@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/keep-network/keep-core/pkg/clientinfo"
@@ -69,8 +70,9 @@ type channel struct {
 	validatorMutex sync.Mutex
 	validator      validator
 
-	publisherMutex sync.Mutex
-	publisher      publisher
+	publisherOnce sync.Once
+	publisherGate *semaphore.Weighted
+	publisher     publisher
 
 	subscription         pubsubSubscription
 	incomingMessageQueue chan *pubsub.Message
@@ -120,7 +122,7 @@ func (c *channel) Send(
 	messageProto.SequenceNumber = c.nextSeqno()
 
 	doSend := func() error {
-		return c.publish(messageProto)
+		return c.publish(ctx, messageProto)
 	}
 
 	var strategy net.RetransmissionStrategy
@@ -249,16 +251,19 @@ func (c *channel) messageProto(
 	}, nil
 }
 
-func (c *channel) publish(message *pb.BroadcastNetworkMessage) error {
+func (c *channel) publish(ctx context.Context, message *pb.BroadcastNetworkMessage) error {
 	messageBytes, err := proto.Marshal(message)
 	if err != nil {
 		return err
 	}
 
-	c.publisherMutex.Lock()
-	defer c.publisherMutex.Unlock()
+	c.publisherOnce.Do(func() { c.publisherGate = semaphore.NewWeighted(1) })
+	if err := c.publisherGate.Acquire(ctx, 1); err != nil {
+		return err
+	}
+	defer c.publisherGate.Release(1)
 
-	publishErr := c.publisher.Publish(context.TODO(), messageBytes)
+	publishErr := c.publisher.Publish(ctx, messageBytes)
 	if publishErr == nil && c.metricsRecorder != nil {
 		c.metricsRecorder.IncrementCounter("message_broadcast_total", 1)
 	}

@@ -1,6 +1,7 @@
 // Package frost defines the inactive FROST integration boundary. The host must
-// authorize each exact message before calling Sign. K-01 supplies only a local
-// harness; no production transport, store, finality or recovery adapter exists.
+// authorize each exact message before calling Sign. K-02 adds guarded local
+// storage and transport components; production finality, fencing deployment,
+// candidate recovery and capacity qualification remain separate work.
 package frost
 
 import "context"
@@ -18,7 +19,7 @@ type Group struct {
 
 // Attempt contains facts agreed by all nodes. StartBlock is this attempt's
 // start block, not the DKG epoch. Use fresh values for every signing retry.
-// Production domain construction and durable ownership belong to K-02.
+// Use Domain.NewAttempt and a guarded engine for durable ownership.
 type Attempt struct {
 	Channel    []byte
 	Session    []byte

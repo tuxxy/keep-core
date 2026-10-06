@@ -1,4 +1,4 @@
-# Local FROST integration — K-01
+# Local FROST integration — K-01 and K-02
 
 This package is inactive in node dispatch. `Frost.Enabled` defaults to false.
 Setting it to true is rejected before chain access or credential handling.
@@ -23,8 +23,8 @@ drained and discarded; errors contain bounded public diagnostics.
 The test harness has local authenticated-seat queues, memory storage, and a
 clearly labeled test acceptance adapter. It proves no production transport
 security, storage durability, chain finality or crash recovery. It creates no
-production wallet record and uses no RPC or funds. SF-02, SF-03 and K-02 remain
-separate work.
+production wallet record and uses no RPC or funds. The guarded K-02 path adds durable journal and authenticated transport
+components. Production qualification, SF-02 and SF-03 remain pending.
 
 ## Run the local harness
 
@@ -46,3 +46,30 @@ the candidate and key, reload opaque records, verify the exact message, reject
 a changed message, and check worker exit. Negative cases cover environment
 scrubbing, wrong/missing worker, malformed input/frame, cancellation and false
 acceptance.
+
+
+## Guarded local integration — K-02
+
+`Domain.NewAttempt` binds deployment context and purpose. Pass its canonical ID
+from `snowfallengine.AttemptID` to the [transport](transport/README.md). Open a
+[durable journal](store/README.md) with an independent fence and use
+`snowfallengine.NewGuarded`. This constructor validates the request and transport
+binding, claims the attempt before worker start, preserves exclusive ownership
+until exit, and installs the accepted key before returning success. Signing
+requires the same installed key. The original `New` constructor remains the
+explicit K-01 test seam; neither constructor enables node dispatch.
+
+Run packages serially when collecting process-exit evidence; both real-worker
+suites inspect processes for the same pinned binary:
+
+```sh
+SNOWFALL_WORKER=/absolute/path/to/snowfall \
+SNOWFALL_WORKER_SHA256=<exact-64-hex-artifact-hash> \
+go test -p 1 -count=1 -v ./pkg/frost/...
+```
+
+The K-02 real test uses actual local libp2p peers, a separate encrypted store per
+node, and explicit test-only acceptance and fencing providers. It closes and
+reopens stores, aborts signing after a commitment, rejects the old attempt after
+reopen, then signs with a fresh attempt. These local results do not supply the
+production fence service, storage qualification or SF-02 candidate recovery.

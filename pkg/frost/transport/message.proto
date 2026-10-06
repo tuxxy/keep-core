@@ -1,0 +1,14 @@
+syntax = "proto3";
+package frost.transport;
+// Version 1 is encoded in ascending field order, exactly once per field,
+// including empty values. Unknown fields and non-canonical encodings reject.
+// The authenticated keep-core broadcast channel signs this complete message.
+message Packet {
+ uint32 version = 1;
+ bytes domain = 2;
+ bytes attempt = 3;
+ uint32 sender = 4;
+ uint32 recipient = 5;
+ string kind = 6;
+ bytes body = 7;
+}

@@ -1,22 +1,28 @@
 # Private local dependency pin
 
-SNOWFALL client commit: `13e9a596eb57e44be22d32b9e6c9ebb044e18c39`.
-Module version recorded in go.mod: `v0.0.0-20261006104512-13e9a596eb57`.
+SNOWFALL client and worker source commit:
+`2b3ad6e58c382861b5c4cebffe8343bbf40e9355`.
+Module version in go.mod: `v0.0.0-20261006111731-2b3ad6e58c38`.
 This is a commit-derived Go pseudo-version, not a published release tag.
+Source branch: `threshold-network/snowfall:integration/sf02-recovery`.
 
 The local replacement is `../snowfall/clients/go`. Keep the sibling worktree
-on that exact commit. A replacement uses the local files; verify the commit
-and clean status before testing. The actual worker source is unchanged at
-`bf9ae8527656937401e2ebdfa2d9734ec8c5e93a`.
+on that exact commit. A replacement uses local files; verify the commit and
+clean status before testing. Only the SNOWFALL adapter imports this module.
 
 Local worker SHA-256:
-`d775dc36c508559f1bd997ab2552cea3aed94587540f6307352fec4628400765`.
+`09e9f88ce5ffcf0260b65d619827db7cf9b0a50d16697305d57c0380208688bb`.
 Built with Rust/Cargo 1.94.0, `cargo build --locked --release -p snowfall-worker`,
-for `aarch64-apple-darwin`, with the default production feature set and no
-`test-utils`. This native local artifact is not a qualified Linux, musl/Alpine,
-or production release. Full artifact and toolchain records are retained in the
-K-00-SF-01-K-01 implementation evidence package.
+for `aarch64-apple-darwin`, with default production features and no `test-utils`.
+This native artifact is not a qualified Linux, musl/Alpine or production release.
+The SF-02 implementation evidence package records its build and test results.
+
+Recovery uses worker bootstrap version 2 and the `recover-dkg` operation.
+Existing signing and new DKG use version 1. The guarded adapter probes recovery
+capability before it can claim an attempt. The earlier beta.1 artifact cannot
+serve this path. Frozen candidate, completion and digest encodings are unchanged.
+Preserve compatible worker, client and host releases while a wallet has obligations.
 
 D-01 is pending: repository access, license compatibility and public distribution
-need an accountable owner decision. This replacement authorizes private local
+need an accountable owner decision. This replacement supports private local
 development only. No new public module tag is claimed.

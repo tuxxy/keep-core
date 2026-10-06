@@ -29,7 +29,7 @@ replace (
 replace github.com/threshold-network/snowfall/clients/go => ../snowfall/clients/go
 
 require (
- github.com/threshold-network/snowfall/clients/go v0.0.0-20261006104512-13e9a596eb57
+ github.com/threshold-network/snowfall/clients/go v0.0.0-20261006111731-2b3ad6e58c38
 	github.com/bnb-chain/tss-lib v1.3.5
 	// v0.24.2 is the lowest release that fixes every advisory open against the
 	// former v0.22.3 pin, and going higher is not currently possible:

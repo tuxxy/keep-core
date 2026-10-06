@@ -20,8 +20,11 @@ import (
 var ErrCapacity = errors.New("FROST transport capacity exceeded")
 
 type Config struct {
-	Domain  frost.Domain
-	Attempt frost.Attempt
+	// Required by guarded DKG. Retains operator attribution before delivery.
+	RecoveryJournal frost.RecoveryJournal
+	RecoveryOnly    bool
+	Domain          frost.Domain
+	Attempt         frost.Attempt
 	// ID must come from snowfallengine.AttemptID. The guarded engine checks it.
 	ID             [32]byte
 	LocalSeats     []uint16
@@ -34,6 +37,10 @@ type Config struct {
 }
 
 type Transport struct {
+	journal      frost.RecoveryJournal
+	scope        frost.Domain
+	localKey     []byte
+	recoveryOnly bool
 	ctx          context.Context
 	cancel       context.CancelFunc
 	attempt      frost.Attempt
@@ -79,7 +86,10 @@ func New(ctx context.Context, c Config) (*Transport, error) {
 	if c.QueueCapacity < 1 || c.QueueCapacity > 4096 || c.MaxMessages < 1 || c.MaxMessages > 65536 {
 		return nil, ErrCapacity
 	}
-	t := &Transport{id: c.ID, domain: c.Domain.ID(), membership: c.Membership, local: map[uint16]*ephemeral.KeyPair{}, roster: map[uint16]bool{}, keys: map[uint16][]byte{}, changed: make(chan struct{}), incoming: make(chan frost.Incoming, c.QueueCapacity), seen: map[[32]byte]bool{}, sent: map[[32]byte]bool{}, max: c.MaxMessages, pending: map[[32]byte]packet{}, pendingLimit: c.QueueCapacity, sendToken: make(chan struct{}, 1)}
+	t := &Transport{journal: c.RecoveryJournal, scope: c.Domain, localKey: append([]byte(nil), c.LocalPublicKey...), recoveryOnly: c.RecoveryOnly, id: c.ID, domain: c.Domain.ID(), membership: c.Membership, local: map[uint16]*ephemeral.KeyPair{}, roster: map[uint16]bool{}, keys: map[uint16][]byte{}, changed: make(chan struct{}), incoming: make(chan frost.Incoming, c.QueueCapacity), seen: map[[32]byte]bool{}, sent: map[[32]byte]bool{}, max: c.MaxMessages, pending: map[[32]byte]packet{}, pendingLimit: c.QueueCapacity, sendToken: make(chan struct{}, 1)}
+	if c.RecoveryJournal != nil && c.RecoveryJournal.Domain() != c.Domain {
+		return nil, errors.New("readiness journal domain mismatch")
+	}
 	t.attempt = frost.Attempt{Channel: append([]byte(nil), c.Attempt.Channel...), Session: append([]byte(nil), c.Attempt.Session...), StartBlock: c.Attempt.StartBlock}
 	var prev uint16
 	for _, seat := range c.Roster {
@@ -117,8 +127,30 @@ func New(ctx context.Context, c Config) (*Transport, error) {
 	}
 	t.ctx, t.cancel = context.WithCancel(ctx)
 	ch.SetUnmarshaler(func() net.TaggedUnmarshaler { return &packet{} })
+	if c.RecoveryOnly {
+		if t.journal == nil {
+			t.cancel()
+			return nil, errors.New("recovery requires readiness journal")
+		}
+		evidence, e := t.journal.ReadReadiness(ctx, t.id)
+		if e != nil {
+			t.cancel()
+			return nil, e
+		}
+		for _, saved := range evidence {
+			kind, id, sender, recipient, err := inspect(saved.Message)
+			if err != nil || kind != "ready-attestation" || id != t.id || sender != saved.Sender || recipient != 0 || saved.Domain != c.Domain || !t.roster[sender] || !t.membership.IsValidMembership(group.MemberIndex(sender), saved.OperatorKey) {
+				t.cancel()
+				return nil, errors.New("invalid saved readiness attribution")
+			}
+			t.enqueueLocked(sender, saved.Message)
+		}
+	}
 	ch.Recv(t.ctx, t.receive)
 	for seat, pair := range t.local {
+		if c.RecoveryOnly {
+			break
+		}
 		p := t.packet(seat, 0, "ephemeral-key", pair.PublicKey.Marshal())
 		if e = ch.Send(t.ctx, &p); e != nil {
 			t.cancel()
@@ -127,6 +159,8 @@ func New(ctx context.Context, c Config) (*Transport, error) {
 	}
 	return t, nil
 }
+func (t *Transport) RecoveryBinding() frost.RecoveryJournal { return t.journal }
+
 func (t *Transport) Binding() (frost.Attempt, [32]byte) {
 	return frost.Attempt{Channel: append([]byte(nil), t.attempt.Channel...), Session: append([]byte(nil), t.attempt.Session...), StartBlock: t.attempt.StartBlock}, t.id
 }
@@ -159,6 +193,9 @@ func (t *Transport) receive(m net.Message) {
 	if !bytes.Equal(p.Domain, t.domain[:]) || !bytes.Equal(p.Attempt, t.id[:]) || !t.roster[uint16(p.Sender)] || !t.membership.IsValidMembership(group.MemberIndex(p.Sender), m.SenderPublicKey()) {
 		return
 	}
+	if t.recoveryOnly && p.Kind != "ready-attestation" {
+		return
+	}
 	sender, recipient := uint16(p.Sender), uint16(p.Recipient)
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -188,14 +225,14 @@ func (t *Transport) receive(m net.Message) {
 		for hash, waiting := range t.pending {
 			if uint16(waiting.Sender) == sender {
 				delete(t.pending, hash)
-				t.processLocked(&waiting)
+				t.processLocked(&waiting, nil)
 			}
 		}
 		return
 	}
-	t.processLocked(p)
+	t.processLocked(p, m.SenderPublicKey())
 }
-func (t *Transport) processLocked(p *packet) {
+func (t *Transport) processLocked(p *packet, operatorKey []byte) {
 	sender, recipient := uint16(p.Sender), uint16(p.Recipient)
 	envelope := p.Body
 	if p.Kind == "dkg-round-two" {
@@ -235,6 +272,12 @@ func (t *Transport) processLocked(p *packet) {
 	kind, id, from, to, e := inspect(envelope)
 	if e != nil || kind != p.Kind || id != t.id || from != sender || to != recipient {
 		return
+	}
+	if kind == "ready-attestation" && !t.seen[sha256.Sum256(envelope)] {
+		if e := t.saveReadiness(t.ctx, sender, envelope, operatorKey); e != nil {
+			t.failLocked(e)
+			return
+		}
 	}
 	t.enqueueLocked(sender, envelope)
 }
@@ -279,11 +322,19 @@ func (t *Transport) send(ctx context.Context, sender, recipient uint16, b []byte
 	if e != nil || id != t.id || from != sender || to != recipient || t.local[sender] == nil || (recipient != 0 && !t.roster[recipient]) {
 		return errPacket
 	}
+	if t.recoveryOnly && kind != "ready-attestation" {
+		return errPacket
+	}
 	if ctx == nil {
 		return errPacket
 	}
 	if e = ctx.Err(); e != nil {
 		return e
+	}
+	if kind == "ready-attestation" {
+		if e := t.saveReadiness(ctx, sender, b, t.localKey); e != nil {
+			return e
+		}
 	}
 	t.mu.Lock()
 	for recipient != 0 && t.keys[recipient] == nil && t.ctx.Err() == nil {
@@ -375,4 +426,11 @@ func (t *Transport) Receive(ctx context.Context) (frost.Incoming, error) {
 		}
 		return v, nil
 	}
+}
+
+func (t *Transport) saveReadiness(ctx context.Context, sender uint16, b, key []byte) error {
+	if t.journal == nil {
+		return nil
+	}
+	return t.journal.SaveReadiness(ctx, frost.ReadinessEvidence{Domain: t.scope, Attempt: t.id, Sender: sender, OperatorKey: append([]byte(nil), key...), Message: append([]byte(nil), b...)})
 }

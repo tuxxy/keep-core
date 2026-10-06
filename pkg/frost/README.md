@@ -1,4 +1,4 @@
-# Local FROST integration — K-01 and K-02
+# Local FROST integration — K-01, K-02 and SF-02
 
 This package is inactive in node dispatch. `Frost.Enabled` defaults to false.
 Setting it to true is rejected before chain access or credential handling.
@@ -24,7 +24,7 @@ The test harness has local authenticated-seat queues, memory storage, and a
 clearly labeled test acceptance adapter. It proves no production transport
 security, storage durability, chain finality or crash recovery. It creates no
 production wallet record and uses no RPC or funds. The guarded K-02 path adds durable journal and authenticated transport
-components. Production qualification, SF-02 and SF-03 remain pending.
+components. SF-02 adds [durable candidate recovery](RECOVERY.md). Production qualification and SF-03 remain pending.
 
 ## Run the local harness
 
@@ -72,4 +72,4 @@ The K-02 real test uses actual local libp2p peers, a separate encrypted store pe
 node, and explicit test-only acceptance and fencing providers. It closes and
 reopens stores, aborts signing after a commitment, rejects the old attempt after
 reopen, then signs with a fresh attempt. These local results do not supply the
-production fence service, storage qualification or SF-02 candidate recovery.
+production fence service or storage qualification. The SF-02 tests also exercise recovery from retained authenticated readiness.

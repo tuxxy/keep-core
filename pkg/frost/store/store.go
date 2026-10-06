@@ -51,14 +51,16 @@ type record struct {
 	Ciphertext []byte
 }
 type snapshot struct {
-	Version   uint16
-	StorageID [32]byte
-	Sequence  uint64
-	Records   map[string]record
-	Locks     map[string]string
-	Claims    map[string][]byte
-	DKGs      map[string]string
-	Keys      map[string][]byte
+	Version    uint16
+	StorageID  [32]byte
+	Sequence   uint64
+	Records    map[string]record
+	Locks      map[string]string
+	Claims     map[string][]byte
+	DKGs       map[string]string
+	Keys       map[string][]byte
+	Recoveries map[string][]byte
+	Readiness  map[string][]byte
 }
 
 type Store struct {
@@ -72,6 +74,7 @@ type Store struct {
 	state            snapshot
 	closed, poisoned bool
 	active           int
+	activeAttempts   map[string]bool
 	// Tests interrupt real I/O at named boundaries. Production leaves nil.
 	boundary      func(string) error
 	syncFile      func(*os.File) error
@@ -146,7 +149,7 @@ func Open(ctx context.Context, c Config) (out *Store, err error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &Store{root: root, id: c.StorageID, aead: aead, lock: lock, fence: lease, syncFile: func(f *os.File) error { return f.Sync() }, syncDirectory: syncDir, install: os.Link}
+	s := &Store{activeAttempts: map[string]bool{}, root: root, id: c.StorageID, aead: aead, lock: lock, fence: lease, syncFile: func(f *os.File) error { return f.Sync() }, syncDirectory: syncDir, install: os.Link}
 	if err = bindIdentity(root, c.StorageID); err != nil {
 		return nil, err
 	}
@@ -178,6 +181,12 @@ func Open(ctx context.Context, c Config) (out *Store, err error) {
 		if s.state.Version != 1 || s.state.StorageID != s.id || s.state.Sequence != s.point.Sequence || s.state.Records == nil || s.state.Locks == nil || s.state.Claims == nil || s.state.DKGs == nil || s.state.Keys == nil {
 			return nil, ErrQuarantined
 		}
+	}
+	if s.state.Recoveries == nil {
+		s.state.Recoveries = map[string][]byte{}
+	}
+	if s.state.Readiness == nil {
+		s.state.Readiness = map[string][]byte{}
 	}
 	return s, nil
 }
@@ -300,6 +309,14 @@ func (s *Store) check(ctx context.Context) error {
 }
 func clone(s snapshot) snapshot {
 	c := s
+	c.Recoveries = make(map[string][]byte, len(s.Recoveries))
+	for k, v := range s.Recoveries {
+		c.Recoveries[k] = v
+	}
+	c.Readiness = make(map[string][]byte, len(s.Readiness))
+	for k, v := range s.Readiness {
+		c.Readiness[k] = v
+	}
 	c.Records = make(map[string]record, len(s.Records))
 	for k, v := range s.Records {
 		c.Records[k] = v
@@ -622,8 +639,9 @@ func (v *Scoped) Claim(ctx context.Context, id [32]byte, purpose string, intent 
 		return nil, s.fail(e)
 	}
 	s.active++
+	s.activeAttempts[key] = true
 	var once sync.Once
-	return func() { once.Do(func() { s.mu.Lock(); s.active--; s.mu.Unlock() }) }, nil
+	return func() { once.Do(func() { s.mu.Lock(); s.active--; delete(s.activeAttempts, key); s.mu.Unlock() }) }, nil
 }
 func (v *Scoped) SaveKey(ctx context.Context, k frost.KeyReady) error {
 	if k.Candidate.Epoch != v.domain.Epoch || k.Candidate.Profile != frost.ApprovedProfile || len(k.LocalReferences) == 0 {

@@ -89,13 +89,13 @@ func (testFinality) WaitCandidateAcceptance(_ context.Context, c frost.Candidate
 }
 
 type countedJournal struct {
-	frost.Journal
+	frost.RecoveryJournal
 	reads atomic.Int32
 }
 
 func (j *countedJournal) Read(ctx context.Context, id [32]byte) ([]byte, error) {
 	j.reads.Add(1)
-	return j.Journal.Read(ctx, id)
+	return j.RecoveryJournal.Read(ctx, id)
 }
 
 type countedProvider struct {
@@ -217,7 +217,7 @@ func TestRealWorkerDurableAuthenticatedReload(t *testing.T) {
 				if e != nil {
 					t.Fatal(e)
 				}
-				journals[i] = &countedJournal{Journal: scoped}
+				journals[i] = &countedJournal{RecoveryJournal: scoped}
 				engines[i], e = snowfallengine.NewGuarded(cfg, journals[i])
 				if e != nil {
 					t.Fatal(e)
@@ -234,7 +234,7 @@ func TestRealWorkerDurableAuthenticatedReload(t *testing.T) {
 				}
 				ts := make([]*Transport, len(nodes))
 				for i, seats := range nodes {
-					ts[i], e = New(ctx, Config{Domain: domain, Attempt: a, ID: snowfallengine.AttemptID(a), LocalSeats: seats, Roster: []uint16{1, 2, 3}, LocalPublicKey: operator.MarshalUncompressed(pubs[i]), Membership: membership, Network: providers[i]})
+					ts[i], e = New(ctx, Config{RecoveryJournal: journals[i], Domain: domain, Attempt: a, ID: snowfallengine.AttemptID(a), LocalSeats: seats, Roster: []uint16{1, 2, 3}, LocalPublicKey: operator.MarshalUncompressed(pubs[i]), Membership: membership, Network: providers[i]})
 					if e != nil {
 						t.Fatal(e)
 					}
@@ -283,6 +283,20 @@ func TestRealWorkerDurableAuthenticatedReload(t *testing.T) {
 				loaded, e := journals[i].LoadKey(ctx)
 				if e != nil || !reflect.DeepEqual(loaded, keys[i]) {
 					t.Fatal("accepted key did not survive reopen")
+				}
+			}
+			// All peers restart, then recover from retained authenticated evidence.
+			for i := range nodes {
+				a, _ := domain.NewAttempt("dkg", [32]byte{1}, 100)
+				tr, e := New(ctx, Config{RecoveryJournal: journals[i], RecoveryOnly: true, Domain: domain, Attempt: a, ID: snowfallengine.AttemptID(a), LocalSeats: nodes[i], Roster: []uint16{1, 2, 3}, LocalPublicKey: operator.MarshalUncompressed(pubs[i]), Membership: membership, Network: providers[i]})
+				if e != nil {
+					t.Fatal(e)
+				}
+				recovered, e := engines[i].RecoverPending(ctx, frost.Providers{Transport: tr, Acceptance: testFinality{}})
+				tr.Close()
+				journals[i].reads.Store(0)
+				if e != nil || !reflect.DeepEqual(recovered, keys[i]) {
+					t.Fatalf("libp2p recovery node %d: %v", i, e)
 				}
 			}
 			requireNoWorkers(t, cfg.Path)

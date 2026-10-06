@@ -27,7 +27,7 @@ type WorkerConfig struct {
 
 type Engine struct {
 	worker  snowfall.WorkerConfig
-	journal frost.Journal
+	journal frost.RecoveryJournal
 }
 
 var _ frost.Engine = (*Engine)(nil)
@@ -38,7 +38,7 @@ func New(config WorkerConfig) (*Engine, error) {
 	if !filepath.IsAbs(config.Path) || config.SHA256 == ([32]byte{}) {
 		return nil, invalid("absolute worker path and nonzero SHA-256 pin are required")
 	}
-	return &Engine{worker: snowfall.WorkerConfig{WorkerPath: config.Path, WorkerSHA256: config.SHA256,
+	return &Engine{worker: snowfall.WorkerConfig{DevelopmentWithoutRecovery: true, WorkerPath: config.Path, WorkerSHA256: config.SHA256,
 		Env: append([]string{}, config.Env...), CommandTimeoutMs: config.CommandTimeoutMs, ShutdownTimeoutMs: config.ShutdownTimeoutMs}}, nil
 }
 
@@ -56,7 +56,15 @@ func NewGuarded(config WorkerConfig, journal frost.Journal) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	e.journal = journal
+	recovery, ok := journal.(frost.RecoveryJournal)
+	if !ok {
+		return nil, invalid("durable recovery journal required")
+	}
+	e.worker.DevelopmentWithoutRecovery = false
+	e.journal = recovery
+	if err := snowfall.CheckWorkerRecovery(context.Background(), &e.worker); err != nil {
+		return nil, classified(err)
+	}
 	return e, nil
 }
 
@@ -70,9 +78,19 @@ func (e *Engine) claim(ctx context.Context, purpose string, a frost.Attempt, epo
 	if e.journal == nil {
 		return func() {}, nil
 	}
+	recovery := purpose == "recover-dkg"
+	if recovery {
+		purpose = "dkg"
+	}
 	d := e.journal.Domain()
 	if d.Epoch != epoch || d.ValidateAttempt(a, purpose) != nil {
 		return nil, invalid("attempt does not match journal domain")
+	}
+	if purpose == "dkg" {
+		retained, ok := p.Transport.(interface{ RecoveryBinding() frost.RecoveryJournal })
+		if !ok || retained.RecoveryBinding() != e.journal {
+			return nil, invalid("journal-backed readiness transport required")
+		}
 	}
 	bound, ok := p.Transport.(interface {
 		Binding() (frost.Attempt, [32]byte)
@@ -88,7 +106,12 @@ func (e *Engine) claim(ctx context.Context, purpose string, a frost.Attempt, epo
 	if err != nil {
 		return nil, invalid("invalid durable intent")
 	}
-	release, err := e.journal.Claim(ctx, AttemptID(a), purpose, raw)
+	var release func()
+	if recovery {
+		release, err = e.journal.AcquireRecovery(ctx, AttemptID(a), raw)
+	} else {
+		release, err = e.journal.Claim(ctx, AttemptID(a), purpose, raw)
+	}
 	if err != nil {
 		return nil, classified(err)
 	}
@@ -127,8 +150,12 @@ func (e *Engine) client(ctx context.Context, g frost.Group, seats []uint16, a fr
 	if g.Quorum != 0 {
 		group = group.WithQuorum(g.Quorum)
 	}
+	var store snowfall.Store = storeBridge{p.Store}
+	if journal, ok := p.Store.(frost.RecoveryJournal); ok {
+		store = recoveryBridge{storeBridge{p.Store}, journal}
+	}
 	chain := &acceptanceBridge{provider: p.Acceptance}
-	c, err := snowfall.NewClient(group, seats, snowfall.Providers{Transport: transportBridge{p.Transport}, Store: storeBridge{p.Store}, Chain: chain}, &e.worker)
+	c, err := snowfall.NewClient(group, seats, snowfall.Providers{Transport: transportBridge{p.Transport}, Store: store, Chain: chain}, &e.worker)
 	return c, chain, classified(err)
 }
 

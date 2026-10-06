@@ -136,7 +136,13 @@ func realWorkerConfig(t *testing.T) snowfallengine.WorkerConfig {
 	if !reflect.DeepEqual(actual[:], raw) {
 		t.Fatal("worker hash mismatch")
 	}
-	return snowfallengine.WorkerConfig{Path: path, SHA256: actual}
+	// Give process checks a path owned only by this test, so concurrent suites
+	// cannot be mistaken for a leaked worker or selected for a crash injection.
+	copyPath := filepath.Join(t.TempDir(), "snowfall-pinned")
+	if e := os.WriteFile(copyPath, b, 0700); e != nil {
+		t.Fatal(e)
+	}
+	return snowfallengine.WorkerConfig{Path: copyPath, SHA256: actual}
 }
 func requireNoWorkers(t *testing.T, path string) {
 	t.Helper()

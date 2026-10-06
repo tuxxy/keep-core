@@ -477,6 +477,21 @@ func TestIdenticalWriteChecksDurableBytes(t *testing.T) {
 }
 
 func TestStorageIdentityCannotResetClaims(t *testing.T) {
+	t.Run("empty store identity", func(t *testing.T) {
+		c := testConfig(t)
+		s, _ := openTest(t, c)
+		must(t, s.Close())
+		// No claim or record exists, so the zero-head journal-presence guard
+		// cannot substitute for the immutable storage-root identity check.
+		c.StorageID[0]++
+		opened, err := Open(context.Background(), c)
+		if opened != nil {
+			must(t, opened.Close())
+		}
+		if opened != nil || !errors.Is(err, ErrQuarantined) {
+			t.Fatal("empty storage identity was rebound")
+		}
+	})
 	c := testConfig(t)
 	s, v := openTest(t, c)
 	release, e := v.Claim(context.Background(), [32]byte{1}, "sign", []byte("intent"))

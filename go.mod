@@ -25,11 +25,11 @@ replace (
 	google.golang.org/protobuf/dev => google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
 )
 
-// Private local SF-01 development. Replace with an approved pin before distribution (D-01).
+// Private local K-03 development. Replace with an approved pin before distribution (D-01).
 replace github.com/threshold-network/snowfall/clients/go => ../snowfall/clients/go
 
 require (
- github.com/threshold-network/snowfall/clients/go v0.0.0-20261007122401-675af5f588b4
+ github.com/threshold-network/snowfall/clients/go v0.0.0-20261007122401-0c0bcea5ead8
 	github.com/bnb-chain/tss-lib v1.3.5
 	// v0.24.2 is the lowest release that fixes every advisory open against the
 	// former v0.22.3 pin, and going higher is not currently possible:

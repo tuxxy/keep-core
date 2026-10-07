@@ -76,4 +76,5 @@ type Journal interface {
 	Claim(context.Context, [32]byte, string, []byte) (release func(), err error)
 	SaveKey(context.Context, KeyReady) error
 	LoadKey(context.Context) (KeyReady, error)
+	DKGStatus(context.Context) (DKGStatus, error)
 }

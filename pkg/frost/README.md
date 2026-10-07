@@ -82,3 +82,8 @@ write. It checks release of live ownership, the retained attempt tombstone,
 rejection of another DKG in that domain, and successful DKG and signing in the
 next epoch. It verifies the signature independently. It never resumes a
 candidate or decodes its secret-bearing bytes.
+
+The complete local K-03 path now connects public approval to completed-key
+reload and `ReadyUnfunded`. See [the protocol](dkg/README.md) and
+[the actual-contract test](../../test/frost/README.md). The normal node remains
+inactive; lost-seat status alone is not a readiness certificate.

@@ -58,6 +58,15 @@ the local seats. Candidate recovery is rejected by owner decision. The pending
 wallet certifies under the C-03 readiness policy or expires unfunded with its
 identity tombstone; the group then requests a fresh epoch.
 
+## Local DKG outcome
+
+`Scoped.DKGStatus` reports original local seats as `InProgress`, `KeyStored` or
+`SeatsLost`. Loss follows from the durable claim when neither a saved key nor
+live ownership remains. It survives process death without a cleanup write.
+Initial key installation requires the live claim; a released or restarted
+attempt cannot install a late key. `KeyStored` is not readiness certification.
+See [the K-03 component contract and checks](K03-LOST-SEATS.md).
+
 ## Qualification limits
 
 The current snapshot limit is 32 MiB; an opaque record is limited to 1 MiB.

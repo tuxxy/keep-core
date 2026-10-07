@@ -3,6 +3,7 @@
   "kind": "counterexample",
   "property": "durable_acks",
   "weakening": "NoDirSync",
+  "profile": "store",
   "max_commits": 3,
   "replay": "full",
   "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
@@ -10,7 +11,7 @@
     {
       "n": 1,
       "action": "open",
-      "proc": 0,
+      "proc": 1,
       "image": 0,
       "expect": "opened",
       "expect_state": {
@@ -22,74 +23,83 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
     {
       "n": 2,
-      "action": "claim",
-      "proc": 0,
-      "attempt": 1,
-      "purpose": "sign",
-      "domain": 0,
+      "action": "put",
+      "proc": 1,
+      "slot": 1,
+      "value": 1,
       "pause": "before-write"
     },
     {
       "n": 3,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "write",
       "pause": "before-file-sync"
     },
     {
       "n": 4,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "file_sync",
       "pause": "before-install"
     },
     {
       "n": 5,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "install",
       "pause": "before-directory-sync"
     },
     {
       "n": 6,
-      "action": "step",
-      "proc": 0,
-      "step": "fence",
-      "pause": "before-acknowledgement"
+      "action": "fence_reset"
     },
     {
       "n": 7,
       "action": "step",
-      "proc": 0,
-      "step": "ack",
-      "expect": "claim_ok"
+      "proc": 1,
+      "step": "fence",
+      "pause": "before-acknowledgement"
     },
     {
       "n": 8,
-      "action": "fence_reset"
+      "action": "step",
+      "proc": 1,
+      "step": "ack",
+      "expect": "durable"
     },
     {
       "n": 9,
-      "action": "clone"
+      "action": "claim",
+      "proc": 1,
+      "attempt": 0,
+      "purpose": "dkg",
+      "domain": 0,
+      "pause": "before-write"
     },
     {
       "n": 10,
-      "action": "open",
-      "proc": 1,
-      "image": 1,
-      "expect": "busy"
+      "action": "clone"
     }
   ],
   "claim_model_steps": [
     {
       "n": 1,
       "action": "open",
-      "proc": 0,
+      "proc": 1,
       "image": 0,
       "expect": "opened",
       "expect_state": {
@@ -101,38 +111,49 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
     {
       "n": 2,
-      "action": "claim",
-      "proc": 0,
-      "attempt": 1,
-      "purpose": "sign",
-      "domain": 0,
+      "action": "put",
+      "proc": 1,
+      "slot": 1,
+      "value": 1,
       "pause": "before-write"
     },
     {
       "n": 3,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "write",
       "pause": "before-file-sync"
     },
     {
       "n": 4,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "file_sync",
       "pause": "before-install"
     },
     {
       "n": 5,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "install",
       "pause": "before-directory-sync"
+    },
+    {
+      "n": 6,
+      "action": "fence_reset"
     }
   ]
 }

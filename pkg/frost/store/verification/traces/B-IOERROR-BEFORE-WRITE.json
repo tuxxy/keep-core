@@ -3,6 +3,7 @@
   "kind": "boundary",
   "property": "declared representative set",
   "weakening": "None",
+  "profile": "store",
   "max_commits": 3,
   "replay": "full",
   "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
@@ -20,6 +21,14 @@
           false
         ],
         "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
           null,
           null
         ]
@@ -68,6 +77,14 @@
           false
         ],
         "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
           null,
           null
         ]

@@ -3,6 +3,7 @@
   "kind": "witness",
   "property": "w_progress_after_reopen",
   "weakening": "None",
+  "profile": "store",
   "max_commits": 3,
   "replay": "full",
   "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
@@ -22,16 +23,23 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
     {
       "n": 2,
-      "action": "claim",
+      "action": "put",
       "proc": 0,
-      "attempt": 0,
-      "purpose": "dkg",
-      "domain": 1,
+      "slot": 0,
+      "value": 1,
       "pause": "before-write"
     },
     {
@@ -64,34 +72,42 @@
     },
     {
       "n": 7,
+      "action": "fence_reset"
+    },
+    {
+      "n": 8,
       "action": "step",
       "proc": 0,
       "step": "fence",
       "pause": "before-acknowledgement"
     },
     {
-      "n": 8,
+      "n": 9,
       "action": "process_crash",
       "proc": 0,
       "expect": "crashed"
     },
     {
-      "n": 9,
-      "action": "clone"
-    },
-    {
       "n": 10,
       "action": "open",
       "proc": 0,
-      "image": 1,
+      "image": 0,
       "expect": "opened",
       "expect_state": {
-        "claims": 1,
+        "claims": 0,
         "dkg": [
           false,
-          true
+          false
         ],
         "slots": [
+          1,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
           null,
           null
         ]
@@ -99,10 +115,11 @@
     },
     {
       "n": 11,
-      "action": "put",
+      "action": "claim",
       "proc": 0,
-      "slot": 1,
-      "value": 1,
+      "attempt": 0,
+      "purpose": "dkg",
+      "domain": 0,
       "pause": "before-write"
     },
     {
@@ -142,85 +159,95 @@
     },
     {
       "n": 17,
+      "action": "step",
+      "proc": 0,
+      "step": "ack",
+      "expect": "claim_ok"
+    },
+    {
+      "n": 18,
       "action": "process_crash",
       "proc": 0,
       "expect": "crashed"
     },
     {
-      "n": 18,
+      "n": 19,
+      "action": "clone"
+    },
+    {
+      "n": 20,
       "action": "open",
-      "proc": 1,
+      "proc": 0,
       "image": 1,
       "expect": "opened",
       "expect_state": {
         "claims": 1,
         "dkg": [
-          false,
-          true
+          true,
+          false
         ],
         "slots": [
+          1,
+          null
+        ],
+        "keys": [
           null,
-          1
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
     {
-      "n": 19,
+      "n": 21,
       "action": "claim",
-      "proc": 1,
+      "proc": 0,
       "attempt": 1,
       "purpose": "dkg",
-      "domain": 0,
+      "domain": 1,
       "pause": "before-write"
-    },
-    {
-      "n": 20,
-      "action": "step",
-      "proc": 1,
-      "step": "write",
-      "pause": "before-file-sync"
-    },
-    {
-      "n": 21,
-      "action": "step",
-      "proc": 1,
-      "step": "file_sync",
-      "pause": "before-install"
     },
     {
       "n": 22,
       "action": "step",
-      "proc": 1,
-      "step": "install",
-      "pause": "before-directory-sync"
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
     },
     {
       "n": 23,
       "action": "step",
-      "proc": 1,
-      "step": "dir_sync",
-      "pause": "before-fence"
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
     },
     {
       "n": 24,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 25,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 26,
+      "action": "step",
+      "proc": 0,
       "step": "fence",
       "pause": "before-acknowledgement"
     },
     {
-      "n": 25,
-      "action": "fence_reset"
-    },
-    {
-      "n": 26,
-      "action": "restore_stale",
-      "image": 0
-    },
-    {
       "n": 27,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "ack",
       "expect": "claim_ok"
     }

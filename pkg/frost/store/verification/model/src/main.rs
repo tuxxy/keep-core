@@ -6,7 +6,8 @@
 //! property.
 
 use k02_host_model::{
-    boundary_traces, run, HostModel, Trace, Weakening, BOUNDARY_WITNESS, DEFAULT_MAX_COMMITS, SAFETY, WITNESSES,
+    boundary_traces, dkg_boundary_traces, run, safety_for, witnesses_for, HostModel, Profile, Trace, Weakening,
+    BOUNDARY_WITNESS, DEFAULT_MAX_COMMITS,
 };
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -18,6 +19,7 @@ use std::time::Duration;
 struct Results {
     tool: &'static str,
     stateright: &'static str,
+    profile: Profile,
     max_commits: u8,
     threads: usize,
     timeout_secs: u64,
@@ -37,6 +39,7 @@ fn main() {
     let mut timeout = 600u64;
     let mut max_commits = DEFAULT_MAX_COMMITS;
     let mut skip_weakenings = false;
+    let mut profile = Profile::Store;
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
         match a.as_str() {
@@ -45,6 +48,13 @@ fn main() {
             "--timeout-secs" => timeout = args.next().expect("--timeout-secs S").parse().expect("timeout"),
             "--max-commits" => max_commits = args.next().expect("--max-commits K").parse().expect("max commits"),
             "--claim-only" => skip_weakenings = true,
+            "--profile" => {
+                profile = match args.next().expect("--profile store|dkg").as_str() {
+                    "store" => Profile::Store,
+                    "dkg" => Profile::Dkg,
+                    other => panic!("unknown profile {other}"),
+                }
+            }
             other => panic!("unknown argument {other}"),
         }
     }
@@ -55,6 +65,7 @@ fn main() {
     let mut results = Results {
         tool: "k02-host-model",
         stateright: "0.31.0",
+        profile,
         max_commits,
         threads,
         timeout_secs: timeout.as_secs(),
@@ -68,13 +79,13 @@ fn main() {
     let mut all_traces: Vec<Trace> = Vec::new();
     let mut ok = true;
 
-    eprintln!("claim model: max_commits={max_commits} threads={threads} timeout={}s", timeout.as_secs());
-    let claim = run(HostModel { weakening: Weakening::None, max_commits }, threads, timeout);
+    eprintln!("claim model: profile={profile:?} max_commits={max_commits} threads={threads} timeout={}s", timeout.as_secs());
+    let claim = run(HostModel { weakening: Weakening::None, max_commits, profile }, threads, timeout);
     eprintln!(
         "  completed={} unique={} generated={} depth={} seconds={:.1}",
         claim.report.completed, claim.report.unique_states, claim.report.generated_states, claim.report.max_depth, claim.report.seconds
     );
-    for name in SAFETY {
+    for name in safety_for(profile) {
         let found = claim.report.discoveries.get(name).copied().unwrap_or(false);
         let verdict = if !claim.report.completed {
             "blocked"
@@ -89,7 +100,7 @@ fn main() {
         eprintln!("  {name}: {verdict}");
         results.claim_model.insert(name.to_string(), verdict.to_string());
     }
-    for (name, predicate, _) in WITNESSES {
+    for (name, predicate, _) in witnesses_for(profile) {
         let found = claim.report.discoveries.get(name).copied().unwrap_or(false);
         let verdict = if found {
             "discovered"
@@ -111,20 +122,20 @@ fn main() {
     all_traces.extend(claim.traces);
 
     if !skip_weakenings {
-        for w in Weakening::ALL {
+        for &w in Weakening::for_profile(profile) {
             eprintln!("weakening {w:?}");
-            let r = run(HostModel { weakening: w, max_commits }, threads, timeout);
-            let declared = w.declared_failure();
-            let found = r.report.discoveries.get(declared).copied().unwrap_or(false);
+            let r = run(HostModel { weakening: w, max_commits, profile }, threads, timeout);
+            let declared = w.declared_failures();
+            let found = declared.iter().all(|d| r.report.discoveries.get(*d).copied().unwrap_or(false));
             eprintln!(
-                "  completed={} unique={} generated={} seconds={:.1} {declared} counterexample={found}",
+                "  completed={} unique={} generated={} seconds={:.1} {declared:?} counterexamples={found}",
                 r.report.completed, r.report.unique_states, r.report.generated_states, r.report.seconds
             );
             if !found {
                 ok = false;
             }
             let mut m = BTreeMap::new();
-            for name in SAFETY {
+            for name in safety_for(profile) {
                 m.insert(name.to_string(), r.report.discoveries.get(name).copied().unwrap_or(false));
             }
             results.weakenings.insert(format!("{w:?}"), m);
@@ -133,7 +144,10 @@ fn main() {
         }
     }
 
-    all_traces.extend(boundary_traces(max_commits));
+    all_traces.extend(match profile {
+        Profile::Store => boundary_traces(max_commits),
+        Profile::Dkg => dkg_boundary_traces(max_commits),
+    });
     for t in &all_traces {
         let name = format!("{}.json", t.id);
         fs::write(out.join("traces").join(&name), serde_json::to_vec_pretty(t).expect("serialize trace")).expect("write trace");

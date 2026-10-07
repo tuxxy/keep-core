@@ -103,3 +103,36 @@ check, the `.pending-*` temporary files (never read by `Open`), payload bytes
 (only two abstract values per slot), more than one seat, and the DKG
 reservation's interaction with `Keys`. Each is covered only by the existing
 unit tests or is out of scope for this tranche.
+
+## 7. K-03 store-side additions (tranche 2, `Profile::Dkg`)
+
+Source: `store.go` blob `255eb6b18`, `store/dkg_status.go`, `store/wallet.go` at
+keep-core `295af3333`. The transitions of sections 1 to 3 are unchanged; the
+additions below ride on the same commit procedure and the same `check`.
+
+| Model | Implementation | Notes |
+| --- | --- | --- |
+| `Snapshot.keys[d]` | `snapshot.Keys[prefix(d)]` (`SaveKey`, `LoadKey`) | value = the identity the key carries (descriptor and output key) |
+| `Snapshot.wallet[d]` | `snapshot.Wallets[prefix(d)]` (`SaveWallet`, `LoadWallet`, `wallet.go`) | rank 1 to 4 = Candidate, RegisteredPendingReady, ReadyUnfunded, Closed; `approval` = the approval receipt fields, immutable once set |
+| `Proc.live_dkg_marker[d]` | `Store.liveDKGs[prefix]`, set at `Claim` success for purpose `dkg` (`store.go` after `s.active++`), deleted by that claim's release closure | in-memory only; never restored by `Open` |
+| `Proc.holds_dkg[d]` | observer ground truth: claimed in this incarnation and not released | no implementation field |
+| `Begin{SaveKey{d, Some(v)}}` | `SaveKey`: top validation, `check`, existing key identical (`syncCurrent`, nil) or different (`installed key conflict`), then `DKGs[key]` present and `liveDKGs[key] == attempt` else `ErrDKGLost`, then `keyMatchesRequest`, then `commit` | outcomes `KeySaved` / `KeyIdentical` (both nil in Go, compared as `key_ok`), `KeyConflict`, `DkgLost` |
+| `Begin{SaveKey{d, None}}` | a key whose roster does not match the retained request | `KeyMismatch` after the live guard, as in the source order |
+| `LoadKey{d}` | `LoadKey`: `check`, `Keys[prefix]` or `ErrMissing` | `KeyLoaded` / `Missing` / `Quarantined` |
+| `DkgStatus{d}` | `DKGStatus` (`dkg_status.go`): `check`, retained request from `Claims[DKGs[prefix]]`, then `KeyStored` if `Keys[prefix]`, `InProgress` if `liveDKGs[prefix]` names the attempt, else `SeatsLost` | `Missing` without a DKG claim; a malformed request quarantines (not modeled: the harness always writes a valid request) |
+| `Begin{SaveWallet{d, w}}` | `SaveWallet` (`wallet.go`): descriptor and state validation, approval required above Candidate, `check`, ReadyUnfunded requires `Keys[prefix]` whose descriptor and output key equal the wallet's, identical record (`syncCurrent`), conflict rules (identity, rank decrease, quarantine cleared, Closed terminal, ReadyUnfunded never Closed, approval fields immutable), `commit` | `WalletSaved` / `WalletIdentical` (compared as `wallet_ok`), `WalletConflict`, `WalletInvalid` |
+| `Release{Dkg, d}` | the release closure of a `dkg` claim: `active--`, `delete(liveDKGs, prefix)` | `Release{Sign}` is the signing closure as before |
+| `Close` busy | `active != 0` | the model counts signing leases plus held DKG claims |
+
+Harness mapping: key identity `v` is descriptor byte `0xD0+v` with a fixed valid
+x-only output key; the wallet with identity `v` carries the same two, so the
+ReadyUnfunded key check is exercised exactly. A DKG claim intent is a valid
+`frost.DKGRequest` (roster 1,2,3, threshold 2, local seats 1,2, attempt derived
+from the domain). Approval receipt `a` is block 20, hash `0xA0+a`, result hash
+`0xB0+a`, deadline 40.
+
+Not modeled in this profile: the structural validation of the retained request
+(the harness never writes an invalid one; `TestDKGStatusRejectsInvalidDurableIntent`
+covers it), the chain-derived fields of the wallet record beyond the receipt
+identity, keys and wallets in domain 1, and the executor that drives these
+calls (V-03).

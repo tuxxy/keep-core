@@ -1,0 +1,60 @@
+{
+  "id": "D-KEY-WITHOUT-CLAIM",
+  "kind": "boundary",
+  "property": "declared representative set (dkg)",
+  "weakening": "None",
+  "profile": "dkg",
+  "max_commits": 3,
+  "replay": "full",
+  "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
+  "steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "save_key",
+      "proc": 0,
+      "domain": 0,
+      "key": "0",
+      "expect": "dkg_lost"
+    },
+    {
+      "n": 3,
+      "action": "dkg_status",
+      "proc": 0,
+      "domain": 0,
+      "expect": "missing"
+    },
+    {
+      "n": 4,
+      "action": "load_key",
+      "proc": 0,
+      "domain": 0,
+      "expect": "missing"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "S-K02-HOST-1": {
+    "scope": "K-02 store, bound B1, tranche 1 (6 October 2026); pinned at the K-02 head before the K-03 change",
+    "evidence": "implementation/K-02/host-verification-2026-10-06/",
+    "pins": {
+      "pkg/frost/store/store.go": "6088d55c8b2c9254b9d559d033b3116d792e1cd5",
+      "pkg/frost/store/fence.go": "66e7f0b0d3f4e978cc1cab0d17972cb73d980870",
+      "pkg/frost/store/lease_unix.go": "93e63201ff4f37e7fb671508c309c2230f130611",
+      "pkg/frost/store/lease_other.go": "0813ced4baff131baba2badac3545bcc4b8d9d7b",
+      "pkg/frost/store/verification/model/src/lib.rs": "a043d01ce08382590cdd82eafa165e38cc125e09",
+      "pkg/frost/store/verification/model/src/main.rs": "8312dd9fac8b39a30d0b980dcaf00518592c0406",
+      "pkg/frost/store/verification/model/Cargo.lock": "ca0b306a0b72d279ea6217829f84575387aad434",
+      "pkg/frost/store/replay_test.go": "eef27131897f1a0cd62fb55eda44164f227e1b9a"
+    }
+  },
+  "S-K02-HOST-2": {
+    "scope": "K-02 store predicates P-K02-OWNER, -TERMINAL, -IMMUTABLE, -DURABLE, -UNCERTAIN re-established on the K-03 store (store profile, bound B1, three commits); supersedes S-K02-HOST-1 for this source",
+    "evidence": "implementation/K-03/host-verification-2026-10-07/",
+    "pins": {
+      "pkg/frost/store/store.go": "255eb6b18360b35596750c1df05169cb2ec88dd0",
+      "pkg/frost/store/fence.go": "66e7f0b0d3f4e978cc1cab0d17972cb73d980870",
+      "pkg/frost/store/lease_unix.go": "93e63201ff4f37e7fb671508c309c2230f130611",
+      "pkg/frost/store/lease_other.go": "0813ced4baff131baba2badac3545bcc4b8d9d7b",
+      "pkg/frost/store/verification/model/src/lib.rs": "9bc26ed80c9ece0036367f283608366c9243dee7",
+      "pkg/frost/store/verification/model/src/main.rs": "fb2fa35b905636e1df328cebae3af4dd7f71040c",
+      "pkg/frost/store/verification/model/Cargo.lock": "ca0b306a0b72d279ea6217829f84575387aad434",
+      "pkg/frost/store/replay_test.go": "d3cd77eb99d8acda39b0a1895842ea5cf7c2b7c3"
+    }
+  },
+  "S-K03-STORE-1": {
+    "scope": "K-03 store-side predicates P-K03-NO-LATE-KEY, -SEATSLOST-TERMINAL, -STATUS-DURABLE, -RELOAD-ONLY-DURABLE, -WALLET-MONOTONE (dkg profile, three commits; see SCOPE.md \u00a711)",
+    "evidence": "implementation/K-03/host-verification-2026-10-07/",
+    "pins": {
+      "pkg/frost/store/store.go": "255eb6b18360b35596750c1df05169cb2ec88dd0",
+      "pkg/frost/store/fence.go": "66e7f0b0d3f4e978cc1cab0d17972cb73d980870",
+      "pkg/frost/store/lease_unix.go": "93e63201ff4f37e7fb671508c309c2230f130611",
+      "pkg/frost/store/lease_other.go": "0813ced4baff131baba2badac3545bcc4b8d9d7b",
+      "pkg/frost/store/verification/model/src/lib.rs": "9bc26ed80c9ece0036367f283608366c9243dee7",
+      "pkg/frost/store/verification/model/src/main.rs": "fb2fa35b905636e1df328cebae3af4dd7f71040c",
+      "pkg/frost/store/verification/model/Cargo.lock": "ca0b306a0b72d279ea6217829f84575387aad434",
+      "pkg/frost/store/replay_test.go": "d3cd77eb99d8acda39b0a1895842ea5cf7c2b7c3",
+      "pkg/frost/store/dkg_status.go": "57e6533e30bdae2fe4d6b55cf9a296a7f9df68c3",
+      "pkg/frost/store/wallet.go": "1eeada06c53d217eb1cc28adc39c7ef6495a4af1",
+      "pkg/frost/dkg_status.go": "fffaed425a8800e10f2b05957208e7561d5f64cc",
+      "pkg/frost/domain.go": "b2374dde41b1b1e85876443e155bda17517e48b3",
+      "pkg/frost/engine.go": "be127735f6aeb2750b52f68537ebb2bd68985084",
+      "pkg/frost/dkg/types.go": "68c9b67adb74d5eb0ca3a63e6bdcf5b05fdf5d65"
+    }
+  }
+}

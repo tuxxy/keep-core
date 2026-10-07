@@ -3,6 +3,7 @@
   "kind": "witness",
   "property": "w_stale_restore_quarantine",
   "weakening": "None",
+  "profile": "store",
   "max_commits": 3,
   "replay": "full",
   "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
@@ -22,16 +23,23 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
     {
       "n": 2,
-      "action": "claim",
+      "action": "put",
       "proc": 0,
-      "attempt": 0,
-      "purpose": "dkg",
-      "domain": 1,
+      "slot": 0,
+      "value": 1,
       "pause": "before-write"
     },
     {
@@ -64,99 +72,117 @@
     },
     {
       "n": 7,
-      "action": "fence_reset"
-    },
-    {
-      "n": 8,
       "action": "step",
       "proc": 0,
       "step": "fence",
       "pause": "before-acknowledgement"
     },
     {
-      "n": 9,
-      "action": "step",
-      "proc": 0,
-      "step": "ack",
-      "expect": "claim_ok"
-    },
-    {
-      "n": 10,
+      "n": 8,
       "action": "process_crash",
       "proc": 0,
       "expect": "crashed"
     },
     {
-      "n": 11,
-      "action": "clone"
-    },
-    {
-      "n": 12,
+      "n": 9,
       "action": "open",
       "proc": 0,
-      "image": 1,
+      "image": 0,
       "expect": "opened",
       "expect_state": {
-        "claims": 1,
+        "claims": 0,
         "dkg": [
           false,
-          true
+          false
         ],
         "slots": [
+          1,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
           null,
           null
         ]
       }
     },
     {
-      "n": 13,
-      "action": "claim",
+      "n": 10,
+      "action": "put",
       "proc": 0,
-      "attempt": 1,
-      "purpose": "sign",
-      "domain": 0,
+      "slot": 1,
+      "value": 1,
       "pause": "before-write"
     },
     {
-      "n": 14,
+      "n": 11,
       "action": "step",
       "proc": 0,
       "step": "write",
       "pause": "before-file-sync"
     },
     {
-      "n": 15,
+      "n": 12,
       "action": "step",
       "proc": 0,
       "step": "file_sync",
       "pause": "before-install"
     },
     {
-      "n": 16,
+      "n": 13,
       "action": "step",
       "proc": 0,
       "step": "install",
       "pause": "before-directory-sync"
     },
     {
-      "n": 17,
+      "n": 14,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 15,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 16,
       "action": "process_crash",
       "proc": 0,
       "expect": "crashed"
     },
     {
+      "n": 17,
+      "action": "clone"
+    },
+    {
       "n": 18,
       "action": "open",
       "proc": 0,
-      "image": 0,
+      "image": 1,
       "expect": "opened",
       "expect_state": {
-        "claims": 1,
+        "claims": 0,
         "dkg": [
           false,
-          true
+          false
         ],
         "slots": [
+          1,
+          1
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
           null,
           null
         ]
@@ -164,10 +190,11 @@
     },
     {
       "n": 19,
-      "action": "put",
+      "action": "claim",
       "proc": 0,
-      "slot": 1,
-      "value": 0,
+      "attempt": 0,
+      "purpose": "sign",
+      "domain": 0,
       "pause": "before-write"
     },
     {
@@ -210,13 +237,13 @@
       "action": "step",
       "proc": 0,
       "step": "ack",
-      "expect": "durable"
+      "expect": "claim_ok"
     },
     {
       "n": 26,
-      "action": "close",
+      "action": "process_crash",
       "proc": 0,
-      "expect": "closed"
+      "expect": "crashed"
     },
     {
       "n": 27,
@@ -226,7 +253,7 @@
     {
       "n": 28,
       "action": "restore_stale",
-      "image": 0
+      "image": 1
     },
     {
       "n": 29,

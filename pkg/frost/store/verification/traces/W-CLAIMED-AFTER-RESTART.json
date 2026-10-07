@@ -3,6 +3,7 @@
   "kind": "witness",
   "property": "w_claimed_after_restart",
   "weakening": "None",
+  "profile": "store",
   "max_commits": 3,
   "replay": "full",
   "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
@@ -22,16 +23,23 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
     {
       "n": 2,
-      "action": "claim",
+      "action": "put",
       "proc": 0,
-      "attempt": 0,
-      "purpose": "dkg",
-      "domain": 1,
+      "slot": 0,
+      "value": 1,
       "pause": "before-write"
     },
     {
@@ -75,68 +83,79 @@
     },
     {
       "n": 9,
-      "action": "step",
-      "proc": 0,
-      "step": "ack",
-      "expect": "claim_ok"
-    },
-    {
-      "n": 10,
       "action": "process_crash",
       "proc": 0,
       "expect": "crashed"
     },
     {
-      "n": 11,
-      "action": "clone"
-    },
-    {
-      "n": 12,
+      "n": 10,
       "action": "open",
       "proc": 0,
-      "image": 1,
+      "image": 0,
       "expect": "opened",
       "expect_state": {
-        "claims": 1,
+        "claims": 0,
         "dkg": [
           false,
-          true
+          false
         ],
         "slots": [
+          1,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
           null,
           null
         ]
       }
     },
     {
-      "n": 13,
+      "n": 11,
       "action": "claim",
       "proc": 0,
-      "attempt": 1,
+      "attempt": 0,
       "purpose": "sign",
       "domain": 0,
       "pause": "before-write"
     },
     {
-      "n": 14,
+      "n": 12,
       "action": "step",
       "proc": 0,
       "step": "write",
       "pause": "before-file-sync"
     },
     {
-      "n": 15,
+      "n": 13,
       "action": "step",
       "proc": 0,
       "step": "file_sync",
       "pause": "before-install"
     },
     {
-      "n": 16,
+      "n": 14,
       "action": "step",
       "proc": 0,
       "step": "install",
       "pause": "before-directory-sync"
+    },
+    {
+      "n": 15,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 16,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
     },
     {
       "n": 17,
@@ -148,15 +167,23 @@
       "n": 18,
       "action": "open",
       "proc": 0,
-      "image": 1,
+      "image": 0,
       "expect": "opened",
       "expect_state": {
         "claims": 1,
         "dkg": [
           false,
-          true
+          false
         ],
         "slots": [
+          1,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
           null,
           null
         ]
@@ -208,20 +235,44 @@
     },
     {
       "n": 25,
-      "action": "step",
+      "action": "process_crash",
       "proc": 0,
-      "step": "ack",
-      "expect": "claim_ok"
+      "expect": "crashed"
     },
     {
       "n": 26,
-      "action": "release",
-      "proc": 0
+      "action": "clone"
     },
     {
       "n": 27,
+      "action": "open",
+      "proc": 1,
+      "image": 1,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 3,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          1,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 28,
       "action": "claim",
-      "proc": 0,
+      "proc": 1,
       "attempt": 0,
       "purpose": "sign",
       "domain": 0,

@@ -3,6 +3,7 @@
   "kind": "counterexample",
   "property": "durable_acks",
   "weakening": "AckBeforeFence",
+  "profile": "store",
   "max_commits": 3,
   "replay": "full",
   "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
@@ -10,7 +11,7 @@
     {
       "n": 1,
       "action": "open",
-      "proc": 1,
+      "proc": 0,
       "image": 0,
       "expect": "opened",
       "expect_state": {
@@ -22,71 +23,75 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
     {
       "n": 2,
       "action": "put",
-      "proc": 1,
+      "proc": 0,
       "slot": 0,
-      "value": 0,
+      "value": 1,
       "pause": "before-write"
     },
     {
       "n": 3,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "write",
       "pause": "before-file-sync"
     },
     {
       "n": 4,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "file_sync",
       "pause": "before-install"
     },
     {
       "n": 5,
+      "action": "clone"
+    },
+    {
+      "n": 6,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "install",
       "pause": "before-directory-sync"
     },
     {
-      "n": 6,
-      "action": "fence_reset"
-    },
-    {
       "n": 7,
-      "action": "clone"
-    },
-    {
-      "n": 8,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "dir_sync",
       "pause": "before-fence"
     },
     {
-      "n": 9,
+      "n": 8,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "ack",
       "expect": "durable",
       "pause": "before-fence"
     },
     {
-      "n": 10,
+      "n": 9,
       "action": "process_crash",
-      "proc": 1,
+      "proc": 0,
       "expect": "crashed"
     },
     {
-      "n": 11,
+      "n": 10,
       "action": "open",
-      "proc": 0,
+      "proc": 1,
       "image": 1,
       "expect": "opened",
       "expect_state": {
@@ -98,37 +103,38 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
     {
-      "n": 12,
-      "action": "put",
-      "proc": 0,
-      "slot": 0,
-      "value": 0,
+      "n": 11,
+      "action": "claim",
+      "proc": 1,
+      "attempt": 0,
+      "purpose": "sign",
+      "domain": 0,
       "pause": "before-write"
     },
     {
-      "n": 13,
-      "action": "step",
-      "proc": 0,
-      "step": "write",
-      "pause": "before-file-sync"
-    },
-    {
-      "n": 14,
-      "action": "step",
-      "proc": 0,
-      "step": "file_sync",
-      "pause": "before-install"
+      "n": 12,
+      "action": "process_crash",
+      "proc": 1,
+      "expect": "crashed"
     }
   ],
   "claim_model_steps": [
     {
       "n": 1,
       "action": "open",
-      "proc": 1,
+      "proc": 0,
       "image": 0,
       "expect": "opened",
       "expect_state": {
@@ -140,50 +146,54 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
     {
       "n": 2,
       "action": "put",
-      "proc": 1,
+      "proc": 0,
       "slot": 0,
-      "value": 0,
+      "value": 1,
       "pause": "before-write"
     },
     {
       "n": 3,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "write",
       "pause": "before-file-sync"
     },
     {
       "n": 4,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "file_sync",
       "pause": "before-install"
     },
     {
       "n": 5,
+      "action": "clone"
+    },
+    {
+      "n": 6,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "install",
       "pause": "before-directory-sync"
     },
     {
-      "n": 6,
-      "action": "fence_reset"
-    },
-    {
       "n": 7,
-      "action": "clone"
-    },
-    {
-      "n": 8,
       "action": "step",
-      "proc": 1,
+      "proc": 0,
       "step": "dir_sync",
       "pause": "before-fence"
     }

@@ -1,0 +1,326 @@
+{
+  "id": "DKG-W-REOPEN",
+  "kind": "witness",
+  "property": "w_reopen",
+  "weakening": "None",
+  "profile": "dkg",
+  "max_commits": 3,
+  "replay": "full",
+  "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
+  "steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "save_wallet",
+      "proc": 0,
+      "domain": 0,
+      "wallet": {
+        "rank": 1,
+        "quarantined": false,
+        "identity": 0,
+        "approval": null
+      },
+      "pause": "before-write"
+    },
+    {
+      "n": 3,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 4,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 5,
+      "action": "step",
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 6,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 7,
+      "action": "fence_reset"
+    },
+    {
+      "n": 8,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 9,
+      "action": "process_crash",
+      "proc": 0,
+      "expect": "crashed"
+    },
+    {
+      "n": 10,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          {
+            "rank": 1,
+            "quarantined": false,
+            "identity": 0,
+            "approval": null
+          },
+          null
+        ]
+      }
+    },
+    {
+      "n": 11,
+      "action": "claim",
+      "proc": 0,
+      "attempt": 0,
+      "purpose": "dkg",
+      "domain": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 12,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 13,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 14,
+      "action": "step",
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 15,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 16,
+      "action": "process_crash",
+      "proc": 0,
+      "expect": "crashed"
+    },
+    {
+      "n": 17,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          {
+            "rank": 1,
+            "quarantined": false,
+            "identity": 0,
+            "approval": null
+          },
+          null
+        ]
+      }
+    },
+    {
+      "n": 18,
+      "action": "claim",
+      "proc": 0,
+      "attempt": 1,
+      "purpose": "dkg",
+      "domain": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 19,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 20,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 21,
+      "action": "step",
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 22,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 23,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 24,
+      "action": "process_crash",
+      "proc": 0,
+      "expect": "crashed"
+    },
+    {
+      "n": 25,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 2,
+        "dkg": [
+          true,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          {
+            "rank": 1,
+            "quarantined": false,
+            "identity": 0,
+            "approval": null
+          },
+          null
+        ]
+      }
+    },
+    {
+      "n": 26,
+      "action": "dkg_status",
+      "proc": 0,
+      "domain": 0,
+      "expect": "status_seats_lost"
+    },
+    {
+      "n": 27,
+      "action": "close",
+      "proc": 0,
+      "expect": "closed"
+    },
+    {
+      "n": 28,
+      "action": "open",
+      "proc": 1,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 2,
+        "dkg": [
+          true,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          {
+            "rank": 1,
+            "quarantined": false,
+            "identity": 0,
+            "approval": null
+          },
+          null
+        ]
+      }
+    }
+  ]
+}

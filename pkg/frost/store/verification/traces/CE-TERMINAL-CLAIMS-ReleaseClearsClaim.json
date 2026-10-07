@@ -3,6 +3,7 @@
   "kind": "counterexample",
   "property": "terminal_claims",
   "weakening": "ReleaseClearsClaim",
+  "profile": "store",
   "max_commits": 3,
   "replay": "full",
   "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
@@ -22,6 +23,14 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
@@ -30,7 +39,7 @@
       "action": "claim",
       "proc": 0,
       "attempt": 0,
-      "purpose": "sign",
+      "purpose": "dkg",
       "domain": 0,
       "pause": "before-write"
     },
@@ -79,7 +88,9 @@
     {
       "n": 9,
       "action": "release",
-      "proc": 0
+      "proc": 0,
+      "domain": 0,
+      "kind": "dkg"
     },
     {
       "n": 10,
@@ -149,6 +160,14 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
@@ -157,7 +176,7 @@
       "action": "claim",
       "proc": 0,
       "attempt": 0,
-      "purpose": "sign",
+      "purpose": "dkg",
       "domain": 0,
       "pause": "before-write"
     },
@@ -206,7 +225,9 @@
     {
       "n": 9,
       "action": "release",
-      "proc": 0
+      "proc": 0,
+      "domain": 0,
+      "kind": "dkg"
     },
     {
       "n": 10,

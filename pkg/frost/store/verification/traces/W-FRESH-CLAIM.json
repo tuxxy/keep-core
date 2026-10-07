@@ -1,0 +1,228 @@
+{
+  "id": "W-FRESH-CLAIM",
+  "kind": "witness",
+  "property": "w_fresh_claim",
+  "weakening": "None",
+  "max_commits": 3,
+  "replay": "full",
+  "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
+  "steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "claim",
+      "proc": 0,
+      "attempt": 0,
+      "purpose": "dkg",
+      "domain": 1,
+      "pause": "before-write"
+    },
+    {
+      "n": 3,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 4,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 5,
+      "action": "step",
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 6,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 7,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 8,
+      "action": "process_crash",
+      "proc": 0,
+      "expect": "crashed"
+    },
+    {
+      "n": 9,
+      "action": "clone"
+    },
+    {
+      "n": 10,
+      "action": "open",
+      "proc": 0,
+      "image": 1,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 1,
+        "dkg": [
+          false,
+          true
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 11,
+      "action": "put",
+      "proc": 0,
+      "slot": 1,
+      "value": 1,
+      "pause": "before-write"
+    },
+    {
+      "n": 12,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 13,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 14,
+      "action": "step",
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 15,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 16,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 17,
+      "action": "process_crash",
+      "proc": 0,
+      "expect": "crashed"
+    },
+    {
+      "n": 18,
+      "action": "open",
+      "proc": 1,
+      "image": 1,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 1,
+        "dkg": [
+          false,
+          true
+        ],
+        "slots": [
+          null,
+          1
+        ]
+      }
+    },
+    {
+      "n": 19,
+      "action": "claim",
+      "proc": 1,
+      "attempt": 1,
+      "purpose": "dkg",
+      "domain": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 20,
+      "action": "step",
+      "proc": 1,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 21,
+      "action": "step",
+      "proc": 1,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 22,
+      "action": "step",
+      "proc": 1,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 23,
+      "action": "step",
+      "proc": 1,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 24,
+      "action": "step",
+      "proc": 1,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 25,
+      "action": "fence_reset"
+    },
+    {
+      "n": 26,
+      "action": "restore_stale",
+      "image": 0
+    },
+    {
+      "n": 27,
+      "action": "step",
+      "proc": 1,
+      "step": "ack",
+      "expect": "claim_ok"
+    }
+  ]
+}

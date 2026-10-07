@@ -123,7 +123,7 @@ func TestCrashedDKGNeedsFreshEpoch(t *testing.T) {
 	}
 	done := make(chan result, 1)
 	go func() {
-		key, err := engine.DKG(ctx, frost.DKGRequest{Group: frost.Group{Roster: roster, Threshold: 2, Epoch: domain.Epoch}, LocalSeats: roster, Attempt: attempt}, frost.Providers{Transport: tr, Acceptance: testFinality{}})
+		key, err := engine.DKG(ctx, frost.DKGRequest{Group: frost.Group{Roster: roster, Threshold: 2, Epoch: domain.Epoch}, LocalSeats: roster, Attempt: attempt}, frost.Providers{Transport: tr, Acceptance: testFinality{}, SigningAuthorization: testFinality{}})
 		done <- result{key, err}
 	}()
 	var candidate [2][32]byte
@@ -201,7 +201,7 @@ func TestCrashedDKGNeedsFreshEpoch(t *testing.T) {
 	}
 	tr, attempt = transportFor(domain, "dkg", 3)
 	groupConfig := frost.Group{Roster: roster, Threshold: 2, Epoch: domain.Epoch}
-	key, err := engine.DKG(ctx, frost.DKGRequest{Group: groupConfig, LocalSeats: roster, Attempt: attempt}, frost.Providers{Transport: tr, Acceptance: testFinality{}})
+	key, err := engine.DKG(ctx, frost.DKGRequest{Group: groupConfig, LocalSeats: roster, Attempt: attempt}, frost.Providers{Transport: tr, Acceptance: testFinality{}, SigningAuthorization: testFinality{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +225,7 @@ func TestCrashedDKGNeedsFreshEpoch(t *testing.T) {
 	}
 	tr, attempt = transportFor(domain, "sign", 4)
 	message := sha256.Sum256([]byte("K02 fresh epoch after durable candidate crash"))
-	signature, err := engine.Sign(ctx, frost.SigningRequest{Group: groupConfig, LocalSeats: roster, Selected: roster, Attempt: attempt, Key: loaded, Message: message}, frost.Providers{Transport: tr, Acceptance: testFinality{}})
+	signature, err := engine.Sign(ctx, frost.SigningRequest{Group: groupConfig, LocalSeats: roster, Selected: roster, Attempt: attempt, Key: loaded, Message: message, Authorization: testGrant(message)}, frost.Providers{Transport: tr, Acceptance: testFinality{}, SigningAuthorization: testFinality{}})
 	if err != nil {
 		t.Fatal(err)
 	}

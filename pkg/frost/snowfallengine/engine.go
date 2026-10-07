@@ -44,6 +44,7 @@ func New(config WorkerConfig) (*Engine, error) {
 
 // NewGuarded requires a durable journal and deployment-bound transport. The
 // journal retains its non-expiring exclusive lease for the entire operation.
+// Sign also requires a nonempty exact intent and a final authorization callback.
 // New remains the explicit local K-01 harness constructor.
 func NewGuarded(config WorkerConfig, journal frost.Journal) (*Engine, error) {
 	if journal == nil {
@@ -191,6 +192,13 @@ func (e *Engine) Sign(ctx context.Context, r frost.SigningRequest, p frost.Provi
 	r.Selected = append([]uint16(nil), r.Selected...)
 	r.Attempt = copyAttempt(r.Attempt)
 	r.Key = copyKey(r.Key)
+	r.Authorization = append([]byte(nil), r.Authorization...)
+	if e.journal != nil && len(r.Authorization) == 0 {
+		return [64]byte{}, invalid("guarded signing requires an exact authorization")
+	}
+	if len(r.Authorization) > 0 && p.SigningAuthorization == nil {
+		return [64]byte{}, invalid("exact authorization callback required")
+	}
 	if e.journal != nil {
 		p.Store = e.journal
 		installed, err := e.journal.LoadKey(ctx)
@@ -235,6 +243,11 @@ func (e *Engine) Sign(ctx context.Context, r frost.SigningRequest, p frost.Provi
 		return [64]byte{}, err
 	}
 	defer release()
+	if p.SigningAuthorization != nil {
+		if err := p.SigningAuthorization.BeforeSigning(ctx, r); err != nil {
+			return [64]byte{}, err
+		}
+	}
 	op, err := c.BeginSigning(key, snowfall.SigningIntent{Selected: r.Selected, Attempt: snowfall.AttemptID(r.Attempt.Channel, r.Attempt.Session, r.Attempt.StartBlock), Message: r.Message})
 	if err != nil {
 		return [64]byte{}, classified(err)

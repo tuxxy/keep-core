@@ -469,7 +469,10 @@ func (mfsp *MovedFundsSweepProposal) Unmarshal(data []byte) error {
 // marshalPublicKey converts an ECDSA public key to a byte
 // array (uncompressed).
 func marshalPublicKey(publicKey *ecdsa.PublicKey) ([]byte, error) {
-	if publicKey.Curve.Params().Name != tecdsa.Curve.Params().Name {
+	if publicKey == nil || publicKey.Curve == nil || publicKey.X == nil || publicKey.Y == nil {
+		return nil, errIncompatiblePublicKey
+	}
+	if publicKey.Curve.Params().Name != tecdsa.Curve.Params().Name || !tecdsa.Curve.IsOnCurve(publicKey.X, publicKey.Y) {
 		return nil, errIncompatiblePublicKey
 	}
 

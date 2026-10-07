@@ -2,6 +2,7 @@ package tbtc
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -45,9 +46,9 @@ const (
 // trackedTransaction holds the monitoring state of a single broadcast wallet
 // transaction.
 type trackedTransaction struct {
-	walletPublicKeyHash [20]byte
-	broadcastAt         time.Time
-	alerted             bool
+	wallet      walletMonitorIdentity
+	broadcastAt time.Time
+	alerted     bool
 }
 
 // trackedTransactionSnapshot pairs a copy of a tracked transaction with its hash
@@ -134,8 +135,10 @@ func (tm *transactionMonitor) track(
 	txHash bitcoin.Hash,
 	walletPublicKeyHash [20]byte,
 ) {
+	tm.trackIdentity(txHash, walletMonitorIdentity{scheme: bitcoin.SignatureECDSA, ecdsa: walletPublicKeyHash})
+}
+func (tm *transactionMonitor) trackIdentity(txHash bitcoin.Hash, identity walletMonitorIdentity) {
 	tm.mu.Lock()
-
 	if _, ok := tm.tracked[txHash]; ok {
 		tm.mu.Unlock()
 		return
@@ -162,8 +165,8 @@ func (tm *transactionMonitor) track(
 	}
 
 	tm.tracked[txHash] = &trackedTransaction{
-		walletPublicKeyHash: walletPublicKeyHash,
-		broadcastAt:         time.Now(),
+		wallet:      identity,
+		broadcastAt: time.Now(),
 	}
 	tm.mu.Unlock()
 }
@@ -253,12 +256,12 @@ func (tm *transactionMonitor) checkWithBudget(
 		// exactly one alert instead of being silently evicted.
 		if outstanding > tm.threshold && !t.alerted {
 			logger.Warnf(
-				"wallet transaction [%s] for wallet [0x%x] has been unconfirmed "+
+				"wallet transaction [%s] for wallet [%s] has been unconfirmed "+
 					"for [%s] (threshold [%s]); it may be stuck in the mempool "+
 					"and blocking subsequent wallet transactions - consider "+
 					"fee-bumping or accelerating it",
 				txHash.Hex(bitcoin.ReversedByteOrder),
-				t.walletPublicKeyHash,
+				t.wallet,
 				outstanding.Round(time.Minute),
 				tm.threshold,
 			)
@@ -284,9 +287,9 @@ func (tm *transactionMonitor) checkWithBudget(
 		if outstanding > transactionMonitorMaxTrackingAge {
 			logger.Warnf(
 				"giving up monitoring wallet transaction [%s] for wallet "+
-					"[0x%x]; it has been unconfirmed for [%s]",
+					"[%s]; it has been unconfirmed for [%s]",
 				txHash.Hex(bitcoin.ReversedByteOrder),
-				t.walletPublicKeyHash,
+				t.wallet,
 				outstanding.Round(time.Minute),
 			)
 			tm.remove(txHash)
@@ -312,4 +315,23 @@ func (tm *transactionMonitor) remove(txHash bitcoin.Hash) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	delete(tm.tracked, txHash)
+}
+
+// Logging identity only. No monitor value is a Bridge lookup key.
+// Keeping the scheme and all 32 FROST bytes prevents ambiguous labels.
+type walletMonitorIdentity struct {
+	scheme bitcoin.SignatureScheme
+	ecdsa  [20]byte
+	frost  [32]byte
+}
+
+func (w walletMonitorIdentity) String() string {
+	switch w.scheme {
+	case bitcoin.SignatureECDSA:
+		return fmt.Sprintf("ecdsa:0x%x", w.ecdsa)
+	case bitcoin.SignatureSchnorr:
+		return fmt.Sprintf("frost:0x%x", w.frost)
+	default:
+		return "invalid wallet identity"
+	}
 }

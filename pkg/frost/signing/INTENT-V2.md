@@ -36,8 +36,8 @@ Do not reverse wallet IDs, descriptor hashes, keys or SHA-256 output bytes.
 Genesis and transaction hashes use the internal bytes stored in `bitcoin.Hash`;
 reverse RPC/display hash hex before placing it in these fields. Request order
 is significant. Requests are not sorted by ID. Generation and state version
-must be positive. The local profile permits 1–128 distinct nonzero request IDs,
-positive net amounts and one positive exact-Q change output. The constructor
+must be positive. The local profile permits 1–64 distinct nonzero request IDs,
+positive net amounts, at most32recognized inputs and one positive exact-Q change output. The constructor
 checks amounts, scripts, fees, count limits and conservation before encoding;
 no signed integer is cast to uint64 before that validation. Future purposes,
 new fields or changed widths require a new domain/version, not a silent v2 edit.

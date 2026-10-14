@@ -16,6 +16,9 @@ import (
 
 const Redemption = "redemption"
 
+// MaxRedemptionRequests matches the C-04 request profile; joint gas qualification remains open.
+const MaxRedemptionRequests = 128
+
 // Request is a locally resolved, net recipient entitlement. C-04/K-05 must
 // derive these values from funded requests and their captured fee policy.
 type Request struct {
@@ -59,7 +62,7 @@ type Plan struct {
 }
 
 func NewPlan(p Proposal) (*Plan, error) {
-	if dkg.ValidateDescriptor(p.Wallet) != nil || p.BitcoinGenesis == ([32]byte{}) || p.Generation == 0 || p.StateVersion == 0 || p.Purpose != Redemption || len(p.Requests) == 0 || len(p.Requests) > 255 {
+	if dkg.ValidateDescriptor(p.Wallet) != nil || p.BitcoinGenesis == ([32]byte{}) || p.Generation == 0 || p.StateVersion == 0 || p.Purpose != Redemption || len(p.Requests) == 0 || len(p.Requests) > MaxRedemptionRequests {
 		return nil, errors.New("invalid signing purpose or wallet")
 	}
 	snapshot, err := bitcoin.NewTaprootTransaction(p.Transaction, p.Prevouts, p.Wallet.OutputKey)

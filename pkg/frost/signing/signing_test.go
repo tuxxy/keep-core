@@ -37,6 +37,32 @@ func planFixture(t *testing.T) (Proposal, *btcec.PrivateKey, *bitcoin.Transactio
 	tx := &bitcoin.Transaction{Version: 2, Inputs: []*bitcoin.TransactionInput{{Outpoint: &point, Sequence: 0xfffffffd}}, Outputs: []*bitcoin.TransactionOutput{{Value: 10000, PublicKeyScript: recipient}, {Value: 89000, PublicKeyScript: script}}}
 	return Proposal{Wallet: descriptor, BitcoinGenesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash), Purpose: Redemption, Generation: 1, StateVersion: 1, Requests: []Request{{ID: [32]byte{21}, Value: 10000, Script: recipient}}, ConflictInput: point, Fees: FeePolicy{Minimum: 100, Maximum: 2000, MaximumSatPerVByte: 20}, Transaction: tx, Prevouts: []bitcoin.PreviousOutput{{Outpoint: point, Value: 100000, PublicKeyScript: script}}}, private, funding
 }
+
+// The host must refuse a valid Bitcoin shape that exceeds the consumer profile.
+func TestPlanRedemptionRequestCap(t *testing.T) {
+	for _, count := range []int{MaxRedemptionRequests, MaxRedemptionRequests + 1} {
+		p, _, _ := planFixture(t)
+		script := p.Requests[0].Script
+		changeScript := p.Transaction.Outputs[1].PublicKeyScript
+		p.Requests = nil
+		p.Transaction.Outputs = nil
+		for i := 0; i < count; i++ {
+			var id [32]byte
+			id[30], id[31] = byte((i+1)>>8), byte(i+1)
+			p.Requests = append(p.Requests, Request{ID: id, Value: 100, Script: script})
+			p.Transaction.Outputs = append(p.Transaction.Outputs, &bitcoin.TransactionOutput{Value: 100, PublicKeyScript: script})
+		}
+		p.Transaction.Outputs = append(p.Transaction.Outputs, &bitcoin.TransactionOutput{Value: int64(99000 - count*100), PublicKeyScript: changeScript})
+		_, err := NewPlan(p)
+		if count == MaxRedemptionRequests && err != nil {
+			t.Fatalf("supported request count refused: %v", err)
+		}
+		if count > MaxRedemptionRequests && err == nil {
+			t.Fatal("consumer-incompatible request count accepted")
+		}
+	}
+}
+
 func TestPlanRequiresExactPurpose(t *testing.T) {
 	for _, tc := range []struct {
 		name   string

@@ -63,6 +63,32 @@ func TestPlanRedemptionRequestCap(t *testing.T) {
 	}
 }
 
+func TestPlanRedemptionInputCap(t *testing.T) {
+	for _, count := range []int{MaxRedemptionInputs, MaxRedemptionInputs + 1} {
+		p, _, funding := planFixture(t)
+		script := p.Prevouts[0].PublicKeyScript
+		funding.Outputs = nil
+		for i := 0; i < count; i++ {
+			funding.Outputs = append(funding.Outputs, &bitcoin.TransactionOutput{Value: 100000, PublicKeyScript: script})
+		}
+		p.Transaction.Inputs, p.Prevouts = nil, nil
+		for i := 0; i < count; i++ {
+			point := bitcoin.TransactionOutpoint{TransactionHash: funding.Hash(), OutputIndex: uint32(i)}
+			p.Transaction.Inputs = append(p.Transaction.Inputs, &bitcoin.TransactionInput{Outpoint: &point, Sequence: 0xfffffffd})
+			p.Prevouts = append(p.Prevouts, bitcoin.PreviousOutput{Outpoint: point, Value: 100000, PublicKeyScript: script})
+		}
+		p.ConflictInput = p.Prevouts[0].Outpoint
+		p.Transaction.Outputs[1].Value = int64(count*100000 - 11000)
+		_, err := NewPlan(p)
+		if count == MaxRedemptionInputs && err != nil {
+			t.Fatalf("supported input count refused: %v", err)
+		}
+		if count > MaxRedemptionInputs && err == nil {
+			t.Fatal("consumer-incompatible input count accepted")
+		}
+	}
+}
+
 func TestPlanRequiresExactPurpose(t *testing.T) {
 	for _, tc := range []struct {
 		name   string

@@ -76,7 +76,8 @@ type Config struct {
 	MinimumConfirmations       uint
 	Journal                    Journal
 	Reservations               Reservations
-	Containment                Containment // directive gate for Quarantined; nil refuses
+	Containment                Containment    // directive gate for Quarantined; nil refuses
+	Sweeps                     SweepAuthority // K-06 sweep plans, in place of Reservations
 	Bitcoin                    Bitcoin
 	Worker                     snowfallengine.WorkerConfig
 	Selected                   []uint16
@@ -100,7 +101,7 @@ type Result struct {
 }
 
 func NewLocalExecutor(c Config) (*Executor, error) {
-	if !c.LocalRegtest || c.Plan == nil || c.Plan.Genesis() != [32]byte(*chaincfg.RegressionNetParams.GenesisHash) || c.Reservation == ([32]byte{}) || c.Session == ([32]byte{}) || c.StartBlock == 0 || c.FinalityBlocks == 0 || c.MinimumConfirmations == 0 || c.Journal == nil || c.Reservations == nil || c.Bitcoin == nil || c.Transport == nil {
+	if !c.LocalRegtest || c.Plan == nil || c.Plan.Genesis() != [32]byte(*chaincfg.RegressionNetParams.GenesisHash) || c.Reservation == ([32]byte{}) || c.Session == ([32]byte{}) || c.StartBlock == 0 || c.FinalityBlocks == 0 || c.MinimumConfirmations == 0 || c.Journal == nil || (c.Plan.IsSweep() && c.Sweeps == nil) || (!c.Plan.IsSweep() && c.Reservations == nil) || c.Bitcoin == nil || c.Transport == nil {
 		return nil, errors.New("incomplete local signing configuration")
 	}
 	c.Selected = append([]uint16(nil), c.Selected...)
@@ -137,6 +138,16 @@ func unresolved(state string) bool {
 
 func (e *Executor) reservation(ctx context.Context, initialize bool) error {
 	p := e.config.Plan
+	if p.sweep != nil {
+		receipt, err := e.config.Sweeps.AuthorizeSweep(ctx, p)
+		if err != nil {
+			return fmt.Errorf("%w: sweep authorization: %v", ErrUnauthorized, err)
+		}
+		if receipt.Block == 0 || receipt.Hash == ([32]byte{}) {
+			return fmt.Errorf("%w: sweep authorization without an anchor", ErrUnauthorized)
+		}
+		return e.pinReceipt(ctx, initialize, receipt)
+	}
 	if p.cancellation != nil {
 		return e.reservationCheck(ctx, initialize, unresolved)
 	}
@@ -180,6 +191,15 @@ func (e *Executor) reservationCheck(ctx context.Context, initialize bool, allowe
 		}
 		receipt = ReservationReceipt{Block: c.Block, Hash: c.BlockHash}
 	}
+	if err := e.pinReceipt(ctx, initialize, receipt); err != nil {
+		return err
+	}
+	return e.step("reservation-seen")
+}
+
+// pinReceipt retains the first authorization anchor durably and refuses any
+// later read whose anchor differs (a reorganization or a changed record).
+func (e *Executor) pinReceipt(ctx context.Context, initialize bool, receipt ReservationReceipt) error {
 	retained, err := e.loadReceipt(ctx)
 	if errors.Is(err, store.ErrMissing) && initialize {
 		raw, marshalErr := json.Marshal(receipt)
@@ -205,7 +225,7 @@ func (e *Executor) reservationCheck(ctx context.Context, initialize bool, allowe
 		e.receipt = &receipt
 	}
 	e.mu.Unlock()
-	return e.step("reservation-seen")
+	return nil
 }
 func (e *Executor) wallet(ctx context.Context) (frost.KeyReady, []uint16, error) {
 	w, err := e.config.Journal.LoadWallet(ctx)
@@ -280,6 +300,9 @@ func (e *Executor) attempt(index int) (frost.Attempt, error) {
 	domain := "keep-core/frost/transaction-attempt/v1/"
 	if c.Plan.cancellation != nil {
 		domain = "keep-core/frost/cancellation-attempt/v1/"
+	}
+	if c.Plan.sweep != nil {
+		domain = "keep-core/frost/sweep-attempt/v1/"
 	}
 	raw := append([]byte(domain), c.Plan.hash[:]...)
 	raw = append(raw, c.Reservation[:]...)
@@ -443,7 +466,7 @@ func (e *Executor) ValidateResult(result *Result) error {
 		if _, err = done.Verify(e.doneContext(i, attempt), p.snapshot.OutputKey()); err != nil {
 			return err
 		}
-		if result.Transaction == nil || i >= len(result.Transaction.Inputs) || result.Transaction.Inputs[i] == nil || len(result.Transaction.Inputs[i].Witness) != 1 || !bytes.Equal(result.Transaction.Inputs[i].Witness[0], done.Signature[:]) {
+		if result.Transaction == nil || i >= len(result.Transaction.Inputs) || result.Transaction.Inputs[i] == nil || len(result.Transaction.Inputs[i].Witness) == 0 || !bytes.Equal(result.Transaction.Inputs[i].Witness[0], done.Signature[:]) {
 			return errors.New("done signature differs from transaction witness")
 		}
 	}
@@ -575,7 +598,7 @@ func (e *Executor) Rebroadcast(ctx context.Context) error {
 	if err := eValidateContext(ctx); err != nil {
 		return err
 	}
-	if e.config.Plan.cancellation != nil {
+	if e.config.Plan.cancellation != nil || e.config.Plan.sweep != nil {
 		return errors.New("rebroadcast applies to payment results only")
 	}
 	raw, err := e.config.Journal.ReadSigningRecord(ctx, e.resultID())

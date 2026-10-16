@@ -26,7 +26,7 @@ type Done struct {
 }
 
 func (d Done) Verify(expected DoneContext, key [32]byte) (bitcoin.Signature, error) {
-	if expected.Version != 1 || expected.Scheme != bitcoin.SignatureSchnorr || expected.WalletID == ([32]byte{}) || expected.DescriptorHash == ([32]byte{}) || expected.BitcoinGenesis == ([32]byte{}) || expected.Plan == ([32]byte{}) || expected.Reservation == ([32]byte{}) || expected.Attempt == ([32]byte{}) || (expected.Purpose != Redemption && expected.Purpose != Cancellation) || expected.StartBlock == 0 || d.Context != expected {
+	if expected.Version != 1 || expected.Scheme != bitcoin.SignatureSchnorr || expected.WalletID == ([32]byte{}) || expected.DescriptorHash == ([32]byte{}) || expected.BitcoinGenesis == ([32]byte{}) || expected.Plan == ([32]byte{}) || expected.Reservation == ([32]byte{}) || expected.Attempt == ([32]byte{}) || (expected.Purpose != Redemption && expected.Purpose != Cancellation && expected.Purpose != Sweep) || expected.StartBlock == 0 || d.Context != expected {
 		return bitcoin.Signature{}, errors.New("signing done context mismatch")
 	}
 	pub, err := schnorr.ParsePubKey(key[:])

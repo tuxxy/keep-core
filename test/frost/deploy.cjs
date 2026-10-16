@@ -4,7 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const { ethers } = require(path.join(__dirname, '../../solidity/ecdsa/node_modules/ethers'));
 async function main() {
- const [url, tbRoot, output, patternText] = process.argv.slice(2);
+ const [url, tbRoot, output, patternText, mode, genesis] = process.argv.slice(2);
+ const k05 = mode === 'k05';
+ if (k05 && !/^0x[0-9a-f]{64}$/.test(genesis||'')) throw Error('K-05 needs the regtest genesis');
  if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(url)) throw Error('local RPC required');
  const kcRoot = path.resolve(__dirname, '../..');
  const provider = new ethers.providers.JsonRpcProvider(url);
@@ -30,7 +32,16 @@ async function main() {
  }
  const implementation=await deploy(tbRoot,'contracts/bridge/Bridge.sol','Bridge');
  const proxyAdmin=await deploy(tbRoot,'@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol','ProxyAdmin');
- const initializer=implementation.interface.encodeFunctionData('initialize',[admin,admin,admin,admin,admin,1]);
+ // K-05 adds a real Bank, the zero-difficulty regtest relay test contract and the
+ // prototype verifier; the treasury is a separate account so fees are observable.
+ let bank, relay, verifier, treasury=admin;
+ if(k05){
+  treasury=await provider.getSigner(1).getAddress();
+  bank=await deploy(tbRoot,'contracts/bank/Bank.sol','Bank');
+  relay=await deploy(tbRoot,'contracts/test/FrostPublicFundingRegistryFixture.sol','FrostPublicFundingRegtestRelay');
+  verifier=await deploy(tbRoot,'contracts/frost/FrostVerifier.sol','FrostVerifier');
+ }
+ const initializer=k05?implementation.interface.encodeFunctionData('initialize',[bank.address,relay.address,treasury,admin,admin,1]):implementation.interface.encodeFunctionData('initialize',[admin,admin,admin,admin,admin,1]);
  const proxy=await deploy(tbRoot,'@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol','TransparentUpgradeableProxy',[implementation.address,proxyAdmin.address,initializer]);
  const bridge=implementation.attach(proxy.address);
  const iface=artifact(tbRoot,'contracts/frost/IFrostBridge.sol','IFrostBridge');
@@ -54,12 +65,25 @@ async function main() {
   await provider.send('anvil_setBalance',[w.address,'0x3635c9adc5dea00000']);
   await(await stake.set(w.address,100)).wait();await(await admission.setAllowed(w.address,true)).wait();await(await registry.refreshOperator(w.address)).wait();
  }
+ if(k05){
+  await(await bank.updateBridge(bridge.address)).wait();
+  await(await bridge.setSpvMaintainerStatus(admin,true)).wait();
+  await(await bridge.updateDepositParameters(3000,100,2000,30)).wait();
+  const movement=Array.from(await bridge.movingFundsParameters());movement[1]=500;
+  await(await bridge.updateMovingFundsParameters(...movement)).wait();
+  // Local test values (D-09 OPEN): 2,000 sat caps and a 3,600 s timeout.
+  await(await bridge.updateRedemptionParameters(3000,100,2000,2000,3600,0,0)).wait();
+  await(await frostBridge.configureFrostFunding(verifier.address,ethers.utils.keccak256(await provider.getCode(verifier.address)),ethers.utils.id('UNQUALIFIED K-05 local verifier reference'),genesis)).wait();
+  await(await frostBridge.setFrostFundingGates(true,true)).wait();
+  await(await frostBridge.configureFrostRedemptions(genesis,2,1000,ethers.constants.AddressZero,ethers.utils.id('UNQUALIFIED K-05 local D-08 reference'))).wait();
+  await(await frostBridge.setFrostRedemptionsEnabled(true)).wait();
+ }
  await(await registry.setRequestsEnabled(true)).wait();await(await frostBridge.setFrostRequestsEnabled(true)).wait();
  await(await frostBridge.requestNewFrostWallet()).wait();
  const pattern=(patternText||'1,2,3').split(',').map(Number);
  let seed=1;for(;seed<10000;seed++) {const members=await pool.selectGroup(3,ethers.utils.hexZeroPad(ethers.utils.hexlify(seed),32));if(members.every((v,i)=>Number(v)===pattern[i]))break;}if(seed===10000)throw Error('selection seed not found');
  await(await beacon.fulfill(seed)).wait();
  const epoch=Number(await registry.epoch());
- fs.writeFileSync(output,JSON.stringify({registry:registry.address,bridge:bridge.address,pool:pool.address,validator:validator.address,beacon:beacon.address,epoch,seed,operators,pattern,artifacts},null,2));
+ fs.writeFileSync(output,JSON.stringify({bank:bank?bank.address:undefined,treasury,registry:registry.address,bridge:bridge.address,pool:pool.address,validator:validator.address,beacon:beacon.address,epoch,seed,operators,pattern,artifacts},null,2));
 }
 main().catch(e=>{console.error(e.message);process.exitCode=1});

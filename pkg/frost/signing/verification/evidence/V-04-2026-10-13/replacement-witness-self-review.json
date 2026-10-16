@@ -1,0 +1,7 @@
+{
+  "classification": "verification-agent witness-quality correction",
+  "finding": "First discovered witness could initially attest an already-expired statement for a future generation. It proved replacement/admission but did not exercise an issued-live counter+1 slot expiring.",
+  "repair": "Observe issuance live at current counter+1/version and require that observer for replacement witness; no stronger action guards invented.",
+  "affected_model": "admission only; primary main.rs unchanged",
+  "rerun_rule": "Complete already running signing profile; rerun admission profile separately on changed module."
+}

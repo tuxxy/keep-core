@@ -1,0 +1,7 @@
+{
+  "classification": "model setup correction before acceptance",
+  "stopped_pids": [
+    31052
+  ],
+  "reason": "Finalized-block immutability guard was inserted in Attest instead of Admit; move it before running replacement controls. Exploration interrupted, no completed claim credited."
+}

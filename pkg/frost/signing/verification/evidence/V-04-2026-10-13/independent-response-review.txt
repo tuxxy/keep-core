@@ -1,0 +1,137 @@
+Independent response review — K-04 local recovery fixes, 13 October 2026
+
+Disposition: F1 and F2 from the original independent review are resolved within
+this concrete review scope. No new confirmed source defect was found in the
+working-tree implementation. V-04, C-04 and K-05 evidence gaps remain open.
+This response is distinct from, and does not replace, ../REVIEW.txt.
+
+Reviewed repository:
+/Users/tux/threshold/integration-worktrees/K-00-SF-01-K-01/keep-core
+Base HEAD: 4e73838af5fd1a97ef8b047616cfbd9eb01e9824.
+Uncommitted executor SHA-256:
+ee8096bcd3f8cb6cfe99c75b307dfdf34ca20ef0830a56d1426e06d94e139d64
+The response review pins actual bytes, not merely HEAD. Exact final test and
+boundary-document pins are in source-pins.json, with reviewed snapshots retained.
+Parent added its multi-input regression and boundary correspondence text during
+review. Those additions were inspected; the added regression was copied into
+scratch and run separately. Production executor bytes stayed unchanged during
+review and match the inspected snapshot at completion.
+
+RESPONSE TO ORIGINAL FINDINGS
+
+F1 — fixed in executor.go:291–317, particularly 312–315.
+The executor verifies a returned signature, creates a persistence context with
+context.WithoutCancel plus a 30-second timeout, retains Done through the same
+fenced immutable journal, and only then closes the transport. The persistence
+context preserves caller values and does not inherit caller cancellation.
+Engine-return cancellation and transport-cleanup cancellation both retain a
+cryptographically valid Done in the real encrypted store. Timed-out completions
+remain unavailable for authorized fallback/broadcast. The independent context
+probe confirms a deadline and preserved values. Source sets it to 30 seconds;
+no 30-second wall-clock timeout experiment was performed. This is a cooperative
+context deadline, not a hard interruption of an unresponsive I/O syscall/provider.
+Actual persistence failures still return an error and preserve terminal claims.
+The fix closes loss caused solely by cancellation; it does not claim impossible
+retention guarantees after actual storage failure or process death before a write.
+
+F2 — fixed in executor.go:372–375 and 400–453.
+Only ErrMissing for the aggregate activates fallback. Fallback requires exact
+original intent bytes, a valid durable receipt, all original per-input Done
+records, strict decoding, exact expected contexts and BIP340 verification. It
+rechecks current reservation and immutable receipt before AddSignatures, validates
+the reconstructed transaction, and retains the aggregate. It never calls the
+engine. Existing aggregate corruption is rejected rather than silently bypassed.
+Full two-input completions recover after real store close/reopen; the next load
+returns byte-identical witness serialization. One-of-two completion data refuses
+without retaining an aggregate or granting the missing input. Original attempts
+remain claimed and cannot be rerun. Parent one-input and multi-input regressions
+also pass independently.
+
+ADVERSARIAL RESPONSE CHECKS
+
+All final assertions passed. No new confirmed findings.
+
+1. Multi-input recovery: one-of-two refuses, two-of-two recovers after real
+   encrypted-store reopen, validates and broadcasts exact bytes. Signature
+   counts do not increase. A same-attempt Run still receives ErrClaimed.
+2. Missing/malformed anchors: absent intent, absent receipt, invalid zero receipt,
+   changed intent, missing first Done and missing second Done all refuse; no
+   aggregate is created.
+3. Mixed completions: a whole input-zero Done inserted at the input-one lookup,
+   plus mismatched input, attempt, plan, reservation, wallet, descriptor, Bitcoin
+   network, purpose, start block and digest all refuse. Corrupt signature,
+   malformed JSON, unknown field and trailing Done data refuse too.
+   These record-corruption cases use a controlled read wrapper over the real
+   journal; no encrypted files or parent records were mutated.
+4. Reservation changes immediately before fallback's final read: timeout,
+   changed receipt block/hash, commitment, generation or state version,
+   insufficient finality and orphaned block all return ErrLateSignature and
+   create no aggregate. No engine call occurs.
+5. Aggregate persistence: cancellation and a controlled persistence error return
+   nil result plus error. Retry with a fresh context succeeds from the already
+   retained Done records without a new signature.
+6. Real store fence errors: failed fence advancement and committed advancement
+   with a lost reply both poison the live store and return no result. After
+   close/reopen, a failed advancement loads the older acknowledged head, excludes
+   the orphan aggregate, and successfully reconstructs it from acknowledged Done.
+   A committed advancement with a lost reply loads and verifies the committed
+   aggregate. No engine grant occurs. Opening the prior nonzero valid fence head
+   is correct; refusing to acknowledge the orphan is the safety requirement.
+7. Returned Done persistence failure: cleanup runs exactly once, Run returns nil
+   plus the storage error, and the real engine-attempt claim remains terminal.
+8. Reservation timeout inside aggregate persistence: the completion remains
+   retained, but actual Broadcast refuses with ErrUnauthorized and sends no
+   bytes. Retaining a completed result is not a fresh signing grant or settlement.
+9. Malformed existing aggregate: returns error directly without consuming fallback
+   records or calling an engine. Fallback is confined to missing aggregate data.
+
+RESULTS AND LIMITS
+
+Final focused-tests.log: exit 0; 25 top-level tests, 142 subtests across signing,
+store, snowfallengine, bitcoin and tbtc; no failures or skips.
+latest-parent-multi-input.log: exit 0; one additional top-level parent regression,
+two subtests. Thus 26 distinct top-level tests and 144 subtests passed in the
+final focused suite plus the latest parent addition. Earlier standalone probes
+also passed after correcting probe setup/observer errors; see probes.log.
+
+Production executor and store source were used unmodified in scratch. The real
+journal encrypts, installs, syncs and fences records. The signing seam makes real
+terminal claims, calls the actual final authorization callback and returns valid
+local BIP340 signatures. It does not run worker IPC or prove cross-operator
+coordination. Controlled fence and chain providers are explicit assumptions.
+Normal tests were independently run. Parent normal/race runs were not consumed
+as independent evidence; this review did not independently run race or the real
+worker/Bitcoin Core end-to-end fixture. No model checking, power-loss campaign,
+production fence/deployment, C-04 qualification or capacity qualification.
+
+The original provider freshness, post-check chain transition, C-04 timeout and
+settlement, K-05 partial-input/conflict-resolution and agreed-executor-configuration
+gaps remain. No source defect was inferred solely from those missing components.
+The new boundary text correctly distinguishes returned-completion persistence,
+all-input recovery and partial-input resolution. Broadcast still supplies a
+separate current-reservation check after recovery.
+
+PROBE CORRECTIONS (NOT SOURCE FINDINGS)
+
+probe-setup-error.log retains the first run: the independent two-input fixture
+changed its funding txid without updating ConflictInput. NewPlan correctly
+rejected it. Updating only the scratch fixture fixed the setup.
+probe-observer-error.log retains the second run: the observer incorrectly
+expected store reopen to quarantine an unfenced aggregate despite an older valid
+nonzero head. Reading the real store commit/open protocol showed the correct
+expectation: recover the acknowledged head, exclude the orphan, retain Done and
+reconstruct. Corrected observer passes; production code was not changed.
+
+ISOLATION / REPRODUCTION
+
+Scratch: /private/tmp/k04-fix-review-20261013/source.
+Created using git archive of reviewed base, followed by copies of the parent
+working-tree executor and regression test. Snowfall dependency uses the prior
+isolated archive at c1847ebdf133d0570643ff968539dd498069f69f. Go dependency caches
+were reused with a scratch writable GOCACHE; GOPROXY=off and GOSUMDB=off.
+
+Copy fix_adversarial_test.go into scratch pkg/frost/signing; its helpers use the
+retained parent recovery_test-reviewed.go (install that as recovery_test.go).
+Exact final commands are in commands.json. All source modifications were confined
+to throwaway scratch; shared-workspace writes were report/evidence files only in
+this response directory. No mutants, parent edits, posts, pushes or deployment.

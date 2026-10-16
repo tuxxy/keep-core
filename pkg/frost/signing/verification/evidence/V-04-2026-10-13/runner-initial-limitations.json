@@ -1,0 +1,1 @@
+{"classification":"tooling defect", "attempts":["macOS RLIMIT_AS rejected before launch", "sandbox ps blocked RSS monitor"], "repair":"authorized escalated runner with 250 ms process-tree RSS monitor", "no_model_result_claimed":true}

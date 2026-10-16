@@ -1,0 +1,46 @@
+{
+  "scope": "N1 expired-unadmitted replacement extension only; no Go consumer claim",
+  "wallets": 1,
+  "intent_generations": 2,
+  "state_versions": 2,
+  "complete_statement_identities": 2,
+  "statement_deadlines": {
+    "0": 1,
+    "1": 2
+  },
+  "chain_ticks": 3,
+  "finalized_ticks": [
+    1,
+    2,
+    3
+  ],
+  "max_replacements": 1,
+  "max_absence_proof_slots_retained": 1,
+  "host_crashes": 1,
+  "predicate": "P-HOST-REPLACEMENT-FINALIZED-ABSENCE",
+  "witnesses": [
+    "W-expired-unadmitted-replaced-and-admitted",
+    "W-admitted-expiry-refuses-replacement"
+  ],
+  "controls": [
+    "ReplaceBeforeInclusiveDeadline",
+    "ReplaceWithoutFinalizedAbsence"
+  ],
+  "assumptions": [
+    "Authenticated canonical finalized absence at/before prior deadline",
+    "Readiness-certified/not-lost is honest-host assumption, not certificate validation predicate"
+  ],
+  "limits": {
+    "wall_seconds_per_command": 1800,
+    "rss_ceiling_bytes": 17179869184,
+    "model_threads": 4,
+    "GOMAXPROCS": 4,
+    "go_package_parallelism": 2,
+    "wallets": 1,
+    "requests": 2,
+    "attempts": 2,
+    "timeout_ticks": 3,
+    "commit_stages": 6,
+    "max_acknowledged_commits": 10
+  }
+}

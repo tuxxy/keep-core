@@ -1,0 +1,43 @@
+{
+  "name": "guard",
+  "command": [
+    "go",
+    "test",
+    "-mod=readonly",
+    "-modfile=/Users/tux/threshold/integration-worktrees/V-04-verification/pkg/frost/signing/verification/evidence/V-04-2026-10-13/run.mod",
+    "-p",
+    "2",
+    "-json",
+    "-count=1",
+    "-timeout=25m",
+    "-run",
+    "^TestV04RealStoreWorkerGuard$",
+    "./pkg/frost/store"
+  ],
+  "start": "2026-10-13T13:01:04.756644+00:00",
+  "limits": {
+    "wall_seconds_per_command": 1800,
+    "rss_ceiling_bytes": 17179869184,
+    "model_threads": 4,
+    "GOMAXPROCS": 4,
+    "go_package_parallelism": 2,
+    "wallets": 1,
+    "requests": 2,
+    "attempts": 2,
+    "timeout_ticks": 3,
+    "commit_stages": 6,
+    "max_acknowledged_commits": 6
+  },
+  "environment_allowlist": {
+    "GOMAXPROCS": "4",
+    "RUSTC": "/Users/tux/.rustup/toolchains/1.94.0-aarch64-apple-darwin/bin/rustc"
+  },
+  "cwd": "/Users/tux/threshold/integration-worktrees/V-04-verification",
+  "exit_code": 0,
+  "timed_out": false,
+  "stopped_for": null,
+  "peak_tree_rss_bytes": 192266240,
+  "memory_monitor_interval_seconds": 0.25,
+  "end": "2026-10-13T13:01:05.848736+00:00",
+  "seconds": 1.092014
+}

@@ -1,0 +1,17 @@
+{"Time":"2026-10-13T15:01:05.23073+02:00","Action":"start","Package":"github.com/keep-network/keep-core/pkg/frost/store"}
+{"Time":"2026-10-13T15:01:05.401258+02:00","Action":"run","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard"}
+{"Time":"2026-10-13T15:01:05.401339+02:00","Action":"output","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard","Output":"=== RUN   TestV04RealStoreWorkerGuard\n","OutputType":"frame"}
+{"Time":"2026-10-13T15:01:05.585339+02:00","Action":"run","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard/no_callback"}
+{"Time":"2026-10-13T15:01:05.585371+02:00","Action":"output","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard/no_callback","Output":"=== RUN   TestV04RealStoreWorkerGuard/no_callback\n","OutputType":"frame"}
+{"Time":"2026-10-13T15:01:05.58542+02:00","Action":"output","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard/no_callback","Output":"--- PASS: TestV04RealStoreWorkerGuard/no_callback (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-13T15:01:05.58543+02:00","Action":"pass","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard/no_callback","Elapsed":0}
+{"Time":"2026-10-13T15:01:05.585445+02:00","Action":"run","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard/empty_intent"}
+{"Time":"2026-10-13T15:01:05.585448+02:00","Action":"output","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard/empty_intent","Output":"=== RUN   TestV04RealStoreWorkerGuard/empty_intent\n","OutputType":"frame"}
+{"Time":"2026-10-13T15:01:05.585452+02:00","Action":"output","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard/empty_intent","Output":"--- PASS: TestV04RealStoreWorkerGuard/empty_intent (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-13T15:01:05.585455+02:00","Action":"pass","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard/empty_intent","Elapsed":0}
+{"Time":"2026-10-13T15:01:05.769117+02:00","Action":"output","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard","Output":"    v04_guard_test.go:139: launch observer completion: frost: ProtocolFailure in starting: worker IPC failed during bootstrap\n"}
+{"Time":"2026-10-13T15:01:05.771023+02:00","Action":"output","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard","Output":"--- PASS: TestV04RealStoreWorkerGuard (0.37s)\n","OutputType":"frame"}
+{"Time":"2026-10-13T15:01:05.771045+02:00","Action":"pass","Package":"github.com/keep-network/keep-core/pkg/frost/store","Test":"TestV04RealStoreWorkerGuard","Elapsed":0.37}
+{"Time":"2026-10-13T15:01:05.771062+02:00","Action":"output","Package":"github.com/keep-network/keep-core/pkg/frost/store","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-13T15:01:05.772061+02:00","Action":"output","Package":"github.com/keep-network/keep-core/pkg/frost/store","Output":"ok  \tgithub.com/keep-network/keep-core/pkg/frost/store\t0.541s\n"}
+{"Time":"2026-10-13T15:01:05.772111+02:00","Action":"pass","Package":"github.com/keep-network/keep-core/pkg/frost/store","Elapsed":0.541}

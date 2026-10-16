@@ -1,0 +1,37 @@
+{
+  "name": "race",
+  "command": [
+    "go",
+    "test",
+    "-mod=readonly",
+    "-modfile=/Users/tux/threshold/integration-worktrees/V-04-verification/pkg/frost/signing/verification/evidence/V-04-2026-10-13/run.mod",
+    "-p",
+    "2",
+    "-json",
+    "-count=1",
+    "-timeout=25m",
+    "-race",
+    "./pkg/frost/signing",
+    "./pkg/frost/store",
+    "./pkg/frost/snowfallengine",
+    "./pkg/bitcoin"
+  ],
+  "start": "2026-10-13T12:52:07.722133+00:00",
+  "limits": {
+    "wall_seconds_per_command": 1800,
+    "address_space_bytes": 17179869184,
+    "model_threads": 4,
+    "GOMAXPROCS": 4,
+    "go_package_parallelism": 2,
+    "wallets": 1,
+    "requests": 2,
+    "attempts": 2,
+    "timeout_ticks": 3,
+    "commit_stages": 6,
+    "max_acknowledged_commits": 6
+  },
+  "environment_allowlist": {
+    "GOMAXPROCS": "4"
+  },
+  "cwd": "/Users/tux/threshold/integration-worktrees/V-04-verification"
+}

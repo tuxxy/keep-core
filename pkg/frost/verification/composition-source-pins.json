@@ -1,0 +1,122 @@
+{
+  "format": 2,
+  "repositories": {
+    "keep-core": {
+      "head": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+      "blobs": {
+        "pkg/frost/dkg/executor.go": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d",
+        "pkg/frost/dkg/types.go": "68c9b67adb74d5eb0ca3a63e6bdcf5b05fdf5d65",
+        "pkg/frost/snowfallengine/engine.go": "06bf6b7ee887dba2096ae353a12707b947c82ae5",
+        "pkg/frost/store/store.go": "255eb6b18360b35596750c1df05169cb2ec88dd0",
+        "pkg/frost/store/dkg_status.go": "57e6533e30bdae2fe4d6b55cf9a296a7f9df68c3",
+        "pkg/frost/store/wallet.go": "1eeada06c53d217eb1cc28adc39c7ef6495a4af1",
+        "pkg/frost/snowfallengine/reload.go": "f2b8e5e052819d9aa0ce943132e71c8365caf325",
+        "solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol": "3cd5ef8e564767e93d99499d6211dad7904e0d46",
+        "solidity/ecdsa/contracts/frost/FrostTypes.sol": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6",
+        "pkg/frost/signing/INTENT-V2.md": "e936a9e9d8934fdd42d604867b78ea8c5d78d0ed",
+        "pkg/frost/signing/testdata/intent-v2.json": "a7b25725371a0a650b636c686876ad3efb9f2a7f",
+        "pkg/frost/signing/plan.go": "1d21b09a21f24b80d0a5f0c5d2a7a7265604c927",
+        "pkg/frost/signing/executor.go": "da212305cff151ae7a6f9a614e47f6b208113cc0",
+        "pkg/frost/store/signing.go": "40a00d3ddf5168a55aff09ee12d092a71e5dac5b",
+        "pkg/frost/signing/done.go": "f0565b079e61061352e59c322469863ec5d37511",
+        "pkg/bitcoin/taproot_transaction.go": "13fb9123646404d673c036d47f20bd97a05946c6",
+        "pkg/tbtc/wallet_signing.go": "161059144c95e01a2b6f10659225a7b07c1d9836",
+        "solidity/ecdsa/contracts/frost/FrostCurve.sol": "db089b5617b7c4af72248bc3ad93876bf992331c",
+        "solidity/ecdsa/contracts/frost/FrostDkgValidator.sol": "cf5b893adce584a75fb5b59f2d0997aa34080bea",
+        "pkg/frost/redemption/attestation.go": "e0518e89635984cfad9d85b42cbea0e3913a4f8d",
+        "pkg/frost/redemption/planner.go": "6fd0666f34e7bf32414d4c9061a4a3de870aace8",
+        "pkg/frost/redemption/reservations.go": "e4fb789920bfbabe2cad549b3e11b150ca8b0279",
+        "pkg/frost/redemption/agreement.go": "1d67efba4c186e21bd6ec1cbf83255e92cfa5f66",
+        "pkg/frost/redemption/reload.go": "2c9fc3398cc6699bc1795131b8b763f73993bf78",
+        "pkg/frost/redemption/chain.go": "d03113d6599d2e7dd7081006c5ffe09afae79003",
+        "pkg/chain/ethereum/frost_redemption.go": "70bc6edf89fbf6e9c82541fffa8f728531799b98",
+        "pkg/frost/redemption/resolver.go": "cb32ba7fdc85e9755d43c4e8586b3f11d62f3ab0",
+        "pkg/frost/redemption/ledger.go": "02eeeb7478b54082b050f453e0828b98dd11e3dc",
+        "pkg/maintainer/spv/frost_redemptions.go": "d5bfe26997d3a346e34a38e4103f18645e8fa615"
+      }
+    },
+    "snowfall": {
+      "head": "c1847ebdf133d0570643ff968539dd498069f69f",
+      "blobs": {
+        "clients/go/candidate.go": "9ae4c259de118834b30738c034a0b7c39b3e273e",
+        "clients/go/encoding.go": "2bf2233a5eee9953b664bae3043b2e6a6b723a58",
+        "clients/go/client.go": "e30790965a0fc757fbb5f0c76028344c46164de3",
+        "clients/go/worker.go": "c4c2c955414f787fe32d1c86b0ddf00e0e3acb1a"
+      }
+    },
+    "tbtc-v2": {
+      "head": "64b981854619b4804d404823bfe77059bf1a554d",
+      "blobs": {
+        "solidity/contracts/bank/Bank.sol": "d44aae20aefe4b2aa2027debc8b9556908cdc64c",
+        "solidity/contracts/bridge/BitcoinTx.sol": "6c52c0cf233da047468b03f14b81d873f28529ff",
+        "solidity/contracts/bridge/BridgeState.sol": "4be8933b8019ce304e3a64df63bc6ab235ad8c59",
+        "solidity/contracts/bridge/Deposit.sol": "961f2ecc2415603bda7e5eaa240af509e76eac65",
+        "solidity/contracts/frost/C04-BOUNDARIES.md": "8bf4f5eb3baf164c1dd2edd7becf42f1871195ce",
+        "solidity/contracts/frost/FrostBitcoinEncoding.sol": "2187ab410ecbbdcfe3ed41a37259a33560aa7017",
+        "solidity/contracts/frost/FrostBridge.sol": "fb4fa7ad0aab09ec02f88f46af1f2ab640ac92c4",
+        "solidity/contracts/frost/FrostCancellationCertificate.sol": "4d45d65f7b0ece9da6a4495760073b92e0f937a1",
+        "solidity/contracts/frost/FrostCustody.sol": "5fae71a81102819dd817cf8f1997380e83d73efd",
+        "solidity/contracts/frost/FrostDepositAdmission.sol": "b84241af4355b7bcabed1427b27d592c3a03237c",
+        "solidity/contracts/frost/FrostDepositProfile.sol": "261b9619dedb4a9a5122145e4d26fa11586f84b3",
+        "solidity/contracts/frost/FrostDepositSweep.sol": "512cc94a153c286e5ff377664b709b1e8db817ca",
+        "solidity/contracts/frost/FrostFundingConfiguration.sol": "0897be497bd54c007e1900816a1803874612994b",
+        "solidity/contracts/frost/FrostFundingState.sol": "20e4d52adef77cf8dd571dc1038c54e9fbb6cdb0",
+        "solidity/contracts/frost/FrostRedemptionLedger.sol": "53be22472bf7b66b88c44d2c65d6baefb1103c92",
+        "solidity/contracts/frost/FrostRedemptionRequests.sol": "fd8a28d225703d919adfb56da5dca849bfe8be29",
+        "solidity/contracts/frost/FrostRedemptionSettlement.sol": "5df9044356d3e893d97788dd9f6dff7cd661b385",
+        "solidity/contracts/frost/FrostRedemptionState.sol": "6a5af03eca135604f303062d1ed33c6e779abaf0",
+        "solidity/contracts/frost/FrostRedemptionTransaction.sol": "9f337ebcedaffee6f5746fbdb59b972c76dfafab",
+        "solidity/contracts/frost/FrostRedemptions.sol": "bb9f64e28c7ed19213dc2f5d21980eeef4b453f9",
+        "solidity/contracts/frost/FrostReservationCertificate.sol": "afd9a4d5e62cc691e732474acd3fcc7a1e61f9c6",
+        "solidity/contracts/frost/FrostSecp256k1.sol": "24987710b29cd9194ffc66c536819e6a63feeaec",
+        "solidity/contracts/frost/FrostSigningIntent.sol": "e5ccc4c18e3a5ef6b47adc1caaced47c2f2b5939",
+        "solidity/contracts/frost/FrostTypes.sol": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6",
+        "solidity/contracts/frost/FrostVerifier.sol": "95c2cdd08551756de91fc7c0cc1343e45b009278",
+        "solidity/contracts/frost/FrostWallets.sol": "9f6092236839548c13f94bde539a79437906a1d8",
+        "solidity/contracts/frost/IFrostBridge.sol": "19abd34568692bd8f0bac80adccfe46cd31bac78",
+        "solidity/contracts/frost/IFrostFundingBridge.sol": "27d15d6a616131a13d165b030a4fd16a4b403fec",
+        "solidity/contracts/frost/IFrostFundingProof.sol": "fd127de00bc61d6740df62976d1fc4cc3bed5580",
+        "solidity/contracts/frost/IFrostVerifier.sol": "c908c07dbe70ac07e96336f3573f81763108f488",
+        "solidity/contracts/vault/TBTCVault.sol": "02632c46bc7efc3e2f4219c5045f14067069ce89",
+        "solidity/test/bridge/Frost.PublicSettlement.test.ts": "db64749a4573e228f1b84a72352fe7ff2e423cba",
+        "solidity/test/data/frost/deposit-profile-v1.json": "c090fec08fae052327cdd6749914d55c3414e502",
+        "solidity/test/data/frost/deposit-profile.ts": "f00afebf3947f895aacf08263eb794f091de0edf",
+        "solidity/test/data/frost/intent-v2.json": "a7b25725371a0a650b636c686876ad3efb9f2a7f",
+        "solidity/contracts/frost/FrostCurve.sol": "db089b5617b7c4af72248bc3ad93876bf992331c",
+        "solidity/contracts/frost/FrostSweepResolutionCertificate.sol": "4ca653f357cca0526f3fdd7644902c71ad9bb16e",
+        "solidity/test/bridge/Frost.SweepConflictResolution.Core.test.ts": "fd1a6e4851c8b49a43f2f820c66ad06b0c984847",
+        "solidity/test/bridge/Frost.SweepConflictResolution.Gas.test.ts": "fa8c19d8df61e73b1b58e10cee8609423334a33e",
+        "solidity/test/bridge/Frost.SweepConflictResolution.test.ts": "4371561794cd62ddf25fe5aa674f313091c949d5",
+        "solidity/contracts/frost/FrostCancellationAdmissions.sol": "70b1fce4ca12ee4a92c14dd6dd40efb4f813cad6",
+        "solidity/contracts/frost/FrostCancellationHistory.sol": "29fd9e62fdb49a11bba39e0b79be05cea73b777f",
+        "solidity/contracts/test/FrostCancellationHistoryFixture.sol": "48fce4b65918801e64625efdb78a8c889cfa23fa",
+        "solidity/test/bridge/Frost.CancellationAlternatives.test.ts": "242f76a6097ee5b43547415d0cc2323180295f98",
+        "solidity/test/bridge/Frost.CancellationHistory.test.ts": "18ca8c5b920fa51360229b69f4244fb9708dcf30"
+      }
+    }
+  },
+  "specifications": [
+    {
+      "name": "KC-SF-V3",
+      "source_repository": "https://github.com/tlabs-xyz/FROST-migration-spec",
+      "revision_kind": "git-commit-sha1",
+      "revision": "44f1356f5b292ad2e78b1d1fa303cd04018d1f8a",
+      "source_path": "keep-core-integration-spec.md",
+      "blob_algorithm": "git-blob-sha1",
+      "blob": "98f8589a48ab95d065d5b95307734d66b93618f1",
+      "content_sha256": "f659067de053ad23ffd7e48851416333ad96a492b5e12cb7bf962a3b1163039c"
+    },
+    {
+      "name": "KC-VER",
+      "source_repository": "https://github.com/tlabs-xyz/FROST-migration-spec",
+      "revision_kind": "git-commit-sha1",
+      "revision": "d45afdab9108cbd0156ad68cc5697ece737a7b1c",
+      "source_path": "keep-core-verification-spec.md",
+      "blob_algorithm": "git-blob-sha1",
+      "blob": "53535870285d22a60472eacfaffbd6e277a1a29b",
+      "content_sha256": "9b00e5372e792399c9c71bb60d93d478ea93460ebc6c31021909324d33688ba9"
+    }
+  ],
+  "spec_integration_revision": "44f1356f5b292ad2e78b1d1fa303cd04018d1f8a",
+  "spec_verification_revision": "d45afdab9108cbd0156ad68cc5697ece737a7b1c"
+}

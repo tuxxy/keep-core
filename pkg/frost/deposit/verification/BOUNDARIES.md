@@ -223,3 +223,30 @@ witnesses.
 - Fee escalation beyond the captured cap.
 - Reorganizations deeper than the finality depth.
 - Executed power loss and the production fence.
+
+## As implemented (16 October 2026)
+
+The K-06 code uses every hook name above. These choices are not in the
+predicates and need the model owner's attention at the V-07 freeze:
+
+- **Grant records.** `Guard.Grant` inserts a grant record into the main lock
+  history at the release point, under the current purpose. Because insertion
+  is compare-and-insert at the next record number, a grant and a resolution
+  transition are totally ordered. Model the grant as a lock-history event, not
+  as a read. `TestMainPurposeLockAndResolution` races the resolution into the
+  gap between the durable claim and the grant.
+- **Two margin clocks.** The planner selects deposits with the anchor block's
+  Ethereum timestamp, which every operator reads identically. The authority
+  enforces the real margin against Bitcoin median-time-past at every grant.
+  Only the second is a safety guard.
+- **Rounds.** A round's anchor is block `round × RoundBlocks`. Its hash and the
+  plan commitment bind the session, and signing starts once the anchor is
+  final. Selected seats are every descriptor seat; rotation is OPEN.
+- **Refunded deposits.** The planner skips a deposit whose funding output is
+  spent on Bitcoin. A plan made before the refund is abandoned on the next
+  `Resolve`.
+- **Closing a main.** `MainLock.Close` needs the custody output recorded spent
+  at the finalized head. The fixture closes mains explicitly; there is no
+  background reconciler yet.
+
+The local acceptance record is `test/frost/K06.md`.

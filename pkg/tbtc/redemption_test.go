@@ -306,3 +306,53 @@ func TestWithRedemptionTotalFee(t *testing.T) {
 		})
 	}
 }
+
+// TestZeroNetAndFeeBoundaries (legacy half of the K-05 named check): the ECDSA
+// assembler refuses wrapped, zero and negative nets and an overdrawn main UTXO
+// before any signature hash exists.
+func TestZeroNetAndFeeBoundaries(t *testing.T) {
+	scenarios, err := test.LoadRedemptionTestScenarios()
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenario := scenarios[0]
+	base := func() []*RedemptionRequest {
+		out := make([]*RedemptionRequest, len(scenario.RedemptionRequests))
+		for i, r := range scenario.RedemptionRequests {
+			out[i] = &RedemptionRequest{Redeemer: r.Redeemer, RedeemerOutputScript: r.RedeemerOutputScript, RequestedAmount: r.RequestedAmount, TreasuryFee: r.TreasuryFee, TxMaxFee: r.TxMaxFee, RequestedAt: r.RequestedAt}
+		}
+		return out
+	}
+	assemble := func(requests []*RedemptionRequest, shares []int64) error {
+		bitcoinChain := newLocalBitcoinChain()
+		if err := bitcoinChain.BroadcastTransaction(scenario.InputTransaction); err != nil {
+			t.Fatal(err)
+		}
+		_, err := assembleRedemptionTransaction(bitcoinChain, scenario.WalletPublicKey, scenario.WalletMainUtxo, requests, func([]*RedemptionRequest) []int64 { return shares }, RedemptionChangeLast)
+		return err
+	}
+	if err := assemble(base(), scenario.FeeShares); err != nil {
+		t.Fatalf("positive control: %v", err)
+	}
+	for _, tc := range []struct {
+		name   string
+		mutate func([]*RedemptionRequest, []int64)
+	}{
+		{"treasury fee above amount", func(r []*RedemptionRequest, _ []int64) { r[0].TreasuryFee = r[0].RequestedAmount + 1 }},
+		{"zero net", func(r []*RedemptionRequest, s []int64) { s[0] = int64(r[0].RequestedAmount - r[0].TreasuryFee) }},
+		{"negative net", func(r []*RedemptionRequest, s []int64) { s[0] = int64(r[0].RequestedAmount-r[0].TreasuryFee) + 1 }},
+		{"negative fee share", func(_ []*RedemptionRequest, s []int64) { s[0] = -1 }},
+		{"outputs exceed main UTXO", func(r []*RedemptionRequest, s []int64) {
+			r[0].RequestedAmount += uint64(scenario.WalletMainUtxo.Value)
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			requests := base()
+			shares := append([]int64(nil), scenario.FeeShares...)
+			tc.mutate(requests, shares)
+			if err := assemble(requests, shares); err == nil {
+				t.Fatal("unsafe legacy redemption assembled")
+			}
+		})
+	}
+}

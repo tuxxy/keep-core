@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -32,6 +33,8 @@ var (
 	// submitRedemptionProofCommand:
 	transactionHashFlagName = "transaction-hash"
 	confirmationsFlagName   = "confirmations"
+	frostWalletFlagName     = "frost-wallet"
+	fromBlockFlagName       = "from-block"
 )
 
 // MaintainerCliCommand contains the definition of tools associated with maintainers
@@ -457,6 +460,57 @@ var submitRedemptionProofCommand = cobra.Command{
 	},
 }
 
+var frostRedemptionsCommand = cobra.Command{
+	Use:   "frost-redemptions",
+	Short: "maintain FROST redemptions of one wallet",
+	Long: "Proves admitted FROST payments or cancellations, notifies timeouts, " +
+		"collects unreserved and resolved refunds, and returns unused " +
+		"cancellation budgets for one FROST wallet. Inactive unless the " +
+		"Bridge has FROST redemptions configured.",
+	TraverseChildren: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+		frostChain, err := ethereum.ConnectFrostRedemption(ctx, clientConfig.Ethereum)
+		if err != nil {
+			return fmt.Errorf("could not connect FROST redemption chain: [%v]", err)
+		}
+		btcChain, err := electrum.Connect(ctx, clientConfig.Bitcoin.Electrum)
+		if err != nil {
+			return fmt.Errorf("could not connect to Electrum chain: [%v]", err)
+		}
+		walletFlag, err := cmd.Flags().GetString(frostWalletFlagName)
+		if err != nil {
+			return err
+		}
+		raw, err := hexutils.Decode(walletFlag)
+		if err != nil || len(raw) != 32 {
+			return fmt.Errorf("FROST wallet ID must be 32 bytes of hex")
+		}
+		fromBlock, err := cmd.Flags().GetUint64(fromBlockFlagName)
+		if err != nil {
+			return err
+		}
+		confirmations, err := cmd.Flags().GetUint(confirmationsFlagName)
+		if err != nil {
+			return err
+		}
+		if confirmations == 0 {
+			return fmt.Errorf("--%s is required for FROST proofs", confirmationsFlagName)
+		}
+		maintainer := spv.FrostRedemptionMaintainer{Chain: frostChain, Bitcoin: btcChain, Confirmations: confirmations, Wallet: [32]byte(raw), FromBlock: fromBlock}
+		for _, step := range []func(context.Context) ([]spv.FrostAction, error){maintainer.ProveSettlements, maintainer.ProcessRequests, maintainer.ClaimBudgets} {
+			actions, err := step(ctx)
+			for _, a := range actions {
+				logger.Infof("FROST %s reservation=%x request=%x transaction=%x", a.Kind, a.Reservation, a.Request, a.Transaction)
+			}
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	},
+}
+
 func init() {
 	initFlags(
 		MaintainerCliCommand,
@@ -548,6 +602,15 @@ func init() {
 	)
 
 	MaintainerCliCommand.AddCommand(&submitRedemptionProofCommand)
+
+	// FROST Redemptions Subcommand.
+	frostRedemptionsCommand.Flags().String(frostWalletFlagName, "", "32-byte FROST wallet ID (hex)")
+	if err := frostRedemptionsCommand.MarkFlagRequired(frostWalletFlagName); err != nil {
+		logger.Fatalf("failed to mark flag required: [%v]", err)
+	}
+	frostRedemptionsCommand.Flags().Uint64(fromBlockFlagName, 0, "first Ethereum block to scan for wallet logs")
+	frostRedemptionsCommand.Flags().Uint(confirmationsFlagName, 0, "Bitcoin confirmations included in each proof")
+	MaintainerCliCommand.AddCommand(&frostRedemptionsCommand)
 }
 
 func newWalletPublicKeyHash(str string) ([20]byte, error) {

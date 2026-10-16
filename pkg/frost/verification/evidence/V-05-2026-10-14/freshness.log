@@ -1,0 +1,158 @@
+{
+  "scope": "selected source/spec content and historical source/evidence references only; not a model or semantic discharge result",
+  "rows": [
+    {
+      "row": 1,
+      "status": "open",
+      "selected_pins": "match",
+      "unpinned_sides": [],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": false
+    },
+    {
+      "row": 2,
+      "status": "open",
+      "selected_pins": "match",
+      "unpinned_sides": [],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": false
+    },
+    {
+      "row": 3,
+      "status": "open",
+      "selected_pins": "match",
+      "unpinned_sides": [],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": false
+    },
+    {
+      "row": 4,
+      "status": "open",
+      "selected_pins": "match",
+      "unpinned_sides": [],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": false
+    },
+    {
+      "row": 5,
+      "status": "open",
+      "selected_pins": "match",
+      "unpinned_sides": [],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": false
+    },
+    {
+      "row": 6,
+      "status": "open",
+      "selected_pins": "match",
+      "unpinned_sides": [],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": false
+    },
+    {
+      "row": 7,
+      "status": "open",
+      "selected_pins": "match",
+      "unpinned_sides": [],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": false
+    },
+    {
+      "row": 8,
+      "status": "open",
+      "selected_pins": "partial-match",
+      "unpinned_sides": [
+        "consumer"
+      ],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": false
+    },
+    {
+      "row": 9,
+      "status": "open",
+      "selected_pins": "unavailable",
+      "unpinned_sides": [
+        "producer",
+        "consumer"
+      ],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": true
+    },
+    {
+      "row": 10,
+      "status": "open",
+      "selected_pins": "unavailable",
+      "unpinned_sides": [
+        "producer",
+        "consumer"
+      ],
+      "mismatches": [],
+      "dependency_coverage": "selected; incomplete",
+      "unassigned_owner": true,
+      "remaining_open": true,
+      "missing_joining_evidence": true
+    }
+  ],
+  "specifications": [
+    {
+      "name": "KC-SF-V3",
+      "source_repository": "https://github.com/tlabs-xyz/FROST-migration-spec",
+      "revision": "44f1356f5b292ad2e78b1d1fa303cd04018d1f8a",
+      "source_path": "keep-core-integration-spec.md",
+      "matches": true,
+      "actual_blob": "98f8589a48ab95d065d5b95307734d66b93618f1",
+      "actual_sha256": "f659067de053ad23ffd7e48851416333ad96a492b5e12cb7bf962a3b1163039c"
+    },
+    {
+      "name": "KC-VER",
+      "source_repository": "https://github.com/tlabs-xyz/FROST-migration-spec",
+      "revision": "d45afdab9108cbd0156ad68cc5697ece737a7b1c",
+      "source_path": "keep-core-verification-spec.md",
+      "matches": true,
+      "actual_blob": "53535870285d22a60472eacfaffbd6e277a1a29b",
+      "actual_sha256": "9b00e5372e792399c9c71bb60d93d478ea93460ebc6c31021909324d33688ba9"
+    }
+  ],
+  "unresolved_obligations": [
+    "A-K04-AGREED-EXECUTOR-CONFIG",
+    "A-GUARDED-END-BEFORE-RELEASE",
+    "A-READY-FRESH-RELOAD",
+    "A-BUILDER-FROZEN-BEFORE-SIGN",
+    "A-CHAIN-FINALITY",
+    "A-FENCE-STORAGE",
+    "A-OPERATOR-ATTEST-AFTER-VALIDATION",
+    "A-ONE-INTENT-PER-STATE-VERSION",
+    "A-STORED-DESCRIPTOR-ONLY",
+    "A-FEE-INCLUSION-ESCALATION",
+    "A-DUPLICATE-REQUEST-STATE-GUARD",
+    "A-READY-SEAT-ELIGIBILITY"
+  ]
+}
+CAP_RESULT exit=0 elapsed=3.20 cap=180s

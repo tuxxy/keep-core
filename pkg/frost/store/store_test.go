@@ -423,9 +423,11 @@ func TestAcceptedKeyJournal(t *testing.T) {
 	c := testConfig(t)
 	s, v := openTest(t, c)
 	ctx := context.Background()
-	k := frost.KeyReady{Candidate: frost.Candidate{Epoch: testDomain().Epoch, Profile: frost.ApprovedProfile, Descriptor: sha256.Sum256([]byte("public descriptor"))}, LocalReferences: []frost.KeyReference{[]byte("opaque reference")}}
+	request, k := dkgFixture(t, v.Domain())
+	release := claimDKG(t, v, [32]byte{31}, request)
 	must(t, v.SaveKey(ctx, k))
 	must(t, v.SaveKey(ctx, k))
+	release()
 	must(t, s.Close())
 	_, v = openTest(t, c)
 	got, e := v.LoadKey(ctx)

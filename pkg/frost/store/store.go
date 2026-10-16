@@ -28,6 +28,7 @@ var (
 	ErrClaimed     = errors.New("FROST attempt already claimed")
 	ErrBusy        = errors.New("FROST store has an active owner or operation")
 	ErrMissing     = errors.New("FROST record missing")
+	ErrDKGLost     = errors.New("FROST DKG seats lost: use a fresh epoch")
 )
 
 const maxSnapshot = 32 << 20
@@ -60,6 +61,7 @@ type snapshot struct {
 	Claims    map[string][]byte
 	DKGs      map[string]string
 	Keys      map[string][]byte
+	Wallets   map[string][]byte `json:",omitempty"`
 }
 
 type Store struct {
@@ -73,6 +75,8 @@ type Store struct {
 	state            snapshot
 	closed, poisoned bool
 	active           int
+	// A live DKG exists only in this process, while its claim lease is held.
+	liveDKGs map[string]string
 	// Tests interrupt real I/O at named boundaries. Production leaves nil.
 	boundary      func(string) error
 	syncFile      func(*os.File) error
@@ -147,7 +151,7 @@ func Open(ctx context.Context, c Config) (out *Store, err error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &Store{root: root, id: c.StorageID, aead: aead, lock: lock, fence: lease, syncFile: func(f *os.File) error { return f.Sync() }, syncDirectory: syncDir, install: os.Link}
+	s := &Store{root: root, id: c.StorageID, aead: aead, lock: lock, fence: lease, liveDKGs: make(map[string]string), syncFile: func(f *os.File) error { return f.Sync() }, syncDirectory: syncDir, install: os.Link}
 	if err = bindIdentity(root, c.StorageID); err != nil {
 		return nil, err
 	}
@@ -331,6 +335,11 @@ func clone(s snapshot) snapshot {
 	for k, v := range s.Keys {
 		c.Keys[k] = v
 	}
+	c.Wallets = make(map[string][]byte, len(s.Wallets))
+	for k, v := range s.Wallets {
+		c.Wallets[k] = v
+	}
+
 	return c
 }
 
@@ -607,8 +616,20 @@ func (v *Scoped) Claim(ctx context.Context, id [32]byte, purpose string, intent 
 		return nil, s.fail(e)
 	}
 	s.active++
+	if purpose == "dkg" {
+		s.liveDKGs[v.prefix()] = key
+	}
 	var once sync.Once
-	return func() { once.Do(func() { s.mu.Lock(); s.active--; s.mu.Unlock() }) }, nil
+	return func() {
+		once.Do(func() {
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			s.active--
+			if purpose == "dkg" {
+				delete(s.liveDKGs, v.prefix())
+			}
+		})
+	}, nil
 }
 func (v *Scoped) SaveKey(ctx context.Context, k frost.KeyReady) error {
 	if k.Candidate.Epoch != v.domain.Epoch || k.Candidate.Profile != frost.ApprovedProfile || len(k.LocalReferences) == 0 {
@@ -635,6 +656,19 @@ func (v *Scoped) SaveKey(ctx context.Context, k frost.KeyReady) error {
 			return errors.New("installed key conflict")
 		}
 		return s.syncCurrent()
+	}
+	// A released or restarted DKG cannot install a late key and undo the
+	// terminal loss report. Identical saved keys above remain idempotent.
+	attempt, ok := s.state.DKGs[key]
+	if !ok || s.liveDKGs[key] != attempt {
+		return ErrDKGLost
+	}
+	request, _, e := v.dkgRequest()
+	if e != nil {
+		return e
+	}
+	if !keyMatchesRequest(k, request) {
+		return errors.New("installed key does not match the claimed DKG seats and group")
 	}
 	raw, e := s.seal(plain, header)
 	if e != nil {

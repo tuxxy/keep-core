@@ -1,0 +1,5 @@
+{
+  "fresh": true,
+  "stale": [],
+  "scope": "Exact V03 production, tooling, client, fixture and specification pins; scope remains bounded and conditional"
+}

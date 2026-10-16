@@ -180,3 +180,35 @@ func TestPlannerBuildsAndValidatesExactEntitlements(t *testing.T) {
 		})
 	}
 }
+
+func TestChainReservationsReadsOneCanonicalSnapshot(t *testing.T) {
+	ctx := context.Background()
+	w := newWorld(t)
+	id := [32]byte{0x77}
+	w.chain.intents[id] = Intent{ID: id, Certificate: Certificate{IntentCommitment: [32]byte{9}, Generation: 1, StateVersion: 1}, AdmittedBlock: 90, TransactionHash: [32]byte{5}, State: IntentTimeoutPending}
+	w.chain.admissions[id] = Admission{ReservationID: id, TransactionHash: [32]byte{5}, Block: 90, BlockHash: w.chain.hash(90)}
+	r := ChainReservations{Chain: w.chain}
+	v, err := r.ReadReservation(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.State != "TimeoutPending" || v.Block != 90 || v.BlockHash != v.CanonicalBlockHash || v.Head != 100 || v.Commitment != ([32]byte{9}) {
+		t.Fatalf("view %+v", v)
+	}
+	w.chain.flipAfter = 2
+	if _, err = r.ReadReservation(ctx, id); !errors.Is(err, ErrInconsistentRead) {
+		t.Fatalf("head change during read not detected: %v", err)
+	}
+	adm := w.chain.admissions[id]
+	adm.BlockHash = [32]byte{1}
+	w.chain.admissions[id] = adm
+	v, err = r.ReadReservation(ctx, id)
+	if err != nil || v.BlockHash == v.CanonicalBlockHash {
+		t.Fatal("reorganized admission not visible to the executor check")
+	}
+	adm.Block = 91
+	w.chain.admissions[id] = adm
+	if _, err = r.ReadReservation(ctx, id); err == nil {
+		t.Fatal("admission log differing from the record accepted")
+	}
+}

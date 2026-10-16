@@ -1,0 +1,39 @@
+{
+  "scope": "Selected source/spec provenance refresh only. All ten rows and twelve caller obligations OPEN. No model, proof or production qualification result.",
+  "checker_source_commit": "7c725975ce218f41a66d0efac3f40dd90287a292",
+  "checks": [
+    {
+      "name": "tests",
+      "actual_exit": 0,
+      "expected_exit": 0,
+      "seconds": 15.53,
+      "wall_cap_seconds": 180,
+      "output": "tests.log",
+      "sha256": "d4ab8303f1f9073852a30e4e497b4f4fc464fb6954f60cf6af3964940c9ea219"
+    },
+    {
+      "name": "freshness",
+      "actual_exit": 0,
+      "expected_exit": 0,
+      "seconds": 3.2,
+      "wall_cap_seconds": 180,
+      "output": "freshness.log",
+      "sha256": "2b9391ba40b49762b515af593f11addb4e9323e29c8ae5e1d0900398733955e4"
+    },
+    {
+      "name": "strict",
+      "actual_exit": 2,
+      "expected_exit": 2,
+      "seconds": 2.73,
+      "wall_cap_seconds": 180,
+      "output": "strict.log",
+      "sha256": "e296688e849d33cac4a4c115b71794a2bafcc7fb1bc6f03abbceed47cc585cbd"
+    }
+  ],
+  "repo_heads": {
+    "tbtc-v2": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
+    "keep-core": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
+    "snowfall": "c1847ebdf133d0570643ff968539dd498069f69f"
+  },
+  "selected_pins": 56
+}

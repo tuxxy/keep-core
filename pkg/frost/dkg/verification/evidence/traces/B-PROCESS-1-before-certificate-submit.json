@@ -1,0 +1,6038 @@
+{
+  "claim_model_steps": [],
+  "id": "B-PROCESS-1-before-certificate-submit",
+  "kind": "boundary",
+  "max_commits": 0,
+  "property": "P-K03-READY-ONLY-RELOADED",
+  "replay": "full",
+  "replay_note": "Real executor subprocess hooks, controlled providers and real durable store; cryptographic engine contract joined to V02 plus real fixture",
+  "steps": [
+    {
+      "action": {
+        "Candidate": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          1,
+          0
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          0
+        ],
+        "wallet_state": [
+          1,
+          0
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          1,
+          0
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          0
+        ],
+        "wallet_state": [
+          1,
+          0
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 1,
+      "pause": null,
+      "pause_before": "candidate-ready",
+      "proc": 0
+    },
+    {
+      "action": {
+        "Candidate": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          1,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          1,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 2,
+      "pause": null,
+      "pause_before": "candidate-ready",
+      "proc": 1
+    },
+    {
+      "action": "BeforePublish",
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          11,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          11,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 3,
+      "pause": "before-publish",
+      "pause_before": null,
+      "proc": 0
+    },
+    {
+      "action": "Publish",
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          12,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 1,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          12,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 1,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 4,
+      "pause": "after-publish",
+      "pause_before": "before-publish",
+      "proc": 0
+    },
+    {
+      "action": "AfterPublish",
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          1,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 1,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 0,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          1,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 1,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 5,
+      "pause": null,
+      "pause_before": "after-publish",
+      "proc": 0
+    },
+    {
+      "action": "Approve",
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          1,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "environment",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          1,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 0,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 6,
+      "pause": null,
+      "pause_before": null,
+      "proc": null
+    },
+    {
+      "action": {
+        "Observe": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          2,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 1,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          2,
+          1
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 1,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 7,
+      "pause": "approval-seen",
+      "pause_before": null,
+      "proc": 0
+    },
+    {
+      "action": {
+        "Observe": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          2,
+          2
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          2,
+          2
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 0,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 8,
+      "pause": "approval-seen",
+      "pause_before": null,
+      "proc": 1
+    },
+    {
+      "action": "Tick",
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          2,
+          2
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 1,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "environment",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          2,
+          2
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 1,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 9,
+      "pause": null,
+      "pause_before": null,
+      "proc": null
+    },
+    {
+      "action": "Tick",
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          2,
+          2
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "environment",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          2,
+          2
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 0,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 10,
+      "pause": null,
+      "pause_before": null,
+      "proc": null
+    },
+    {
+      "action": {
+        "BeforeFinality": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          3,
+          2
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 1,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          3,
+          2
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 1,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 11,
+      "pause": "before-finality-reread",
+      "pause_before": "approval-seen",
+      "proc": 0
+    },
+    {
+      "action": {
+        "BeforeFinality": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          3,
+          3
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          3,
+          3
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 0,
+        "recognized_desc": [
+          0,
+          0
+        ],
+        "recognized_tick": [
+          0,
+          0
+        ],
+        "recognized_view": [
+          0,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 12,
+      "pause": "before-finality-reread",
+      "pause_before": "approval-seen",
+      "proc": 1
+    },
+    {
+      "action": {
+        "Reread": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          4,
+          3
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 1,
+        "recognized_desc": [
+          1,
+          0
+        ],
+        "recognized_tick": [
+          2,
+          0
+        ],
+        "recognized_view": [
+          1,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          4,
+          3
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 1,
+        "recognized_desc": [
+          1,
+          0
+        ],
+        "recognized_tick": [
+          2,
+          0
+        ],
+        "recognized_view": [
+          1,
+          0
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 13,
+      "pause": "after-finality-reread",
+      "pause_before": "before-finality-reread",
+      "proc": 0
+    },
+    {
+      "action": {
+        "Reread": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          4,
+          4
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          4,
+          4
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          1,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 0
+      },
+      "n": 14,
+      "pause": "after-finality-reread",
+      "pause_before": "before-finality-reread",
+      "proc": 1
+    },
+    {
+      "action": {
+        "WorkerReady": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          21,
+          4
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 3
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          21,
+          4
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          1
+        ],
+        "watched": 0,
+        "worker_ready": 3
+      },
+      "n": 15,
+      "pause": "before-key-ready-save",
+      "pause_before": "after-finality-reread",
+      "proc": 0
+    },
+    {
+      "action": {
+        "WorkerReady": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          21,
+          21
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 0,
+        "key_desc": [
+          0,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          21,
+          21
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 16,
+      "pause": "before-key-ready-save",
+      "pause_before": "after-finality-reread",
+      "proc": 1
+    },
+    {
+      "action": {
+        "Key": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 1,
+        "key_desc": [
+          1,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          5,
+          21
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 1,
+        "key_desc": [
+          1,
+          0
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          5,
+          21
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 17,
+      "pause": "after-key-ready",
+      "pause_before": "before-key-ready-save",
+      "proc": 0
+    },
+    {
+      "action": {
+        "Key": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          5,
+          5
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          5,
+          5
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 18,
+      "pause": "after-key-ready",
+      "pause_before": "before-key-ready-save",
+      "proc": 1
+    },
+    {
+      "action": {
+        "PostKeyRead": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          16,
+          5
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          16,
+          5
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 0,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 19,
+      "pause": "after-post-key-read",
+      "pause_before": "after-key-ready",
+      "proc": 0
+    },
+    {
+      "action": {
+        "Reload": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          17,
+          5
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 3,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          17,
+          5
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 3,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 20,
+      "pause": "after-key-reload",
+      "pause_before": "after-post-key-read",
+      "proc": 0
+    },
+    {
+      "action": {
+        "BeginReadiness": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          6,
+          5
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 3,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          6,
+          5
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 3,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 21,
+      "pause": "before-readiness-collect",
+      "pause_before": "after-key-reload",
+      "proc": 0
+    },
+    {
+      "action": {
+        "PostKeyRead": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          6,
+          16
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 3,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          6,
+          16
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 3,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 22,
+      "pause": "after-post-key-read",
+      "pause_before": "after-key-ready",
+      "proc": 1
+    },
+    {
+      "action": {
+        "Reload": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          6,
+          17
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          6,
+          17
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 23,
+      "pause": "after-key-reload",
+      "pause_before": "after-post-key-read",
+      "proc": 1
+    },
+    {
+      "action": {
+        "BeginReadiness": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          6,
+          6
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 0,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          6,
+          6
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 24,
+      "pause": "before-readiness-collect",
+      "pause_before": "after-key-reload",
+      "proc": 1
+    },
+    {
+      "action": {
+        "Attest": 0
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 3,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          7,
+          6
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 3,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          7,
+          6
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 25,
+      "pause": null,
+      "pause_before": "before-readiness-collect",
+      "proc": 0
+    },
+    {
+      "action": {
+        "Attest": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          7,
+          7
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          0,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          7,
+          7
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 26,
+      "pause": null,
+      "pause_before": "before-readiness-collect",
+      "proc": 1
+    },
+    {
+      "action": {
+        "BeforeCertificate": {
+          "proc": 0,
+          "seats": 7
+        }
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          7,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          14,
+          7
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          7,
+          0
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          14,
+          7
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 27,
+      "pause": "before-certificate-submit",
+      "pause_before": null,
+      "proc": 0
+    },
+    {
+      "action": {
+        "BeforeCertificate": {
+          "proc": 1,
+          "seats": 13
+        }
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          7,
+          13
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          14,
+          14
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          7,
+          13
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          14,
+          14
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 28,
+      "pause": "before-certificate-submit",
+      "pause_before": null,
+      "proc": 1
+    },
+    {
+      "action": {
+        "ProcessCrash": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          7,
+          13
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          14,
+          9
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          4
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "dead",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          7,
+          13
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": false,
+        "funded": false,
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 0,
+        "monitor_pending": 0,
+        "monitor_used": 0,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          14,
+          9
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          4
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 0,
+        "worker_ready": 15
+      },
+      "n": 29,
+      "pause": null,
+      "pause_before": "before-certificate-submit",
+      "proc": 1
+    }
+  ],
+  "weakening": 0
+}

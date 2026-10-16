@@ -224,3 +224,50 @@ func TestOutpointKeyMatchesC04(t *testing.T) {
 		t.Fatal("outpoint key encoding")
 	}
 }
+
+// constructionSHA256 pins testdata/deposit-construction-v1.json: C-05
+// frostDepositConstruction answers (including the C-07 output key and parity)
+// for a real DKG wallet key, captured by TestDepositTemplateCrossLanguage with
+// FROST_K06_VECTORS_OUT. The TypeScript SDK checks the same file.
+const constructionSHA256 = "d754bd8f255c4dd121434bf34bec227cf9b1ad783fb26dd42512d552ec9e1de1"
+
+func TestDepositConstructionMatchesC05(t *testing.T) {
+	raw, err := os.ReadFile("testdata/deposit-construction-v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sum := sha256.Sum256(raw); hex.EncodeToString(sum[:]) != constructionSHA256 {
+		t.Fatal("construction vectors changed; recapture them from C-05")
+	}
+	var vectors []struct {
+		Terms                                                map[string]string
+		WalletKey, OutputKey, Root, Receipt                  string
+		Parity                                               uint8
+		WalletLeaf, RefundLeaf, WalletControl, RefundControl string
+	}
+	if err = json.Unmarshal(raw, &vectors); err != nil {
+		t.Fatal(err)
+	}
+	for i, v := range vectors {
+		var raw vector
+		raw.Terms.ChainID, raw.Terms.Bridge, raw.Terms.BitcoinGenesis = v.Terms["chainId"], v.Terms["bridge"], v.Terms["bitcoinGenesis"]
+		raw.Terms.FullWalletID, raw.Terms.DescriptorHash, raw.Terms.Depositor = v.Terms["fullWalletId"], v.Terms["descriptorHash"], v.Terms["depositor"]
+		raw.Terms.Vault, raw.Terms.Blinding, raw.Terms.Amount = v.Terms["vault"], v.Terms["blinding"], v.Terms["amount"]
+		raw.Terms.RefundKey, raw.Terms.ExtraData = v.Terms["refundKey"], v.Terms["extraData"]
+		locktime, err := strconv.ParseUint(v.Terms["refundLocktime"], 10, 32)
+		if err != nil {
+			t.Fatal(err)
+		}
+		raw.Terms.RefundLocktime = uint32(locktime)
+		var key [32]byte
+		copy(key[:], unhex(t, v.WalletKey))
+		c, err := Build(raw.terms(t), key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(c.OutputKey[:], unhex(t, v.OutputKey)) || !bytes.Equal(c.Root[:], unhex(t, v.Root)) || c.Parity != v.Parity || !bytes.Equal(c.Receipt[:], unhex(t, v.Receipt)) ||
+			!bytes.Equal(c.WalletLeaf, unhex(t, v.WalletLeaf)) || !bytes.Equal(c.RefundLeaf, unhex(t, v.RefundLeaf)) || !bytes.Equal(c.WalletControl, unhex(t, v.WalletControl)) || !bytes.Equal(c.RefundControl, unhex(t, v.RefundControl)) {
+			t.Fatalf("vector %d: Go construction differs from C-05", i)
+		}
+	}
+}

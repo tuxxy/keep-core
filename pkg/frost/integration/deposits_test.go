@@ -1,7 +1,11 @@
 package integration
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -9,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
+	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
 	"github.com/keep-network/keep-core/pkg/frost/deposit"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
@@ -480,6 +485,7 @@ func TestMainPurposeLockAndResolution(t *testing.T) {
 func TestDepositTemplateCrossLanguage(t *testing.T) {
 	w := newK06World(t)
 	ctx := w.f.ctx
+	var vectors []constructionVector
 	for _, locktime := range []uint32{w.locktime(3 * k06RefundDelay), 0x7fffffff, 0x80000000, 0xffffffff} {
 		for _, amount := range []uint64{3_000, 1_000_000, 2_100_000_000_000_000} {
 			terms := w.terms(amount, locktime, [20]byte{})
@@ -492,6 +498,17 @@ func TestDepositTemplateCrossLanguage(t *testing.T) {
 				t.Fatal(err)
 			}
 			w.sameConstruction(terms, c, contract)
+			vectors = append(vectors, newConstructionVector(terms, w.wallet.OutputKey, contract))
+		}
+	}
+	// The contract's answers become the fixed Go and TypeScript vectors.
+	if out := os.Getenv("FROST_K06_VECTORS_OUT"); out != "" {
+		raw, err := json.MarshalIndent(vectors, "", "  ")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = os.WriteFile(out, append(raw, '\n'), 0o644); err != nil {
+			t.Fatal(err)
 		}
 	}
 	height := w.terms(1_000_000, 499_999_999, [20]byte{})
@@ -517,4 +534,29 @@ func TestDepositTemplateCrossLanguage(t *testing.T) {
 		t.Fatal("Core rejected the five-byte CLTV refund:", err)
 	}
 	w.coreMine(1)
+}
+
+// constructionVector is one C-05 frostDepositConstruction answer for the real
+// wallet key, in 0x hex, with every term as the contract ABI takes it.
+type constructionVector struct {
+	Terms         map[string]string `json:"terms"`
+	WalletKey     string            `json:"walletKey"`
+	OutputKey     string            `json:"outputKey"`
+	Root          string            `json:"root"`
+	Parity        uint8             `json:"parity"`
+	Receipt       string            `json:"receipt"`
+	WalletLeaf    string            `json:"walletLeaf"`
+	RefundLeaf    string            `json:"refundLeaf"`
+	WalletControl string            `json:"walletControl"`
+	RefundControl string            `json:"refundControl"`
+}
+
+func x(b []byte) string { return "0x" + hex.EncodeToString(b) }
+
+func newConstructionVector(t deposit.Terms, key [32]byte, c frostbridgeabi.FrostDepositAdmissionConstruction) constructionVector {
+	return constructionVector{
+		Terms:     map[string]string{"chainId": t.ChainID.String(), "bridge": x(t.Bridge[:]), "bitcoinGenesis": x(t.BitcoinGenesis[:]), "fullWalletId": x(t.WalletID[:]), "descriptorHash": x(t.DescriptorHash[:]), "depositor": x(t.Depositor[:]), "vault": x(t.Vault[:]), "blinding": x(t.Blinding[:]), "amount": strconv.FormatUint(t.Amount, 10), "refundKey": x(t.RefundKey[:]), "refundLocktime": strconv.FormatUint(uint64(t.RefundLocktime), 10), "extraData": x(t.ExtraData[:])},
+		WalletKey: x(key[:]), OutputKey: x(c.Output.Key[:]), Root: x(c.Output.Root[:]), Parity: c.Output.Parity, Receipt: x(c.Receipt[:]),
+		WalletLeaf: x(c.WalletLeaf), RefundLeaf: x(c.RefundLeaf), WalletControl: x(c.WalletControl), RefundControl: x(c.RefundControl),
+	}
 }

@@ -58,6 +58,9 @@ const (
 	k05MaxRate       = 10
 	k05Timeout       = 3600
 	k05Confirmations = 1
+	// k05CancelAfter is the RebroadcastThenCancel window in Ethereum blocks
+	// after the timeout block and finality (D-09, OPEN).
+	k05CancelAfter = 20
 )
 
 type k05World struct {
@@ -458,7 +461,7 @@ func (w *k05World) host() {
 			return h.Number, err
 		}
 		w.attesters = append(w.attesters, &redemption.Attester{Planner: w.planner, Journal: journal, Ledger: ledger, Key: node.key, Seats: w.f.executors[i].Request.LocalSeats, Reload: redemption.FreshWorkerReload(node.worker, journal, head)})
-		w.resolvers = append(w.resolvers, &redemption.Resolver{Chain: w.chain, Ledger: ledger, Schedule: redemption.Schedule{FinalityBlocks: k05Finality, RoundBlocks: k05RoundBlocks}, Policy: redemption.RebroadcastThenCancel, Base: signing.Config{Journal: journal, Bitcoin: w.core, Worker: worker, MinimumConfirmations: 1, LocalRegtest: true, Transport: func(ctx context.Context, a frost.Attempt) (frost.Transport, func(), error) {
+		w.resolvers = append(w.resolvers, &redemption.Resolver{Chain: w.chain, Ledger: ledger, Schedule: redemption.Schedule{FinalityBlocks: k05Finality, RoundBlocks: k05RoundBlocks, CancelAfterBlocks: k05CancelAfter}, Policy: redemption.RebroadcastThenCancel, Base: signing.Config{Journal: journal, Bitcoin: w.core, Worker: worker, MinimumConfirmations: 1, LocalRegtest: true, Transport: func(ctx context.Context, a frost.Attempt) (frost.Transport, func(), error) {
 			request := w.f.executors[i].Request
 			tr, err := transport.New(ctx, transport.Config{Domain: journal.Domain(), Attempt: a, ID: snowfallengine.AttemptID(a), LocalSeats: request.LocalSeats, Roster: request.Group.Roster, LocalPublicKey: operator.MarshalUncompressed(&node.private.PublicKey), Membership: node.membership, Network: node.network})
 			if err != nil {

@@ -25,6 +25,10 @@ type Schedule struct {
 	// RoundBlocks is the length of one signing round. A failed or crashed
 	// attempt is terminal; the next round derives a fresh session and attempt.
 	RoundBlocks uint64
+	// CancelAfterBlocks is the RebroadcastThenCancel window: how long after
+	// the timeout block (plus finality) a timely signed payment is
+	// rebroadcast before the host moves to cancellation (a D-09 input).
+	CancelAfterBlocks uint64
 }
 
 // Agree derives the agreed configuration for the round that contains head.

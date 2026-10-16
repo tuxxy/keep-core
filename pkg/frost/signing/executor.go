@@ -46,6 +46,15 @@ type Bitcoin interface {
 	Unspent(context.Context, bitcoin.TransactionOutpoint) (bool, error)
 	Broadcast(context.Context, []byte) error
 }
+
+// ConfirmedSpends answers from confirmed chain state only, ignoring the
+// mempool. A cancellation exists to replace a payment that may sit
+// unconfirmed in the mempool spending the same inputs, so its prevout check
+// must not count that spend. Providers without it cannot sign cancellations.
+type ConfirmedSpends interface {
+	ConfirmedUnspent(context.Context, bitcoin.TransactionOutpoint) (bool, error)
+}
+
 type Journal interface {
 	dkg.Journal
 	RetainSigningRecord(context.Context, [32]byte, []byte) error
@@ -228,13 +237,27 @@ func (e *Executor) bitcoin(ctx context.Context) error {
 		if err != nil || confirmations < e.config.MinimumConfirmations {
 			return fmt.Errorf("%w: unconfirmed prevout", ErrUnauthorized)
 		}
-		unspent, err := e.config.Bitcoin.Unspent(ctx, p.Outpoint)
+		unspent, err := e.unspent(ctx, p.Outpoint)
 		if err != nil || !unspent {
 			return fmt.Errorf("%w: spent prevout", ErrUnauthorized)
 		}
 	}
 	return nil
 }
+
+// unspent is the prevout check: mempool-inclusive for every plan except a
+// cancellation, which checks confirmed state only (see ConfirmedSpends).
+func (e *Executor) unspent(ctx context.Context, o bitcoin.TransactionOutpoint) (bool, error) {
+	if e.config.Plan.cancellation == nil {
+		return e.config.Bitcoin.Unspent(ctx, o)
+	}
+	confirmed, ok := e.config.Bitcoin.(ConfirmedSpends)
+	if !ok {
+		return false, errors.New("Bitcoin provider cannot exclude mempool spends")
+	}
+	return confirmed.ConfirmedUnspent(ctx, o)
+}
+
 func (e *Executor) attempt(index int) (frost.Attempt, error) {
 	c := e.config
 	domain := "keep-core/frost/transaction-attempt/v1/"

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
+	"github.com/keep-network/keep-core/pkg/frost/dkg"
 )
 
 // TestZeroNetAndFeeBoundaries is the K-05 named check that zero or negative
@@ -181,6 +183,70 @@ func TestPlannerBuildsAndValidatesExactEntitlements(t *testing.T) {
 	}
 }
 
+func attester(w *world, j *memJournal) *Attester {
+	key, _ := crypto.ToECDSA(append(make([]byte, 31), 7))
+	return &Attester{Planner: w.planner, Journal: j, Ledger: Ledger{Journal: j}, Key: key, Seats: []uint16{1}}
+}
+
+func TestAttestationSlotLock(t *testing.T) {
+	ctx := context.Background()
+	w := newWorld(t)
+	j := newMemJournal()
+	a := attester(w, j)
+	plan, _, err := w.planner.Build(ctx, w.chain.head, w.ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := a.Attest(ctx, plan, w.chain.head+10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	again, err := a.Attest(ctx, plan, w.chain.head+10)
+	if err != nil || string(again[1]) != string(first[1]) {
+		t.Fatal("identical attestation is not idempotent")
+	}
+	if _, err = a.Attest(ctx, plan, w.chain.head+20); err != nil {
+		t.Fatalf("same-intent renewal refused: %v", err)
+	}
+	if _, err = a.Attest(ctx, plan, w.chain.head+15); !errors.Is(err, ErrConflictingAttestation) {
+		t.Fatal("renewal with an earlier deadline accepted")
+	}
+	other, _, err := w.planner.Build(ctx, w.chain.head, w.ids[:1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = a.Attest(ctx, other, w.chain.head+10); !errors.Is(err, ErrConflictingAttestation) {
+		t.Fatalf("conflicting intent before deadlines finalized: %v", err)
+	}
+	// Both deadlines (head+10 and the renewal head+20) finalize: head-2 >= head+20.
+	w.chain.head += 22
+	w.chain.custody[plan.WalletID()] = Custody{Generation: 1, StateVersion: 1, Value: 1_000_000, MainOutpoint: OutpointKey(w.main.Outpoint)}
+	if _, err = a.Attest(ctx, other, w.chain.head+10); err == nil {
+		t.Fatal("conflicting intent accepted for an admitted slot")
+	}
+	w.chain.custody[plan.WalletID()] = Custody{Generation: 0, StateVersion: 1, Value: 1_000_000, MainOutpoint: OutpointKey(w.main.Outpoint)}
+	if _, err = a.Attest(ctx, other, w.chain.head+10); err != nil {
+		t.Fatalf("replacement after finalized non-admission refused: %v", err)
+	}
+	history, err := a.History(ctx, plan.WalletID(), 1, 1)
+	if err != nil || len(history) != 3 || history[0].Plan != plan.Commitment() || history[2].Plan != other.Commitment() {
+		t.Fatalf("history not retained: %d %v", len(history), err)
+	}
+	// Signature recovers to the operator for the C-04 digest.
+	certificate, _ := CertificateFor(plan, w.chain.head-22+10)
+	digest := ReservationDigest(w.chain.ChainID(), w.chain.Bridge(), certificate)
+	prefixed := crypto.Keccak256Hash([]byte("\x19Ethereum Signed Message:\n32"), digest[:])
+	sig := append([]byte(nil), first[1]...)
+	sig[64] -= 27
+	pub, err := crypto.SigToPub(prefixed[:], sig)
+	if err != nil || crypto.PubkeyToAddress(*pub) != crypto.PubkeyToAddress(a.Key.PublicKey) {
+		t.Fatal("certificate signature does not recover to the operator")
+	}
+	if _, err = a.Attest(ctx, plan, w.chain.head+1000); err == nil {
+		t.Fatal("deadline beyond the certificate window accepted")
+	}
+}
+
 func TestChainReservationsReadsOneCanonicalSnapshot(t *testing.T) {
 	ctx := context.Background()
 	w := newWorld(t)
@@ -211,4 +277,53 @@ func TestChainReservationsReadsOneCanonicalSnapshot(t *testing.T) {
 	if _, err = r.ReadReservation(ctx, id); err == nil {
 		t.Fatal("admission log differing from the record accepted")
 	}
+}
+
+func TestLedgerIsAppendOnly(t *testing.T) {
+	ctx := context.Background()
+	j := newMemJournal()
+	l := Ledger{Journal: j}
+	id := [32]byte{1}
+	for _, e := range []Entry{{Reservation: id, Kind: KindSigned, Detail: "0"}, {Reservation: id, Kind: KindSigned, Detail: "0"}, {Reservation: id, Kind: KindLateQuarantined}} {
+		if err := l.Append(ctx, e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	entries, err := l.Entries(ctx, id)
+	if err != nil || len(entries) != 2 || entries[1].Kind != KindLateQuarantined {
+		t.Fatalf("%v %v", entries, err)
+	}
+	// A conflicting rewrite of an existing sequence is refused by the store.
+	if err = j.RetainSigningRecord(ctx, entryID(id, 0), []byte(`{}`)); err == nil {
+		t.Fatal("ledger record overwritten")
+	}
+}
+
+func TestCollectCountsSeatsOnce(t *testing.T) {
+	sig := make([]byte, 65)
+	seats, sigs, err := Collect(2, map[uint16][]byte{3: sig}, map[uint16][]byte{1: sig, 3: sig})
+	if err != nil || len(seats) != 2 || seats[0] != 1 || seats[1] != 3 || len(sigs) != 130 {
+		t.Fatal(seats, err)
+	}
+	if _, _, err = Collect(3, map[uint16][]byte{1: sig, 2: sig}); err == nil {
+		t.Fatal("below threshold accepted")
+	}
+}
+
+func TestDigestsMatchSolidityEncoding(t *testing.T) {
+	ids := [][32]byte{{1}, {2}}
+	got, err := RequestIDsHash(ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// abi.encode(bytes32[]) = offset 0x20, length 2, elements.
+	raw := make([]byte, 64)
+	raw[31] = 0x20
+	raw[63] = 2
+	raw = append(raw, ids[0][:]...)
+	raw = append(raw, ids[1][:]...)
+	if got != crypto.Keccak256Hash(raw) {
+		t.Fatal("request IDs hash encoding")
+	}
+	_ = dkg.WalletID
 }

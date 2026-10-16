@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
+	"github.com/keep-network/keep-core/pkg/frost/store"
 )
 
 // fakeChain is a controlled C-04 view for unit tests only. It is not C-04
@@ -47,17 +48,13 @@ func (f *fakeChain) hash(n uint64) [32]byte {
 	b := binary.BigEndian.AppendUint64([]byte{f.fork}, n)
 	return sha256.Sum256(b)
 }
-
-func (f *fakeChain) ChainID() uint64 { return 31337 }
-
+func (f *fakeChain) ChainID() uint64  { return 31337 }
 func (f *fakeChain) Bridge() [20]byte { return [20]byte{0xb1} }
-
 func (f *fakeChain) Head(context.Context) (Head, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return Head{Number: f.head, Hash: f.hash(f.head)}, nil
 }
-
 func (f *fakeChain) HeaderHash(_ context.Context, n uint64) ([32]byte, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -71,17 +68,13 @@ func (f *fakeChain) HeaderHash(_ context.Context, n uint64) ([32]byte, error) {
 	}
 	return f.hash(n), nil
 }
-
 func (f *fakeChain) Timestamp(context.Context, uint64) (uint64, error) { return f.time, nil }
-
 func (f *fakeChain) Configuration(context.Context, uint64) (Configuration, error) {
 	return f.config, nil
 }
-
 func (f *fakeChain) MaximumTotalFee(context.Context, uint64) (uint64, error) {
 	return f.maxTotalFee, nil
 }
-
 func (f *fakeChain) Request(_ context.Context, _ uint64, id [32]byte) (Request, error) {
 	r, ok := f.requests[id]
 	if !ok {
@@ -90,7 +83,6 @@ func (f *fakeChain) Request(_ context.Context, _ uint64, id [32]byte) (Request, 
 	r.Script = append([]byte(nil), r.Script...)
 	return r, nil
 }
-
 func (f *fakeChain) Intent(_ context.Context, _ uint64, id [32]byte) (Intent, error) {
 	i, ok := f.intents[id]
 	if !ok {
@@ -98,19 +90,15 @@ func (f *fakeChain) Intent(_ context.Context, _ uint64, id [32]byte) (Intent, er
 	}
 	return i, nil
 }
-
 func (f *fakeChain) Custody(_ context.Context, _ uint64, w [32]byte) (Custody, error) {
 	return f.custody[w], nil
 }
-
 func (f *fakeChain) CustodyOutput(_ context.Context, _ uint64, k [32]byte) (CustodyOutput, error) {
 	return f.outputs[k], nil
 }
-
 func (f *fakeChain) Alternatives(_ context.Context, _ uint64, id [32]byte) ([]Alternative, error) {
 	return f.alternatives[id], nil
 }
-
 func (f *fakeChain) RequestEvents(_ context.Context, w [32]byte, from, to uint64) ([]RequestEvent, error) {
 	var out []RequestEvent
 	for _, e := range f.events {
@@ -120,7 +108,6 @@ func (f *fakeChain) RequestEvents(_ context.Context, w [32]byte, from, to uint64
 	}
 	return out, nil
 }
-
 func (f *fakeChain) Admissions(_ context.Context, w [32]byte, from, to uint64) ([]Admission, error) {
 	var out []Admission
 	for id, a := range f.admissions {
@@ -130,7 +117,6 @@ func (f *fakeChain) Admissions(_ context.Context, w [32]byte, from, to uint64) (
 	}
 	return out, nil
 }
-
 func (f *fakeChain) Admission(_ context.Context, id [32]byte) (Admission, error) {
 	a, ok := f.admissions[id]
 	if !ok {
@@ -138,7 +124,6 @@ func (f *fakeChain) Admission(_ context.Context, id [32]byte) (Admission, error)
 	}
 	return a, nil
 }
-
 func (f *fakeChain) CancellationAdmission(_ context.Context, id, h [32]byte) (Admission, error) {
 	var k [64]byte
 	copy(k[:32], id[:])
@@ -152,6 +137,33 @@ func (f *fakeChain) CancellationAdmission(_ context.Context, id, h [32]byte) (Ad
 
 // memJournal is a compare-and-insert record store with the same identical /
 // conflict semantics as store.Scoped.RetainSigningRecord.
+type memJournal struct {
+	mu      sync.Mutex
+	records map[[32]byte][]byte
+}
+
+func newMemJournal() *memJournal { return &memJournal{records: map[[32]byte][]byte{}} }
+func (m *memJournal) RetainSigningRecord(_ context.Context, id [32]byte, raw []byte) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if old, ok := m.records[id]; ok {
+		if bytes.Equal(old, raw) {
+			return nil
+		}
+		return errors.New("conflicting signing application record")
+	}
+	m.records[id] = append([]byte(nil), raw...)
+	return nil
+}
+func (m *memJournal) ReadSigningRecord(_ context.Context, id [32]byte) ([]byte, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	raw, ok := m.records[id]
+	if !ok {
+		return nil, store.ErrMissing
+	}
+	return append([]byte(nil), raw...), nil
+}
 
 type fakeUnspent []bitcoin.PreviousOutput
 
@@ -175,7 +187,6 @@ type world struct {
 
 // newWorld funds one wallet with a 1,000,000 sat main output and two funded
 // P2WPKH requests of 100,000 sat gross with a 500 sat treasury fee each.
-
 func newWorld(t *testing.T) *world {
 	t.Helper()
 	secret := make([]byte, 32)

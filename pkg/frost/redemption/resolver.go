@@ -62,6 +62,28 @@ type Directives interface {
 	Directive(ctx context.Context, reservation [32]byte) (Directive, bool, error)
 }
 
+// DirectiveContainment is the executor's signing.Containment over a
+// directive source: a cancellation needs a cancel directive and a payment
+// rebroadcast needs a rebroadcast directive.
+type DirectiveContainment struct {
+	Directives Directives
+}
+
+func (c DirectiveContainment) AllowContained(ctx context.Context, plan *signing.Plan, reservation [32]byte) error {
+	d, ok, err := directive(ctx, c.Directives, reservation)
+	if err != nil {
+		return err
+	}
+	want := DirectiveRebroadcast
+	if plan.IsCancellation() {
+		want = DirectiveCancel
+	}
+	if !ok || d.Action != want {
+		return ErrContained
+	}
+	return nil
+}
+
 func directive(ctx context.Context, d Directives, reservation [32]byte) (Directive, bool, error) {
 	if d == nil {
 		return Directive{}, false, nil
@@ -108,6 +130,7 @@ func (r *Resolver) executor(plan *signing.Plan, reservation [32]byte, a Agreemen
 	c.FinalityBlocks = r.Schedule.FinalityBlocks
 	c.Selected = a.Selected
 	c.Reservations = ChainReservations{Chain: r.Chain}
+	c.Containment = DirectiveContainment{Directives: r.Directives}
 	return signing.NewLocalExecutor(c)
 }
 

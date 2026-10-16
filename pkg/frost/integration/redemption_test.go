@@ -14,6 +14,7 @@ import (
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
+	"github.com/keep-network/keep-core/pkg/maintainer/spv"
 	"github.com/keep-network/keep-core/pkg/tbtcpg"
 )
 
@@ -668,4 +669,74 @@ func TestContainedReservationNeedsDirective(t *testing.T) {
 	before := w.balance(w.adminAddr)
 	w.cancel(payment, reservation, 1000)
 	w.requireRefunded(before-1000, gross, id)
+}
+
+// TestAdmittedCancellationNeedsDirectiveAfterContainment is the review
+// ordering: a cancellation is attested and admitted while Reserved, then the
+// wallet is contained. No operator may sign or broadcast that already-admitted
+// cancellation until a governance directive says to cancel.
+func TestAdmittedCancellationNeedsDirectiveAfterContainment(t *testing.T) {
+	w := newK05World(t)
+	ctx := w.f.ctx
+	const gross = 50_000
+	id := w.request(gross, p2wpkh(0x58))
+	payment, reservation := w.admit()
+	cancellation := mustCancellation(t, w, payment)
+	validUntil := w.head() + 100
+	var parts []map[uint16][]byte
+	var auth redemption.CancellationAuthorization
+	for _, a := range w.attesters {
+		sigs, au, err := a.AttestCancellation(ctx, payment, cancellation, reservation, validUntil)
+		if err != nil {
+			t.Fatal("cancellation attest while Reserved:", err)
+		}
+		parts, auth = append(parts, sigs), au
+	}
+	seats, signatures, err := redemption.Collect(w.wallet.Threshold, parts...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.approve(1000)
+	if err = w.chain.AuthorizeCancellation(ctx, auth, spv.TransactionInfo(cancellation.Snapshot().Unsigned()), seats, signatures); err != nil {
+		t.Fatal(err)
+	}
+	w.mine(k05Finality)
+	custody, err := w.chain.Custody(ctx, w.head(), w.walletID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return w.bridge.QuarantineFrostWallet(o, w.walletID, custody.StateVersion, crypto.Keccak256Hash([]byte("signer integrity")), crypto.Keccak256Hash([]byte("evidence")))
+	})
+	launches := []int{w.launchCount(0), w.launchCount(1)}
+	for i, err := range w.signAll(cancellation, reservation) {
+		if !errors.Is(err, signing.ErrUnauthorized) {
+			t.Fatalf("operator %d signed an admitted cancellation of a contained reservation: %v", i, err)
+		}
+		if w.launchCount(i) != launches[i] {
+			t.Fatal("a worker started for a contained reservation")
+		}
+	}
+	if err = w.resolvers[0].Broadcast(ctx, cancellation, reservation); err == nil {
+		t.Fatal("contained cancellation broadcast without a directive")
+	}
+	directives := staticDirectives{reservation: {Reservation: reservation, Class: "signer-integrity", Action: redemption.DirectiveCancel}}
+	for i := range w.resolvers {
+		w.resolvers[i].Directives = directives
+	}
+	w.mine(k05RoundBlocks) // the refused round's attempts are terminal
+	for i, err := range w.signAll(cancellation, reservation) {
+		if err != nil {
+			t.Fatalf("operator %d with a cancel directive: %v", i, err)
+		}
+	}
+	if err = w.resolvers[0].Broadcast(ctx, cancellation, reservation); err != nil {
+		t.Fatal(err)
+	}
+	w.coreMine(1)
+	before := w.balance(w.adminAddr)
+	if actions, err := w.maintainer.ProveSettlements(ctx); err != nil || len(actions) != 1 || actions[0].Kind != "cancellation-proof" {
+		t.Fatalf("%+v %v", actions, err)
+	}
+	w.requireRefunded(before, gross, id)
 }

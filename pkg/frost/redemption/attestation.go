@@ -22,6 +22,10 @@ import (
 // or has been, admitted.
 var ErrConflictingAttestation = errors.New("conflicting FROST intent attestation refused")
 
+// ErrContained refuses a new cancellation for a Quarantined reservation
+// without a governance directive to cancel.
+var ErrContained = errors.New("FROST reservation is contained: governance directive required")
+
 var (
 	reservationDomain  = crypto.Keccak256Hash([]byte("tbtc-v2/frost-redemption-reservation/v2"))
 	cancellationDomain = crypto.Keccak256Hash([]byte("tbtc-v2/frost-reservation-cancellation/v1"))
@@ -134,8 +138,11 @@ type Attester struct {
 	Seats []uint16
 	// Reload checks the completed key in a fresh worker immediately before
 	// attesting (C-04 honest-host rule). Nil only in unit tests.
-	Reload   func(context.Context) error
-	boundary func(string) error
+	Reload func(context.Context) error
+	// Directives are governance instructions for Quarantined reservations.
+	// Without a cancel directive no cancellation is attested for them.
+	Directives Directives
+	boundary   func(string) error
 }
 
 func (a *Attester) step(name string) error {
@@ -288,6 +295,15 @@ func (a *Attester) AttestCancellation(ctx context.Context, payment, cancellation
 	}
 	if !intent.State.Unresolved() || intent.Certificate.IntentCommitment != payment.Commitment() || intent.Certificate.WalletID != dkg.WalletID(a.Planner.Wallet.OutputKey) {
 		return nil, none, errors.New("reservation is not an unresolved admission of this payment")
+	}
+	if intent.State == IntentQuarantined {
+		d, ok, err := directive(ctx, a.Directives, reservation)
+		if err != nil {
+			return nil, none, err
+		}
+		if !ok || d.Action != DirectiveCancel {
+			return nil, none, ErrContained
+		}
 	}
 	alternatives, err := a.Planner.Chain.Alternatives(ctx, head.Number, reservation)
 	if err != nil {

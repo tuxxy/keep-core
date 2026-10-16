@@ -2,11 +2,15 @@ package integration
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
@@ -603,4 +607,65 @@ func TestLedgerRecoveryHeadroom(t *testing.T) {
 		}
 		t.Logf("operator %d: %d of %d records after recovery (reserve %d)", i, len(entries), capacity, reserve)
 	}
+}
+
+// staticDirectives is an operator-supplied governance directive table.
+type staticDirectives map[[32]byte]redemption.Directive
+
+func (d staticDirectives) Directive(_ context.Context, reservation [32]byte) (redemption.Directive, bool, error) {
+	out, ok := d[reservation]
+	return out, ok, nil
+}
+
+// TestContainedReservationNeedsDirective: governance contains the wallet
+// while a timely payment is signed. Every host neither rebroadcasts nor
+// cancels on its own, and refuses to attest a cancellation, until a
+// directive names the containment class and the action. With a cancel
+// directive the reservation is cancelled and refunded.
+func TestContainedReservationNeedsDirective(t *testing.T) {
+	w := newK05World(t)
+	ctx := w.f.ctx
+	const gross = 50_000
+	id := w.request(gross, p2wpkh(0x57))
+	payment, reservation := w.admit()
+	for i, err := range w.signAll(payment, reservation) {
+		if err != nil {
+			t.Fatalf("signer %d: %v", i, err)
+		}
+	}
+	custody, err := w.chain.Custody(ctx, w.head(), w.walletID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return w.bridge.QuarantineFrostWallet(o, w.walletID, custody.StateVersion, crypto.Keccak256Hash([]byte("issuance fault")), crypto.Keccak256Hash([]byte("evidence")))
+	})
+	intent, _ := w.chain.Intent(ctx, w.head(), reservation)
+	if intent.State != redemption.IntentQuarantined {
+		t.Fatal("reservation not contained:", intent.State)
+	}
+	for i, r := range w.resolvers {
+		if s, err := r.Resolve(ctx, payment, reservation); err != nil || s != redemption.StatusAwaitingDirective {
+			t.Fatalf("operator %d acted without a directive: %s %v", i, s, err)
+		}
+	}
+	if _, err := w.core.Transaction(ctx, bitcoin.Hash(payment.BitcoinTransactionHash())); err == nil {
+		t.Fatal("a contained payment was rebroadcast without a directive")
+	}
+	if _, _, err := w.attesters[0].AttestCancellation(ctx, payment, mustCancellation(t, w, payment), reservation, w.head()+10); !errors.Is(err, redemption.ErrContained) {
+		t.Fatal("cancellation attested without a directive:", err)
+	}
+	directives := staticDirectives{reservation: {Reservation: reservation, Class: "issuance-fault", Action: redemption.DirectiveCancel}}
+	for i := range w.resolvers {
+		w.resolvers[i].Directives = directives
+		w.attesters[i].Directives = directives
+	}
+	for i, r := range w.resolvers {
+		if s, err := r.Resolve(ctx, payment, reservation); err != nil || s != redemption.StatusNeedsCancellation {
+			t.Fatalf("operator %d with a cancel directive: %s %v", i, s, err)
+		}
+	}
+	before := w.balance(w.adminAddr)
+	w.cancel(payment, reservation, 1000)
+	w.requireRefunded(before-1000, gross, id)
 }

@@ -31,7 +31,50 @@ const (
 	StatusBroadcast         Status = "broadcast"
 	StatusNeedsCancellation Status = "needs-cancellation"
 	StatusSettled           Status = "settled"
+	// StatusAwaitingDirective: the reservation is Quarantined (wallet
+	// containment) and no governance directive names an action. The host
+	// neither rebroadcasts nor cancels on its own.
+	StatusAwaitingDirective Status = "awaiting-directive"
 )
+
+// DirectiveAction is what governance tells hosts to do with a contained
+// reservation. Hosts see only C-04's reasonHash, so the action must come
+// from a directive that names the containment class (spec issue #3).
+type DirectiveAction int
+
+const (
+	// DirectiveRebroadcast resends a timely durable payment result.
+	DirectiveRebroadcast DirectiveAction = iota + 1
+	// DirectiveCancel moves the reservation to cancellation.
+	DirectiveCancel
+)
+
+// Directive is one governance directive for a Quarantined reservation.
+type Directive struct {
+	Reservation [32]byte
+	Class       string
+	Action      DirectiveAction
+}
+
+// Directives supplies governance directives. How a host authenticates them
+// is an OPEN operational decision; nil means no directive exists.
+type Directives interface {
+	Directive(ctx context.Context, reservation [32]byte) (Directive, bool, error)
+}
+
+func directive(ctx context.Context, d Directives, reservation [32]byte) (Directive, bool, error) {
+	if d == nil {
+		return Directive{}, false, nil
+	}
+	out, ok, err := d.Directive(ctx, reservation)
+	if err != nil || !ok {
+		return Directive{}, false, err
+	}
+	if out.Reservation != reservation || out.Class == "" || (out.Action != DirectiveRebroadcast && out.Action != DirectiveCancel) {
+		return Directive{}, false, errors.New("malformed governance directive")
+	}
+	return out, true, nil
+}
 
 // Resolver drives one operator's side of a reservation. All decisions read
 // the authoritative chain record; all local progress is in the durable ledger.
@@ -40,6 +83,8 @@ type Resolver struct {
 	Ledger   Ledger
 	Schedule Schedule
 	Policy   TimeoutPolicy
+	// Directives are governance instructions for Quarantined reservations.
+	Directives Directives
 	// Base carries the operator's journal, Bitcoin view, worker, transport,
 	// confirmations and LocalRegtest. Plan, Reservation, Session, StartBlock,
 	// FinalityBlocks, Selected and Reservations are filled per attempt.
@@ -359,7 +404,17 @@ func (r *Resolver) Resolve(ctx context.Context, plan *signing.Plan, reservation 
 			return "", err
 		}
 		rebroadcast := signed && r.Policy == RebroadcastThenCancel
-		if rebroadcast {
+		if intent.State == IntentQuarantined {
+			// Containment: no automatic rebroadcast or cancellation.
+			d, ok, err := directive(ctx, r.Directives, reservation)
+			if err != nil {
+				return "", err
+			}
+			if !ok {
+				return StatusAwaitingDirective, r.Ledger.Append(ctx, Entry{Reservation: reservation, Kind: KindEscalation, Block: head.Number, Detail: "containment: awaiting governance directive"})
+			}
+			rebroadcast = signed && d.Action == DirectiveRebroadcast
+		} else if rebroadcast {
 			// Rebroadcast, then cancel: once the chain-derived window after
 			// the timeout has passed, stop rebroadcasting and cancel.
 			elapsed, err := r.windowElapsed(ctx, head, intent)

@@ -12,6 +12,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
 	"github.com/keep-network/keep-core/pkg/frost/store"
@@ -25,6 +26,8 @@ var ErrConflictingAttestation = errors.New("conflicting FROST intent attestation
 // ErrContained refuses a new cancellation for a Quarantined reservation
 // without a governance directive to cancel.
 var ErrContained = errors.New("FROST reservation is contained: governance directive required")
+
+var reservationIDDomain = crypto.Keccak256Hash([]byte("tbtc-v2/frost-reservation-id/v1"))
 
 var (
 	reservationDomain  = crypto.Keccak256Hash([]byte("tbtc-v2/frost-redemption-reservation/v2"))
@@ -88,6 +91,19 @@ func ReservationDigest(chainID uint64, bridge [20]byte, c Certificate) [32]byte 
 	return crypto.Keccak256Hash(b)
 }
 
+// ReservationID is C-04 FrostReservationCertificate.reservationId.
+func ReservationID(chainID uint64, bridge [20]byte, c Certificate) [32]byte {
+	b := append([]byte(nil), reservationIDDomain[:]...)
+	b = append(b, word(chainID)...)
+	b = append(b, address32(bridge)...)
+	b = append(b, c.WalletID[:]...)
+	b = append(b, c.DescriptorHash[:]...)
+	b = append(b, word(c.Generation)...)
+	b = append(b, word(c.StateVersion)...)
+	b = append(b, c.IntentCommitment[:]...)
+	return crypto.Keccak256Hash(b)
+}
+
 // CancellationDigest is the C-04 cancellation certificate digest.
 func CancellationDigest(chainID uint64, bridge [20]byte, a CancellationAuthorization) [32]byte {
 	b := append([]byte(nil), cancellationDomain[:]...)
@@ -142,7 +158,16 @@ type Attester struct {
 	// Directives are governance instructions for Quarantined reservations.
 	// Without a cancel directive no cancellation is attested for them.
 	Directives Directives
-	boundary   func(string) error
+	// MainLock is the K-06 main purpose lock (VD-07). When set, an
+	// attestation first moves the main to redemption(reservation); nil
+	// before K-06.
+	MainLock MainLocker
+	boundary func(string) error
+}
+
+// MainLocker is the K-06 main purpose lock as the attester uses it.
+type MainLocker interface {
+	AcquireRedemption(ctx context.Context, wallet [32]byte, main bitcoin.TransactionOutpoint, reservation [32]byte, validUntil uint64) error
 }
 
 func (a *Attester) step(name string) error {
@@ -263,6 +288,12 @@ func (a *Attester) Attest(ctx context.Context, plan *signing.Plan, validUntil ui
 	}
 	if err = a.step("after-attest-lock"); err != nil {
 		return nil, err
+	}
+	if a.MainLock != nil {
+		id := ReservationID(a.Planner.Chain.ChainID(), a.Planner.Chain.Bridge(), certificate)
+		if err = a.MainLock.AcquireRedemption(ctx, certificate.WalletID, plan.ConflictInput(), id, validUntil); err != nil {
+			return nil, fmt.Errorf("main purpose lock: %w", err)
+		}
 	}
 	digest := ReservationDigest(a.Planner.Chain.ChainID(), a.Planner.Chain.Bridge(), certificate)
 	out := map[uint16][]byte{}

@@ -78,6 +78,7 @@ type Config struct {
 	Reservations               Reservations
 	Containment                Containment    // directive gate for Quarantined; nil refuses
 	Sweeps                     SweepAuthority // K-06 sweep plans, in place of Reservations
+	Guard                      GrantGuard     // K-06 main purpose lock; nil before K-06
 	Bitcoin                    Bitcoin
 	Worker                     snowfallengine.WorkerConfig
 	Selected                   []uint16
@@ -318,6 +319,7 @@ func (e *Executor) doneContext(index int, attempt frost.Attempt) DoneContext {
 type finalAuthorization struct {
 	executor *Executor
 	expected frost.SigningRequest
+	input    int
 }
 
 func (g finalAuthorization) BeforeSigning(ctx context.Context, r frost.SigningRequest) error {
@@ -334,7 +336,15 @@ func (g finalAuthorization) BeforeSigning(ctx context.Context, r frost.SigningRe
 	if err := e.bitcoin(ctx); err != nil {
 		return err
 	}
-	return e.reservation(ctx, false)
+	if err := e.reservation(ctx, false); err != nil {
+		return err
+	}
+	if e.config.Guard != nil {
+		if err := e.config.Guard.Grant(ctx, e.config.Plan, e.config.Reservation, g.input); err != nil {
+			return fmt.Errorf("%w: main purpose lock: %v", ErrUnauthorized, err)
+		}
+	}
+	return nil
 }
 
 type signingAcceptance struct{}
@@ -367,6 +377,11 @@ func (e *Executor) Run(ctx context.Context) (*Result, error) {
 	if err = e.reservation(ctx, true); err != nil {
 		return nil, err
 	}
+	if e.config.Guard != nil {
+		if err = e.config.Guard.Permit(ctx, e.config.Plan, e.config.Reservation); err != nil {
+			return nil, fmt.Errorf("%w: main purpose lock: %v", ErrUnauthorized, err)
+		}
+	}
 	if err = e.step("before-intent-record"); err != nil {
 		return nil, err
 	}
@@ -391,7 +406,7 @@ func (e *Executor) Run(ctx context.Context) (*Result, error) {
 			return nil, errors.New("invalid signing transport factory")
 		}
 		request := frost.SigningRequest{Group: frost.Group{Roster: append([]uint16(nil), key.Candidate.Roster...), Threshold: key.Candidate.Threshold, Quorum: uint16(len(key.Candidate.Roster)), Epoch: key.Candidate.Epoch}, LocalSeats: locals, Selected: append([]uint16(nil), e.config.Selected...), Attempt: attempt, Key: key, Message: digest, Authorization: p.IntentBytes()}
-		providers := frost.Providers{Transport: tr, Store: e.config.Journal, Acceptance: signingAcceptance{}, SigningAuthorization: finalAuthorization{e, request}}
+		providers := frost.Providers{Transport: tr, Store: e.config.Journal, Acceptance: signingAcceptance{}, SigningAuthorization: finalAuthorization{e, request, index}}
 		raw, err := e.engine.Sign(ctx, request, providers)
 		if err != nil {
 			closeTransport()

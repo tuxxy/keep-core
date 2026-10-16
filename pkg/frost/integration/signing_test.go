@@ -173,6 +173,13 @@ func (c *coreChain) Unspent(ctx context.Context, p bitcoin.TransactionOutpoint) 
 	err := c.call(ctx, "gettxout", []any{p.TransactionHash.Hex(bitcoin.ReversedByteOrder), p.OutputIndex, true}, &result)
 	return len(result) > 0 && string(result) != "null", err
 }
+
+// ConfirmedUnspent ignores the mempool (gettxout include_mempool=false).
+func (c *coreChain) ConfirmedUnspent(ctx context.Context, p bitcoin.TransactionOutpoint) (bool, error) {
+	var result json.RawMessage
+	err := c.call(ctx, "gettxout", []any{p.TransactionHash.Hex(bitcoin.ReversedByteOrder), p.OutputIndex, false}, &result)
+	return len(result) > 0 && string(result) != "null", err
+}
 func (c *coreChain) Broadcast(ctx context.Context, raw []byte) error {
 	encoded := hex.EncodeToString(raw)
 	var checks []struct {

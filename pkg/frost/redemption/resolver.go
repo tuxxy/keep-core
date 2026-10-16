@@ -265,6 +265,29 @@ func (r *Resolver) Broadcast(ctx context.Context, plan *signing.Plan, reservatio
 	return r.Ledger.Append(ctx, Entry{Reservation: reservation, Kind: kind, Block: head.Number, Transaction: plan.BitcoinTransactionHash()})
 }
 
+// windowElapsed reports whether the rebroadcast window after the reservation's
+// timeout has passed. The timeout block comes from the C-04 request records,
+// so every operator derives the same answer.
+func (r *Resolver) windowElapsed(ctx context.Context, head Head, intent Intent) (bool, error) {
+	if r.Schedule.CancelAfterBlocks == 0 {
+		return false, errors.New("RebroadcastThenCancel needs a rebroadcast window")
+	}
+	var timeout uint64
+	for _, id := range intent.RequestIDs {
+		request, err := r.Chain.Request(ctx, head.Number, id)
+		if err != nil {
+			return false, err
+		}
+		if request.TimeoutBlock > timeout {
+			timeout = request.TimeoutBlock
+		}
+	}
+	if timeout == 0 {
+		return false, errors.New("timed-out reservation without a timeout block")
+	}
+	return head.Number >= timeout+r.Schedule.FinalityBlocks+r.Schedule.CancelAfterBlocks, nil
+}
+
 // Resolve advances one payment reservation by one step.
 func (r *Resolver) Resolve(ctx context.Context, plan *signing.Plan, reservation [32]byte) (Status, error) {
 	head, err := r.Chain.Head(ctx)
@@ -335,7 +358,22 @@ func (r *Resolver) Resolve(ctx context.Context, plan *signing.Plan, reservation 
 		if err != nil {
 			return "", err
 		}
-		if signed && r.Policy == RebroadcastThenCancel {
+		rebroadcast := signed && r.Policy == RebroadcastThenCancel
+		if rebroadcast {
+			// Rebroadcast, then cancel: once the chain-derived window after
+			// the timeout has passed, stop rebroadcasting and cancel.
+			elapsed, err := r.windowElapsed(ctx, head, intent)
+			if err != nil {
+				return "", err
+			}
+			if elapsed {
+				if err = r.Ledger.Append(ctx, Entry{Reservation: reservation, Kind: KindEscalation, Block: head.Number, Detail: "rebroadcast window elapsed"}); err != nil {
+					return "", err
+				}
+				return StatusNeedsCancellation, nil
+			}
+		}
+		if rebroadcast {
 			a, err := r.roundAgreement(ctx, plan, reservation, round)
 			if err != nil {
 				return "", err

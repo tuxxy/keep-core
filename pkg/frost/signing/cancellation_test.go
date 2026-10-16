@@ -1,6 +1,7 @@
 package signing
 
 import (
+	"context"
 	"testing"
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
@@ -38,5 +39,46 @@ func TestCancellationPlanRequiresImmediateFinality(t *testing.T) {
 				t.Fatalf("ok=%v err=%v", tc.ok, err)
 			}
 		})
+	}
+}
+
+type confirmedStub struct {
+	*bitcoinStub
+	confirmedSpent bool
+}
+
+func (c confirmedStub) ConfirmedUnspent(context.Context, bitcoin.TransactionOutpoint) (bool, error) {
+	return !c.confirmedSpent, nil
+}
+
+// A cancellation replaces a payment that may sit unconfirmed in the mempool
+// spending the same inputs: its prevout check ignores that mempool spend, and
+// refuses a provider that cannot exclude the mempool.
+func TestCancellationPrevoutIgnoresMempoolPayment(t *testing.T) {
+	e, _, btc, _ := executorFixture(t)
+	payment := e.config.Plan
+	tx := payment.Snapshot().Unsigned()
+	script, _ := bitcoin.PayToTaproot(payment.Snapshot().OutputKey())
+	cancellation, err := NewCancellationPlan(payment, &bitcoin.Transaction{Version: 2, Inputs: tx.Inputs, Outputs: []*bitcoin.TransactionOutput{{Value: 99_000, PublicKeyScript: script}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	outpoint := *tx.Inputs[0].Outpoint
+	btc.spent = true // the payment is in the mempool
+	e.config.Plan = cancellation
+	if _, err = e.unspent(context.Background(), outpoint); err == nil {
+		t.Fatal("cancellation signed without a confirmed-state provider")
+	}
+	e.config.Bitcoin = confirmedStub{bitcoinStub: btc}
+	if ok, err := e.unspent(context.Background(), outpoint); err != nil || !ok {
+		t.Fatal("mempool payment blocked its own cancellation", err)
+	}
+	e.config.Bitcoin = confirmedStub{bitcoinStub: btc, confirmedSpent: true}
+	if ok, _ := e.unspent(context.Background(), outpoint); ok {
+		t.Fatal("cancellation of a confirmed spend")
+	}
+	e.config.Plan = payment
+	if ok, _ := e.unspent(context.Background(), outpoint); ok {
+		t.Fatal("payment ignored a mempool spend")
 	}
 }

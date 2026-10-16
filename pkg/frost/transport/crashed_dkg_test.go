@@ -157,11 +157,21 @@ func TestCrashedDKGNeedsFreshEpoch(t *testing.T) {
 	if _, err := journal.LoadKey(ctx); !errors.Is(err, store.ErrMissing) {
 		t.Fatalf("crashed DKG installed a key: %v", err)
 	}
+	requireLostSeats := func() {
+		t.Helper()
+		status, err := journal.DKGStatus(ctx)
+		if err != nil || status.Domain != domain || status.Attempt != snowfallengine.AttemptID(attempt) ||
+			status.State != frost.DKGSeatsLost || !reflect.DeepEqual(status.LocalSeats, roster) || !reflect.DeepEqual(status.LostSeats, roster) {
+			t.Fatalf("crashed worker did not report all local seats lost: %+v %v", status, err)
+		}
+	}
+	requireLostSeats()
 	if err := root.Close(); err != nil {
 		t.Fatal(err)
 	}
 	root = open()
 	journal = scope(domain)
+	requireLostSeats()
 	if release, err := journal.Claim(ctx, snowfallengine.AttemptID(attempt), "dkg", []byte("original attempt")); !errors.Is(err, store.ErrClaimed) {
 		if release != nil {
 			release()

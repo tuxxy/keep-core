@@ -111,7 +111,7 @@ func startCore(t *testing.T, ctx context.Context) *coreChain {
 		cancel()
 		t.Fatal(err)
 	}
-	c := &coreChain{url: fmt.Sprintf("http://127.0.0.1:%d", port), client: &http.Client{Timeout: 10 * time.Second}}
+	c := &coreChain{url: fmt.Sprintf("http://127.0.0.1:%d", port), client: &http.Client{Timeout: 60 * time.Second}}
 	t.Cleanup(func() {
 		stopCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()

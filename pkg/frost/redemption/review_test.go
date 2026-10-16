@@ -115,11 +115,13 @@ func TestAttestCancellationRefusesDustOutput(t *testing.T) {
 // timeout/cancellation recovery path writes is accepted inside the reserve.
 func TestLedgerCapacityKeepsHistoryReadable(t *testing.T) {
 	ctx := context.Background()
-	l := Ledger{Journal: newMemJournal()}
-	capacity, reserve := l.limits()
-	if capacity != defaultCapacity || reserve != defaultReserve {
+	if capacity, reserve := (Ledger{}).limits(); capacity != defaultCapacity || reserve != defaultReserve {
 		t.Fatal("defaults")
 	}
+	// The rule is the same at any size; a scaled ledger keeps this test fast
+	// (every append rereads the ledger, which is quadratic at 4,096 records).
+	l := Ledger{Journal: newMemJournal(), Capacity: 64, Reserve: 16}
+	capacity, reserve := l.limits()
 	id := [32]byte{1}
 	for i := 0; i < capacity-reserve; i++ {
 		if err := l.Append(ctx, Entry{Reservation: id, Kind: KindSignAttempt, Detail: fmt.Sprint(i)}); err != nil {

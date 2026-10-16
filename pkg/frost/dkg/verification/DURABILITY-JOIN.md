@@ -1,0 +1,15 @@
+# V-02 source-pinned assume/guarantee join
+
+Provider guarantee: S-K03-STORE-1 and S-K02-HOST-2 from K-03 host-verification-2026-10-07. Evidence at `/Users/tux/threshold/Research/SNOWFALL/integration-spec-v2/implementation/K-03/host-verification-2026-10-07/`. Reference tooling read-only at K-03-host-verification/keep-core/pkg/frost/store/verification. Store subject blobs in current V-03 match: store.go 255eb6b18360b35596750c1df05169cb2ec88dd0; wallet.go 1eeada06c53d217eb1cc28adc39c7ef6495a4af1; dkg/types.go 68c9b67adb74d5eb0ca3a63e6bdcf5b05fdf5d65. Full pin comparison retained separately before claim acceptance.
+
+Consumer assumptions: acknowledged completed keys are durable; lost pre-completion claims remain terminal after reopen; only live claim holder installs; reload reads fenced durable truth; immutable wallet receipt/lifecycle cannot regress. The chain model's Key action represents a successful real SaveKey acknowledgement, not all write/sync/install/fence stages. A process/host death before this action loses seats; afterward it retains completed keys. Chain replay operates on actual acknowledged store boundaries, and reopens/loads actual stores after killing. Unacknowledged store I/O crashes, clones, stale restores and fence lost-reply behavior remain within the joined store guarantees/limits, not mislabeled full chain traces.
+
+Assumptions retained from provider: non-expiring exclusive fencing lease, durable compare-and-advance authority independent of keystore, sync semantics, collision freedom, no worker work after release, structurally valid request. Parent's controlled fence survives child kills but is a test authority, not production fencing. Completed-key fresh worker validation is additionally checked by real pinned K-03 fixture tests. The controlled replay engine supplies public/synthetic opaque references and exercises real SaveKey/LoadKey; it does not replace that worker validation evidence.
+
+No claim of Go proof or production gate. Any provider pin mismatch blocks the join and must not be hand-waved as fresh because another branch's tooling passed.
+
+## Full freshness resolution
+
+`evidence/durability-join.json` compares every production subject pin to current V03 and every provider-tooling pin to the archived provider worktree. All match. The older consumer-side store model/replay is not the provider and is not cited as fresh; its differing blobs are retained as `consumer_tooling_not_used`. Thus no provider pin mismatch is waived. Source correspondence is the retained provider, not #10 or an arbitrary newer branch.
+
+The provider's bounded model remains max_commits=3. The chain model consumes its acknowledged-durability/terminality interface as an explicit assumption; it does not extrapolate the provider's exhaustive state count to all five-plus commits of a whole executor lifecycle. Concrete replay executes those lifecycle commits and reopens their current-source stores. Unacknowledged I/O host losses and a universal composition/induction argument beyond provider bounds are not claimed. This is the requested source-pinned assume/guarantee join, with inherited scope limits, not a new store proof.

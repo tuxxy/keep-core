@@ -1,0 +1,167 @@
+{
+  "normal": {
+    "run": {
+      "command": [
+        "go",
+        "test",
+        "-modfile=.v03-cache/verification.mod",
+        "./pkg/frost/...",
+        "-count=1",
+        "-timeout=120s",
+        "-v"
+      ],
+      "environment_allowlist": {
+        "PATH": "/Users/tux/.elan/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/tux/.codex/tmp/arg0/codex-arg0tdLtdd:/Users/tux/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/tux/.local/bin:/Users/tux/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/Users/tux/.elan/bin:/Users/tux/.foundry/bin:/Users/tux/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS",
+        "GOCACHE": "/Users/tux/threshold/integration-worktrees/V-03-verification/.v03-cache/build",
+        "GOPROXY": "off",
+        "FROST_K03_TBTC": null,
+        "FROST_K03_ANVIL": null,
+        "SNOWFALL_WORKER": null,
+        "SNOWFALL_WORKER_SHA256": null
+      },
+      "deadline_seconds": 300,
+      "start_utc": "2026-10-13T12:52:23.744105+00:00",
+      "end_utc": "2026-10-13T12:52:36.609047+00:00",
+      "seconds": 12.864877042,
+      "exit_code": 0
+    },
+    "passed_top_level": 49,
+    "skipped_top_level": 20,
+    "failed_top_level": 0,
+    "packages": [
+      "github.com/keep-network/keep-core/pkg/frost\t0.153s",
+      "github.com/keep-network/keep-core/pkg/frost/dkg\t0.777s",
+      "github.com/keep-network/keep-core/pkg/frost/integration\t0.329s",
+      "github.com/keep-network/keep-core/pkg/frost/snowfallengine\t0.694s",
+      "github.com/keep-network/keep-core/pkg/frost/store\t11.100s",
+      "github.com/keep-network/keep-core/pkg/frost/transport\t1.019s"
+    ]
+  },
+  "race": {
+    "run": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "-modfile=.v03-cache/verification.mod",
+        "./pkg/frost/...",
+        "-count=1",
+        "-timeout=120s",
+        "-v"
+      ],
+      "environment_allowlist": {
+        "PATH": "/Users/tux/.elan/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/tux/.codex/tmp/arg0/codex-arg0tdLtdd:/Users/tux/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/tux/.local/bin:/Users/tux/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/Users/tux/.elan/bin:/Users/tux/.foundry/bin:/Users/tux/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS",
+        "GOCACHE": "/Users/tux/threshold/integration-worktrees/V-03-verification/.v03-cache/build",
+        "GOPROXY": "off",
+        "FROST_K03_TBTC": null,
+        "FROST_K03_ANVIL": null,
+        "SNOWFALL_WORKER": null,
+        "SNOWFALL_WORKER_SHA256": null
+      },
+      "deadline_seconds": 300,
+      "start_utc": "2026-10-13T12:52:40.602328+00:00",
+      "end_utc": "2026-10-13T12:53:12.632478+00:00",
+      "seconds": 32.030123749999994,
+      "exit_code": 0
+    },
+    "passed_top_level": 49,
+    "skipped_top_level": 20,
+    "failed_top_level": 0,
+    "packages": [
+      "github.com/keep-network/keep-core/pkg/frost\t1.152s",
+      "github.com/keep-network/keep-core/pkg/frost/dkg\t1.846s",
+      "github.com/keep-network/keep-core/pkg/frost/integration\t1.683s",
+      "github.com/keep-network/keep-core/pkg/frost/snowfallengine\t3.216s",
+      "github.com/keep-network/keep-core/pkg/frost/store\t16.072s",
+      "github.com/keep-network/keep-core/pkg/frost/transport\t2.504s"
+    ]
+  },
+  "projection": {
+    "run": {
+      "command": [
+        "go",
+        "test",
+        "-modfile=.v03-cache/verification.mod",
+        "./pkg/frost/dkg",
+        "-run",
+        "TestV03",
+        "-count=1",
+        "-timeout=120s",
+        "-v"
+      ],
+      "environment_allowlist": {
+        "PATH": "/Users/tux/.elan/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/tux/.codex/tmp/arg0/codex-arg0tdLtdd:/Users/tux/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/tux/.local/bin:/Users/tux/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/Users/tux/.elan/bin:/Users/tux/.foundry/bin:/Users/tux/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS",
+        "GOCACHE": "/Users/tux/threshold/integration-worktrees/V-03-verification/.v03-cache/build",
+        "GOPROXY": "off",
+        "FROST_K03_TBTC": null,
+        "FROST_K03_ANVIL": null,
+        "SNOWFALL_WORKER": null,
+        "SNOWFALL_WORKER_SHA256": null
+      },
+      "deadline_seconds": 300,
+      "start_utc": "2026-10-13T12:53:27.694576+00:00",
+      "end_utc": "2026-10-13T12:53:28.413929+00:00",
+      "seconds": 0.719285,
+      "exit_code": 0
+    },
+    "passed_top_level": 3,
+    "skipped_top_level": 0,
+    "failed_top_level": 0,
+    "packages": [
+      "github.com/keep-network/keep-core/pkg/frost/dkg\t0.166s"
+    ]
+  },
+  "projection-race": {
+    "run": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "-modfile=.v03-cache/verification.mod",
+        "./pkg/frost/dkg",
+        "-run",
+        "TestV03",
+        "-count=1",
+        "-timeout=120s",
+        "-v"
+      ],
+      "environment_allowlist": {
+        "PATH": "/Users/tux/.elan/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/tux/.codex/tmp/arg0/codex-arg0tdLtdd:/Users/tux/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/tux/.local/bin:/Users/tux/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/Users/tux/.elan/bin:/Users/tux/.foundry/bin:/Users/tux/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS",
+        "GOCACHE": "/Users/tux/threshold/integration-worktrees/V-03-verification/.v03-cache/build",
+        "GOPROXY": "off",
+        "FROST_K03_TBTC": null,
+        "FROST_K03_ANVIL": null,
+        "SNOWFALL_WORKER": null,
+        "SNOWFALL_WORKER_SHA256": null
+      },
+      "deadline_seconds": 300,
+      "start_utc": "2026-10-13T12:53:28.448575+00:00",
+      "end_utc": "2026-10-13T12:53:30.284256+00:00",
+      "seconds": 1.835636625,
+      "exit_code": 0
+    },
+    "passed_top_level": 3,
+    "skipped_top_level": 0,
+    "failed_top_level": 0,
+    "packages": [
+      "github.com/keep-network/keep-core/pkg/frost/dkg\t1.212s"
+    ]
+  },
+  "trace_replay": {
+    "full": 0,
+    "partial": 0,
+    "none": 14,
+    "note": "Projected seam reads do not constitute full or partial lockstep trace replay",
+    "projection_log_line": "v03_replay_test.go:79: trace files=14 projected approval reads=12; full traces=0 (unsupported steps retained)"
+  },
+  "predicates": {
+    "P-K03-ONE-DESCRIPTOR": "blocked",
+    "P-K03-NO-EARLY-FUNDING": "blocked",
+    "P-K03-READY-ONLY-RELOADED": "blocked",
+    "P-K03-INCONSISTENCY-QUARANTINE": "blocked",
+    "P-K03-EXPIRY-TOMBSTONE": "blocked",
+    "P-K03-FRESH-EPOCH-DISJOINT": "blocked",
+    "P-K03-SUBMITTED-NOT-TERMINAL": "blocked"
+  },
+  "independent_review": "pending"
+}

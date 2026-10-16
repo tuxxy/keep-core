@@ -1,0 +1,9 @@
+# V03 self-review
+
+Reviewed source ordering against actual Executor, real fixtures and seven predicates. Replaced stronger invented key-time read with actual receipt-to-key interval. Separated worker-ready and C03 readiness, certificate call/postcondition/save/return and monitor observation. Export rejects actions not offered by the finite model. Controls change behavior, not safety verdict bits; current-source replay follows claim expectations and cuts at first unavailable/no-effect action.
+
+Confirmed two implementation findings and subsequent refinements: success dropped classified monitor failure, callback observation was not shared, joined cancellation could erase quarantine, and a delayed canonical read could falsely quarantine during approval publication. Retained initial failing tests and independent review sequence; every guard repair was reported before change. Exact last publication gap is tested deterministically and under race. RPC remains outside mutex; classification uses coherent knowledge, identity knowledge monotonic.
+
+Complete returned/reopened wallet identity and exact synthetic KeyReady/local references checked at terminal and crash boundaries. Actual signed result hash is compared, not an unsigned tuple. Synthetic references/engine do not establish crypto validity: actual pinned worker lifecycle fixtures and V02 join provide their explicitly bounded assumptions. Host-cache/power-loss traces are partial, never full. Production policy inputs, broad post-K03 funding capabilities and funded positive witness remain outside this inactive subject. No proof of Go or universal liveness claim.
+
+Independent reviews and responses retained in review/. Fourth review conditionally accepts exact repaired sources subject to final matching runs and hash/report refresh. Only declared bounded/conditional scope may be cited. Final statement invalidates on any source/tooling/fixture/policy/provider assumption change.

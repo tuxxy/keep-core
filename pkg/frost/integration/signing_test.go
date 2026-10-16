@@ -244,8 +244,16 @@ func TestTaprootExactAuthorization(t *testing.T) {
 	if err := core.call(f.ctx, "getnewaddress", nil, &miner); err != nil {
 		t.Fatal(err)
 	}
-	if err := core.call(f.ctx, "generatetoaddress", []any{101, miner}, nil); err != nil {
-		t.Fatal(err)
+	// Mine maturity in batches: one 101-block call can exceed the 10 s RPC
+	// client timeout on a loaded host.
+	for mined := 0; mined < 101; mined += 10 {
+		batch := 101 - mined
+		if batch > 10 {
+			batch = 10
+		}
+		if err := core.call(f.ctx, "generatetoaddress", []any{batch, miner}, nil); err != nil {
+			t.Fatal(err)
+		}
 	}
 	q := records[0].Descriptor.OutputKey
 	address, err := btcutil.NewAddressTaproot(q[:], &chaincfg.RegressionNetParams)

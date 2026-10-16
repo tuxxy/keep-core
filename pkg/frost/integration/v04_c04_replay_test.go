@@ -491,6 +491,9 @@ func replayC04(t *testing.T, names []string, weakened bool) {
 	for _, name := range names {
 		name := name
 		t.Run(name, func(t *testing.T) {
+			// Every trace builds its own world (Anvil, Core, operators), so
+			// traces replay in parallel.
+			t.Parallel()
 			raw, err := os.ReadFile(filepath.Join(dir, name+".json"))
 			if err != nil {
 				t.Fatal(err)

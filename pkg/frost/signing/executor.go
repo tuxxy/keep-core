@@ -47,6 +47,14 @@ type Bitcoin interface {
 	Broadcast(context.Context, []byte) error
 }
 
+// Containment decides whether a Quarantined (contained) reservation may still
+// be acted on. Hosts act on a contained reservation only under a governance
+// directive (spec issue #3); the executor asks at every reservation read, so
+// an admitted alternative cannot be granted or broadcast without one.
+type Containment interface {
+	AllowContained(ctx context.Context, plan *Plan, reservation [32]byte) error
+}
+
 // ConfirmedSpends answers from confirmed chain state only, ignoring the
 // mempool. A cancellation exists to replace a payment that may sit
 // unconfirmed in the mempool spending the same inputs, so its prevout check
@@ -68,6 +76,7 @@ type Config struct {
 	MinimumConfirmations       uint
 	Journal                    Journal
 	Reservations               Reservations
+	Containment                Containment // directive gate for Quarantined; nil refuses
 	Bitcoin                    Bitcoin
 	Worker                     snowfallengine.WorkerConfig
 	Selected                   []uint16
@@ -145,6 +154,14 @@ func (e *Executor) reservationCheck(ctx context.Context, initialize bool, allowe
 	p := e.config.Plan
 	if v.ID != e.config.Reservation || v.Commitment != p.PaymentCommitment() || v.Generation != p.intent.Generation || v.StateVersion != p.intent.StateVersion || !allowed(v.State) || v.Block == 0 || v.BlockHash == ([32]byte{}) || v.BlockHash != v.CanonicalBlockHash || v.HeadHash == ([32]byte{}) || v.Head < v.Block || v.Head-v.Block < e.config.FinalityBlocks {
 		return fmt.Errorf("%w: missing, unfinalized or changed reservation", ErrUnauthorized)
+	}
+	if v.State == stateQuarantined {
+		if e.config.Containment == nil {
+			return fmt.Errorf("%w: contained reservation without a governance directive", ErrUnauthorized)
+		}
+		if err := e.config.Containment.AllowContained(ctx, p, e.config.Reservation); err != nil {
+			return fmt.Errorf("%w: contained reservation: %v", ErrUnauthorized, err)
+		}
 	}
 	receipt := ReservationReceipt{Block: v.Block, Hash: v.BlockHash}
 	if p.cancellation != nil {

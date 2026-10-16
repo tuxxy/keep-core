@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -78,6 +79,7 @@ func (l lease) Close() error { l.a.mu.Lock(); defer l.a.mu.Unlock(); l.a.leased 
 
 type deployment struct {
 	Registry, Bridge, Pool, Validator, Beacon common.Address
+	Bank, Treasury                            common.Address
 	Epoch                                     uint64
 	Seed                                      int
 	Pattern                                   []int
@@ -108,7 +110,19 @@ type fixture struct {
 	stopMining context.CancelFunc
 }
 
+type setupOptions struct {
+	timeout time.Duration
+	// mode "k05" deploys a real Bank, regtest relay and verifier and enables
+	// FROST funding and redemptions with local test values.
+	mode string
+}
+
 func setup(t *testing.T, pattern string) *fixture {
+	t.Helper()
+	return setupWith(t, pattern, setupOptions{timeout: 120 * time.Second})
+}
+
+func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 	t.Helper()
 	tb := os.Getenv("FROST_K03_TBTC")
 	worker := os.Getenv("SNOWFALL_WORKER")
@@ -128,7 +142,7 @@ func setup(t *testing.T, pattern string) *fixture {
 	if hex.EncodeToString(hash[:]) != pin {
 		t.Fatal("worker pin mismatch")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), options.timeout)
 	t.Cleanup(cancel)
 	listener, err := stdnet.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -166,7 +180,12 @@ func setup(t *testing.T, pattern string) *fixture {
 	_, file, _, _ := runtime.Caller(0)
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
 	output := filepath.Join(t.TempDir(), "deployment.json")
-	deploy := exec.CommandContext(ctx, "node", filepath.Join(root, "test/frost/deploy.cjs"), url, tb, output, pattern)
+	args := []string{filepath.Join(root, "test/frost/deploy.cjs"), url, tb, output, pattern}
+	if options.mode == "k05" {
+		genesis := chaincfg.RegressionNetParams.GenesisHash
+		args = append(args, "k05", "0x"+hex.EncodeToString(genesis[:]))
+	}
+	deploy := exec.CommandContext(ctx, "node", args...)
 	if out, err := deploy.CombinedOutput(); err != nil {
 		t.Fatalf("actual contract deployment: %v\n%s", err, out)
 	}

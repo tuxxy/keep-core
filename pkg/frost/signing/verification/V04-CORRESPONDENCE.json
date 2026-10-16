@@ -1,0 +1,61 @@
+{
+  "package": "V-04 checkpoint / provisional V-05 inputs",
+  "subject": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
+  "records": [
+    {
+      "producer": "K-04 immutable Bitcoin plan and intent-v2 encoder",
+      "consumer": "guarded signing grant",
+      "joining_evidence": "fixed Go/TypeScript vectors, authorization checks and real-worker retained public grants",
+      "assumption": "exact-plan equality",
+      "status": "concrete checkpoint; encoding and source pinned"
+    },
+    {
+      "producer": "K-02/K-03 encrypted immutable store",
+      "consumer": "receipt, intent, terminal claim and done retention",
+      "joining_evidence": "real-store guard/reopen checks plus inherited store trace suite",
+      "assumption": "A-STORE",
+      "status": "concrete tests; shared-model composition remains open",
+      "owner": "storage and integration verification leads"
+    },
+    {
+      "producer": "parent K-04 bounded post-worker persistence and completion reconstruction",
+      "consumer": "fresh executor LoadResult",
+      "joining_evidence": "old source failing controls; fixed source cancellation/reopen and partial-input tests",
+      "assumption": "P-K04-DURABLE-SIGNATURE-RECOVERY",
+      "status": "local concrete checkpoint; no power-loss claim"
+    },
+    {
+      "producer": "controlled fixture agreement",
+      "consumer": "input-specific attempts and selected-seat configuration",
+      "joining_evidence": "real worker/Core fixture",
+      "assumption": "A-K04-AGREED-EXECUTOR-CONFIG",
+      "status": "owned controlled-input assumption",
+      "owner": "K-05 coordination/signing implementation leads"
+    },
+    {
+      "producer": "abstract C-04 ledger only",
+      "consumer": "timeout/late-payment/cancellation/refund",
+      "joining_evidence": "finite model and negative controls",
+      "assumption": "A-C04-CURRENT-FINALITY / A-CONFLICT-FINALITY",
+      "status": "blocked real replay at K-05; authority helper not ledger",
+      "owner": "C-04 and K-05 adapter/settlement leads"
+    },
+    {
+      "producer": "proposed C04 consumer and K05 host certificate attestation",
+      "consumer": "finalized reservation / signing grant",
+      "joining_evidence": "abstract admission model; ADMISSION-SEMANTICS.md; unchanged Go v2 vectors",
+      "assumption": "uint64 independent intent counter, custody state version, one active custody reservation, durable tuple lock, inclusive historical-admission deadline and logical ID; replacement only with finalized expired-unadmitted absence; readiness-not-lost is honest-host assumption; all original and outstanding renewal deadlines finalized plus authenticated absence, bounded to one observed renewal",
+      "status": "declared required storage/consumer guarantees; not implemented Bridge/Go attestation enforcement",
+      "owner": "C04 consumer and K05 coordination/adapters"
+    },
+    {
+      "producer": "K05 honest host readiness checks",
+      "consumer": "certificate attestation and signing eligibility",
+      "assumption": "A-HOST-READINESS-NOT-LOST",
+      "joining_evidence": "N2 explicit user clarification; canonical on-chain readiness state absent",
+      "status": "owned honest-host assumption, not certificate validator predicate",
+      "owner": "K05 readiness/coordination implementers"
+    }
+  ],
+  "production_executor_subject": "05032bb6b51371d88b1e4a07823ed6e61283dfff"
+}

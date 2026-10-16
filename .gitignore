@@ -82,3 +82,10 @@ dist/
 
 # Yarn 4 local state (not for zero-installs)
 .yarn/install-state.gz
+
+# Local V-03 verification build cache
+.v03-cache/
+
+# Read-only pinned fixture links for local V-03 runs
+/solidity/ecdsa/build
+/solidity/ecdsa/node_modules

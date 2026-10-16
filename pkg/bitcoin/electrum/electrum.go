@@ -873,6 +873,34 @@ func (c *Connection) GetMempoolUtxosForPublicKeyHash(
 	return utxos, nil
 }
 
+// UnspentByScript returns confirmed unspent outputs locked by the exact
+// script, oldest first. FROST wallets use it with OP_1 PUSH32 Q; no HASH160
+// or ECDSA witness key is involved.
+func (c *Connection) UnspentByScript(
+	_ context.Context,
+	script bitcoin.Script,
+) ([]bitcoin.PreviousOutput, error) {
+	items, err := c.getScriptUtxos(script, true)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]bitcoin.PreviousOutput, 0, len(items))
+	for _, item := range items {
+		if item.value > uint64(bitcoin.MaxSatoshi) {
+			return nil, fmt.Errorf("UTXO value out of range")
+		}
+		out = append(out, bitcoin.PreviousOutput{
+			Outpoint: bitcoin.TransactionOutpoint{
+				TransactionHash: item.txHash,
+				OutputIndex:     item.outputIndex,
+			},
+			Value:           int64(item.value),
+			PublicKeyScript: append(bitcoin.Script(nil), script...),
+		})
+	}
+	return out, nil
+}
+
 type scriptUtxoItem struct {
 	txHash      bitcoin.Hash
 	outputIndex uint32

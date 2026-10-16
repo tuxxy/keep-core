@@ -1,0 +1,103 @@
+{
+  "id": "B-STALE-RESTORE-QUARANTINE",
+  "kind": "boundary",
+  "property": "declared representative set",
+  "weakening": "None",
+  "max_commits": 3,
+  "replay": "full",
+  "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
+  "steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "claim",
+      "proc": 0,
+      "attempt": 0,
+      "purpose": "sign",
+      "domain": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 3,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 4,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 5,
+      "action": "step",
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 6,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 7,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 8,
+      "action": "step",
+      "proc": 0,
+      "step": "ack",
+      "expect": "claim_ok"
+    },
+    {
+      "n": 9,
+      "action": "release",
+      "proc": 0
+    },
+    {
+      "n": 10,
+      "action": "close",
+      "proc": 0,
+      "expect": "closed"
+    },
+    {
+      "n": 11,
+      "action": "restore_stale",
+      "image": 0
+    },
+    {
+      "n": 12,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "quarantined"
+    }
+  ]
+}

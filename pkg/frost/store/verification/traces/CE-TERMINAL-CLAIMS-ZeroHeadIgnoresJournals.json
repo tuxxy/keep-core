@@ -1,0 +1,256 @@
+{
+  "id": "CE-TERMINAL-CLAIMS-ZeroHeadIgnoresJournals",
+  "kind": "counterexample",
+  "property": "terminal_claims",
+  "weakening": "ZeroHeadIgnoresJournals",
+  "max_commits": 3,
+  "replay": "full",
+  "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
+  "steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "claim",
+      "proc": 0,
+      "attempt": 0,
+      "purpose": "sign",
+      "domain": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 3,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 4,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 5,
+      "action": "step",
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 6,
+      "action": "clone"
+    },
+    {
+      "n": 7,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 8,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 9,
+      "action": "step",
+      "proc": 0,
+      "step": "ack",
+      "expect": "claim_ok"
+    },
+    {
+      "n": 10,
+      "action": "process_crash",
+      "proc": 0,
+      "expect": "crashed"
+    },
+    {
+      "n": 11,
+      "action": "fence_reset"
+    },
+    {
+      "n": 12,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 13,
+      "action": "claim",
+      "proc": 0,
+      "attempt": 0,
+      "purpose": "sign",
+      "domain": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 14,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 15,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 16,
+      "action": "step",
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 17,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 18,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 19,
+      "action": "step",
+      "proc": 0,
+      "step": "ack",
+      "expect": "claim_ok"
+    }
+  ],
+  "claim_model_steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "claim",
+      "proc": 0,
+      "attempt": 0,
+      "purpose": "sign",
+      "domain": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 3,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 4,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 5,
+      "action": "step",
+      "proc": 0,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 6,
+      "action": "clone"
+    },
+    {
+      "n": 7,
+      "action": "step",
+      "proc": 0,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 8,
+      "action": "step",
+      "proc": 0,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 9,
+      "action": "step",
+      "proc": 0,
+      "step": "ack",
+      "expect": "claim_ok"
+    },
+    {
+      "n": 10,
+      "action": "process_crash",
+      "proc": 0,
+      "expect": "crashed"
+    },
+    {
+      "n": 11,
+      "action": "fence_reset"
+    },
+    {
+      "n": 12,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "quarantined",
+      "diverges": true
+    }
+  ]
+}

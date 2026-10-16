@@ -1,0 +1,100 @@
+{
+  "id": "CE-OWNER-EXCLUSIVE-LocalLockOnly",
+  "kind": "counterexample",
+  "property": "owner_exclusive",
+  "weakening": "LocalLockOnly",
+  "max_commits": 3,
+  "replay": "full",
+  "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
+  "steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 1,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "clone"
+    },
+    {
+      "n": 3,
+      "action": "open",
+      "proc": 0,
+      "image": 1,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "action": "put",
+      "proc": 0,
+      "slot": 0,
+      "value": 1,
+      "pause": "before-write"
+    },
+    {
+      "n": 5,
+      "action": "claim",
+      "proc": 1,
+      "attempt": 0,
+      "purpose": "sign",
+      "domain": 0,
+      "pause": "before-write"
+    }
+  ],
+  "claim_model_steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 1,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "clone"
+    },
+    {
+      "n": 3,
+      "action": "open",
+      "proc": 0,
+      "image": 1,
+      "expect": "busy",
+      "diverges": true
+    }
+  ]
+}

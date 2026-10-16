@@ -3,6 +3,7 @@
   "kind": "boundary",
   "property": "declared representative set",
   "weakening": "None",
+  "profile": "store",
   "max_commits": 3,
   "replay": "partial",
   "replay_note": "host_crash is simulated: the replay harness removes the files the model declares not durable; it cannot drop the OS cache",
@@ -20,6 +21,14 @@
           false
         ],
         "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
           null,
           null
         ]

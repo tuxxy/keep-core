@@ -46,6 +46,23 @@ type Bitcoin interface {
 	Unspent(context.Context, bitcoin.TransactionOutpoint) (bool, error)
 	Broadcast(context.Context, []byte) error
 }
+
+// Containment decides whether a Quarantined (contained) reservation may still
+// be acted on. Hosts act on a contained reservation only under a governance
+// directive (spec issue #3); the executor asks at every reservation read, so
+// an admitted alternative cannot be granted or broadcast without one.
+type Containment interface {
+	AllowContained(ctx context.Context, plan *Plan, reservation [32]byte) error
+}
+
+// ConfirmedSpends answers from confirmed chain state only, ignoring the
+// mempool. A cancellation exists to replace a payment that may sit
+// unconfirmed in the mempool spending the same inputs, so its prevout check
+// must not count that spend. Providers without it cannot sign cancellations.
+type ConfirmedSpends interface {
+	ConfirmedUnspent(context.Context, bitcoin.TransactionOutpoint) (bool, error)
+}
+
 type Journal interface {
 	dkg.Journal
 	RetainSigningRecord(context.Context, [32]byte, []byte) error
@@ -59,6 +76,7 @@ type Config struct {
 	MinimumConfirmations       uint
 	Journal                    Journal
 	Reservations               Reservations
+	Containment                Containment // directive gate for Quarantined; nil refuses
 	Bitcoin                    Bitcoin
 	Worker                     snowfallengine.WorkerConfig
 	Selected                   []uint16
@@ -105,7 +123,27 @@ type ReservationReceipt struct {
 	Hash  [32]byte
 }
 
+// Unresolved C-04 intent states. Only Reserved grants new signing; the others
+// keep historical acts recoverable (K-05 rebroadcast and cancellation).
+const (
+	stateReserved       = "Reserved"
+	stateTimeoutPending = "TimeoutPending"
+	stateQuarantined    = "Quarantined"
+)
+
+func unresolved(state string) bool {
+	return state == stateReserved || state == stateTimeoutPending || state == stateQuarantined
+}
+
 func (e *Executor) reservation(ctx context.Context, initialize bool) error {
+	p := e.config.Plan
+	if p.cancellation != nil {
+		return e.reservationCheck(ctx, initialize, unresolved)
+	}
+	return e.reservationCheck(ctx, initialize, func(state string) bool { return state == stateReserved })
+}
+
+func (e *Executor) reservationCheck(ctx context.Context, initialize bool, allowed func(string) bool) error {
 	if err := e.step("before-reservation-read"); err != nil {
 		return err
 	}
@@ -114,10 +152,34 @@ func (e *Executor) reservation(ctx context.Context, initialize bool) error {
 		return fmt.Errorf("%w: reservation read: %v", ErrUnauthorized, err)
 	}
 	p := e.config.Plan
-	if v.ID != e.config.Reservation || v.Commitment != p.hash || v.Generation != p.intent.Generation || v.StateVersion != p.intent.StateVersion || v.State != "Reserved" || v.Block == 0 || v.BlockHash == ([32]byte{}) || v.BlockHash != v.CanonicalBlockHash || v.HeadHash == ([32]byte{}) || v.Head < v.Block || v.Head-v.Block < e.config.FinalityBlocks {
+	if v.ID != e.config.Reservation || v.Commitment != p.PaymentCommitment() || v.Generation != p.intent.Generation || v.StateVersion != p.intent.StateVersion || !allowed(v.State) || v.Block == 0 || v.BlockHash == ([32]byte{}) || v.BlockHash != v.CanonicalBlockHash || v.HeadHash == ([32]byte{}) || v.Head < v.Block || v.Head-v.Block < e.config.FinalityBlocks {
 		return fmt.Errorf("%w: missing, unfinalized or changed reservation", ErrUnauthorized)
 	}
+	if v.State == stateQuarantined {
+		if e.config.Containment == nil {
+			return fmt.Errorf("%w: contained reservation without a governance directive", ErrUnauthorized)
+		}
+		if err := e.config.Containment.AllowContained(ctx, p, e.config.Reservation); err != nil {
+			return fmt.Errorf("%w: contained reservation: %v", ErrUnauthorized, err)
+		}
+	}
 	receipt := ReservationReceipt{Block: v.Block, Hash: v.BlockHash}
+	if p.cancellation != nil {
+		// A cancellation grant additionally requires its own finalized C-04
+		// admission for the same reservation, snapshot and fee.
+		reader, ok := e.config.Reservations.(Cancellations)
+		if !ok {
+			return fmt.Errorf("%w: provider cannot read cancellation admissions", ErrUnauthorized)
+		}
+		c, err := reader.ReadCancellation(ctx, e.config.Reservation, p.cancellation.TransactionHash)
+		if err != nil {
+			return fmt.Errorf("%w: cancellation read: %v", ErrUnauthorized, err)
+		}
+		if c.Reservation != e.config.Reservation || c.TransactionHash != p.cancellation.TransactionHash || c.Snapshot != p.cancellation.Snapshot || c.Fee != uint64(p.cancellation.Fee) || c.Block == 0 || c.BlockHash == ([32]byte{}) || c.BlockHash != c.CanonicalBlockHash || v.Head < c.Block || v.Head-c.Block < e.config.FinalityBlocks {
+			return fmt.Errorf("%w: missing, unfinalized or changed cancellation admission", ErrUnauthorized)
+		}
+		receipt = ReservationReceipt{Block: c.Block, Hash: c.BlockHash}
+	}
 	retained, err := e.loadReceipt(ctx)
 	if errors.Is(err, store.ErrMissing) && initialize {
 		raw, marshalErr := json.Marshal(receipt)
@@ -192,16 +254,34 @@ func (e *Executor) bitcoin(ctx context.Context) error {
 		if err != nil || confirmations < e.config.MinimumConfirmations {
 			return fmt.Errorf("%w: unconfirmed prevout", ErrUnauthorized)
 		}
-		unspent, err := e.config.Bitcoin.Unspent(ctx, p.Outpoint)
+		unspent, err := e.unspent(ctx, p.Outpoint)
 		if err != nil || !unspent {
 			return fmt.Errorf("%w: spent prevout", ErrUnauthorized)
 		}
 	}
 	return nil
 }
+
+// unspent is the prevout check: mempool-inclusive for every plan except a
+// cancellation, which checks confirmed state only (see ConfirmedSpends).
+func (e *Executor) unspent(ctx context.Context, o bitcoin.TransactionOutpoint) (bool, error) {
+	if e.config.Plan.cancellation == nil {
+		return e.config.Bitcoin.Unspent(ctx, o)
+	}
+	confirmed, ok := e.config.Bitcoin.(ConfirmedSpends)
+	if !ok {
+		return false, errors.New("Bitcoin provider cannot exclude mempool spends")
+	}
+	return confirmed.ConfirmedUnspent(ctx, o)
+}
+
 func (e *Executor) attempt(index int) (frost.Attempt, error) {
 	c := e.config
-	raw := append([]byte("keep-core/frost/transaction-attempt/v1/"), c.Plan.hash[:]...)
+	domain := "keep-core/frost/transaction-attempt/v1/"
+	if c.Plan.cancellation != nil {
+		domain = "keep-core/frost/cancellation-attempt/v1/"
+	}
+	raw := append([]byte(domain), c.Plan.hash[:]...)
 	raw = append(raw, c.Reservation[:]...)
 	raw = append(raw, c.Session[:]...)
 	raw = binary.BigEndian.AppendUint32(raw, uint32(index))
@@ -484,6 +564,78 @@ func (e *Executor) Broadcast(ctx context.Context, result *Result) error {
 	raw := append([]byte(nil), result.Transaction.Serialize(bitcoin.Witness)...)
 	return e.config.Bitcoin.Broadcast(ctx, raw)
 }
+
+// Rebroadcast resends a durable, fully validated payment result after its
+// reservation left Reserved (TimeoutPending or Quarantined). It never starts a
+// worker, never joins partial or late completions, and requires the result
+// record that Run writes only after every input was accepted while Reserved.
+// Whether an honest host should do this is spec issue #3 (OPEN); callers gate it
+// with an explicit policy.
+func (e *Executor) Rebroadcast(ctx context.Context) error {
+	if err := eValidateContext(ctx); err != nil {
+		return err
+	}
+	if e.config.Plan.cancellation != nil {
+		return errors.New("rebroadcast applies to payment results only")
+	}
+	raw, err := e.config.Journal.ReadSigningRecord(ctx, e.resultID())
+	if err != nil {
+		return fmt.Errorf("%w: no durable accepted result: %v", ErrUnauthorized, err)
+	}
+	result := new(Result)
+	if err = json.Unmarshal(raw, result); err != nil {
+		return err
+	}
+	if err = e.step("before-rebroadcast"); err != nil {
+		return err
+	}
+	if err = e.ValidateResult(result); err != nil {
+		return err
+	}
+	if err = e.checkResultReceipt(ctx, result); err != nil {
+		return err
+	}
+	if err = e.reservationCheck(ctx, false, unresolved); err != nil {
+		return err
+	}
+	return e.config.Bitcoin.Broadcast(ctx, append([]byte(nil), result.Transaction.Serialize(bitcoin.Witness)...))
+}
+
+// Result returns the durable accepted result record without recovery.
+func (e *Executor) Result(ctx context.Context) (*Result, error) {
+	raw, err := e.config.Journal.ReadSigningRecord(ctx, e.resultID())
+	if err != nil {
+		return nil, err
+	}
+	result := new(Result)
+	if err = json.Unmarshal(raw, result); err != nil {
+		return nil, err
+	}
+	if err = e.ValidateResult(result); err != nil {
+		return nil, err
+	}
+	return result, e.checkResultReceipt(ctx, result)
+}
+
+// PossibleRelease reports whether any input's signature completion is durable
+// for this plan and session, i.e. a share may have been released.
+func (e *Executor) PossibleRelease(ctx context.Context) (bool, error) {
+	for index := range e.config.Plan.snapshot.Digests() {
+		attempt, err := e.attempt(index)
+		if err != nil {
+			return false, err
+		}
+		_, err = e.config.Journal.ReadSigningRecord(ctx, signingDoneID(snowfallengine.AttemptID(attempt)))
+		if err == nil {
+			return true, nil
+		}
+		if !errors.Is(err, store.ErrMissing) {
+			return true, err
+		}
+	}
+	return false, nil
+}
+
 func eValidateContext(ctx context.Context) error {
 	if ctx == nil {
 		return errors.New("context required")

@@ -173,6 +173,13 @@ func (c *coreChain) Unspent(ctx context.Context, p bitcoin.TransactionOutpoint) 
 	err := c.call(ctx, "gettxout", []any{p.TransactionHash.Hex(bitcoin.ReversedByteOrder), p.OutputIndex, true}, &result)
 	return len(result) > 0 && string(result) != "null", err
 }
+
+// ConfirmedUnspent ignores the mempool (gettxout include_mempool=false).
+func (c *coreChain) ConfirmedUnspent(ctx context.Context, p bitcoin.TransactionOutpoint) (bool, error) {
+	var result json.RawMessage
+	err := c.call(ctx, "gettxout", []any{p.TransactionHash.Hex(bitcoin.ReversedByteOrder), p.OutputIndex, false}, &result)
+	return len(result) > 0 && string(result) != "null", err
+}
 func (c *coreChain) Broadcast(ctx context.Context, raw []byte) error {
 	encoded := hex.EncodeToString(raw)
 	var checks []struct {
@@ -244,8 +251,16 @@ func TestTaprootExactAuthorization(t *testing.T) {
 	if err := core.call(f.ctx, "getnewaddress", nil, &miner); err != nil {
 		t.Fatal(err)
 	}
-	if err := core.call(f.ctx, "generatetoaddress", []any{101, miner}, nil); err != nil {
-		t.Fatal(err)
+	// Mine maturity in batches: one 101-block call can exceed the 10 s RPC
+	// client timeout on a loaded host.
+	for mined := 0; mined < 101; mined += 10 {
+		batch := 101 - mined
+		if batch > 10 {
+			batch = 10
+		}
+		if err := core.call(f.ctx, "generatetoaddress", []any{batch, miner}, nil); err != nil {
+			t.Fatal(err)
+		}
 	}
 	q := records[0].Descriptor.OutputKey
 	address, err := btcutil.NewAddressTaproot(q[:], &chaincfg.RegressionNetParams)

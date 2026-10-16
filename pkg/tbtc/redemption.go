@@ -481,11 +481,20 @@ func assembleRedemptionTransaction(
 		// The redeemable amount for a redemption request is the difference
 		// between the requested amount and treasury fee computed upon
 		// request creation.
+		// K-05: refuse wrapped, zero or negative values before any signature
+		// request instead of relying only on the on-chain validator.
+		if request.TreasuryFee > request.RequestedAmount ||
+			request.RequestedAmount-request.TreasuryFee > uint64(bitcoin.MaxSatoshi) {
+			return nil, fmt.Errorf("redemption request %d amount domain", i)
+		}
 		redeemableAmount := int64(request.RequestedAmount - request.TreasuryFee)
 		// The actual value of the redemption output is the difference between
 		// the request's redeemable amount and share of the transaction fee
 		// incurred by the given request.
 		feeShare := feeShares[i]
+		if feeShare < 0 || feeShare >= redeemableAmount {
+			return nil, fmt.Errorf("redemption request %d net payout is not positive", i)
+		}
 		redemptionOutputValue := redeemableAmount - feeShare
 
 		totalFee += feeShare
@@ -508,6 +517,10 @@ func assembleRedemptionTransaction(
 	changeOutputValue := builder.TotalInputsValue() -
 		totalRedemptionOutputsValue -
 		totalFee
+
+	if changeOutputValue < 0 {
+		return nil, fmt.Errorf("redemption outputs and fee exceed the main UTXO")
+	}
 
 	// If we can have a non-zero change, construct it.
 	if changeOutputValue > 0 {

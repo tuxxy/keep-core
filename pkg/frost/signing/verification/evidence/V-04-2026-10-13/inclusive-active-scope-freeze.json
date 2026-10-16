@@ -1,0 +1,33 @@
+{
+  "normative_subject": "d956fb1caa5a7a46e3b83429299eccf582c129c5",
+  "executor_bytes_subject": "05032bb6b51371d88b1e4a07823ed6e61283dfff",
+  "wallets": 1,
+  "requests": 2,
+  "attempts": 2,
+  "timeout_ticks": 3,
+  "historical_certificate_deadline_labels": [
+    1,
+    2
+  ],
+  "certificate_admission_inclusive": true,
+  "current_reserved_state_controls_release": true,
+  "maximum_active_custody_reservations": 1,
+  "intent_counter_initial": 0,
+  "state_version_initial_on_abstract_custody_admission": 1,
+  "generation_labels": 2,
+  "state_version_labels": 2,
+  "host_attestation_lock": "proposed wallet/intent-generation/state-version compare-and-insert; no existing enforcement claimed",
+  "limits": {
+    "wall_seconds_per_command": 1800,
+    "rss_ceiling_bytes": 17179869184,
+    "model_threads": 4,
+    "GOMAXPROCS": 4,
+    "go_package_parallelism": 2,
+    "wallets": 1,
+    "requests": 2,
+    "attempts": 2,
+    "timeout_ticks": 3,
+    "commit_stages": 6,
+    "max_acknowledged_commits": 10
+  }
+}

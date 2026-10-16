@@ -1,0 +1,7 @@
+{
+  "finding": "Counterexample extraction must check offered action membership before direct next_state. AllowConcurrentReservations removes an action availability guard; direct next_state omitted the refusal in the trace only.",
+  "affected": "claim_model_steps first divergence for admission AllowConcurrentReservations",
+  "repair": "Check claim.actions membership, then next_state/state equality. No graph, predicate, bounds, or production change.",
+  "prior_run": "before-admission-divergence-audit",
+  "classification": "verification-agent self-review"
+}

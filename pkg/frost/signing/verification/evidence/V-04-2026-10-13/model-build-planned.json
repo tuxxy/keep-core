@@ -1,0 +1,68 @@
+{
+  "name": "model-build",
+  "command": [
+    "cargo",
+    "build",
+    "--offline",
+    "--release",
+    "--manifest-path",
+    "pkg/frost/signing/verification/model/Cargo.toml"
+  ],
+  "start": "2026-10-13T15:10:13.374507+00:00",
+  "limits": {
+    "wall_seconds_per_command": 1800,
+    "rss_ceiling_bytes": 17179869184,
+    "model_threads": 4,
+    "GOMAXPROCS": 4,
+    "go_package_parallelism": 2,
+    "wallets": 1,
+    "requests": 2,
+    "attempts": 2,
+    "timeout_ticks": 3,
+    "commit_stages": 6,
+    "max_acknowledged_commits": 10
+  },
+  "environment_allowlist": {
+    "GOMAXPROCS": "4",
+    "CARGO_BUILD_JOBS": "4",
+    "RUSTC": "/Users/tux/.rustup/toolchains/1.94.0-aarch64-apple-darwin/bin/rustc"
+  },
+  "cwd": "/Users/tux/threshold/integration-worktrees/V-04-verification",
+  "input_sha256": {
+    "pkg/frost/signing/previous_transaction_test.go": "1592719675285eaa58f8449705dbabb8b8216c40d8e6180e3fd00fff8e9f9857",
+    "pkg/frost/signing/plan.go": "cbc5dfd1ec34408142584cee6ef5d92680513d9d60d45c0a81e1e2c95db67eb4",
+    "pkg/frost/signing/v04_recovery_test.go": "e669e2606b3257f2cf13c3da9d1db4892c076f740b63e778df7896c0b88e570f",
+    "pkg/frost/signing/previous_transaction.go": "a1067b4355c2b226e023dc5f5178c69a465797f0e35c9b6999dc92a96d61131f",
+    "pkg/frost/signing/intent_test.go": "a344c8c7279ea313eeb099e84e0eb5136dcd18ef549f8e294bc7fd03082a6ee8",
+    "pkg/frost/signing/recovery_test.go": "b08b8639ba1ef27bbc4ba0dd765691cc2ef148f4a0f2e122bcc2e423b1f50bd2",
+    "pkg/frost/signing/signing_test.go": "1762ffac3d3da954ae87515e2a9012ce1d420a71e338e96b352adc7082001fe8",
+    "pkg/frost/signing/executor.go": "ee8096bcd3f8cb6cfe99c75b307dfdf34ca20ef0830a56d1426e06d94e139d64",
+    "pkg/frost/signing/v04_replay_test.go": "58332cd95ab24c39f095c61dd23ddf424e41497870085262c8244b4d1aa8f63f",
+    "pkg/frost/signing/v04_process_replay_test.go": "ecad53b67634b4dca1597118e33dfc58c542dbe32f3e64e32b7f52218eb247dc",
+    "pkg/frost/signing/done.go": "e31a0c02eb5f3e558a9cb7007b59945427368a6b8979ebe050209be28ea89b45",
+    "pkg/frost/snowfallengine/reload.go": "9ed63d5f65b2a4afd1934ade20ff39ee622bb338c2585dc7508c6f82da64af66",
+    "pkg/frost/snowfallengine/acceptance_boundary_test.go": "4b8e5eae9039d6f2002e3ace9da3bf0cc092453d8fb1be5a1756692ac790e61d",
+    "pkg/frost/snowfallengine/engine_test.go": "57954c6bde0b90634a25329a7ba81b14744cda7cd19ef55f2492b6b56797c3bd",
+    "pkg/frost/snowfallengine/signing_authorization_test.go": "f06269a5775f17627355ffdc150e46b758190ada058b1340dcaa4c3e1abcf72d",
+    "pkg/frost/snowfallengine/engine.go": "2325008872da0f76aff3bebca5e38d15e6df49e78a16f734aa6eeebc73c1a994",
+    "pkg/frost/store/store_test.go": "71b6e3ed133fd6a0df8c4c8d363ee16713598f58f9a10256f361d9bf264a8eb8",
+    "pkg/frost/store/signing.go": "139fa5c1071c1e8d466992e8709eb704251fcab9af59186ab44df5bbb94a69b2",
+    "pkg/frost/store/store.go": "669d7d2f40cbc275784186270d8d29fd2b89811244c73cc3dd860e5d7d457dc9",
+    "pkg/frost/store/dkg_status_test.go": "ab3dfa7d2e59e1ae5f04243097c3eb5fcd93807e6a1c9ea0285de48eb91ef388",
+    "pkg/frost/store/fence.go": "5ff33db28af3674298958a888cbb8738a66a65f4b805fcac62ec6dbe768b4906",
+    "pkg/frost/store/dkg_status.go": "fd97889f3c11a48412663a253967ad8386406d3c8e13841f6a45474cedae6b28",
+    "pkg/frost/store/wallet_test.go": "d562cf578fb14dea3c7d972182c57a55353303274abe6c4c28f7d5a0ddb0fed4",
+    "pkg/frost/store/signing_test.go": "a71b459e7568f622faf33f4df48eafd4abe9b496946afaac4b8c2dda3057df0a",
+    "pkg/frost/store/replay_test.go": "85d68f399be1fa9123a0c80b50f15f3843483e63741fbd109c7a7fefa39d4649",
+    "pkg/frost/store/wallet.go": "590af57e1f6a28439d1b88ac45a26dcd35b45f3c0e8bd422833701a738ad01e7",
+    "pkg/frost/store/lease_unix.go": "2affc5ef047da0d8214e15f315359ef83319313f01e1972550920dd2bf63b934",
+    "pkg/frost/store/lease_other.go": "ffd66ed3b28b2848b06190f168285c557c719a0f4e1430cb8e4b7bdde1099012",
+    "pkg/frost/store/v04_guard_test.go": "0d68b7b67b16474f8ec0130e8d79f4711980fe195a784c7c0f5ded838a011483"
+  },
+  "source_manifest_sha256": "396f94174b919b95c70460350ac545f6dc63105077ed6f8fffb050f94456aced",
+  "model_sha256": {
+    "pkg/frost/signing/verification/model/src/admission.rs": "a99fe3a475b7000049f27ee73dd4158f354c82a5b607fbd03b95db6dbe6e2438",
+    "pkg/frost/signing/verification/model/src/main.rs": "79a3ae0684872362ea2e1363e913afe2b3baa8224a7a76444d34e80a550b27d7",
+    "pkg/frost/signing/verification/model/src/bin/admission-check.rs": "d7a0c3c5921def2a7e85ac640b21003f21f5d6716ceb8f1c2fd1aef773f46936"
+  }
+}

@@ -1,0 +1,2589 @@
+{
+  "claim_model_steps": [
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 0,
+        "last_admitted_version": 0,
+        "locks": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": false,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 1
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          1,
+          0
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": false,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 2
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          1,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 3
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          2,
+          0
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 4
+    },
+    {
+      "action": {
+        "Renew": [
+          1,
+          2
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 5
+    },
+    {
+      "action": {
+        "Attest": [
+          2,
+          1,
+          0
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 6
+    },
+    {
+      "action": "FinalizeTick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 7
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 8
+    },
+    {
+      "action": "Crash",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 9
+    },
+    {
+      "action": {
+        "ConfirmAbsence": [
+          1,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 0,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 10
+    },
+    {
+      "action": {
+        "Admit": [
+          1,
+          1,
+          0,
+          1,
+          true
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 0,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 11
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          1,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 12
+    },
+    {
+      "action": {
+        "Admit": [
+          1,
+          1,
+          0,
+          3,
+          true
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          true,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 13
+    },
+    {
+      "action": "StateSpend",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 14
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          2,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 15
+    },
+    {
+      "action": {
+        "ConfirmAbsence": [
+          2,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 16
+    },
+    {
+      "action": {
+        "Attest": [
+          2,
+          2,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 9,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 17
+    },
+    {
+      "action": {
+        "Admit": [
+          2,
+          2,
+          0,
+          2,
+          true
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          true
+        ],
+        "admissions": 2,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 2,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          2
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 9,
+        "last_admitted_version": 2,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          true
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 18
+    },
+    {
+      "action": "FinalizeTick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          true
+        ],
+        "admissions": 2,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 2,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          2
+        ],
+        "finalized_tick": 2,
+        "issued_live_mask": 9,
+        "last_admitted_version": 2,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          true
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 19
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          true
+        ],
+        "admissions": 2,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 2,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          2
+        ],
+        "finalized_tick": 2,
+        "issued_live_mask": 9,
+        "last_admitted_version": 2,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          true
+        ],
+        "tick": 3,
+        "version": 2
+      },
+      "n": 20
+    },
+    {
+      "action": {
+        "Attest": [
+          2,
+          1,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          true
+        ],
+        "admissions": 2,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 2,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          2
+        ],
+        "finalized_tick": 2,
+        "issued_live_mask": 9,
+        "last_admitted_version": 2,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": true,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          true
+        ],
+        "tick": 3,
+        "version": 2
+      },
+      "n": 21
+    }
+  ],
+  "id": "None-W-expired-certificate-refused",
+  "initial_state": {
+    "absence_slot": null,
+    "active": [
+      false,
+      false
+    ],
+    "admissions": 0,
+    "attestation_history": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "bad_expiry": false,
+    "bad_generation": false,
+    "bad_id": false,
+    "bad_lock": false,
+    "bad_replacement": false,
+    "bad_version": false,
+    "counter": 0,
+    "crash_used": false,
+    "deadlines": [
+      0,
+      0
+    ],
+    "finalized_tick": null,
+    "issued_live_mask": 0,
+    "last_admitted_version": 0,
+    "locks": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "readiness_generation": 1,
+    "refused_admitted_replacement": false,
+    "refused_expiry": false,
+    "refused_lock": false,
+    "refused_version": false,
+    "renewal_blocked_replacement": false,
+    "renewed_slot": null,
+    "replacement_admitted": false,
+    "replacement_slot": null,
+    "replacement_witness_candidate": false,
+    "reserved": [
+      false,
+      false
+    ],
+    "tick": 0,
+    "version": 1
+  },
+  "kind": "witness",
+  "property": "W-expired-certificate-refused",
+  "replay": "none",
+  "replay_note": "Proposed consumer and host certificate lock only; no existing C04 ledger/Go certificate-attestation path.",
+  "steps": [
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 0,
+        "last_admitted_version": 0,
+        "locks": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": false,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 1
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          1,
+          0
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": false,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 2
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          1,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 3
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          2,
+          0
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 4
+    },
+    {
+      "action": {
+        "Renew": [
+          1,
+          2
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 5
+    },
+    {
+      "action": {
+        "Attest": [
+          2,
+          1,
+          0
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 6
+    },
+    {
+      "action": "FinalizeTick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 1,
+        "version": 1
+      },
+      "n": 7
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 8
+    },
+    {
+      "action": "Crash",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 9
+    },
+    {
+      "action": {
+        "ConfirmAbsence": [
+          1,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 0,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 10
+    },
+    {
+      "action": {
+        "Admit": [
+          1,
+          1,
+          0,
+          1,
+          true
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 0,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 11
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          1,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 0,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 12
+    },
+    {
+      "action": {
+        "Admit": [
+          1,
+          1,
+          0,
+          3,
+          true
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          true,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 1
+      },
+      "n": 13
+    },
+    {
+      "action": "StateSpend",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 14
+    },
+    {
+      "action": {
+        "Attest": [
+          1,
+          2,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 15
+    },
+    {
+      "action": {
+        "ConfirmAbsence": [
+          2,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          0
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 1,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 16
+    },
+    {
+      "action": {
+        "Attest": [
+          2,
+          2,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 1,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 1,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          0
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 9,
+        "last_admitted_version": 1,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          false
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 17
+    },
+    {
+      "action": {
+        "Admit": [
+          2,
+          2,
+          0,
+          2,
+          true
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          true
+        ],
+        "admissions": 2,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 2,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          2
+        ],
+        "finalized_tick": 1,
+        "issued_live_mask": 9,
+        "last_admitted_version": 2,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          true
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 18
+    },
+    {
+      "action": "FinalizeTick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          true
+        ],
+        "admissions": 2,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 2,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          2
+        ],
+        "finalized_tick": 2,
+        "issued_live_mask": 9,
+        "last_admitted_version": 2,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          true
+        ],
+        "tick": 2,
+        "version": 2
+      },
+      "n": 19
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          true
+        ],
+        "admissions": 2,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 2,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          2
+        ],
+        "finalized_tick": 2,
+        "issued_live_mask": 9,
+        "last_admitted_version": 2,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          true
+        ],
+        "tick": 3,
+        "version": 2
+      },
+      "n": 20
+    },
+    {
+      "action": {
+        "Attest": [
+          2,
+          1,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": 2,
+        "active": [
+          false,
+          true
+        ],
+        "admissions": 2,
+        "attestation_history": [
+          3,
+          1,
+          1,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 2,
+        "crash_used": true,
+        "deadlines": [
+          3,
+          2
+        ],
+        "finalized_tick": 2,
+        "issued_live_mask": 9,
+        "last_admitted_version": 2,
+        "locks": [
+          2,
+          1,
+          1,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": true,
+        "refused_expiry": true,
+        "refused_lock": true,
+        "refused_version": false,
+        "renewal_blocked_replacement": true,
+        "renewed_slot": 1,
+        "replacement_admitted": false,
+        "replacement_slot": 0,
+        "replacement_witness_candidate": true,
+        "reserved": [
+          true,
+          true
+        ],
+        "tick": 3,
+        "version": 2
+      },
+      "n": 21
+    }
+  ],
+  "weakening": "None"
+}

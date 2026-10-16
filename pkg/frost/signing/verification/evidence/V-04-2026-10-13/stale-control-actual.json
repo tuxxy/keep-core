@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "/Users/tux/threshold/integration-worktrees/V-04-verification/pkg/frost/signing/verification/check-freshness.py",
+    "/Users/tux/threshold/integration-worktrees/V-04-verification/pkg/frost/signing/verification/evidence/V-04-2026-10-13/stale-manifest-negative-control.json"
+  ],
+  "exit_code": 1,
+  "result": {
+    "status": "stale",
+    "subject": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
+    "mismatches": [
+      {
+        "group": "files",
+        "path": "pkg/frost/signing/executor.go"
+      }
+    ]
+  }
+}

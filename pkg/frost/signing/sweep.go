@@ -31,6 +31,15 @@ type SweepAuthority interface {
 	AuthorizeSweep(ctx context.Context, plan *Plan) (ReservationReceipt, error)
 }
 
+// GrantGuard is the host's main purpose lock (VD-07), optional and nil for
+// K-04/K-05 use. Permit is a read-only check when the executor starts; Grant
+// is the durable check at the release point, after the claim and right before
+// the worker receives each input's grant.
+type GrantGuard interface {
+	Permit(ctx context.Context, plan *Plan, reservation [32]byte) error
+	Grant(ctx context.Context, plan *Plan, reservation [32]byte, input int) error
+}
+
 // SweepDeposit is one revealed deposit input. Key is the C-05 deposit key of
 // the funding outpoint; Spend is the wallet leaf and its control block.
 type SweepDeposit struct {

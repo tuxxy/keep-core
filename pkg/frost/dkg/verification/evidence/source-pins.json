@@ -215,8 +215,8 @@
     },
     {
       "path": "pkg/frost/integration/integration_test.go",
-      "sha256": "4701ce10248fcf1919f261d6bf07d0cc9dfc5a978298041f5fc972d9d231ff93",
-      "git_blob": "19b7f6c18345e818a8199b4b36a43efc0a8ecb97"
+      "sha256": "90c42405e062e55795c3042bfc5fda05f2c436bcfcb25eb6220511c4960cfe5d",
+      "git_blob": "cca5c3731b652fa81e3ee26649a5184de6760565"
     },
     {
       "path": "pkg/frost/integration/reorg_test.go",
@@ -255,8 +255,8 @@
     },
     {
       "path": "pkg/frost/store/replay_test.go",
-      "sha256": "85d68f399be1fa9123a0c80b50f15f3843483e63741fbd109c7a7fefa39d4649",
-      "git_blob": "eef27131897f1a0cd62fb55eda44164f227e1b9a"
+      "sha256": "b92d83b9d8f320f664d22048c74132465b2e9c6037609ba6e55140d8f691a96d",
+      "git_blob": "d3cd77eb99d8acda39b0a1895842ea5cf7c2b7c3"
     },
     {
       "path": "pkg/frost/store/store.go",
@@ -305,8 +305,8 @@
     },
     {
       "path": "pkg/frost/engine.go",
-      "sha256": "36be9cd41b6f6f372511d4e208869df4efc2d59f172a581b51e1893dae590461",
-      "git_blob": "be127735f6aeb2750b52f68537ebb2bd68985084"
+      "sha256": "38c093251b978cd5eed2625197e3cfdd9c0ddec87f176be0473ffb686f5acc63",
+      "git_blob": "2275eb6a4d604d9340d083187b2c556a448796a7"
     },
     {
       "path": "pkg/frost/config_test.go",
@@ -330,8 +330,8 @@
     },
     {
       "path": "pkg/frost/snowfallengine/engine.go",
-      "sha256": "868a789c0ed4e4b650c72def1954e819c09f9584d5a5104e84da32b3cd15efd2",
-      "git_blob": "13119da48941bc2bae09358b0d36599ee750e9c5"
+      "sha256": "2325008872da0f76aff3bebca5e38d15e6df49e78a16f734aa6eeebc73c1a994",
+      "git_blob": "06bf6b7ee887dba2096ae353a12707b947c82ae5"
     },
     {
       "path": "solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol",
@@ -378,5 +378,32 @@
       "sha256": "d775dc36c508559f1bd997ab2552cea3aed94587540f6307352fec4628400765",
       "git_blob": "3827686a0e46e4e10d0311a50e75de02e0dbc102"
     }
-  ]
+  ],
+  "repin_2026_10_16": {
+    "reason": "V-03 restacked above K-05 and V-01/02 in one linear PR stack (owner request, 16 October 2026)",
+    "changed": [
+      {
+        "path": "pkg/frost/integration/integration_test.go",
+        "old_sha256_prefix": "4701ce10248f",
+        "new_sha256_prefix": "90c42405e062"
+      },
+      {
+        "path": "pkg/frost/store/replay_test.go",
+        "old_sha256_prefix": "85d68f399be1",
+        "new_sha256_prefix": "b92d83b9d8f3"
+      },
+      {
+        "path": "pkg/frost/engine.go",
+        "old_sha256_prefix": "36be9cd41b6f",
+        "new_sha256_prefix": "38c093251b97"
+      },
+      {
+        "path": "pkg/frost/snowfallengine/engine.go",
+        "old_sha256_prefix": "868a789c0ed4",
+        "new_sha256_prefix": "2325008872da"
+      }
+    ],
+    "model_rerun": false,
+    "concrete_replay": "replay package and V03 seam tests rerun normally and under -race on the restacked tree: pass"
+  }
 }

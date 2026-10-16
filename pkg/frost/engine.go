@@ -60,6 +60,9 @@ type SigningRequest struct {
 	Attempt    Attempt
 	Key        KeyReady
 	Message    [32]byte
+	// Authorization retains the public exact-message grant in the durable claim.
+	// Guarded signing requires a nonempty grant and the final host callback.
+	Authorization []byte
 }
 
 type Engine interface {
@@ -117,10 +120,17 @@ type Acceptance interface {
 	WaitCandidateAcceptance(context.Context, Candidate) (Receipt, error)
 }
 
+// SigningAuthorization rechecks the exact grant after the durable attempt
+// claim and immediately before the worker starts. It must not mutate r.
+type SigningAuthorization interface {
+	BeforeSigning(context.Context, SigningRequest) error
+}
+
 type Providers struct {
-	Transport  Transport
-	Store      Store
-	Acceptance Acceptance
+	Transport            Transport
+	Store                Store
+	Acceptance           Acceptance
+	SigningAuthorization SigningAuthorization
 }
 
 type Category string

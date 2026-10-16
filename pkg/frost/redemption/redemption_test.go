@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
+	"github.com/keep-network/keep-core/pkg/frost/signing"
 )
 
 // TestZeroNetAndFeeBoundaries is the K-05 named check that zero or negative
@@ -244,6 +245,33 @@ func TestAttestationSlotLock(t *testing.T) {
 	}
 	if _, err = a.Attest(ctx, plan, w.chain.head+1000); err == nil {
 		t.Fatal("deadline beyond the certificate window accepted")
+	}
+}
+
+func TestAgreementIsChainDerived(t *testing.T) {
+	s := Schedule{FinalityBlocks: 2, RoundBlocks: 10}
+	adm := Admission{ReservationID: [32]byte{1}, TransactionHash: [32]byte{2}, Block: 50, BlockHash: [32]byte{3}}
+	a, err := Agree(s, 1, [20]byte{4}, signing.Redemption, adm.ReservationID, adm, []uint16{1, 3}, 52)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := Agree(s, 1, [20]byte{4}, signing.Redemption, adm.ReservationID, adm, []uint16{1, 3}, 61)
+	if a.Session != b.Session || a.StartBlock != 52 || a.Round != 0 {
+		t.Fatal("operators in one round disagree")
+	}
+	next, _ := Agree(s, 1, [20]byte{4}, signing.Redemption, adm.ReservationID, adm, []uint16{1, 3}, 62)
+	if next.Session == a.Session || next.StartBlock != 62 || next.Round != 1 {
+		t.Fatal("retry round reuses the session")
+	}
+	reorg := adm
+	reorg.BlockHash[0] ^= 1
+	c, _ := Agree(s, 1, [20]byte{4}, signing.Redemption, adm.ReservationID, reorg, []uint16{1, 3}, 52)
+	cancel, _ := Agree(s, 1, [20]byte{4}, signing.Cancellation, adm.ReservationID, adm, []uint16{1, 3}, 52)
+	if c.Session == a.Session || cancel.Session == a.Session {
+		t.Fatal("session ignores admission hash or purpose")
+	}
+	if _, err = Agree(s, 1, [20]byte{4}, signing.Redemption, adm.ReservationID, adm, []uint16{1, 3}, 51); err == nil {
+		t.Fatal("agreement before finality")
 	}
 }
 

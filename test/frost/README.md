@@ -97,3 +97,8 @@ result. Contract invalid-input vectors are re-signed so a stale signature cannot
 mask the admission predicate under test. Bridge collision tests explicitly
 inject the occupied state using compiler storage layouts, then remove it for
 an identical-input positive control; they do not claim to find hash preimages.
+
+## K-04 local signing
+
+The next milestone uses this K-03 fixture and Bitcoin Core regtest. See
+[`K04.md`](K04.md) for the exact transaction acceptance matrix and run command.

@@ -62,6 +62,8 @@ type Plan struct {
 	encoded  []byte
 	preimage []byte
 	hash     [32]byte
+	// cancellation is set only for a K-05 cancellation alternative.
+	cancellation *cancellationIntent
 }
 
 func NewPlan(p Proposal) (*Plan, error) {

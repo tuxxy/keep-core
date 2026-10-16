@@ -2,7 +2,7 @@
   "format": 2,
   "repositories": {
     "keep-core": {
-      "head": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+      "head": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
       "blobs": {
         "pkg/frost/dkg/executor.go": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d",
         "pkg/frost/dkg/types.go": "68c9b67adb74d5eb0ca3a63e6bdcf5b05fdf5d65",
@@ -45,7 +45,7 @@
       }
     },
     "tbtc-v2": {
-      "head": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+      "head": "64b981854619b4804d404823bfe77059bf1a554d",
       "blobs": {
         "solidity/contracts/bank/Bank.sol": "d44aae20aefe4b2aa2027debc8b9556908cdc64c",
         "solidity/contracts/bridge/BitcoinTx.sol": "6c52c0cf233da047468b03f14b81d873f28529ff",
@@ -61,7 +61,7 @@
         "solidity/contracts/frost/FrostDepositSweep.sol": "512cc94a153c286e5ff377664b709b1e8db817ca",
         "solidity/contracts/frost/FrostFundingConfiguration.sol": "0897be497bd54c007e1900816a1803874612994b",
         "solidity/contracts/frost/FrostFundingState.sol": "20e4d52adef77cf8dd571dc1038c54e9fbb6cdb0",
-        "solidity/contracts/frost/FrostRedemptionLedger.sol": "6c65c6da89961d7e08c510c55d2c45f67be9a922",
+        "solidity/contracts/frost/FrostRedemptionLedger.sol": "53be22472bf7b66b88c44d2c65d6baefb1103c92",
         "solidity/contracts/frost/FrostRedemptionRequests.sol": "fd8a28d225703d919adfb56da5dca849bfe8be29",
         "solidity/contracts/frost/FrostRedemptionSettlement.sol": "5df9044356d3e893d97788dd9f6dff7cd661b385",
         "solidity/contracts/frost/FrostRedemptionState.sol": "6a5af03eca135604f303062d1ed33c6e779abaf0",

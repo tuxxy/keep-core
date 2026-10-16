@@ -35,31 +35,31 @@
       "consumer_sources": [
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/dkg/executor.go",
           "blob": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/dkg/types.go",
           "blob": "68c9b67adb74d5eb0ca3a63e6bdcf5b05fdf5d65"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/snowfallengine/engine.go",
           "blob": "06bf6b7ee887dba2096ae353a12707b947c82ae5"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "solidity/ecdsa/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "solidity/ecdsa/contracts/frost/FrostDkgValidator.sol",
           "blob": "cf5b893adce584a75fb5b59f2d0997aa34080bea"
         }
@@ -109,19 +109,19 @@
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/store/store.go",
           "blob": "255eb6b18360b35596750c1df05169cb2ec88dd0"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/store/dkg_status.go",
           "blob": "57e6533e30bdae2fe4d6b55cf9a296a7f9df68c3"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/store/wallet.go",
           "blob": "1eeada06c53d217eb1cc28adc39c7ef6495a4af1"
         }
@@ -129,19 +129,19 @@
       "consumer_sources": [
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/snowfallengine/reload.go",
           "blob": "f2b8e5e052819d9aa0ce943132e71c8365caf325"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/dkg/executor.go",
           "blob": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol",
           "blob": "3cd5ef8e564767e93d99499d6211dad7904e0d46"
         }
@@ -179,25 +179,25 @@
       "producer_sources": [
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol",
           "blob": "3cd5ef8e564767e93d99499d6211dad7904e0d46"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "solidity/ecdsa/contracts/frost/FrostTypes.sol",
           "blob": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "solidity/ecdsa/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "solidity/ecdsa/contracts/frost/FrostDkgValidator.sol",
           "blob": "cf5b893adce584a75fb5b59f2d0997aa34080bea"
         }
@@ -205,25 +205,25 @@
       "consumer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostWallets.sol",
           "blob": "9f6092236839548c13f94bde539a79437906a1d8"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostTypes.sol",
           "blob": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostBridge.sol",
           "blob": "fb4fa7ad0aab09ec02f88f46af1f2ab640ac92c4"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         }
@@ -260,19 +260,19 @@
       "producer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostDepositProfile.sol",
           "blob": "261b9619dedb4a9a5122145e4d26fa11586f84b3"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/data/frost/deposit-profile.ts",
           "blob": "f00afebf3947f895aacf08263eb794f091de0edf"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/data/frost/deposit-profile-v1.json",
           "blob": "c090fec08fae052327cdd6749914d55c3414e502"
         }
@@ -280,61 +280,61 @@
       "consumer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostDepositAdmission.sol",
           "blob": "b84241af4355b7bcabed1427b27d592c3a03237c"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostBitcoinEncoding.sol",
           "blob": "2187ab410ecbbdcfe3ed41a37259a33560aa7017"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostFundingState.sol",
           "blob": "20e4d52adef77cf8dd571dc1038c54e9fbb6cdb0"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostFundingConfiguration.sol",
           "blob": "0897be497bd54c007e1900816a1803874612994b"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/IFrostFundingBridge.sol",
           "blob": "27d15d6a616131a13d165b030a4fd16a4b403fec"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/IFrostVerifier.sol",
           "blob": "c908c07dbe70ac07e96336f3573f81763108f488"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostVerifier.sol",
           "blob": "95c2cdd08551756de91fc7c0cc1343e45b009278"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostSecp256k1.sol",
           "blob": "24987710b29cd9194ffc66c536819e6a63feeaec"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostDepositSweep.sol",
           "blob": "512cc94a153c286e5ff377664b709b1e8db817ca"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostCustody.sol",
           "blob": "5fae71a81102819dd817cf8f1997380e83d73efd"
         }
@@ -418,103 +418,103 @@
       "producer_sources": [
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/signing/INTENT-V2.md",
           "blob": "e936a9e9d8934fdd42d604867b78ea8c5d78d0ed"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/signing/testdata/intent-v2.json",
           "blob": "a7b25725371a0a650b636c686876ad3efb9f2a7f"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionRequests.sol",
           "blob": "fd8a28d225703d919adfb56da5dca849bfe8be29"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptions.sol",
           "blob": "bb9f64e28c7ed19213dc2f5d21980eeef4b453f9"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionLedger.sol",
-          "blob": "6c65c6da89961d7e08c510c55d2c45f67be9a922"
+          "blob": "53be22472bf7b66b88c44d2c65d6baefb1103c92"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionState.sol",
           "blob": "6a5af03eca135604f303062d1ed33c6e779abaf0"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostCustody.sol",
           "blob": "5fae71a81102819dd817cf8f1997380e83d73efd"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionTransaction.sol",
           "blob": "9f337ebcedaffee6f5746fbdb59b972c76dfafab"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostReservationCertificate.sol",
           "blob": "afd9a4d5e62cc691e732474acd3fcc7a1e61f9c6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostSigningIntent.sol",
           "blob": "e5ccc4c18e3a5ef6b47adc1caaced47c2f2b5939"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostBridge.sol",
           "blob": "fb4fa7ad0aab09ec02f88f46af1f2ab640ac92c4"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/IFrostBridge.sol",
           "blob": "19abd34568692bd8f0bac80adccfe46cd31bac78"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostWallets.sol",
           "blob": "9f6092236839548c13f94bde539a79437906a1d8"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostTypes.sol",
           "blob": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/C04-BOUNDARIES.md",
           "blob": "8bf4f5eb3baf164c1dd2edd7becf42f1871195ce"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/bridge/BridgeState.sol",
           "blob": "4be8933b8019ce304e3a64df63bc6ab235ad8c59"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/data/frost/intent-v2.json",
           "blob": "a7b25725371a0a650b636c686876ad3efb9f2a7f"
         }
@@ -522,61 +522,61 @@
       "consumer_sources": [
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/signing/plan.go",
           "blob": "1d21b09a21f24b80d0a5f0c5d2a7a7265604c927"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/signing/executor.go",
           "blob": "da212305cff151ae7a6f9a614e47f6b208113cc0"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/store/signing.go",
           "blob": "40a00d3ddf5168a55aff09ee12d092a71e5dac5b"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/attestation.go",
           "blob": "e0518e89635984cfad9d85b42cbea0e3913a4f8d"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/planner.go",
           "blob": "6fd0666f34e7bf32414d4c9061a4a3de870aace8"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/reservations.go",
           "blob": "e4fb789920bfbabe2cad549b3e11b150ca8b0279"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/agreement.go",
           "blob": "1d67efba4c186e21bd6ec1cbf83255e92cfa5f66"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/reload.go",
           "blob": "2c9fc3398cc6699bc1795131b8b763f73993bf78"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/chain.go",
           "blob": "d03113d6599d2e7dd7081006c5ffe09afae79003"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/chain/ethereum/frost_redemption.go",
           "blob": "70bc6edf89fbf6e9c82541fffa8f728531799b98"
         }
@@ -619,7 +619,7 @@
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/integration/redemption_test.go",
           "blob": "e0c2bb020f64799ad99632266075e4904813eff1",
           "scope": "ROW-5: K-05 named tests (real DKG, real worker, real C-04/C-05 on Anvil, Bitcoin Core regtest); concrete tests, local test values"
@@ -672,13 +672,13 @@
       "producer_sources": [
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/signing/done.go",
           "blob": "f0565b079e61061352e59c322469863ec5d37511"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/signing/executor.go",
           "blob": "da212305cff151ae7a6f9a614e47f6b208113cc0"
         }
@@ -686,37 +686,37 @@
       "consumer_sources": [
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/bitcoin/taproot_transaction.go",
           "blob": "13fb9123646404d673c036d47f20bd97a05946c6"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/tbtc/wallet_signing.go",
           "blob": "161059144c95e01a2b6f10659225a7b07c1d9836"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Core.test.ts",
           "blob": "fd1a6e4851c8b49a43f2f820c66ad06b0c984847"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/resolver.go",
           "blob": "cb32ba7fdc85e9755d43c4e8586b3f11d62f3ab0"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/ledger.go",
           "blob": "02eeeb7478b54082b050f453e0828b98dd11e3dc"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/maintainer/spv/frost_redemptions.go",
           "blob": "d5bfe26997d3a346e34a38e4103f18645e8fa615"
         }
@@ -738,7 +738,7 @@
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/integration/redemption_test.go",
           "blob": "e0c2bb020f64799ad99632266075e4904813eff1",
           "scope": "ROW-6: P-K05-TERMINAL-ATTEMPT; K-05 lifecycle and late-signature named tests: same bytes broadcast, SPV payment proof by the K-05 maintainer path on regtest; concrete tests"
@@ -778,19 +778,19 @@
       "producer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/bridge/BitcoinTx.sol",
           "blob": "6c52c0cf233da047468b03f14b81d873f28529ff"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostCustody.sol",
           "blob": "5fae71a81102819dd817cf8f1997380e83d73efd"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionTransaction.sol",
           "blob": "9f337ebcedaffee6f5746fbdb59b972c76dfafab"
         }
@@ -798,163 +798,163 @@
       "consumer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostDepositSweep.sol",
           "blob": "512cc94a153c286e5ff377664b709b1e8db817ca"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostDepositAdmission.sol",
           "blob": "b84241af4355b7bcabed1427b27d592c3a03237c"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostFundingState.sol",
           "blob": "20e4d52adef77cf8dd571dc1038c54e9fbb6cdb0"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/IFrostFundingProof.sol",
           "blob": "fd127de00bc61d6740df62976d1fc4cc3bed5580"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionLedger.sol",
-          "blob": "6c65c6da89961d7e08c510c55d2c45f67be9a922"
+          "blob": "53be22472bf7b66b88c44d2c65d6baefb1103c92"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionSettlement.sol",
           "blob": "5df9044356d3e893d97788dd9f6dff7cd661b385"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostCancellationCertificate.sol",
           "blob": "4d45d65f7b0ece9da6a4495760073b92e0f937a1"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionRequests.sol",
           "blob": "fd8a28d225703d919adfb56da5dca849bfe8be29"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionState.sol",
           "blob": "6a5af03eca135604f303062d1ed33c6e779abaf0"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostBridge.sol",
           "blob": "fb4fa7ad0aab09ec02f88f46af1f2ab640ac92c4"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/bridge/BridgeState.sol",
           "blob": "4be8933b8019ce304e3a64df63bc6ab235ad8c59"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/bridge/Deposit.sol",
           "blob": "961f2ecc2415603bda7e5eaa240af509e76eac65"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/bank/Bank.sol",
           "blob": "d44aae20aefe4b2aa2027debc8b9556908cdc64c"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/vault/TBTCVault.sol",
           "blob": "02632c46bc7efc3e2f4219c5045f14067069ce89"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.PublicSettlement.test.ts",
           "blob": "db64749a4573e228f1b84a72352fe7ff2e423cba"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostSweepResolutionCertificate.sol",
           "blob": "4ca653f357cca0526f3fdd7644902c71ad9bb16e"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Core.test.ts",
           "blob": "fd1a6e4851c8b49a43f2f820c66ad06b0c984847"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Gas.test.ts",
           "blob": "fa8c19d8df61e73b1b58e10cee8609423334a33e"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.test.ts",
           "blob": "4371561794cd62ddf25fe5aa674f313091c949d5"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostCancellationAdmissions.sol",
           "blob": "70b1fce4ca12ee4a92c14dd6dd40efb4f813cad6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostCancellationHistory.sol",
           "blob": "29fd9e62fdb49a11bba39e0b79be05cea73b777f"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/test/FrostCancellationHistoryFixture.sol",
           "blob": "48fce4b65918801e64625efdb78a8c889cfa23fa"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.CancellationAlternatives.test.ts",
           "blob": "242f76a6097ee5b43547415d0cc2323180295f98"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.CancellationHistory.test.ts",
           "blob": "18ca8c5b920fa51360229b69f4244fb9708dcf30"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/resolver.go",
           "blob": "cb32ba7fdc85e9755d43c4e8586b3f11d62f3ab0"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/ledger.go",
           "blob": "02eeeb7478b54082b050f453e0828b98dd11e3dc"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/chain/ethereum/frost_redemption.go",
           "blob": "70bc6edf89fbf6e9c82541fffa8f728531799b98"
         }
@@ -1018,14 +1018,14 @@
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.CancellationAlternatives.test.ts",
           "blob": "242f76a6097ee5b43547415d0cc2323180295f98",
           "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification."
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.CancellationHistory.test.ts",
           "blob": "18ca8c5b920fa51360229b69f4244fb9708dcf30",
           "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification."
@@ -1053,7 +1053,7 @@
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/integration/redemption_test.go",
           "blob": "e0c2bb020f64799ad99632266075e4904813eff1",
           "scope": "ROW-7: P-K05-NO-DOUBLE-OUTCOME; K-05 reservation timeout race named test; concrete tests"
@@ -1088,67 +1088,67 @@
       "producer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostVerifier.sol",
           "blob": "95c2cdd08551756de91fc7c0cc1343e45b009278"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostSecp256k1.sol",
           "blob": "24987710b29cd9194ffc66c536819e6a63feeaec"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/IFrostVerifier.sol",
           "blob": "c908c07dbe70ac07e96336f3573f81763108f488"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostReservationCertificate.sol",
           "blob": "afd9a4d5e62cc691e732474acd3fcc7a1e61f9c6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostCancellationCertificate.sol",
           "blob": "4d45d65f7b0ece9da6a4495760073b92e0f937a1"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionLedger.sol",
-          "blob": "6c65c6da89961d7e08c510c55d2c45f67be9a922"
+          "blob": "53be22472bf7b66b88c44d2c65d6baefb1103c92"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionRequests.sol",
           "blob": "fd8a28d225703d919adfb56da5dca849bfe8be29"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostRedemptionState.sol",
           "blob": "6a5af03eca135604f303062d1ed33c6e779abaf0"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "solidity/ecdsa/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         },
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "solidity/ecdsa/contracts/frost/FrostDkgValidator.sol",
           "blob": "cf5b893adce584a75fb5b59f2d0997aa34080bea"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "820b5308b38d8b17a40a1d78edc9f8047ffc51f1",
+          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         }
@@ -1257,7 +1257,7 @@
       "evidence": [
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/agreement.go",
           "blob": "1d67efba4c186e21bd6ec1cbf83255e92cfa5f66",
           "scope": "A-K04-AGREED-EXECUTOR-CONFIG: local chain-derived agreement only; no cross-operator transport"
@@ -1368,7 +1368,7 @@
       "evidence": [
         {
           "repository": "keep-core",
-          "revision": "e9fc2076455f16a36459b1fcdfe9b2c17cee7e04",
+          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/attestation.go",
           "blob": "e0518e89635984cfad9d85b42cbea0e3913a4f8d",
           "scope": "A-OPERATOR-ATTEST-AFTER-VALIDATION: Attest orders Validate, Reload, lock, sign"

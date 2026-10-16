@@ -3,6 +3,7 @@
   "kind": "counterexample",
   "property": "terminal_claims",
   "weakening": "ZeroHeadIgnoresJournals",
+  "profile": "store",
   "max_commits": 3,
   "replay": "full",
   "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
@@ -20,6 +21,14 @@
           false
         ],
         "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
           null,
           null
         ]
@@ -50,14 +59,14 @@
     },
     {
       "n": 5,
+      "action": "clone"
+    },
+    {
+      "n": 6,
       "action": "step",
       "proc": 0,
       "step": "install",
       "pause": "before-directory-sync"
-    },
-    {
-      "n": 6,
-      "action": "clone"
     },
     {
       "n": 7,
@@ -105,6 +114,14 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
@@ -113,8 +130,8 @@
       "action": "claim",
       "proc": 0,
       "attempt": 0,
-      "purpose": "sign",
-      "domain": 0,
+      "purpose": "dkg",
+      "domain": 1,
       "pause": "before-write"
     },
     {
@@ -176,6 +193,14 @@
         "slots": [
           null,
           null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          null,
+          null
         ]
       }
     },
@@ -204,14 +229,14 @@
     },
     {
       "n": 5,
+      "action": "clone"
+    },
+    {
+      "n": 6,
       "action": "step",
       "proc": 0,
       "step": "install",
       "pause": "before-directory-sync"
-    },
-    {
-      "n": 6,
-      "action": "clone"
     },
     {
       "n": 7,

@@ -242,3 +242,138 @@ rewritten into the sections above.
     appear. `PutOverwrites` removes the compare guard of `Put` (a write to an
     occupied slot with different contents commits instead of returning
     `Conflict`) and is declared to break `immutable_slots`.
+
+## 11. Tranche 2: K-03 store-side predicates (7 October 2026)
+
+Recorded before the tranche 2 runs. Governing plan: KC-VER revision 01
+(companion to KC-SF-V3), packages V-00 to V-02. Source: keep-core
+`295af3333` (K-03 PR #8), store blob `255eb6b18`.
+
+### 11.1 Scope
+
+V-00: the model becomes profile-parametric (`store`, `dkg`) with one shared
+kernel; `check-freshness.py` compares statement pins with the tree. V-01:
+re-pin of the tranche 1 statement on the K-03 store (the `store` profile must
+reproduce the tranche 1 unique-state count, and the 54 tranche 1 traces must
+replay). V-02: the `dkg` profile below.
+
+### 11.2 Predicates
+
+| ID | Predicate | Model property | V3 mapping |
+| --- | --- | --- | --- |
+| P-K03-NO-LATE-KEY | After the live ownership of a DKG attempt ends by release, process crash, host crash or restart, no completed key can be installed for that domain; a key is installed only by the handle holding the live claim and only if it matches the retained request. | `no_late_key` | SC-03, SC-08; section 4.3 |
+| P-K03-SEATSLOST-TERMINAL | Once the status for a domain is SeatsLost, it never reports InProgress or KeyStored again. | `seatslost_terminal` | SC-08 |
+| P-K03-STATUS-DURABLE | The reported status equals the function of the fenced durable snapshot and the ground truth of live ownership: KeyStored only with a fenced key; InProgress only while this handle holds the claim; SeatsLost only for a durable claim without key and without owner; Missing without a claim. | `status_durable` | SC-08 |
+| P-K03-RELOAD-ONLY-DURABLE | A key loads only if the fenced snapshot holds that key; an acknowledged key is present after any successful reopen. | `reload_only_durable`, `durable_acks` | SC-02, SC-08 |
+| P-K03-WALLET-MONOTONE | An acknowledged wallet record never changes identity, never lowers its rank, never clears quarantine, never leaves Closed, never goes from ReadyUnfunded to Closed, never changes its approval receipt; ReadyUnfunded is acknowledged only with a durable key of the same identity. | `wallet_monotone` | SC-02, SC-08 |
+
+### 11.3 Bounds (dkg profile)
+
+Two processes, one image (no clone), two attempts as DKG claims in domain 0
+only, no signing claims; keys and the wallet record in domain 0; key values two
+identities plus one non-matching key; wallet rank 1 to 4, two identities,
+quarantine flag, two approval receipts; no record or lock slots; three commits;
+process crash at every stage, I/O error at every step, the three fence
+outcomes and one fence reset. Clone, stale restore and host crash are omitted
+in this profile: their effect on the store is checked by the `store` profile on
+the same kernel, and the first dkg run with the full action space exceeded the
+16 GiB limit (recorded as blocked). Limits per run: 1800 s wall, 16 GiB
+resident set, 12 threads.
+
+### 11.4 Assumptions added
+
+A-10 The guarded engine ends the worker operation before it releases the DKG
+claim (caller obligation; entered in the composition ledger). A-11 The retained
+DKG request is well formed; its structural validation is covered by the unit
+tests, not by the model.
+
+### 11.5 Negative controls (dkg profile)
+
+| Weakening | Declared failing property |
+| --- | --- |
+| `NoLiveOwnerCheck` (the `ErrDKGLost` guard removed) | `no_late_key`, `seatslost_terminal` |
+| `ReleaseKeepsLiveDkg` | `no_late_key` |
+| `StatusIgnoresKey` | `status_durable` |
+| `WalletRankUnchecked` | `wallet_monotone` |
+| `ReadyWithoutKey` | `wallet_monotone` |
+| `LoadKeyIgnoresFence` (`LoadKey` skips the fence check) | `reload_only_durable` |
+
+A weakened run stops only when every declared property has a counterexample
+(revised during the tranche so that each predicate has a recorded control).
+The kernel weakenings of section 6 are checked in the `store` profile run.
+
+### 11.6 Acceptance
+
+Section 7 applies per predicate. In addition, V-01 passes only if the `store`
+profile completes exhaustively at three commits with the five tranche 1
+properties and witnesses intact, the kernel weakenings break their declared
+properties, and the tranche 1 trace set (54 traces, tranche 1 harness) replays
+on the K-03 store. The unique-state count is recorded and any difference from
+the tranche 1 count of 32,327,085 must be explained in the results. (Revised
+during the tranche: the kernel now releases a claim by kind and domain, as the
+Go release closures do, so a DKG claim and a signing claim are distinct live
+state; the count therefore differs from tranche 1 by construction.) Witnesses required for the dkg profile:
+`w_key_saved_live`, `w_late_key_refused`, `w_key_loaded_after_reopen`,
+`w_status_key_stored_after_reopen`, `w_status_seats_lost`,
+`w_status_in_progress`, `w_wallet_ready`, `w_wallet_closed_after_pending`,
+`w_wallet_conflict`, `w_key_identical`.
+
+### 11.7 Revisions made during tranche 2
+
+1. **Finding F-09, model defect (observer).** The first dkg-profile run reported
+   a `durable_acks` counterexample: a Closed wallet commit was accepted by the
+   authority, the process crashed before acknowledging it, and the reopen loaded
+   the fenced Closed record while the last acknowledged record was Pending. The
+   observer required the reopened record to equal the last acknowledged record.
+   For a monotone record that is wrong: a fenced but unacknowledged commit
+   legitimately advances it. The observer now requires that the reopened record
+   preserves the acknowledged facts (same identity, rank not lower, quarantine
+   not cleared, approval receipt unchanged). Same lesson as F-01: compare with
+   the committed truth, not with the last acknowledgement. Counterexample, first
+   results and model source preserved under `model-defect-observer-2/`. No
+   implementation change.
+2. **Reduced dkg profile.** The first dkg run with the full kernel action space
+   exceeded the 16 GiB limit and was stopped (recorded as blocked). The profile
+   now omits clone, stale restore, host crash, signing claims and domain 1 DKG
+   claims; see §11.3. The witnesses that need those actions are not required in
+   the dkg profile.
+3. **Re-pin criterion.** See §11.6: the unique-state count differs from tranche
+   1 because release is now per claim kind and domain.
+4. **Trace counts.** A weakened run stops at its first declared counterexample,
+   so the number of counterexample traces it also finds for other properties
+   varies between runs; the store profile wrote 53 traces where tranche 1 wrote
+   54 for that reason.
+5. **Finding F-10, assumption mismatch (clone semantics).** The regenerated
+   store witness `W-PROGRESS-AFTER-REOPEN` cloned the keystore while a journal
+   was installed but not yet directory-synced. The model's clone copied durable
+   journals only, so the clone had no journal and, after a fence reset, opened
+   fresh (the A-05 corner). The harness copies the live directory, so the clone
+   had the journal and the store quarantined, which is the safe behavior. The
+   model now copies every installed journal name into the clone and marks the
+   copies durable, matching a file-level copy. The old trace, the failing
+   replay log and the model source are preserved under
+   `assumption-mismatch-clone/`. Not an implementation defect. Tranche 1's
+   clone-related results stand under the durable-only clone abstraction they
+   were recorded with; S-K02-HOST-2 is recorded under the file-level one.
+
+## 12. Re-pin at the K-05 head (15 October 2026)
+
+This tooling now sits on K-05 `24e870e74`. From K-03 to K-05, `store.go`,
+`fence.go`, the lease files, `dkg_status.go`, `wallet.go`, `domain.go` and
+`dkg/types.go` are byte-identical. K-04 added `store/signing.go` and changed
+`pkg/frost/engine.go`. `signing.go` stores signing application records through
+the existing claim path. The `engine.go` change is the authorization field
+and seam. Neither is a new model transition, but both are pinned: a change to
+either makes the statements stale.
+
+Reruns used the same limits (1800 s, 16 GiB, 12 threads, three commits). Both
+claim models reproduce their state counts: store 34,719,463 and dkg 4,841,694.
+Every weakening breaks its declared property. The regenerated traces (53
+store and 50 dkg) replay 104/104 normally and under the race detector. The
+tranche-1 harness in the K-05 tree replays 55/55. The store suite is 212/212
+normal and race; FROST is 404 pass with 22 skips (integration tests that need
+the Anvil environment), normal and race. Statements: S-K02-HOST-3 and
+S-K03-STORE-2. Their predecessors are marked superseded, and
+`check-freshness.py` reports superseded statements without citing them.
+Signing application records are not modeled. V-04 covers them with concrete
+tests.

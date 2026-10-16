@@ -1,0 +1,94 @@
+{
+  "recorded": "2026-10-16",
+  "purpose": "V-07 boundary contract pins; any change re-pins BOUNDARIES.md before the model freeze",
+  "spec": {
+    "repository": "tlabs-xyz/FROST-migration-spec",
+    "files": [
+      {
+        "path": "keep-core-integration-spec.md",
+        "commit": "d45afdab9108cbd0156ad68cc5697ece737a7b1c",
+        "blob": "98f8589a48ab95d065d5b95307734d66b93618f1"
+      },
+      {
+        "path": "keep-core-verification-spec.md",
+        "commit": "e893602593dec030d2ace822dcf61776f0a631df",
+        "blob": "2ab227a295e09566d8853ed0d7bd0fef791084e4",
+        "note": "rev 02, spec PR #4, unmerged"
+      }
+    ]
+  },
+  "keep-core": {
+    "commit": "3f01ebcaa",
+    "files": [
+      {
+        "path": "pkg/frost/signing/executor.go",
+        "blob": "da212305cff151ae7a6f9a614e47f6b208113cc0"
+      },
+      {
+        "path": "pkg/frost/signing/plan.go",
+        "blob": "1d21b09a21f24b80d0a5f0c5d2a7a7265604c927"
+      },
+      {
+        "path": "pkg/frost/signing/cancellation.go",
+        "blob": "16c86465549e56cbe17bf1e3e4fced61b7b67ced"
+      },
+      {
+        "path": "pkg/frost/redemption/ledger.go",
+        "blob": "02eeeb7478b54082b050f453e0828b98dd11e3dc"
+      },
+      {
+        "path": "pkg/frost/redemption/resolver.go",
+        "blob": "cb32ba7fdc85e9755d43c4e8586b3f11d62f3ab0"
+      },
+      {
+        "path": "pkg/frost/redemption/agreement.go",
+        "blob": "1d67efba4c186e21bd6ec1cbf83255e92cfa5f66"
+      },
+      {
+        "path": "pkg/frost/redemption/attestation.go",
+        "blob": "e0518e89635984cfad9d85b42cbea0e3913a4f8d"
+      },
+      {
+        "path": "pkg/bitcoin/taproot_transaction.go",
+        "blob": "13fb9123646404d673c036d47f20bd97a05946c6"
+      },
+      {
+        "path": "pkg/frost/store/signing.go",
+        "blob": "40a00d3ddf5168a55aff09ee12d092a71e5dac5b"
+      }
+    ]
+  },
+  "tbtc-v2": {
+    "commit": "64b98185",
+    "files": [
+      {
+        "path": "solidity/contracts/frost/FrostDepositSweep.sol",
+        "blob": "512cc94a153c286e5ff377664b709b1e8db817ca"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostDepositProfile.sol",
+        "blob": "261b9619dedb4a9a5122145e4d26fa11586f84b3"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostDepositAdmission.sol",
+        "blob": "b84241af4355b7bcabed1427b27d592c3a03237c"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostSweepResolutionCertificate.sol",
+        "blob": "4ca653f357cca0526f3fdd7644902c71ad9bb16e"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostFundingState.sol",
+        "blob": "20e4d52adef77cf8dd571dc1038c54e9fbb6cdb0"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostRedemptionLedger.sol",
+        "blob": "53be22472bf7b66b88c44d2c65d6baefb1103c92"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostCustody.sol",
+        "blob": "5fae71a81102819dd817cf8f1997380e83d73efd"
+      }
+    ]
+  }
+}

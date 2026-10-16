@@ -1,0 +1,361 @@
+{
+  "claim_model_steps": [
+    {
+      "action": {
+        "Attest": [
+          2,
+          2,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          0,
+          0,
+          0,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 0,
+        "last_admitted_version": 0,
+        "locks": [
+          0,
+          0,
+          0,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": false,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 0,
+        "version": 1
+      },
+      "n": 1
+    },
+    {
+      "action": "Crash",
+      "diverges": true,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          0,
+          0,
+          0,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 0,
+        "last_admitted_version": 0,
+        "locks": [
+          0,
+          0,
+          0,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": false,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 0,
+        "version": 1
+      },
+      "n": 2
+    }
+  ],
+  "id": "ForgetTupleLocksOnCrash-P-HOST-ONE-INTENT-ATTESTATION",
+  "initial_state": {
+    "absence_slot": null,
+    "active": [
+      false,
+      false
+    ],
+    "admissions": 0,
+    "attestation_history": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "bad_expiry": false,
+    "bad_generation": false,
+    "bad_id": false,
+    "bad_lock": false,
+    "bad_replacement": false,
+    "bad_version": false,
+    "counter": 0,
+    "crash_used": false,
+    "deadlines": [
+      0,
+      0
+    ],
+    "finalized_tick": null,
+    "issued_live_mask": 0,
+    "last_admitted_version": 0,
+    "locks": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "readiness_generation": 1,
+    "refused_admitted_replacement": false,
+    "refused_expiry": false,
+    "refused_lock": false,
+    "refused_version": false,
+    "renewal_blocked_replacement": false,
+    "renewed_slot": null,
+    "replacement_admitted": false,
+    "replacement_slot": null,
+    "replacement_witness_candidate": false,
+    "reserved": [
+      false,
+      false
+    ],
+    "tick": 0,
+    "version": 1
+  },
+  "kind": "counterexample",
+  "property": "P-HOST-ONE-INTENT-ATTESTATION",
+  "replay": "none",
+  "replay_note": "Proposed consumer and host certificate lock only; no existing C04 ledger/Go certificate-attestation path.",
+  "steps": [
+    {
+      "action": {
+        "Attest": [
+          2,
+          2,
+          1
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          0,
+          0,
+          0,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": false,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 0,
+        "last_admitted_version": 0,
+        "locks": [
+          0,
+          0,
+          0,
+          2
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": false,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 0,
+        "version": 1
+      },
+      "n": 1
+    },
+    {
+      "action": "Crash",
+      "diverges": true,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          0,
+          0,
+          0,
+          2
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": false,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 0,
+        "last_admitted_version": 0,
+        "locks": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": false,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 0,
+        "version": 1
+      },
+      "n": 2
+    },
+    {
+      "action": {
+        "Attest": [
+          2,
+          2,
+          0
+        ]
+      },
+      "diverges": false,
+      "expect_state": {
+        "absence_slot": null,
+        "active": [
+          false,
+          false
+        ],
+        "admissions": 0,
+        "attestation_history": [
+          0,
+          0,
+          0,
+          3
+        ],
+        "bad_expiry": false,
+        "bad_generation": false,
+        "bad_id": false,
+        "bad_lock": true,
+        "bad_replacement": false,
+        "bad_version": false,
+        "counter": 0,
+        "crash_used": true,
+        "deadlines": [
+          0,
+          0
+        ],
+        "finalized_tick": null,
+        "issued_live_mask": 0,
+        "last_admitted_version": 0,
+        "locks": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "readiness_generation": 1,
+        "refused_admitted_replacement": false,
+        "refused_expiry": false,
+        "refused_lock": false,
+        "refused_version": false,
+        "renewal_blocked_replacement": false,
+        "renewed_slot": null,
+        "replacement_admitted": false,
+        "replacement_slot": null,
+        "replacement_witness_candidate": false,
+        "reserved": [
+          false,
+          false
+        ],
+        "tick": 0,
+        "version": 1
+      },
+      "n": 3
+    }
+  ],
+  "weakening": "ForgetTupleLocksOnCrash"
+}

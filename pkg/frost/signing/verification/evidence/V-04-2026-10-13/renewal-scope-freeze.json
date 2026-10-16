@@ -1,0 +1,42 @@
+{
+  "scope": "Affected admission/attestation model only; primary main.rs and all Go unchanged",
+  "renewals": 1,
+  "max_replacements": 1,
+  "intent_identities": 2,
+  "certificate_variants": 3,
+  "deadlines": {
+    "original": 1,
+    "same_intent_renewal": 2,
+    "different_intent_replacement": 3
+  },
+  "ticks": 3,
+  "finalized_block_labels": [
+    1,
+    2,
+    3
+  ],
+  "generation_labels": 2,
+  "custody_version_labels": 2,
+  "wallets": 1,
+  "witnesses": [
+    "W-outstanding-renewal-blocks-replacement",
+    "W-renewal-deadline-finalized-before-replacement-admission"
+  ],
+  "negative_control": "IgnoreOutstandingRenewal",
+  "required_fence": "Expiry past maximum original/renewal deadline, all deadlines finalized and canonical finalized absence; renewal clears older absence observation; retained history",
+  "limitations": "One renewal only, not arbitrary renewal histories or real consumer/storage/cryptography",
+  "limits": {
+    "wall_seconds_per_command": 1800,
+    "rss_ceiling_bytes": 17179869184,
+    "model_threads": 4,
+    "GOMAXPROCS": 4,
+    "go_package_parallelism": 2,
+    "wallets": 1,
+    "requests": 2,
+    "attempts": 2,
+    "timeout_ticks": 3,
+    "commit_stages": 6,
+    "max_acknowledged_commits": 10
+  },
+  "expiry_witness_refinement": "With added deadline3, require active admitted certificate strictly past its recorded deadline for survival/refusal witnesses; no transition changes."
+}

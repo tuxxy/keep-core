@@ -1,0 +1,8 @@
+{
+  "classification": "replay harness observer defect, not production defect",
+  "finding": "OmitFinalGuard discovered reservation state6 after cancellation/refund. Projection mapped only timeout3 and left actual provider Reserved.",
+  "repair": "Use trace-named grant attempt and map every non-Reserved modeled reservation state to a concrete refusal state.",
+  "prior_failed_runs": "before-final-state-projection-correction",
+  "model_unchanged": true,
+  "production_unchanged": true
+}

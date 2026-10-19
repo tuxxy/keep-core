@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
 	"math/big"
 	"reflect"
 	"sort"
@@ -83,6 +84,9 @@ type TbtcChain struct {
 	ecdsaDkgValidatorAddress common.Address
 
 	sweptDepositsCache *cache.GenericTimeCache[*tbtc.DepositChainRequest]
+
+	// frostBridge reads the FROST extension at the Bridge address (K-07 drain).
+	frostBridge *frostbridgeabi.FrostBridgeCaller
 }
 
 // NewTbtcChain construct a new instance of the TBTC-specific Ethereum
@@ -116,6 +120,11 @@ func newTbtcChain(
 			"failed to attach to Bridge contract: [%v]",
 			err,
 		)
+	}
+
+	frostBridge, err := frostbridgeabi.NewFrostBridgeCaller(bridgeAddress, baseChain.client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to attach to the FROST Bridge extension: [%v]", err)
 	}
 
 	maintainerProxyAddress, err := config.ContractAddress(MaintainerProxyContractName)
@@ -282,6 +291,7 @@ func newTbtcChain(
 	}
 
 	return &TbtcChain{
+		frostBridge:              frostBridge,
 		baseChain:                baseChain,
 		bridge:                   bridge,
 		maintainerProxy:          maintainerProxy,

@@ -5,7 +5,10 @@ const path = require('path');
 const { ethers } = require(path.join(__dirname, '../../solidity/ecdsa/node_modules/ethers'));
 async function main() {
  const [url, tbRoot, output, patternText, mode, genesis] = process.argv.slice(2);
- const k05 = mode === 'k05';
+ // K-07 is K-05 plus a controlled legacy registry root, a reimbursement pool
+ // and the open drain gate, for the ECDSA-to-FROST drain.
+ const k07 = mode === 'k07';
+ const k05 = mode === 'k05' || k07;
  if (k05 && !/^0x[0-9a-f]{64}$/.test(genesis||'')) throw Error('K-05 needs the regtest genesis');
  if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(url)) throw Error('local RPC required');
  const kcRoot = path.resolve(__dirname, '../..');
@@ -41,7 +44,12 @@ async function main() {
   relay=await deploy(tbRoot,'contracts/test/FrostPublicFundingRegistryFixture.sol','FrostPublicFundingRegtestRelay');
   verifier=await deploy(tbRoot,'contracts/frost/FrostVerifier.sol','FrostVerifier');
  }
- const initializer=k05?implementation.interface.encodeFunctionData('initialize',[bank.address,relay.address,treasury,admin,admin,1]):implementation.interface.encodeFunctionData('initialize',[admin,admin,admin,admin,admin,1]);
+ let legacyRegistry, reimbursementPool;
+ if(k07){
+  legacyRegistry=await deploy(tbRoot,'contracts/test/FrostDrainRegistryFixture.sol','FrostDrainRegistryFixture');
+  reimbursementPool=await deploy(tbRoot,'@keep-network/random-beacon/contracts/ReimbursementPool.sol','ReimbursementPool',[0,0]);
+ }
+ const initializer=k05?implementation.interface.encodeFunctionData('initialize',[bank.address,relay.address,treasury,k07?legacyRegistry.address:admin,k07?reimbursementPool.address:admin,1]):implementation.interface.encodeFunctionData('initialize',[admin,admin,admin,admin,admin,1]);
  const proxy=await deploy(tbRoot,'@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol','TransparentUpgradeableProxy',[implementation.address,proxyAdmin.address,initializer]);
  const bridge=implementation.attach(proxy.address);
  const iface=artifact(tbRoot,'contracts/frost/IFrostBridge.sol','IFrostBridge');
@@ -78,12 +86,44 @@ async function main() {
   await(await frostBridge.configureFrostRedemptions(genesis,2,1000,ethers.constants.AddressZero,ethers.utils.id('UNQUALIFIED K-05 local D-08 reference'))).wait();
   await(await frostBridge.setFrostRedemptionsEnabled(true)).wait();
  }
+ let legacy;
+ if(k07){
+  await(await legacyRegistry.bindWalletOwner(bridge.address)).wait();
+  await(await legacyRegistry.setMember(admin)).wait();
+  await(await reimbursementPool.authorize(bridge.address)).wait();
+  await(await frostBridge.setFrostDrainEnabled(true)).wait();
+  legacy=legacyLayout(tbRoot);
+  legacy.registry=legacyRegistry.address;
+  // The real legacy proposal validator, for the legacy host's drain proposal.
+  legacy.validator=(await deploy(tbRoot,'contracts/bridge/WalletProposalValidator.sol','WalletProposalValidator',[bridge.address])).address;
+ }
  await(await registry.setRequestsEnabled(true)).wait();await(await frostBridge.setFrostRequestsEnabled(true)).wait();
  await(await frostBridge.requestNewFrostWallet()).wait();
  const pattern=(patternText||'1,2,3').split(',').map(Number);
  let seed=1;for(;seed<10000;seed++) {const members=await pool.selectGroup(3,ethers.utils.hexZeroPad(ethers.utils.hexlify(seed),32));if(members.every((v,i)=>Number(v)===pattern[i]))break;}if(seed===10000)throw Error('selection seed not found');
  await(await beacon.fulfill(seed)).wait();
  const epoch=Number(await registry.epoch());
- fs.writeFileSync(output,JSON.stringify({bank:bank?bank.address:undefined,treasury,registry:registry.address,bridge:bridge.address,pool:pool.address,validator:validator.address,beacon:beacon.address,epoch,seed,operators,pattern,artifacts},null,2));
+ fs.writeFileSync(output,JSON.stringify({legacy,bank:bank?bank.address:undefined,treasury,registry:registry.address,bridge:bridge.address,pool:pool.address,validator:validator.address,beacon:beacon.address,epoch,seed,operators,pattern,artifacts},null,2));
+}
+// legacyLayout reads the compiler's Bridge storage layout, so the K-07 tests
+// can set the controlled legacy wallet markers (main UTXO hash, state) without
+// hard-coding slots.
+function legacyLayout(tbRoot) {
+ // The artifact's debug file names the exact build that produced it.
+ const dbg=path.join(tbRoot,'solidity','build','contracts','bridge','Bridge.sol','Bridge.dbg.json');
+ for(const f of [path.resolve(path.dirname(dbg),JSON.parse(fs.readFileSync(dbg)).buildInfo)]) {
+  const info=JSON.parse(fs.readFileSync(f));
+  const layout=info.output?.contracts?.['contracts/bridge/Bridge.sol']?.Bridge?.storageLayout;
+  if(!layout)continue;
+  const self=layout.storage.find(s=>s.label==='self');
+  const members=layout.types[self.type].members;
+  const field=(name)=>{const m=members.find(x=>x.label===name);if(!m)throw Error('missing '+name);return m;};
+  const wallets=field('registeredWallets');
+  const wallet=layout.types[layout.types[wallets.type].value].members;
+  const member=(name)=>{const m=wallet.find(x=>x.label===name);return {slot:Number(m.slot),offset:m.offset,bytes:Number(layout.types[m.type].numberOfBytes)};};
+  const live=field('liveWalletsCount');
+  return {registeredWallets:Number(self.slot)+Number(wallets.slot),mainUtxoHash:member('mainUtxoHash'),state:member('state'),movingFundsRequestedAt:member('movingFundsRequestedAt'),liveWalletsCount:{slot:Number(self.slot)+Number(live.slot),offset:live.offset,bytes:Number(layout.types[live.type].numberOfBytes)}};
+ }
+ throw Error('no Bridge storage layout in build-info');
 }
 main().catch(e=>{console.error(e.message);process.exitCode=1});

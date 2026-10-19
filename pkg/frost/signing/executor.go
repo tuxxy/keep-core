@@ -229,19 +229,25 @@ func (e *Executor) pinReceipt(ctx context.Context, initialize bool, receipt Rese
 	return nil
 }
 func (e *Executor) wallet(ctx context.Context) (frost.KeyReady, []uint16, error) {
-	w, err := e.config.Journal.LoadWallet(ctx)
+	p := e.config.Plan
+	return localWallet(ctx, e.config.Journal, p.intent.WalletID, p.intent.DescriptorHash, p.snapshot.OutputKey())
+}
+
+// localWallet requires the durable wallet record and key of this host to be
+// the expected ready wallet, and returns the key and the local seats.
+func localWallet(ctx context.Context, journal Journal, id, descriptorHash, outputKey [32]byte) (frost.KeyReady, []uint16, error) {
+	w, err := journal.LoadWallet(ctx)
 	if err != nil {
 		return frost.KeyReady{}, nil, err
 	}
-	p := e.config.Plan
-	if w.Quarantined || w.State != "ReadyUnfunded" || w.ID != p.intent.WalletID || w.DescriptorHash != p.intent.DescriptorHash || w.Descriptor.OutputKey != p.snapshot.OutputKey() {
+	if w.Quarantined || w.State != "ReadyUnfunded" || w.ID != id || w.DescriptorHash != descriptorHash || w.Descriptor.OutputKey != outputKey {
 		return frost.KeyReady{}, nil, fmt.Errorf("%w: wallet identity or readiness", ErrUnauthorized)
 	}
-	key, err := e.config.Journal.LoadKey(ctx)
+	key, err := journal.LoadKey(ctx)
 	if err != nil {
 		return key, nil, err
 	}
-	status, err := e.config.Journal.DKGStatus(ctx)
+	status, err := journal.DKGStatus(ctx)
 	if err != nil {
 		return key, nil, err
 	}

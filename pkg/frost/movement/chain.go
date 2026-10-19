@@ -89,6 +89,9 @@ type Incoming struct {
 	Target, Source   [32]byte
 	Value, CreatedAt uint64
 	State            IncomingState
+	// SweepFeeCap is movedFundsSweepTxMaxTotalFee when the output was
+	// recorded; the C-08 self-transfer defense checks this cap (K-08).
+	SweepFeeCap uint64
 }
 
 // Counters are the C-06 per-wallet counters and the global ones.

@@ -36,6 +36,12 @@ const (
 	KindSweepBroadcast       Kind = "sweep-broadcast"
 	KindSweepLateQuarantined Kind = "sweep-late-quarantined"
 	KindSweepOutcome         Kind = "sweep-outcome"
+
+	// K-07 movement and incoming sweep records, keyed by the movement ID.
+	KindMovementAttempt   Kind = "movement-attempt"
+	KindMovementSigned    Kind = "movement-signed"
+	KindMovementBroadcast Kind = "movement-broadcast"
+	KindMovementOutcome   Kind = "movement-outcome"
 )
 
 // Entry is one immutable ledger record. Detail is public recovery data only;
@@ -84,7 +90,8 @@ func recoveryKind(k Kind) bool {
 	switch k {
 	case KindTimeoutSeen, KindEscalation, KindCancellationAttest, KindCancellationAttempt, KindCancellationSigned, KindCancellationBroadcast,
 		KindSigned, KindBroadcast, KindLateQuarantined, KindOutcome,
-		KindSweepSigned, KindSweepBroadcast, KindSweepLateQuarantined, KindSweepOutcome:
+		KindSweepSigned, KindSweepBroadcast, KindSweepLateQuarantined, KindSweepOutcome,
+		KindMovementSigned, KindMovementBroadcast, KindMovementOutcome:
 		return true
 	}
 	return false

@@ -84,6 +84,19 @@ type deployment struct {
 	Seed                                      int
 	Pattern                                   []int
 	Operators                                 []common.Address
+	// Legacy is set in mode "k07": the controlled legacy registry, the real
+	// WalletProposalValidator and the compiler's Bridge storage layout for
+	// the legacy wallet markers.
+	Legacy *legacyLayout
+}
+
+type storageField struct{ Slot, Offset, Bytes int }
+
+type legacyLayout struct {
+	Registry, Validator                         common.Address
+	RegisteredWallets                           int
+	MainUtxoHash, State, MovingFundsRequestedAt storageField
+	LiveWalletsCount                            storageField
 }
 type nodeConfig struct {
 	root       *store.Store
@@ -113,7 +126,8 @@ type fixture struct {
 type setupOptions struct {
 	timeout time.Duration
 	// mode "k05" deploys a real Bank, regtest relay and verifier and enables
-	// FROST funding and redemptions with local test values.
+	// FROST funding and redemptions with local test values. Mode "k07" adds
+	// a controlled legacy registry root, a reimbursement pool and the drain.
 	mode string
 }
 
@@ -181,9 +195,9 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
 	output := filepath.Join(t.TempDir(), "deployment.json")
 	args := []string{filepath.Join(root, "test/frost/deploy.cjs"), url, tb, output, pattern}
-	if options.mode == "k05" {
+	if options.mode == "k05" || options.mode == "k07" {
 		genesis := chaincfg.RegressionNetParams.GenesisHash
-		args = append(args, "k05", "0x"+hex.EncodeToString(genesis[:]))
+		args = append(args, options.mode, "0x"+hex.EncodeToString(genesis[:]))
 	}
 	deploy := exec.CommandContext(ctx, "node", args...)
 	if out, err := deploy.CombinedOutput(); err != nil {

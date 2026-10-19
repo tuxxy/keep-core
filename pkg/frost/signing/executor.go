@@ -77,7 +77,7 @@ type Config struct {
 	Journal                    Journal
 	Reservations               Reservations
 	Containment                Containment    // directive gate for Quarantined; nil refuses
-	Sweeps                     SweepAuthority // K-06 sweep plans, in place of Reservations
+	Sweeps                     SweepAuthority // K-06 sweep and K-07 movement plans, in place of Reservations
 	Guard                      GrantGuard     // K-06 main purpose lock; nil before K-06
 	Bitcoin                    Bitcoin
 	Worker                     snowfallengine.WorkerConfig
@@ -102,7 +102,7 @@ type Result struct {
 }
 
 func NewLocalExecutor(c Config) (*Executor, error) {
-	if !c.LocalRegtest || c.Plan == nil || c.Plan.Genesis() != [32]byte(*chaincfg.RegressionNetParams.GenesisHash) || c.Reservation == ([32]byte{}) || c.Session == ([32]byte{}) || c.StartBlock == 0 || c.FinalityBlocks == 0 || c.MinimumConfirmations == 0 || c.Journal == nil || (c.Plan.IsSweep() && c.Sweeps == nil) || (!c.Plan.IsSweep() && c.Reservations == nil) || c.Bitcoin == nil || c.Transport == nil {
+	if !c.LocalRegtest || c.Plan == nil || c.Plan.Genesis() != [32]byte(*chaincfg.RegressionNetParams.GenesisHash) || c.Reservation == ([32]byte{}) || c.Session == ([32]byte{}) || c.StartBlock == 0 || c.FinalityBlocks == 0 || c.MinimumConfirmations == 0 || c.Journal == nil || (c.Plan.hostAuthorized() && c.Sweeps == nil) || (!c.Plan.hostAuthorized() && c.Reservations == nil) || c.Bitcoin == nil || c.Transport == nil {
 		return nil, errors.New("incomplete local signing configuration")
 	}
 	c.Selected = append([]uint16(nil), c.Selected...)
@@ -139,7 +139,7 @@ func unresolved(state string) bool {
 
 func (e *Executor) reservation(ctx context.Context, initialize bool) error {
 	p := e.config.Plan
-	if p.sweep != nil {
+	if p.hostAuthorized() {
 		receipt, err := e.config.Sweeps.AuthorizeSweep(ctx, p)
 		if err != nil {
 			return fmt.Errorf("%w: sweep authorization: %v", ErrUnauthorized, err)
@@ -304,6 +304,12 @@ func (e *Executor) attempt(index int) (frost.Attempt, error) {
 	}
 	if c.Plan.sweep != nil {
 		domain = "keep-core/frost/sweep-attempt/v1/"
+	}
+	if c.Plan.IsMovement() {
+		domain = "keep-core/frost/movement-attempt/v1/"
+	}
+	if c.Plan.IsIncomingSweep() {
+		domain = "keep-core/frost/incoming-sweep-attempt/v1/"
 	}
 	raw := append([]byte(domain), c.Plan.hash[:]...)
 	raw = append(raw, c.Reservation[:]...)
@@ -613,7 +619,7 @@ func (e *Executor) Rebroadcast(ctx context.Context) error {
 	if err := eValidateContext(ctx); err != nil {
 		return err
 	}
-	if e.config.Plan.cancellation != nil || e.config.Plan.sweep != nil {
+	if e.config.Plan.cancellation != nil || e.config.Plan.hostAuthorized() {
 		return errors.New("rebroadcast applies to payment results only")
 	}
 	raw, err := e.config.Journal.ReadSigningRecord(ctx, e.resultID())

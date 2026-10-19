@@ -205,11 +205,17 @@ func (mfa *movingFundsAction) execute() error {
 		)
 	}
 
+	frostKeys, err := FrostTargetKeys(mfa.chain, mfa.proposal.TargetWallets)
+	if err != nil {
+		return fmt.Errorf("error while resolving FROST target wallets: [%v]", err)
+	}
+
 	unsignedMovingFundsTx, err := assembleMovingFundsTransaction(
 		mfa.btcChain,
 		walletMainUtxo,
 		mfa.proposal.TargetWallets,
 		mfa.proposal.MovingFundsTxFee.Int64(),
+		frostKeys,
 	)
 	if err != nil {
 		return fmt.Errorf(
@@ -523,11 +529,46 @@ func isWalletPendingMovingFundsTarget(
 	return false, nil
 }
 
+// FrostTargetResolver is implemented by host chains that know FROST wallets.
+// FrostTargetOutputKey reports whether label is a FROST wallet and, if so,
+// its output key Q from the immutable descriptor (KC-SF-V3 K-07 drain).
+type FrostTargetResolver interface {
+	FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error)
+}
+
+// FrostTargetKeys resolves which committed targets are FROST wallets. A chain
+// without the resolver knows only legacy targets. A drain commitment names
+// FROST targets only (C-06), so a mixed list is refused here as well.
+func FrostTargetKeys(chain interface{}, targets [][20]byte) (map[[20]byte][32]byte, error) {
+	resolver, ok := chain.(FrostTargetResolver)
+	if !ok {
+		return nil, nil
+	}
+	keys := map[[20]byte][32]byte{}
+	for _, target := range targets {
+		q, frost, err := resolver.FrostTargetOutputKey(target)
+		if err != nil {
+			return nil, err
+		}
+		if frost {
+			keys[target] = q
+		}
+	}
+	if len(keys) != 0 && len(keys) != len(targets) {
+		return nil, fmt.Errorf("moving funds targets mix legacy and FROST wallets")
+	}
+	if len(keys) == 0 {
+		return nil, nil
+	}
+	return keys, nil
+}
+
 func assembleMovingFundsTransaction(
 	bitcoinChain bitcoin.Chain,
 	walletMainUtxo *bitcoin.UnspentTransactionOutput,
 	targetWallets [][20]byte,
 	fee int64,
+	frostKeys map[[20]byte][32]byte,
 ) (*bitcoin.TransactionBuilder, error) {
 	if len(targetWallets) < 1 {
 		return nil, fmt.Errorf("at least one target wallet is required")
@@ -567,9 +608,16 @@ func assembleMovingFundsTransaction(
 	// as the order of target wallets has already been validated by the on-chain
 	// contract.
 	for i, targetWalletPublicKeyHash := range targetWallets {
-		outputScript, err := bitcoin.PayToWitnessPublicKeyHash(
-			targetWalletPublicKeyHash,
-		)
+		var outputScript bitcoin.Script
+		var err error
+		if q, frost := frostKeys[targetWalletPublicKeyHash]; frost {
+			// A drain output to a FROST target: OP_1 PUSH32 Q (C-06).
+			outputScript, err = bitcoin.PayToTaproot(q)
+		} else {
+			outputScript, err = bitcoin.PayToWitnessPublicKeyHash(
+				targetWalletPublicKeyHash,
+			)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("cannot compute output script: [%v]", err)
 		}

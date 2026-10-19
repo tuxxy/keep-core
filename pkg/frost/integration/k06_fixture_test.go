@@ -80,14 +80,33 @@ type k06World struct {
 // wallet, ReadyUnfunded, with every K-06 host component on each operator's
 // real store and worker. Custody is funded only by K-06 sweeps.
 func newK06World(t *testing.T) *k06World {
+	return newK06WorldWith(t, k06Options{mode: "k05"})
+}
+
+// k06Options lets K-07 deploy its mode and run more DKGs while blocks are
+// still mined; afterDKG must leave f.journals and f.executors on the first
+// wallet, which this world wires.
+type k06Options struct {
+	mode     string
+	afterDKG func(f *fixture)
+}
+
+func newK06WorldWith(t *testing.T, options k06Options) *k06World {
 	t.Helper()
-	f := setupWith(t, "1,1,2", setupOptions{timeout: 20 * time.Minute, mode: "k05"})
+	timeout := 20 * time.Minute
+	if options.afterDKG != nil {
+		timeout = 30 * time.Minute
+	}
+	f := setupWith(t, "1,1,2", setupOptions{timeout: timeout, mode: options.mode})
 	core := startCore(t, f.ctx)
 	records, errs := f.run()
 	for i, err := range errs {
 		if err != nil {
 			t.Fatalf("DKG operator %d: %v", i, err)
 		}
+	}
+	if options.afterDKG != nil {
+		options.afterDKG(f)
 	}
 	f.stopMining()
 	admin, _ := crypto.HexToECDSA(anvilKey0)

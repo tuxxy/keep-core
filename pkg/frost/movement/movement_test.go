@@ -359,12 +359,53 @@ func TestMovementUsesCommittedFeeCap(t *testing.T) {
 	}
 }
 
+// An incoming sweep stays within the cap recorded with its incoming outputs
+// as well as the live one, so a later parameter change cannot leave the
+// signature without its C-08 self-transfer defense (K-08).
+func TestIncomingSweepUsesRecordedFeeCap(t *testing.T) {
+	ctx := context.Background()
+	w := newWorld(t)
+	target := w.targets[0]
+	movementTx := [32]byte{0x56}
+	key := OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(movementTx), OutputIndex: 0})
+	w.f.incoming[key] = Incoming{Target: target.ID, Source: w.source.ID, Value: 99_000, State: IncomingPending, SweepFeeCap: 300}
+	w.f.incomingLog = []IncomingLog{{Log: Log{Block: 90, BlockHash: w.f.hash(90)}, Outpoint: key, Target: target.ID, Source: w.source.ID, Value: 99_000, TransactionHash: movementTx, OutputIndex: 0}}
+	p := w.planner()
+	p.Wallet = target.Descriptor
+	p.Bitcoin = unspent{}
+	p.FeeRate = 20
+	plan, err := p.IncomingSweep(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fee := plan.Snapshot().Fee(); fee != 300 {
+		t.Fatalf("incoming sweep fee %d, want the recorded cap 300 (live cap 5,000)", fee)
+	}
+	a := &Authority{View: w.view}
+	if _, err = a.AuthorizeSweep(ctx, plan); err != nil {
+		t.Fatal("recorded-cap incoming sweep refused:", err)
+	}
+	// A plan built when the record carried the live cap is above it now.
+	in := w.f.incoming[key]
+	in.SweepFeeCap = 5_000
+	w.f.incoming[key] = in
+	high, err := p.IncomingSweep(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in.SweepFeeCap = 300
+	w.f.incoming[key] = in
+	if _, err = a.AuthorizeSweep(ctx, high); !errors.Is(err, ErrPlanMismatch) {
+		t.Fatal("an incoming sweep above its recorded cap was authorized", err)
+	}
+}
+
 func TestIncomingAuthorityAndPlan(t *testing.T) {
 	w := newWorld(t)
 	target := w.targets[0]
 	movementTx := [32]byte{0x55}
 	key := OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(movementTx), OutputIndex: 1})
-	w.f.incoming[key] = Incoming{Target: target.ID, Source: w.source.ID, Value: 99_000, State: IncomingPending}
+	w.f.incoming[key] = Incoming{Target: target.ID, Source: w.source.ID, Value: 99_000, State: IncomingPending, SweepFeeCap: 5_000}
 	w.f.incomingLog = []IncomingLog{{Log: Log{Block: 90, BlockHash: w.f.hash(90)}, Outpoint: key, Target: target.ID, Source: w.source.ID, Value: 99_000, TransactionHash: movementTx, OutputIndex: 1}}
 	p := w.planner()
 	p.Wallet = target.Descriptor
@@ -418,7 +459,7 @@ func TestIncomingAuthorityMatchesRecordsByKey(t *testing.T) {
 	}
 	sort.Slice(outs, func(i, j int) bool { return bytes.Compare(outs[i].key[:], outs[j].key[:]) > 0 })
 	for i, o := range outs {
-		w.f.incoming[o.key] = Incoming{Target: target.ID, Source: w.source.ID, Value: 99_000, State: IncomingPending}
+		w.f.incoming[o.key] = Incoming{Target: target.ID, Source: w.source.ID, Value: 99_000, State: IncomingPending, SweepFeeCap: 5_000}
 		block := uint64(90 + i)
 		w.f.incomingLog = append(w.f.incomingLog, IncomingLog{Log: Log{Block: block, BlockHash: w.f.hash(block)}, Outpoint: o.key, Target: target.ID, Source: w.source.ID, Value: 99_000, TransactionHash: o.tx, OutputIndex: 1})
 	}

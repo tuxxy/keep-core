@@ -249,3 +249,46 @@ Decided by the implementer on 19 October 2026 for owner review.
 - Production exchange of claim signatures and the heartbeat scheduler (reading 5).
 - An economic sanction route (D-03).
 - Executed power loss and the production fence.
+
+## As implemented (19 October 2026)
+
+The K-08 code uses every hook name above. These choices are not in the
+predicates and need the model owner's attention at the V-09 freeze:
+
+- **Defense records.** The executor writes one record per input digest,
+  keyed `(walletId, digest)`, after the intent record and before any grant.
+  Sweeps record the route as "sweep": the defender asks C-08 at defense
+  time whether the transaction is proven and otherwise uses the
+  self-transfer kind. A payment or cancellation alternative records its
+  reservation; a movement its period. A heartbeat records its nonce.
+- **Heartbeat signer.** A separate signer, not a transaction plan. It
+  shares the executor's local wallet check and the guarded engine. The
+  `Done` record of a heartbeat carries the heartbeat tag in its genesis
+  field, which a heartbeat does not bind.
+- **Rounds.** The heartbeat round is derived like the K-06 and K-07 rounds
+  (`RoundBlocks`, `FinalityBlocks`); its session binds the wallet, chain ID,
+  Bridge, anchor hash and round number.
+- **Outcomes.** A round that started before a restart and has no outcome is
+  unknown: it is never rerun and never counted as a failure. A refused
+  heartbeat, or one that failed before its transport ran, records no
+  outcome. An outcome keeps the heartbeat signature (it is not secret).
+- **Claim window.** A claim records the newest heartbeat nonce it covered;
+  the next claim counts only later heartbeats. An operator holding several
+  seats signs once per seat with the same key, as C-09 counts seats.
+- **Defender scan.** The defender reads challenge logs from the wallet's
+  registration block on every pass. It keeps no cursor, so a restart loses
+  nothing; log volume per wallet is bounded by the bond.
+- **Not implemented here.** The background scheduler for heartbeats,
+  defenses and timeouts; the peer-to-peer exchange of claim signatures
+  (reading 5); legacy changes of any kind.
+
+- **Review fixes (19 October 2026).** A round with a start record and no
+  outcome ends the claim window, because it may have been signed. A claim
+  retained at a nonce is reused on retry and any other proposal at that
+  nonce is refused. The defender and the timeout notifier continue past a
+  challenge they cannot settle and report all errors together. The
+  self-transfer fee cap is fixed when each input was recorded (tbtc-v2 #13),
+  so the host plans an incoming sweep within the smaller of the live cap and
+  its incoming outputs' recorded caps.
+
+The local acceptance record is `test/frost/K08.md`.

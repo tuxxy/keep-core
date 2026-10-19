@@ -25,6 +25,8 @@ const (
 	Redemption Purpose = "redemption"
 	Resolution Purpose = "resolution"
 	SweepMain  Purpose = "sweep"
+	// MovementMain holds a main for a K-07 movement plan.
+	MovementMain Purpose = "movement"
 	// Closed is terminal: the main was spent by a finalized outcome.
 	Closed Purpose = "closed"
 )
@@ -160,9 +162,51 @@ func (l *MainLock) AcquireRedemption(ctx context.Context, wallet [32]byte, main 
 
 // AcquireSweep records a main-spending sweep plan. A free main moves to sweep;
 // a main already held by sweep accepts further alternatives, which all spend
-// the same main, so at most one can confirm.
+// the same main, so at most one can confirm. K-07 incoming sweeps use it too.
+// A main a committed movement holds is refused.
 func (l *MainLock) AcquireSweep(ctx context.Context, wallet [32]byte, main bitcoin.TransactionOutpoint, plan [32]byte) error {
-	key := OutpointKey(main)
+	return l.acquirePlan(ctx, wallet, OutpointKey(main), plan, SweepMain, "")
+}
+
+// CommittedMovement is evidence that the movement authority accepted one
+// movement plan: it read a finalized, unproven C-06 commitment naming exactly
+// the plan's main and targets. Only AuthorizeMovement makes one.
+type CommittedMovement struct {
+	wallet, main, plan [32]byte
+}
+
+// AuthorizeMovement asks authority to authorize a movement plan and returns
+// the evidence AcquireMovement needs.
+func AuthorizeMovement(ctx context.Context, authority signing.SweepAuthority, plan *signing.Plan) (CommittedMovement, error) {
+	if authority == nil || !plan.IsMovement() || plan.MovementMain() == nil {
+		return CommittedMovement{}, errors.New("not a movement plan")
+	}
+	if _, err := authority.AuthorizeSweep(ctx, plan); err != nil {
+		return CommittedMovement{}, err
+	}
+	return CommittedMovement{wallet: plan.WalletID(), main: OutpointKey(plan.MovementMain().Outpoint), plan: plan.Commitment()}, nil
+}
+
+// AcquireMovement records a K-07 movement plan on the source main. A free main
+// moves to movement; a main already held by movement accepts further
+// alternatives of the commitment, which spend the whole main and exclude each
+// other on Bitcoin. A main still held by a K-06 sweep that aborted (its
+// deposit later refunded, say) moves to movement too, recorded as "committed
+// movement supersedes sweep": C-06 committed that unspent main, and the
+// evidence shows the commitment is finalized, unproven and names exactly this
+// main. A superseded sweep signature and the movement spend the same main, so
+// Bitcoin admits at most one; a proven sweep retires the commitment on chain
+// and opens a new period.
+func (l *MainLock) AcquireMovement(ctx context.Context, evidence CommittedMovement) error {
+	if evidence.plan == ([32]byte{}) {
+		return errors.New("movement needs the movement authority's evidence")
+	}
+	return l.acquirePlan(ctx, evidence.wallet, evidence.main, evidence.plan, MovementMain, SweepMain)
+}
+
+// acquirePlan records plan under purpose on a free main, a main already held
+// by purpose, or a main held by supersedes (none when empty).
+func (l *MainLock) acquirePlan(ctx context.Context, wallet, key, plan [32]byte, purpose, supersedes Purpose) error {
 	if err := l.step("before-main-lock"); err != nil {
 		return err
 	}
@@ -171,15 +215,20 @@ func (l *MainLock) AcquireSweep(ctx context.Context, wallet [32]byte, main bitco
 		return err
 	}
 	current := state(history)
-	if current.Purpose != Free && current.Purpose != SweepMain {
+	entry := Entry{Purpose: purpose, Subject: plan}
+	switch {
+	case current.Purpose == Free || current.Purpose == purpose:
+	case supersedes != "" && current.Purpose == supersedes:
+		entry.Reason = "committed movement supersedes " + string(supersedes)
+	default:
 		return fmt.Errorf("%w: %s", ErrMainBusy, current.Purpose)
 	}
 	for _, e := range since(history) {
-		if !e.Grant && e.Purpose == SweepMain && e.Subject == plan {
+		if !e.Grant && e.Purpose == purpose && e.Subject == plan {
 			return l.step("main-lock-acquired")
 		}
 	}
-	if err = l.insert(ctx, wallet, key, len(history), Entry{Purpose: SweepMain, Subject: plan}); err != nil {
+	if err = l.insert(ctx, wallet, key, len(history), entry); err != nil {
 		return err
 	}
 	return l.step("main-lock-acquired")
@@ -266,6 +315,20 @@ func (l *MainLock) transfer(ctx context.Context, wallet, key [32]byte, next func
 func permitted(history []Entry, plan *signing.Plan, reservation [32]byte) error {
 	current := state(history)
 	switch {
+	case plan.IsMovement() || plan.IsIncomingSweep():
+		want := MovementMain
+		if plan.IsIncomingSweep() {
+			want = SweepMain
+		}
+		if current.Purpose != want {
+			return fmt.Errorf("%w: %s plan needs %s, main is %s", ErrMainBusy, plan.Purpose(), want, current.Purpose)
+		}
+		for _, e := range since(history) {
+			if !e.Grant && e.Subject == plan.Commitment() {
+				return nil
+			}
+		}
+		return fmt.Errorf("%w: %s plan not recorded under the lock", ErrMainBusy, plan.Purpose())
 	case !plan.IsSweep():
 		if current.Purpose != Redemption || current.Subject != reservation {
 			return fmt.Errorf("%w: payment or cancellation needs redemption(%x), main is %s", ErrMainBusy, reservation, current.Purpose)
@@ -296,6 +359,13 @@ func permitted(history []Entry, plan *signing.Plan, reservation [32]byte) error 
 
 // spentMain is the main output a grant would spend, if any.
 func spentMain(plan *signing.Plan) (bitcoin.TransactionOutpoint, bool) {
+	if plan.IsMovement() || plan.IsIncomingSweep() {
+		main := plan.MovementMain()
+		if main == nil {
+			return bitcoin.TransactionOutpoint{}, false
+		}
+		return main.Outpoint, true
+	}
 	if plan.IsSweep() {
 		main := plan.SweepMain()
 		if main == nil {

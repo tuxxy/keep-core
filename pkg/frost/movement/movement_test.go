@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
+	"github.com/keep-network/keep-core/pkg/frost/deposit"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
@@ -434,6 +435,45 @@ func TestIncomingAuthorityMatchesRecordsByKey(t *testing.T) {
 	}
 	if _, err = (&Authority{View: w.view}).AuthorizeSweep(context.Background(), plan); err != nil {
 		t.Fatal("log order must not refuse a valid incoming sweep", err)
+	}
+}
+
+// A K-06 sweep that aborted still holds the main C-06 committed. The
+// authorized movement takes it over; a movement-held main refuses a sweep.
+func TestCommittedMovementSupersedesAbortedSweep(t *testing.T) {
+	ctx := context.Background()
+	w := newWorld(t)
+	plan := w.committed(t)
+	lock := &deposit.MainLock{Journal: &journal{records: map[[32]byte][]byte{}}}
+	if err := lock.AcquireSweep(ctx, w.source.ID, w.main.Outpoint, [32]byte{1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := lock.AcquireMovement(ctx, deposit.CommittedMovement{}); err == nil {
+		t.Fatal("movement took a sweep's main without evidence")
+	}
+	committed, err := deposit.AuthorizeMovement(ctx, &Authority{View: w.view}, plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = lock.AcquireMovement(ctx, committed); err != nil {
+		t.Fatal("committed movement must supersede an aborted sweep", err)
+	}
+	current, err := lock.Current(ctx, w.source.ID, OutpointKey(w.main.Outpoint))
+	if err != nil || current.Purpose != deposit.MovementMain || current.Subject != plan.Commitment() || current.Reason != "committed movement supersedes sweep" {
+		t.Fatal("movement record", current, err)
+	}
+	if err = (deposit.Guard{Lock: lock}).Permit(ctx, plan, [32]byte{}); err != nil {
+		t.Fatal("grant guard refused the movement", err)
+	}
+	if err = lock.AcquireSweep(ctx, w.source.ID, w.main.Outpoint, [32]byte{2}); !errors.Is(err, deposit.ErrMainBusy) {
+		t.Fatal("a sweep took a committed movement's main", err)
+	}
+	// A proven commitment gives no evidence.
+	c := w.f.commitments[w.source.ID]
+	c.ProvenAt = 1
+	w.f.commitments[w.source.ID] = c
+	if _, err = deposit.AuthorizeMovement(ctx, &Authority{View: w.view}, plan); !errors.Is(err, ErrSettled) {
+		t.Fatal("evidence for a proven commitment", err)
 	}
 }
 

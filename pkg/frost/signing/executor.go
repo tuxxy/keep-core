@@ -395,6 +395,13 @@ func (e *Executor) Run(ctx context.Context) (*Result, error) {
 	if err = e.config.Journal.RetainSigningRecord(ctx, p.hash, p.encoded); err != nil {
 		return nil, err
 	}
+	// Every digest is defensible before any grant can release it (V-09).
+	if err = e.step("before-defense-record"); err != nil {
+		return nil, err
+	}
+	if err = e.retainDefenses(ctx); err != nil {
+		return nil, err
+	}
 	e.mu.Lock()
 	result := &Result{Plan: p.hash, Receipt: *e.receipt}
 	e.mu.Unlock()

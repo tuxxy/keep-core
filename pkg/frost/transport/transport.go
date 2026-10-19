@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/keep-network/keep-core/pkg/crypto/ephemeral"
@@ -131,6 +132,20 @@ func (t *Transport) Binding() (frost.Attempt, [32]byte) {
 	return frost.Attempt{Channel: append([]byte(nil), t.attempt.Channel...), Session: append([]byte(nil), t.attempt.Session...), StartBlock: t.attempt.StartBlock}, t.id
 }
 func (t *Transport) Close() { t.cancel() }
+
+// Present returns the seats whose ephemeral keys this attempt holds: the local
+// seats and every seat whose key arrived from its membership-checked operator.
+// It is the authenticated presence record a heartbeat keeps (K-08).
+func (t *Transport) Present() []uint16 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	out := make([]uint16, 0, len(t.keys))
+	for seat := range t.keys {
+		out = append(out, seat)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
+}
 func (t *Transport) packet(sender, recipient uint16, kind string, body []byte) packet {
 	return packet{Version: 1, Domain: append([]byte(nil), t.domain[:]...), Attempt: append([]byte(nil), t.id[:]...), Sender: uint64(sender), Recipient: uint64(recipient), Kind: kind, Body: body}
 }

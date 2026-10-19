@@ -404,3 +404,24 @@ func TestForeignDomainAndEnvelopeBinding(t *testing.T) {
 		})
 	}
 }
+
+// Presence counts a seat only once its ephemeral key arrived from the
+// operator that holds it; a key sent for another operator's seat is ignored.
+func TestPresenceIsAuthenticated(t *testing.T) {
+	f := newFixture(t, [][]uint16{{1}, {2}}, 16)
+	a := f.nodes[0]
+	deadline := time.Now().Add(time.Second)
+	for len(a.Present()) < 2 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if got := a.Present(); len(got) != 2 || got[0] != 1 || got[1] != 2 {
+		t.Fatalf("presence %v, want [1 2]", got)
+	}
+	key := make([]byte, 33)
+	copy(key, a.keys[1])
+	forged := a.packet(3, 0, "ephemeral-key", key)
+	a.receive(testMessage{p: &forged, key: f.configs[1].LocalPublicKey})
+	if got := a.Present(); len(got) != 2 {
+		t.Fatalf("a seat-3 key from seat 2's operator counted as presence: %v", got)
+	}
+}

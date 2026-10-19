@@ -114,6 +114,7 @@ func (a *Authority) incoming(ctx context.Context, plan *signing.Plan) (signing.R
 		recorded[in.Log.Outpoint] = in
 	}
 	var anchor Log
+	capFee := t.Parameters.MovedFundsSweepTxMaxTotalFee
 	for i, key := range keys {
 		in, ok := recorded[key]
 		if !ok {
@@ -136,6 +137,9 @@ func (a *Authority) incoming(ctx context.Context, plan *signing.Plan) (signing.R
 		if in.Log.Block > anchor.Block {
 			anchor = in.Log.Log
 		}
+		if in.Record.SweepFeeCap < capFee {
+			capFee = in.Record.SweepFeeCap
+		}
 	}
 	if t.Custody.ActiveReservation != ([32]byte{}) {
 		return signing.ReservationReceipt{}, fmt.Errorf("%w: target main reserved", ErrPlanMismatch)
@@ -144,8 +148,8 @@ func (a *Authority) incoming(ctx context.Context, plan *signing.Plan) (signing.R
 	if (main == nil) != (t.Custody.MainOutpoint == ([32]byte{})) || (main != nil && OutpointKey(main.Outpoint) != t.Custody.MainOutpoint) {
 		return signing.ReservationReceipt{}, fmt.Errorf("%w: target main", ErrPlanMismatch)
 	}
-	if fee := plan.Snapshot().Fee(); fee <= 0 || uint64(fee) > t.Parameters.MovedFundsSweepTxMaxTotalFee {
-		return signing.ReservationReceipt{}, fmt.Errorf("%w: fee above the moved funds sweep cap", ErrPlanMismatch)
+	if fee := plan.Snapshot().Fee(); fee <= 0 || uint64(fee) > capFee {
+		return signing.ReservationReceipt{}, fmt.Errorf("%w: fee above the moved funds sweep cap or a recorded cap", ErrPlanMismatch)
 	}
 	return signing.ReservationReceipt{Block: anchor.Block, Hash: anchor.BlockHash}, nil
 }

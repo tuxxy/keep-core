@@ -156,7 +156,7 @@ func (c *FrostRedemptionChain) Incoming(ctx context.Context, at uint64, outpoint
 	if r.State == uint8(movement.IncomingUnknown) {
 		return movement.Incoming{}, movement.ErrNotFound
 	}
-	return movement.Incoming{Target: r.Target, Source: r.Source, Value: r.Value, CreatedAt: r.CreatedAt, State: movement.IncomingState(r.State)}, nil
+	return movement.Incoming{Target: r.Target, Source: r.Source, Value: r.Value, CreatedAt: r.CreatedAt, State: movement.IncomingState(r.State), SweepFeeCap: r.SweepFeeCap}, nil
 }
 
 // IncomingLogs lists FrostIncomingRecorded logs of a target in [from, to].

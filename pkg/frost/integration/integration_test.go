@@ -107,20 +107,21 @@ type nodeConfig struct {
 	worker     snowfallengine.WorkerConfig
 }
 type fixture struct {
-	chainMu    sync.RWMutex
-	nodes      []nodeConfig
-	t          *testing.T
-	ctx        context.Context
-	cancel     context.CancelFunc
-	rpc        *rpc.Client
-	client     *ethclient.Client
-	deployment deployment
-	registry   *binding.FrostWalletRegistry
-	executors  []*dkg.Executor
-	journals   []*store.Scoped
-	roots      []*store.Store
-	workers    []string
-	stopMining context.CancelFunc
+	chainMu     sync.RWMutex
+	nodes       []nodeConfig
+	t           *testing.T
+	ctx         context.Context
+	cancel      context.CancelFunc
+	rpc         *rpc.Client
+	client      *ethclient.Client
+	deployment  deployment
+	registry    *binding.FrostWalletRegistry
+	executors   []*dkg.Executor
+	journals    []*store.Scoped
+	roots       []*store.Store
+	rootConfigs []store.Config
+	workers     []string
+	stopMining  context.CancelFunc
 }
 
 type setupOptions struct {
@@ -275,11 +276,13 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 				t.Fatal("no loopback bootstrap")
 			}
 		}
-		rootStore, err := store.Open(ctx, store.Config{Keystore: filepath.Join(t.TempDir(), "keys"), StorageID: [32]byte{byte(operatorIndex)}, Key: [32]byte{17}, Fence: &authority{}})
+		rootConfig := store.Config{Keystore: filepath.Join(t.TempDir(), "keys"), StorageID: [32]byte{byte(operatorIndex)}, Key: [32]byte{17}, Fence: &authority{}}
+		rootStore, err := store.Open(ctx, rootConfig)
 		if err != nil {
 			t.Fatal(err)
 		}
 		f.roots = append(f.roots, rootStore)
+		f.rootConfigs = append(f.rootConfigs, rootConfig)
 		t.Cleanup(func() { _ = rootStore.Close() })
 		journal, err := rootStore.Scope(domain)
 		if err != nil {

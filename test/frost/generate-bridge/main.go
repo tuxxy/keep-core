@@ -15,7 +15,8 @@ import (
 var eventSources = []string{
 	"FrostRedemptionLedger", "FrostRedemptionRequests", "FrostRedemptionSettlement",
 	"FrostCancellationAdmissions", "FrostDepositSweep", "FrostDepositAdmission",
-	"FrostFundingConfiguration", "FrostWallets",
+	"FrostFundingConfiguration", "FrostWallets", "FrostMovement", "FrostMovementDispatch",
+	"FrostFraud", "FrostLifecycle",
 }
 
 func read(root, name string) []map[string]any {

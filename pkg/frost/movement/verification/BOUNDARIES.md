@@ -121,13 +121,15 @@ when the closure ledger, read at one finalized head, is empty:
 | Main output (or a recorded dust disposition) | FROST custody |
 | Pending outgoing movement | C-06 commitment and movement record |
 | Pending incoming moved outputs | C-06 incoming counter |
-| Revealed deposits neither swept nor expired | C-05 `pendingReveals` (with the reading 5 expiry) |
 | Redemption escrow, open requests, active reservation | C-04 |
 | Open fraud challenges | C-08 |
 
 A late arrival after the check (an incoming transfer proof or a fraud
 challenge) reopens it: the host rechecks at `before-closure-notify` and the contract
 rechecks at the `Closing → Closed` transition. Closing never deletes key material.
+Revealed deposits are not an obligation: reveals never block. A late sweep
+of a real deposit reopens a `Closing` or `Closed` wallet into `MovingFunds` in
+a new period (reading 5).
 
 **P-K07-SIGNER-RETENTION.** The completed key and the signing evidence stay
 loadable until the closure predicate holds **and** every challenge window over
@@ -199,7 +201,7 @@ where the guard is real code (revert the guard, the test fails).
 | INCOMING-ONCE | `ForgetIncomingKey` (KC-VER control) | double credit |
 | NO-STRANDED-MOVEMENT | `CloseWithIncomingPending` (KC-VER control) | target closed with incoming pending |
 | NO-STRANDED-MOVEMENT | `SweepOnlyWhenLive` (the legacy target-state filter) | incoming unreachable from `Closing` |
-| CLOSE-ONLY-WHEN-CLEAR | `MainFieldOnly` (KC-VER control) | closure with reveals, escrow or a challenge open |
+| CLOSE-ONLY-WHEN-CLEAR | `MainFieldOnly` (KC-VER control) | closure with incoming, escrow or a challenge open |
 | CLOSE-ONLY-WHEN-CLEAR | `NoRecheckBeforeNotify` | closure after a late arrival |
 | SIGNER-RETENTION | `DeleteKeyAtClosing` (KC-VER control) | defense impossible after closure begins |
 
@@ -209,7 +211,8 @@ where the guard is real code (revert the guard, the test fails).
 - An incoming sweep after a lost proof reply credits once.
 - The legacy stranded case, then its FROST recovery.
 - A late deposit after the closure check is still sweepable or refundable.
-- A revealed deposit refunded by its depositor expires and unblocks the source.
+- A revealed deposit never blocks the source; a late sweep of it reopens a
+  `Closing` or `Closed` wallet into `MovingFunds` in a new period.
 - A defense after closure begins (signature evidence and key loadable).
 - An ECDSA → FROST drain is proven and swept by the FROST target.
 
@@ -254,18 +257,16 @@ readings 2, 5 and 6 were tightened in that review.
    SIGNER-RETENTION, so the dust stays spendable, and K-12 inventories it.
 5. **Late deposits (D-07 test value, OPEN).** Reveals are refused once a wallet
    leaves `ReadyUnfunded` or `Live` (the C-05 rule today). A funded but
-   unrevealed deposit is recovered by the operator-free depositor refund. A
-   deposit revealed earlier blocks the commitment and closure through
-   `pendingReveals` until it is swept (FROST sweeps stay accepted in
-   `MovingFunds`, as legacy sweeps are) or until it **expires**: once
-   `block.timestamp` passes its `refundLocktime`, anyone may notify the
-   expiry, which records disposition `depositor-refundable` and decrements
-   `pendingReveals` once. Without this, a deposit the host refused to sweep at
-   the margin and the depositor then refunded would block the source forever.
-   A sweep that still consumes an expired deposit is credited normally and
-   does not decrement again. Because reveals stop at `MovingFunds`, the late
-   arrivals that can reopen a closure check are an incoming transfer proof
-   and a fraud challenge.
+   unrevealed deposit is recovered by the operator-free depositor refund.
+   **Reveals never block.** A deposit revealed earlier blocks neither the
+   commitment nor closure, and deposits do not expire. The host may still
+   sweep it (FROST sweeps stay accepted in `MovingFunds`, as legacy sweeps
+   are), or the depositor refunds it. A late sweep of a real deposit reopens a
+   `Closing` or `Closed` wallet into `MovingFunds` in a new period, and the
+   swept value moves on by an ordinary movement. A proven sweep that spends a
+   committed main retires that commitment and opens the new period. The other
+   late arrivals that can reopen a closure check are an incoming transfer
+   proof and a fraud challenge.
 6. **Legacy signer in the fixture.** The FROST fixture has no legacy ECDSA
    wallet. The drain tests register one through a fixture ECDSA registry
    contract and sign its movement with real tss-lib, in process, over the
@@ -277,7 +278,7 @@ readings 2, 5 and 6 were tightened in that review.
 
 - A-K07-MOVEMENT-VIEW: one internally consistent C-06 snapshot at the canonical head, as for A-C04-CURRENT-FINALITY.
 - A-K07-CLOSURE-LEDGER: C-09 exposes every closure obligation row at one head.
-- Contract obligations (KC-VER table): C-06 binds targets by descriptor hash; consumes each incoming key once across schemes; accepts incoming sweeps per reading 2. C-05/C-09 expire a revealed deposit past its refund locktime once. C-09 refuses `Closing → Closed` unless the ledger is empty. C-08 reports open challenges.
+- Contract obligations (KC-VER table): C-06 binds targets by descriptor hash; consumes each incoming key once across schemes; accepts incoming sweeps per reading 2. Reveals never block; a proven late deposit sweep reopens a `Closing` or `Closed` wallet into `MovingFunds` in a new period, and a proven spend of a committed main retires that commitment. C-09 refuses `Closing → Closed` unless the ledger is empty. C-08 reports open challenges.
 
 ## Not covered
 
@@ -285,3 +286,61 @@ readings 2, 5 and 6 were tightened in that review.
 - Reorganizations deeper than the finality depth.
 - The governance handling of a target that cannot sign (reading 1).
 - Executed power loss and the production fence.
+
+## As implemented (19 October 2026)
+
+The K-07 code uses every hook name above except `before-late-quarantine`
+(movements have no refund race). These choices are not in the predicates and
+need the model owner's attention at the V-08 freeze:
+
+- **One authority for both plans.** `movement.Authority` implements the
+  executor's `SweepAuthority` for movements and incoming sweeps; the
+  executor treats every host-authorized plan alike (K-06 sweeps included).
+  A movement's anchor is the commitment's log block; an incoming sweep's is
+  its latest incoming log block.
+- **Committed keys only.** The authority compares each planned target key
+  with the descriptor read under the committed label and requires its
+  descriptor hash to equal the committed one. It never reads eligibility,
+  quarantine or state of a target. `TestMovementTargetStateRace` changes the
+  target's state inside the first signing claim.
+- **Lock purposes.** A movement takes the new `movement` purpose on the
+  source main; an incoming sweep takes the K-06 `sweep` purpose on the
+  target main. Grant records are as in K-06.
+- **A committed movement supersedes an aborted sweep** (review fix). A K-06
+  sweep that took the main and then aborted (its deposit later refunded)
+  leaves the main under `sweep`, while C-06 commits that unspent main. The
+  movement takes it over only with the authority's evidence: a finalized,
+  unproven commitment naming exactly this main. The lock records "committed
+  movement supersedes sweep". The old sweep signature and the movement spend
+  the same main, so Bitcoin admits at most one; a proven sweep retires the
+  commitment on chain and opens a new period. A sweep never takes a
+  movement's main. `TestCommittedMovementSupersedesAbortedSweep` (unit).
+- **Incoming records by key** (review fix). The view returns incoming
+  records in log order and the plan lists inputs in key order. The authority
+  matches them by outpoint key, so a valid sweep is never refused for its log
+  order. `TestIncomingAuthorityMatchesRecordsByKey` (unit).
+- **Target selection.** A new commitment names the lowest eligible labels
+  by the C-06 count; every operator derives the same list from the readiness
+  logs. A recorded commitment of the current period is reused, never
+  resubmitted.
+- **Fees.** Movement and incoming sweep fees are the fee rate times the
+  virtual size. A movement is capped at the `maxFee` its commitment recorded,
+  in planning and in the authority, so a later parameter change never yields
+  a fee the proof or the C-08 defense rejects; an incoming sweep at the
+  current moved funds sweep cap.
+- **Closure.** `movement.Closure` reads the C-09 obligation bits at the
+  finalized head, rereads them at the current head before the notice, and
+  archives a local record. Nothing deletes a key or signing record. Bit 16
+  (pending reveals) is unused: reveals never block closure.
+- **Legacy drain.** `pkg/tbtc` pays P2TR to FROST targets when the chain
+  resolves them through `walletScheme` and the immutable descriptor. The
+  integration test signs the drain with real tss-lib over the tecdsatest
+  shares and sets the legacy wallet's main UTXO and MovingFunds as
+  controlled storage markers. After the commitment, the real
+  `WalletProposalValidator` accepts the drain proposal, and the legacy
+  host's commitment hash equals the one the Bridge stored.
+- **Not implemented here.** A background scheduler that drives commitments,
+  movers and closure on its own; quarantine directives other than the K-05
+  `Directives` source; heartbeat failure and inactivity (K-08).
+
+The local acceptance record is `test/frost/K07.md`.

@@ -11,6 +11,7 @@ import (
 	binding "github.com/keep-network/keep-core/pkg/chain/ethereum/frostabi"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
+	"github.com/keep-network/keep-core/pkg/tbtc"
 )
 
 // walletArguments decodes walletDescriptor(label): abi.encode of the
@@ -253,3 +254,30 @@ func (c *FrostRedemptionChain) ResetMovingFundsTimeout(ctx context.Context, wall
 }
 
 var _ movement.Chain = (*FrostRedemptionChain)(nil)
+
+// FrostTargetOutputKey implements tbtc.FrostTargetResolver: a label the
+// Bridge reports as scheme 2 is a FROST wallet, and its output key comes from
+// its immutable descriptor.
+func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error) {
+	if tc.frostBridge == nil {
+		return [32]byte{}, false, nil
+	}
+	scheme, err := tc.frostBridge.WalletScheme(nil, label)
+	if err != nil {
+		return [32]byte{}, false, err
+	}
+	if scheme != 2 {
+		return [32]byte{}, false, nil
+	}
+	raw, err := tc.frostBridge.WalletDescriptor(nil, label)
+	if err != nil {
+		return [32]byte{}, false, err
+	}
+	w, err := decodeWallet(raw)
+	if err != nil {
+		return [32]byte{}, false, err
+	}
+	return w.Descriptor.OutputKey, true, nil
+}
+
+var _ tbtc.FrostTargetResolver = (*TbtcChain)(nil)

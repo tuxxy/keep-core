@@ -175,6 +175,7 @@ func TestAssembleMovingFundsTransaction(t *testing.T) {
 				scenario.WalletMainUtxo,
 				scenario.TargetWallets,
 				scenario.Fee,
+				nil,
 			)
 
 			if err != nil {

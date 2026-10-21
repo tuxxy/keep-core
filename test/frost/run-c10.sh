@@ -43,10 +43,12 @@ changed="./pkg/frost/deposit ./pkg/maintainer/spv ./pkg/chain/ethereum ./pkg/tbt
 # Contract suites that execute code C-10 changed: the reveal, the sweep
 # credit (plain, vault, resolution and gas-bounded routes), the gates, the
 # drain and release, the dispatch chain, the storage layout and upgrade, and
-# the legacy Wallets and MovingFunds libraries. Suites that only fund through
-# a changed helper in setup, or never reach C-10 code, are left out.
+# the legacy Wallets, MovingFunds, DepositSweep and Redemption libraries
+# (the last two release a drain when their proof replaces its main). Suites
+# that only fund through a changed helper in setup, or never reach C-10 code,
+# are left out.
 b=test/bridge
-contracts="$b/Frost.CutoverExposure.test.ts $b/Frost.DepositAdmission.test.ts $b/Frost.DepositSweep.test.ts $b/Frost.DepositSweep.Guards.test.ts $b/Frost.DepositSweep.MainRequired.test.ts $b/Frost.DepositSweep.Gas.test.ts $b/Frost.FundingDispatch.test.ts $b/Frost.Identity.test.ts $b/Frost.Movement.test.ts $b/Frost.Fraud.test.ts $b/Frost.Lifecycle.test.ts $b/Frost.SweepConflictResolution.test.ts $b/Frost.SweepConflictResolution.Gas.test.ts $b/Bridge.MovingFunds.test.ts $b/Bridge.Wallets.test.ts"
+contracts="$b/Frost.CutoverExposure.test.ts $b/Frost.DepositAdmission.test.ts $b/Frost.DepositSweep.test.ts $b/Frost.DepositSweep.Guards.test.ts $b/Frost.DepositSweep.MainRequired.test.ts $b/Frost.DepositSweep.Gas.test.ts $b/Frost.FundingDispatch.test.ts $b/Frost.Movement.test.ts $b/Frost.Fraud.test.ts $b/Frost.Lifecycle.test.ts $b/Frost.SweepConflictResolution.test.ts $b/Frost.SweepConflictResolution.Gas.test.ts $b/Frost.Identity.test.ts $b/Bridge.MovingFunds.test.ts $b/Bridge.Wallets.test.ts $b/Bridge.Deposit.test.ts $b/Bridge.Redemption.test.ts"
 core="$b/Frost.PublicFunding.test.ts $b/Frost.PublicVaultCallback.test.ts $b/Frost.PublicNegativeGuards.test.ts $b/Frost.PublicGasCap.test.ts $b/Frost.PublicMaximumBatch.test.ts $b/Frost.SweepConflictResolution.Core.test.ts $b/Frost.LegacyReconciliation.test.ts"
 named='^(TestFrostSweepWithinExposureBudget|TestFrostDepositSweepAndCredit|TestDepositorRefundWithoutOperators|TestLateDepositRecovery|TestMainPurposeLockAndResolution|TestDepositTemplateCrossLanguage|TestCrossSchemeDrainAndSweep|TestMovementTargetStateRace|TestMovementCommittedFeeCap|TestNoTargetAndDustRecovery|TestCloseWithPendingObligations|TestFrostRedemptionLifecycle|TestFrostFraudPublicAdmissionDefenseTimeout)$'
 stage test/frost/go-test-shards.sh ./pkg/frost/integration 5 "$evidence_dir/named.jsonl" -run "$named" -count=1 -timeout 60m

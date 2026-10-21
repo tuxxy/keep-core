@@ -91,7 +91,7 @@ func TestFrostDepositSweepAndCredit(t *testing.T) {
 	locktime := w.locktime(k06RefundDelay)
 	a := w.deposit(1_000_000, locktime, [20]byte{})
 	b := w.deposit(2_000_000, locktime, [20]byte{})
-	r := w.round(b.revealBlock + k06Finality)
+	r := w.round(b.readyBlock + k06Finality)
 	plan := w.plan(r)
 	if plan.SweepMain() != nil || len(plan.SweepDeposits()) != 2 {
 		t.Fatal("first sweep of an unfunded wallet spends both deposits and no main")
@@ -152,7 +152,7 @@ func TestFrostDepositSweepAndCredit(t *testing.T) {
 	}
 
 	c := w.deposit(3_000_000, locktime, [20]byte{})
-	r = w.round(c.revealBlock + k06Finality)
+	r = w.round(c.readyBlock + k06Finality)
 	plan = w.plan(r)
 	custody, _ := w.chain.Custody(ctx, w.head(), w.walletID)
 	if m := plan.SweepMain(); m == nil || deposit.OutpointKey(m.Outpoint) != custody.MainOutpoint || m.Outpoint.TransactionHash != bitcoin.Hash(payment.BitcoinTransactionHash()) {
@@ -167,7 +167,7 @@ func TestFrostDepositSweepAndCredit(t *testing.T) {
 func (w *k06World) fundBySweep() bitcoin.TransactionOutpoint {
 	w.t.Helper()
 	d := w.deposit(1_000_000, w.locktime(3*k06RefundDelay), [20]byte{})
-	r := w.round(d.revealBlock + k06Finality)
+	r := w.round(d.readyBlock + k06Finality)
 	plan := w.plan(r)
 	w.sweepAndProve(plan, r.Number, w.sweeps)
 	return bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(plan.BitcoinTransactionHash())}
@@ -210,7 +210,7 @@ func TestDepositorRefundWithoutOperators(t *testing.T) {
 	ctx := w.f.ctx
 	locktime := w.locktime(2 * k06RefundMargin)
 	d := w.deposit(1_000_000, locktime, [20]byte{})
-	r := w.round(d.revealBlock + k06Finality)
+	r := w.round(d.readyBlock + k06Finality)
 	stale := w.plan(r)
 	before := w.balance(w.adminAddr)
 	tx := w.refund(d)
@@ -264,7 +264,7 @@ func TestLateDepositRecovery(t *testing.T) {
 
 	short := w.locktime(2 * k06RefundMargin)
 	e := w.deposit(1_000_000, short, [20]byte{})
-	r := w.round(e.revealBlock + k06Finality)
+	r := w.round(e.readyBlock + k06Finality)
 	dead := w.plan(r)
 	if m := dead.SweepMain(); m == nil || m.Outpoint != m1 || len(dead.SweepDeposits()) != 1 {
 		t.Fatal("sweep must spend the unreserved main and the deposit")
@@ -293,7 +293,7 @@ func TestLateDepositRecovery(t *testing.T) {
 		t.Fatal("dead sweep broadcast after its deposit was refunded")
 	}
 	f := w.deposit(2_000_000, w.locktime(3*k06RefundDelay), [20]byte{})
-	r = w.round(f.revealBlock + k06Finality)
+	r = w.round(f.readyBlock + k06Finality)
 	alternative := w.plan(r)
 	if m := alternative.SweepMain(); m == nil || m.Outpoint != m1 || len(alternative.SweepDeposits()) != 1 || alternative.SweepDeposits()[0].Key != f.key {
 		t.Fatal("alternative must spend the same main without the refunded deposit")
@@ -317,7 +317,7 @@ func TestLateDepositRecovery(t *testing.T) {
 	// deposit-only.
 	late := w.locktime(3 * k06RefundDelay)
 	g := w.deposit(1_000_000, late, [20]byte{})
-	r = w.round(g.revealBlock + k06Finality)
+	r = w.round(g.readyBlock + k06Finality)
 	plan := w.plan(r)
 	if plan.SweepMain() != nil {
 		t.Fatal("a reserved main must stay out of the sweep")
@@ -373,7 +373,7 @@ func TestMainPurposeLockAndResolution(t *testing.T) {
 		}
 	}
 	g := w.deposit(1_000_000, w.locktime(3*k06RefundDelay), [20]byte{})
-	r := w.round(g.revealBlock + k06Finality)
+	r := w.round(g.readyBlock + k06Finality)
 	side := w.plan(r)
 	if side.SweepMain() != nil {
 		t.Fatal("a reserved main must stay out of an ordinary sweep")
@@ -381,7 +381,7 @@ func TestMainPurposeLockAndResolution(t *testing.T) {
 	w.sweepAndProve(side, r.Number, w.sweeps)
 
 	h := w.deposit(1_000_000, w.locktime(3*k06RefundDelay), [20]byte{})
-	r = w.round(h.revealBlock + k06Finality)
+	r = w.round(h.readyBlock + k06Finality)
 	resolution, err := w.sweepers[0].Planner.Build(ctx, r.Anchor, [][32]byte{h.key}, reservation)
 	if err != nil {
 		t.Fatal(err)
@@ -519,7 +519,7 @@ func TestDepositTemplateCrossLanguage(t *testing.T) {
 		t.Fatal("C-05 accepted a block-height refund locktime")
 	}
 	four := w.deposit(1_000_000, 0x7fffffff, [20]byte{})
-	r := w.round(four.revealBlock + k06Finality)
+	r := w.round(four.readyBlock + k06Finality)
 	w.sweepAndProve(w.plan(r), r.Number, w.sweeps)
 	five := w.deposit(1_000_000, 0x80000000, [20]byte{})
 	if len(five.construction.RefundLeaf) != 76 {

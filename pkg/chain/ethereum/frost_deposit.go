@@ -11,11 +11,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
 	"github.com/keep-network/keep-core/pkg/frost/deposit"
+	"github.com/keep-network/keep-core/pkg/frost/redemption"
 )
 
 // depositWords is abi.encode(FrostFundingState.Deposit): the twelve Terms
-// words and eleven record words, all static.
-const depositWords = 23
+// words and twelve record words, all static. The last, C-10's reservedAt,
+// is read through Reserved instead.
+const depositWords = 24
 
 // Deposit reads the C-05 deposit record of one outpoint key at block at.
 func (c *FrostRedemptionChain) Deposit(ctx context.Context, at uint64, key [32]byte) (deposit.Record, error) {
@@ -128,6 +130,22 @@ func (c *FrostRedemptionChain) SubmitSweepResolutionProof(ctx context.Context, p
 	resolution := frostbridgeabi.FrostDepositSweepResolution{Sweep: sweepRequest(p), Authorization: frostbridgeabi.FrostSweepResolutionCertificateAuthorization{ReservationId: a.ReservationID, TransactionHash: a.TransactionHash, Vault: common.Address(a.Vault), ValidUntilBlock: a.ValidUntilBlock}, Seats: seats, Signatures: signatures}
 	return c.send(ctx, func(o *bind.TransactOpts) (*types.Transaction, error) {
 		return c.bridge.SubmitFrostSweepResolutionProof(o, resolution)
+	})
+}
+
+// exposureABI is the one C-10 controller view the host reads.
+// Reserved reads whether the Bridge holds an open C-10 reservation of one
+// deposit at block at: reserved and not yet swept. Without an installed
+// controller nothing can be reserved, so the answer is false.
+func (c *FrostRedemptionChain) Reserved(ctx context.Context, at uint64, key [32]byte) (bool, error) {
+	return c.bridge.FrostDepositReserved(c.at(ctx, at), key)
+}
+
+// ReserveDeposit reserves a revealed deposit against the C-10 budget with an
+// SPV proof of its funding transaction.
+func (c *FrostRedemptionChain) ReserveDeposit(ctx context.Context, key [32]byte, funding redemption.BitcoinInfo, p redemption.BitcoinProof) error {
+	return c.send(ctx, func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return c.bridge.ReserveFrostDeposit(o, key, info(funding), proof(p))
 	})
 }
 

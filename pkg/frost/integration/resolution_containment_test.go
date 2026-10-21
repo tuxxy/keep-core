@@ -38,7 +38,7 @@ func TestResolutionSweepNeedsDirectiveAfterContainment(t *testing.T) {
 			w.request(100_000, p2wpkh(0x64))
 			_, reservation := w.admit()
 			h := w.deposit(1_000_000, w.locktime(3*k06RefundDelay), [20]byte{})
-			r := w.round(h.revealBlock + k06Finality)
+			r := w.round(h.readyBlock + k06Finality)
 			plan, err := w.sweepers[0].Planner.Build(ctx, r.Anchor, [][32]byte{h.key}, reservation)
 			if err != nil {
 				t.Fatal(err)

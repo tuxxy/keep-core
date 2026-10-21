@@ -32,6 +32,10 @@ type fakeChain struct {
 	maxCerts uint64
 	// revealErr, when set, fails reveal-log reads (a provider outage).
 	revealErr error
+	// unreserved lists deposits without a C-10 reservation, and reservedAt
+	// the first block holding one; every other deposit is reserved throughout.
+	unreserved map[[32]byte]bool
+	reservedAt map[[32]byte]uint64
 }
 
 func newFakeChain() *fakeChain {
@@ -102,6 +106,12 @@ func (c *fakeChain) Reveals(_ context.Context, wallet [32]byte, from, to uint64)
 	}
 	return out, nil
 }
+func (c *fakeChain) Reserved(_ context.Context, at uint64, key [32]byte) (bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return !c.unreserved[key] && at >= c.reservedAt[key], nil
+}
+
 func (c *fakeChain) Reveal(_ context.Context, key [32]byte) (Reveal, error) {
 	if c.revealErr != nil {
 		return Reveal{}, c.revealErr

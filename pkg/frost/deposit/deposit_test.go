@@ -30,13 +30,26 @@ func TestPlannerPendingIsDeterministic(t *testing.T) {
 	w.chain.records[swept] = r
 	refunded := w.deposit(7, 700_000, 92, vault)
 	w.btc.spent[bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(w.chain.records[refunded].FundingTransactionHash), OutputIndex: 7}] = true
+	// C-10: a deposit without an exposure reservation is never planned.
+	unreserved := w.deposit(8, 800_000, 92, vault)
+	w.chain.unreserved = map[[32]byte]bool{unreserved: true}
+	// A reservation first present at block 99 is not final at anchor 100.
+	fresh := w.deposit(9, 900_000, 92, vault)
+	// One first present at 98 is exactly FinalityBlocks deep: planned.
+	final := w.deposit(10, 1_000_000, 92, vault)
+	w.chain.reservedAt = map[[32]byte]uint64{fresh: 99, final: 98}
 	keys, err := w.planner.Pending(ctx, 0, 100, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := map[[32]byte]bool{a: true, b: true}
-	if len(keys) != 2 || !want[keys[0]] || !want[keys[1]] || string(keys[0][:]) > string(keys[1][:]) {
+	want := map[[32]byte]bool{a: true, b: true, final: true}
+	if len(keys) != 3 {
 		t.Fatalf("pending %x", keys)
+	}
+	for i, key := range keys {
+		if !want[key] || (i > 0 && string(keys[i-1][:]) > string(key[:])) {
+			t.Fatalf("pending %x", keys)
+		}
 	}
 }
 
@@ -111,6 +124,20 @@ func TestAuthoritySweepAuthorizedOnly(t *testing.T) {
 			r.SweptAt = 9
 			w.chain.records[k] = r
 		}, ErrSwept},
+		{"no exposure reservation", func(w *world, k [32]byte) {
+			w.chain.unreserved = map[[32]byte]bool{k: true}
+		}, ErrUnreserved},
+		// Review of #20: head 100, reveal 90, finality 2. A reservation first
+		// present at 99 or 100 is not final; one present at 98 is.
+		{"reservation not yet final (99)", func(w *world, k [32]byte) {
+			w.chain.reservedAt = map[[32]byte]uint64{k: 99}
+		}, ErrUnreserved},
+		{"reservation not yet final (100)", func(w *world, k [32]byte) {
+			w.chain.reservedAt = map[[32]byte]uint64{k: 100}
+		}, ErrUnreserved},
+		{"reservation final (98)", func(w *world, k [32]byte) {
+			w.chain.reservedAt = map[[32]byte]uint64{k: 98}
+		}, nil},
 		{"refund margin by median-time-past", func(w *world, k [32]byte) {
 			w.clock.set(uint64(w.chain.records[k].Terms.RefundLocktime) - 3600)
 		}, ErrRefundMargin},

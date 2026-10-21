@@ -73,12 +73,18 @@ func (p Planner) eligible(ctx context.Context, at uint64, key [32]byte) (Record,
 	if !ok {
 		return r, false, nil
 	}
+	// C-10: only a deposit reserved against the exposure budget at a final
+	// depth is planned, so its sweep proof can never be refused by the budget.
+	if reserved, err := reservedAtDepth(ctx, p.Chain, at, p.Policy.FinalityBlocks, key); err != nil || !reserved {
+		return r, false, err
+	}
 	unspent, err := p.Funding.Unspent(ctx, bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(r.FundingTransactionHash), OutputIndex: r.FundingOutputIndex})
 	return r, unspent, err
 }
 
 // Pending returns the deposits to sweep at anchor block at: revealed for this
-// wallet in [from, at], final at at, unswept and before the planning margin.
+// wallet in [from, at], final at at, unswept, reserved and before the
+// planning margin.
 // All selected deposits share one vault (C-05 credits one vault per sweep):
 // the vault of the smallest eligible key. Keys are in ascending order.
 func (p Planner) Pending(ctx context.Context, from, at uint64, limit int) ([][32]byte, error) {

@@ -46,7 +46,14 @@ type k08World struct {
 
 func newK08World(t *testing.T) *k08World {
 	t.Helper()
-	w := &k08World{k06World: newK06World(t)}
+	return attachK08World(t, newK06World(t))
+}
+
+// attachK08World installs enforcement on an existing wallet. K-09 uses it
+// to join enforcement and movement on the same stores and contract state.
+func attachK08World(t *testing.T, custody *k06World) *k08World {
+	t.Helper()
+	w := &k08World{k06World: custody}
 	var err error
 	if w.legacy, err = legacyabi.NewBridge(w.f.deployment.Bridge, w.f.client); err != nil {
 		t.Fatal(err)

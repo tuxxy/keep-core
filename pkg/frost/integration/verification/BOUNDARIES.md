@@ -120,8 +120,8 @@ The joined test follows the fixed assertion checkpoints, using the existing
 component hooks without adding production hooks. The local closing period is
 one second (OPEN) so the restart defense is checked before the fraud deadline.
 The runbook dispatches the components, validates every required case and
-retains source/command/log hashes. Six throwaway guard controls and their
-harness self-test cover the new runner guards. Production artifact binding
+retains source/command/log hashes. Eleven throwaway guard controls, their harness self-test, and a config-only
+Hardhat control cover the runner guards. Production artifact binding
 walks every linked library (27 artifacts in the recorded run).
 
 A separate offline-refund witness removes operator signing resources before
@@ -130,3 +130,32 @@ legacy upgrade checkpoints and six production-factor SPV cases. The scoped
 acceptance record is `test/frost/K09.md`; `COMPOSITION-K09A.json` records the
 concrete joins without promoting them into V-05 discharge or source proofs.
 K-09b has not run. All readings above remain OPEN for owner review.
+
+
+## Review corrections (23 October 2026)
+
+K09A-B01/C01/C02/B02/C03 are addressed by the local runner and paired config:
+
+- Hardhat tests and compilation select the local network explicitly. The K-09
+  config removes external networks, disables forking after dotenv loads, and
+  rejects external selection. The runner removes inherited deployment inputs.
+- Every owned stage process group is terminated on success, nonzero exit,
+  timeout or interruption. TERM/KILL escalation does not depend on leader exit.
+- Artifact binding compares all compiler input sources, including package
+  imports, and records compiler/input/build-info identities. It is checked
+  again after execution. Local Go replacements are resolved recursively and
+  hashed along with the complete host package tree and in-tree dependencies.
+  Final enumeration catches additions and deletions, including ignored Go files.
+- Public evidence contains only generated case/count/status and provenance
+  summaries. Raw stdout/stderr, exception text, and generated legacy artifacts
+  stay outside that tree in a fresh 0700 private directory (files use umask 077).
+  Unknown producer fields are never copied into public summaries. Recognized
+  secret-material labels fail the run and remain quarantined. That additional
+  detector cannot recognize every encoding; opaque records are never decoded
+  or automatically exported, and private diagnostics are not certified safe
+  to publish. Inspect the private directory only under the secrecy policy.
+
+The focused controls exercise stale imports, edited local replacement code,
+ignored added Go files, external network/fork inputs, child survival after
+success/failure/timeout, forbidden output and the actual runner export path.
+No final mutation campaign or new model result is implied by these controls.

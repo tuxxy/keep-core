@@ -2,12 +2,17 @@
 """Focused K-09 runner controls in throwaway copies; no mutation campaign."""
 import argparse
 import json
+import os
+import signal
+import shutil
+import time
 from pathlib import Path
 import runpy
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 
@@ -59,14 +64,160 @@ def probe(source, selected=None):
                         dest.mkdir(parents=True, exist_ok=True)
                         (dest / (name + ".json")).write_text(json.dumps(artifact))
                         (dest / (name + ".dbg.json")).write_text(json.dumps({"buildInfo": "info.json"}))
-                        info = {"input": {"sources": {source_name: {"content": "original source"}}},
+                        dependency = repo / "node_modules/@openzeppelin/contracts/Dependency.sol"
+                        dependency.parent.mkdir(parents=True, exist_ok=True)
+                        dependency.write_text("original dependency")
+                        info = {"input": {"sources": {source_name: {"content": "original source"}, "@openzeppelin/contracts/Dependency.sol": {"content": "original dependency"}}},
                                 "output": {"contracts": {source_name: {name: {"evm": {"bytecode": {"object": "00"}, "deployedBytecode": {"object": "00"}}}}}}}
                         (dest / "info.json").write_text(json.dumps(info))
                 runner["artifact_binding"].__globals__["KC"] = kc
                 self.assertEqual(len(runner["artifact_binding"](tb)), 8)
-                (kc / "solidity/ecdsa/contracts/FrostAdmission.sol").write_text("changed source")
-                with self.assertRaisesRegex(ValueError, "artifact/source mismatch", msg="control ArtifactSource assertion"):
+                if selected == "test_imported_artifact_source":
+                    changed = kc / "solidity/ecdsa/node_modules/@openzeppelin/contracts/Dependency.sol"
+                else:
+                    changed = kc / "solidity/ecdsa/contracts/FrostAdmission.sol"
+                changed.write_text("changed source")
+                with self.assertRaisesRegex(ValueError, "artifact/source mismatch", msg="control " + ("ImportedSource" if selected == "test_imported_artifact_source" else "ArtifactSource") + " assertion"):
                     runner["artifact_binding"](tb)
+
+
+        def test_imported_artifact_source(self):
+            nonlocal selected
+            previous = selected
+            selected = "test_imported_artifact_source"
+            try:
+                self.test_artifact_source()
+            finally:
+                selected = previous
+
+        def test_local_network(self):
+            inherited = {"HARDHAT_NETWORK": "mainnet", "FORKING_URL": "https://invalid.example", "FORKING_BLOCK": "1", "CHAIN_API_URL": "https://invalid.example", "CONTRACT_OWNER_ACCOUNT_PRIVATE_KEY": "SYNTHETIC_NOT_A_KEY"}
+            env = runner["local_environment"](inherited)
+            command = runner["hardhat_test"]("hardhat", "fixture.ts")
+            self.assertEqual(env["HARDHAT_NETWORK"], "hardhat", "control LocalNetwork assertion")
+            self.assertFalse(any(k in env for k in ("FORKING_URL", "FORKING_BLOCK", "CHAIN_API_URL", "CONTRACT_OWNER_ACCOUNT_PRIVATE_KEY")))
+            self.assertEqual(command[command.index("--network") + 1], "hardhat")
+
+        def test_forbidden_output(self):
+            # Also exercise the public writer, not just the result parser.
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                raw = root / "private"
+                raw.mkdir(mode=0o700)
+                marker = "secret_share=PRIVATE_SENTINEL"
+                (raw / "stage.log").write_text(marker)
+                with self.assertRaisesRegex(ValueError, "forbidden secret-bearing", msg="control SecretOutput assertion"):
+                    runner["require_private_evidence"](raw)
+                public = root / "result.json"
+                with self.assertRaisesRegex(ValueError, "forbidden secret-bearing"):
+                    runner["public_json"](public, {"Output": marker})
+                self.assertFalse(public.exists())
+                runner["public_json"](public, {"cases": [{"name": "Required", "status": "pass"}]})
+                self.assertNotIn("SENTINEL", public.read_text())
+                # Unknown opaque producer data has no route into this summary.
+                runner["require_public_output"]("ordinary public test result")
+
+        def test_local_replacement(self):
+            # Real git enumeration and go.mod JSON parsing; no Go build/test.
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                kc, tb, dep = [root / name for name in ("kc", "tb", "dependency")]
+                for repo in (kc, tb, dep):
+                    repo.mkdir()
+                    subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
+                    subprocess.run(["git", "-C", str(repo), "-c", "user.name=probe", "-c", "user.email=probe@invalid", "commit", "--allow-empty", "-qm", "probe"], check=True, capture_output=True)
+                (kc / "go.mod").write_text("module example.com/main\n\ngo 1.24.0\nreplace example.com/dependency => ../dependency\n")
+                (dep / "go.mod").write_text("module example.com/dependency\n\ngo 1.24.0\n")
+                target = dep / "original.go"
+                target.write_text("package dependency\n")
+                runner["source_snapshot"].__globals__["KC"] = kc
+                env = runner["local_environment"](os.environ)
+                before = runner["source_snapshot"](tb, env)
+                self.assertIn("go-local:" + str(dep.resolve()), before)
+                target.write_text("package dependency\n// changed\n")
+                after = runner["source_snapshot"](tb, env)
+                with self.assertRaisesRegex(ValueError, "sources changed", msg="control LocalReplacement assertion"):
+                    runner["require_sources_unchanged"](before, after)
+                target.write_text("package dependency\n")
+                # Include ignored Go inputs, which git alone would miss.
+                (dep / ".gitignore").write_text("added.go\n")
+                before = runner["source_snapshot"](tb, env)
+                (dep / "added.go").write_text("package dependency\n")
+                after = runner["source_snapshot"](tb, env)
+                with self.assertRaisesRegex(ValueError, "sources changed"):
+                    runner["require_sources_unchanged"](before, after)
+                (dep / "added.go").unlink()
+                runner["require_sources_unchanged"](before, runner["source_snapshot"](tb, env))
+
+        def test_runner_output_boundary(self):
+            # Exercise the actual promotion/error path with real Python children.
+            for forbidden in (False, True):
+                with self.subTest(forbidden=forbidden), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    required = "TestFrostCompleteLocalLifecycle"
+                    output = "secret_share=PRIVATE_SENTINEL" if forbidden else "opaque=PRIVATE_SENTINEL"
+                    events = [json.dumps({"Action": "output", "Test": required, "Output": output}), json.dumps({"Action": "pass", "Test": required})]
+                    program = "print(" + repr("\n".join(events)) + ")"
+                    launch = runner["run_command"]
+                    def command_stub(command, cwd, env, log_path):
+                        self.assertEqual(env["HARDHAT_NETWORK"], "hardhat")
+                        return launch([sys.executable, "-c", program], root, env, log_path, timeout=3, grace=.1)
+                    env = {k: str(root) for k in ("FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "FROST_K04_BITCOIND", "FROST_C04_LEGACY_BASELINE_BUILD")}
+                    env.update({"SNOWFALL_WORKER_SHA256": runner["WORKER_SHA"], "FROST_K04_BITCOIND_SHA256": runner["CORE_SHA"]})
+                    globals_ = runner["main"].__globals__
+                    with patch.dict(os.environ, env), patch.object(sys, "argv", ["runner", str(root / "public"), "--only", "joined"]), patch.dict(globals_, {"require_pin": lambda *args: None, "source_snapshot": lambda *args: {}, "artifact_binding": lambda *args: {}, "run_command": command_stub}), patch.object(subprocess, "check_output", return_value="1.2.3"):
+                        code = runner["main"]()
+                    result = json.loads((root / "public/result.json").read_text())
+                    private = Path(result["privateEvidence"])
+                    try:
+                        self.assertEqual(code, 1 if forbidden else 0)
+                        self.assertEqual(result["status"], "fail" if forbidden else "partial")
+                        self.assertEqual(private.stat().st_mode & 0o777, 0o700)
+                        self.assertIn("PRIVATE_SENTINEL", (private / "joined.log").read_text())
+                        for public in (root / "public").iterdir():
+                            self.assertNotIn("PRIVATE_SENTINEL", public.read_text())
+                        self.assertEqual(set(p.name for p in (root / "public").iterdir()), {"result.json", "sources.json", "artifacts.json"})
+                    finally:
+                        shutil.rmtree(private)
+
+        def test_process_cleanup(self):
+            # Limits: Python-only process groups, <5s each; exact owned cleanup.
+            for leader in ("failure", "timeout", "success"):
+                with self.subTest(leader=leader), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    pidfile = root / "child.pid"
+                    heartbeat = root / 'heartbeat'
+                    child = ("import signal,time\nsignal.signal(signal.SIGTERM,signal.SIG_IGN)\n"
+                             "p=" + repr(str(heartbeat)) + "\n"
+                             "for _ in range(400):\n with open(p, 'a') as f: f.write('.')\n time.sleep(.01)\n")
+                    program = ('import subprocess,sys,time; p=subprocess.Popen([sys.executable,"-c",sys.argv[2]]); '
+                               'open(sys.argv[1],"w").write(str(p.pid)); time.sleep(.15); ' +
+                               ('time.sleep(4)' if leader == "timeout" else 'sys.exit(' + ('1' if leader == "failure" else '0') + ')'))
+                    original_popen = subprocess.Popen
+                    groups = []
+                    def track(*args, **kwargs):
+                        process = original_popen(*args, **kwargs)
+                        groups.append(process.pid)
+                        return process
+                    try:
+                        with patch.object(subprocess, "Popen", track):
+                            command = [sys.executable, "-c", program, str(pidfile), child]
+                            if leader == "timeout":
+                                with self.assertRaises(subprocess.TimeoutExpired):
+                                    runner["run_command"](command, root, os.environ.copy(), root / "stage.log", timeout=.4, grace=.1)
+                            else:
+                                code = runner["run_command"](command, root, os.environ.copy(), root / "stage.log", timeout=2, grace=.1)
+                                self.assertEqual(code, 1 if leader == "failure" else 0)
+                        self.assertTrue(heartbeat.is_file(), "child never reached its live positive witness")
+                        size = heartbeat.stat().st_size
+                        time.sleep(.12)
+                        self.assertEqual(size, heartbeat.stat().st_size, "control ProcessCleanup assertion")
+                    finally:
+                        for group in groups:
+                            try:
+                                os.killpg(group, signal.SIGKILL)
+                            except ProcessLookupError:
+                                pass
 
         def test_successful_witnesses(self):
             runner["require_exit"](0)
@@ -99,7 +250,12 @@ def main():
         ("SkippedGo", "test_skipped_go", '        if outcomes != ["pass"]:', '        if False:'),
         ("MissingContractCase", "test_missing_contract_case", '            if stats.get("passes") != count or stats.get("failures") != 0 or stats.get("pending") != 0 or stats.get("tests") != count:', '            if False:'),
         ("CommandFailure", "test_command_failure", '    if code != 0:', '    if False:'),
-        ("ArtifactSource", "test_artifact_source", '                    if (repo / source).read_text() != value["content"]:', '                    if False:'),
+        ("ArtifactSource", "test_artifact_source", '                if source_path.read_text() != value["content"]:', '                if False:'),
+        ("ImportedSource", "test_imported_artifact_source", '                if source_path.read_text() != value["content"]:', '                if source.startswith("contracts/") and source_path.read_text() != value["content"]:'),
+        ("LocalNetwork", "test_local_network", '"HARDHAT_NETWORK": "hardhat",', '"HARDHAT_NETWORK": parent.get("HARDHAT_NETWORK"),'),
+        ("SecretOutput", "test_forbidden_output", '    if SECRET_OUTPUT.search(text):', '    if False:'),
+        ("LocalReplacement", "test_local_replacement", '    if before != after:', '    if False:'),
+        ("ProcessCleanup", "test_process_cleanup", '            terminate_group(process, grace)', '            process.poll()'),
     ]
     with tempfile.TemporaryDirectory(prefix="k09-controls-") as tmp:
         for name, case, before, after in controls:

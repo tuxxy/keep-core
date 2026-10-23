@@ -1,0 +1,265 @@
+{
+  "date": "2026-10-23",
+  "scope": "K-09a concrete composition evidence appendix; does not close the authoritative V-05 ledger",
+  "evidenceClass": "concrete testing",
+  "evidenceRoot": "implementation/K-09/local-2026-10-23",
+  "rows": [
+    {
+      "v3Row": 1,
+      "contract": "SF candidate -> host publication",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "snowfall",
+          "path": "clients/go/candidate.go",
+          "blob": "9ae4c259de118834b30738c034a0b7c39b3e273e",
+          "sha256": "05c663c8f7ce3d116ae4083c80211c28a8d8f884a450868a975f1b276bb0ffdb"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/frost/dkg/executor.go",
+          "blob": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d",
+          "sha256": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a"
+        }
+      ],
+      "witnesses": [
+        "TestFrostCompleteLocalLifecycle/k09-ready"
+      ],
+      "remaining": "Production-size and specialist cryptographic qualification remain open."
+    },
+    {
+      "v3Row": 2,
+      "contract": "Durable completion -> fresh readiness",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/frost/store/wallet.go",
+          "blob": "1eeada06c53d217eb1cc28adc39c7ef6495a4af1",
+          "sha256": "590af57e1f6a28439d1b88ac45a26dcd35b45f3c0e8bd422833701a738ad01e7"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/frost/dkg/executor.go",
+          "blob": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d",
+          "sha256": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a"
+        }
+      ],
+      "witnesses": [
+        "TestFrostCompleteLocalLifecycle/k09-ready",
+        "TestFrostCompleteLocalLifecycle/k09-closure"
+      ],
+      "remaining": "Concrete reload witnesses; production storage/fence qualification remains open."
+    },
+    {
+      "v3Row": 3,
+      "contract": "Approved identity -> Bridge wallet",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "keep-core",
+          "path": "solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol",
+          "blob": "3cd5ef8e564767e93d99499d6211dad7904e0d46",
+          "sha256": "e54a120932b21cd0152676dad9624c3b861fd678b4be5235e2eb445c11d9a10f"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "tbtc-v2",
+          "path": "solidity/contracts/frost/FrostWallets.sol",
+          "blob": "c91a8941d059ccf694dc815763214e46527a88c7",
+          "sha256": "df0aa8e18a3f50c45ef7f52a2fb590ec8b4f44317d09c86c089fbfec6c04a6d5"
+        }
+      ],
+      "witnesses": [
+        "TestFrostCompleteLocalLifecycle/k09-ready"
+      ],
+      "remaining": "Controlled stake/beacon and three-seat local policy."
+    },
+    {
+      "v3Row": 4,
+      "contract": "Deposit template -> spend/refund",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/frost/deposit/template.go",
+          "blob": "4cb488794315fef7cd7ebed48fecfb6c72e3f944",
+          "sha256": "262ecfea1119c8206af54829997b82a1aa8d77cf8693fea6ced92bf306ba6d59"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "tbtc-v2",
+          "path": "solidity/contracts/frost/FrostDepositAdmission.sol",
+          "blob": "6e9d7ece253b22ff28f82cd1913e3c23058103a5",
+          "sha256": "5362990156f94ee84d92dbd24f2df5bbd9db71927d87f8035b44ccae0ea932d8"
+        }
+      ],
+      "witnesses": [
+        "TestFrostCompleteLocalLifecycle/k09-credit",
+        "TestFrostLifecycleRefundWithSignersOffline"
+      ],
+      "remaining": "Shared Go/contract construction and Core acceptance; C-07 named qualification is not supplied here."
+    },
+    {
+      "v3Row": 5,
+      "contract": "Funded request/intent -> exact signer",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/frost/redemption/planner.go",
+          "blob": "6fd0666f34e7bf32414d4c9061a4a3de870aace8",
+          "sha256": "bebc2de15198981d0e4a0556cc154c062c8ebb43055d848fe2db42c26e689a86"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/frost/signing/executor.go",
+          "blob": "6c49c0075b99ecdef07766211b68c6661e1e316c",
+          "sha256": "78e1f603c0f348192f5eea6a0bdeb211787ae3d4a96abc7944ad97ad04c7b2ec"
+        }
+      ],
+      "witnesses": [
+        "TestFrostCompleteLocalLifecycle/k09-payment",
+        "TestReservationTimeoutRace"
+      ],
+      "remaining": "Local finality and fee policy are OPEN test values."
+    },
+    {
+      "v3Row": 6,
+      "contract": "Signature/immutable transaction -> broadcast/SPV",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/frost/signing/executor.go",
+          "blob": "6c49c0075b99ecdef07766211b68c6661e1e316c",
+          "sha256": "78e1f603c0f348192f5eea6a0bdeb211787ae3d4a96abc7944ad97ad04c7b2ec"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/maintainer/spv/frost_movement.go",
+          "blob": "63f52450afcdcb4ed5c11e8dbd99aac4ebde2389",
+          "sha256": "22ef0d5bdef2df8b1d2588e19e134cf8d128d88196ea38fd7dcf16a20b8798ca"
+        }
+      ],
+      "witnesses": [
+        "TestFrostCompleteLocalLifecycle/k09-movement",
+        "TestCrossSchemeDrainAndSweep"
+      ],
+      "remaining": "Real Core bytes and production proof entry points; regtest relay is controlled."
+    },
+    {
+      "v3Row": 7,
+      "contract": "Inclusion/custody -> credit once",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/maintainer/spv/frost_sweeps.go",
+          "blob": "a2dd0d720cc37ff9ffbf8816625b0e417af2de16",
+          "sha256": "5a7d1889e6b542ae4be15e3f2a01638415722ef6120b780703d084135270331f"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "tbtc-v2",
+          "path": "solidity/contracts/frost/FrostDepositSweep.sol",
+          "blob": "2a7230399533988352a5f064737023f5185a8484",
+          "sha256": "6475c0a46a059e343a86845d795a2d6b9e14cddb6bf4fb8e33a407624d07cfcd"
+        }
+      ],
+      "witnesses": [
+        "TestFrostCompleteLocalLifecycle/k09-credit",
+        "K-09 realistic-header SPV at production difficulty factor"
+      ],
+      "remaining": "Separate mainnet-header validation does not qualify a relay deployment."
+    },
+    {
+      "v3Row": 8,
+      "contract": "Signature/challenge -> exact defense",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "tbtc-v2",
+          "path": "solidity/contracts/frost/FrostFraud.sol",
+          "blob": "709b0839a6e562d7995d4dd98b38f328a2f3b810",
+          "sha256": "a11deeedc72195062bafd8bccaed7501015d5d3b859c2b620acde33e0d49f3c4"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/frost/enforcement/defender.go",
+          "blob": "a718c34ba51bbfea99d2d20038e5d7edad971012",
+          "sha256": "c06145adb653cee5d11fb3ad177da46b9e244e3605afdaf495205bf549a800b8"
+        }
+      ],
+      "witnesses": [
+        "TestFrostCompleteLocalLifecycle/k09-restarted-defense",
+        "TestFrostFraudPublicAdmissionDefenseTimeout"
+      ],
+      "remaining": "Restarted defense before deadline; inclusion assumptions and C-07 qualification remain owned."
+    },
+    {
+      "v3Row": 9,
+      "contract": "Cleared ledger -> closure/retirement",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "keep-core",
+          "path": "pkg/frost/movement/closure.go",
+          "blob": "e2c017aa7834c0da1447aefb5bdca1a18ccc0b6a",
+          "sha256": "9f69098aa000b7649068bd6b512e93238f09d3cd2ded2bbca56c37af1de14832"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "tbtc-v2",
+          "path": "solidity/contracts/frost/FrostLifecycle.sol",
+          "blob": "7db6ca7ba712e2048eb4d5c79cce9f74ec152a5a",
+          "sha256": "1cb31b018dee6c7d2be13e6a4318387ef04e2c5bfca7d62f72c7a2cb7062d733"
+        }
+      ],
+      "witnesses": [
+        "TestFrostCompleteLocalLifecycle/k09-closure"
+      ],
+      "remaining": "Local closure only. K-12 archive inventory and key destruction are outside K-09a."
+    },
+    {
+      "v3Row": 10,
+      "contract": "Approved source/configuration -> inherited result",
+      "status": "concrete-local-witness",
+      "producerSources": [
+        {
+          "repository": "keep-core",
+          "path": "test/frost/k09-local.py",
+          "blob": "333d9cbab338abab5a5e8df1ea94e9cb0280e0f5",
+          "sha256": "e785bb204af519e52af051330c0654755640528f29970f1a4d47cfa68ffd7329"
+        }
+      ],
+      "consumerSources": [
+        {
+          "repository": "tbtc-v2",
+          "path": "solidity/test/bridge/Frost.LifecycleUpgrade.test.ts",
+          "blob": "0f06159b20fc2930341fdcd921f9706141bfa880",
+          "sha256": "4ba56a3a2c05b5d16255509f0c3ad0698ad00c9a693910c200163a0646a5b686"
+        }
+      ],
+      "witnesses": [
+        "artifact-binding",
+        "K-09 pending legacy obligations across actual upgrade"
+      ],
+      "remaining": "Local artifact/source and proxy-upgrade correspondence only; C-11/K-10 production deployment remains open."
+    }
+  ]
+}

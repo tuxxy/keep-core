@@ -2,7 +2,17 @@
   "recorded": "2026-10-23",
   "purpose": "K-09a boundary bases, before code",
   "spec": {
-    "commit": "51b9a168e6b6c73d4d471f7d302267a065407fb5"
+    "commit": "51b9a168e6b6c73d4d471f7d302267a065407fb5",
+    "files": [
+      {
+        "path": "keep-core-integration-spec.md",
+        "blob": "98f8589a48ab95d065d5b95307734d66b93618f1"
+      },
+      {
+        "path": "keep-core-verification-spec.md",
+        "blob": "ab1815f31cf311ca5b3b7d04e7a70dd37dfa1d3d"
+      }
+    ]
   },
   "keep-core": {
     "commit": "c09f8e76cf97a18c69f7de1a23c60d36688cc8b7",
@@ -41,6 +51,11 @@
         "path": "pkg/frost/enforcement/defender.go",
         "blob": "a718c34ba51bbfea99d2d20038e5d7edad971012",
         "sha256": "c06145adb653cee5d11fb3ad177da46b9e244e3605afdaf495205bf549a800b8"
+      },
+      {
+        "path": "pkg/frost/verification/COMPOSITION.json",
+        "blob": "43a6601452fe2bc27ae4774f87708ef4dee2efe9",
+        "sha256": "ef4d6e9729c02aa265365ca56dcc7ed01509be8d21d5e550174c9c6f3cf855ed"
       }
     ]
   },

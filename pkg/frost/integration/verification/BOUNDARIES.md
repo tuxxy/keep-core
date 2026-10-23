@@ -113,3 +113,20 @@ scale, production funding gate or proof of the Go source is claimed.
 Concrete tests and human self-review only, with limits and evidence paths.
 The acceptance record must distinguish pass, fail, not run and blocked.
 No K-09a acceptance is inferred from historical component results alone.
+
+## As implemented (23 October 2026)
+
+The joined test follows the fixed assertion checkpoints, using the existing
+component hooks without adding production hooks. The local closing period is
+one second (OPEN) so the restart defense is checked before the fraud deadline.
+The runbook dispatches the components, validates every required case and
+retains source/command/log hashes. Six throwaway guard controls and their
+harness self-test cover the new runner guards. Production artifact binding
+walks every linked library (27 artifacts in the recorded run).
+
+A separate offline-refund witness removes operator signing resources before
+constructing the refund. The contract side supplies three reachable public
+legacy upgrade checkpoints and six production-factor SPV cases. The scoped
+acceptance record is `test/frost/K09.md`; `COMPOSITION-K09A.json` records the
+concrete joins without promoting them into V-05 discharge or source proofs.
+K-09b has not run. All readings above remain OPEN for owner review.

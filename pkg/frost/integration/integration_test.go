@@ -80,10 +80,12 @@ func (l lease) Close() error { l.a.mu.Lock(); defer l.a.mu.Unlock(); l.a.leased 
 type deployment struct {
 	Registry, Bridge, Pool, Validator, Beacon common.Address
 	Bank, Treasury                            common.Address
-	Epoch                                     uint64
-	Seed                                      int
-	Pattern                                   []int
-	Operators                                 []common.Address
+	// Exposure is the C-10 controller, installed in mode "k05" and later.
+	Exposure  common.Address
+	Epoch     uint64
+	Seed      int
+	Pattern   []int
+	Operators []common.Address
 	// Legacy is set in mode "k07": the controlled legacy registry, the real
 	// WalletProposalValidator and the compiler's Bridge storage layout for
 	// the legacy wallet markers.

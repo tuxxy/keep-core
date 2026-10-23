@@ -74,6 +74,9 @@ type k06World struct {
 	sweeps     spv.FrostSweepMaintainer
 	refundKey  *btcec.PrivateKey
 	blinding   byte
+	// unreservedReveals leaves new deposits without a C-10 reservation, for
+	// the tests that reserve them explicitly.
+	unreservedReveals bool
 }
 
 // newK06World is the K-05 world without its test-only funding: a real DKG
@@ -144,7 +147,7 @@ func newK06WorldWith(t *testing.T, options k06Options) *k06World {
 		w.sweepers = append(w.sweepers, &deposit.Sweeper{Chain: k5.chain, Planner: planner, Authority: &deposit.Authority{View: w.view}, Lock: lock, Ledger: redemption.Ledger{Journal: k5.journals[i]}, Schedule: redemption.Schedule{FinalityBlocks: k06Finality, RoundBlocks: k06RoundBlocks}, Base: base})
 		w.resolution = append(w.resolution, &deposit.ResolutionAttester{Chain: k5.chain, Lock: lock, Authority: &deposit.Authority{View: w.view}, Key: f.nodes[i].key, Seats: f.executors[i].Request.LocalSeats, Reload: k5.attesters[i].Reload})
 	}
-	w.sweeps = spv.FrostSweepMaintainer{Chain: k5.chain, Bitcoin: k5.btc, Confirmations: 1}
+	w.sweeps = spv.FrostSweepMaintainer{Chain: k5.chain, Bitcoin: k5.btc, Confirmations: 1, Funding: core, Clock: w.clock, RefundMargin: k06RefundMargin}
 	if os.Getenv("FROST_K06_CONTROL_FAULT") == "proof-rpc" {
 		// Controls-harness self-test only: an outage unrelated to any guard.
 		w.sweeps.Chain = proofOutage{k5.chain}
@@ -184,6 +187,9 @@ type funded struct {
 	funding      bitcoin.TransactionOutpoint
 	key          [32]byte
 	revealBlock  uint64
+	// readyBlock holds both the reveal and the C-10 reservation: a sweep
+	// plan anchored finality blocks later may include the deposit.
+	readyBlock uint64
 }
 
 // deposit pays the Go-built deposit address from Core, mines it, reveals it to
@@ -226,7 +232,17 @@ func (w *k06World) deposit(amount uint64, locktime uint32, vault [20]byte) funde
 		return w.bridge.RevealFrostDeposit(o, abiTerms(terms), frostbridgeabi.BitcoinTxInfo{Version: info.Version, InputVector: info.InputVector, OutputVector: info.OutputVector, Locktime: info.Locktime}, uint32(index))
 	})
 	funding := bitcoin.TransactionOutpoint{TransactionHash: hash, OutputIndex: uint32(index)}
-	return funded{terms: terms, construction: c, funding: funding, key: deposit.OutpointKey(funding), revealBlock: receipt.BlockNumber.Uint64()}
+	f := funded{terms: terms, construction: c, funding: funding, key: deposit.OutpointKey(funding), revealBlock: receipt.BlockNumber.Uint64()}
+	f.readyBlock = f.revealBlock
+	// C-10: the planner sweeps only reserved deposits; reserve through the
+	// maintainer once the funding is confirmed, as a host does.
+	if !w.unreservedReveals {
+		if action, err := w.sweeps.ReserveDeposit(ctx, f.key); err != nil || action.Kind != "deposit-reservation" {
+			t.Fatalf("deposit reservation: %+v %v", action, err)
+		}
+		f.readyBlock = w.head()
+	}
+	return f
 }
 
 // locktime is a refund time the given seconds after the current Ethereum time.

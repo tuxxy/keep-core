@@ -211,7 +211,7 @@ func TestFrostFraudPublicAdmissionDefenseTimeout(t *testing.T) {
 	ctx := w.f.ctx
 
 	d := w.deposit(1_000_000, w.locktime(3*k06RefundDelay), [20]byte{})
-	r := w.round(d.revealBlock + k06Finality)
+	r := w.round(d.readyBlock + k06Finality)
 	proven := w.plan(r)
 	w.sweepAndProve(proven, r.Number, w.sweeps)
 	main := bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(proven.BitcoinTransactionHash())}
@@ -245,7 +245,7 @@ func TestFrostFraudPublicAdmissionDefenseTimeout(t *testing.T) {
 	// and broadcast, then the depositor's refund replaces it and mines.
 	short := w.locktime(2 * k06RefundMargin)
 	e := w.deposit(1_000_000, short, [20]byte{})
-	r = w.round(e.revealBlock + k06Finality)
+	r = w.round(e.readyBlock + k06Finality)
 	dead := w.plan(r)
 	if m := dead.SweepMain(); m == nil || m.Outpoint != main {
 		t.Fatal("the losing sweep must spend the main")

@@ -318,7 +318,7 @@ type FrostSweepResolutionCertificateAuthorization struct {
 
 // FrostBridgeMetaData contains all meta data concerning the FrostBridge contract.
 var FrostBridgeMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"FrostDrainEnabled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes20\",\"name\":\"source\",\"type\":\"bytes20\"}],\"name\":\"FrostDrainReleased\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"}],\"name\":\"FrostFraudChallengeDefeatTimedOut\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"}],\"name\":\"FrostFraudChallengeDefeated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"name\":\"FrostFraudChallengeSubmitted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"addressesEnabled\",\"type\":\"bool\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"revealEnabled\",\"type\":\"bool\"}],\"name\":\"FrostFundingGatesChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"verifier\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"runtimeHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"qualificationRecord\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"}],\"name\":\"FrostFundingInstalled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"FrostIncomingEscalated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"target\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"source\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"outputIndex\",\"type\":\"uint32\"}],\"name\":\"FrostIncomingRecorded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"}],\"name\":\"FrostMovedFundsSwept\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"}],\"name\":\"FrostMovingFundsBelowDust\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"}],\"name\":\"FrostMovingFundsCommitmentRetired\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"mainOutpoint\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes20[]\",\"name\":\"targets\",\"type\":\"bytes20[]\"},{\"indexed\":false,\"internalType\":\"bytes32[]\",\"name\":\"descriptorHashes\",\"type\":\"bytes32[]\"}],\"name\":\"FrostMovingFundsCommitted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"FrostMovingFundsCompleted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostMovingFundsEscalated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostMovingFundsTimeoutReset\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint16[]\",\"name\":\"inactiveSeats\",\"type\":\"uint16[]\"},{\"indexed\":false,\"internalType\":\"address[]\",\"name\":\"inactiveOperators\",\"type\":\"address[]\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"heartbeatFailed\",\"type\":\"bool\"}],\"name\":\"FrostOperatorInactivityNotified\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"reason\",\"type\":\"bytes32\"}],\"name\":\"FrostSanctionNotified\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletClosed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletClosing\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"reason\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletMovingFunds\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletReopened\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"descriptor\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"}],\"name\":\"__snowfallWalletCreated\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"id\",\"type\":\"bytes32\"}],\"name\":\"__snowfallWalletExpired\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"id\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"generation\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"capabilityVersion\",\"type\":\"uint32\"}],\"name\":\"__snowfallWalletReady\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"snapshot\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"fee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"}],\"internalType\":\"structFrostCancellationCertificate.Authorization\",\"name\":\"authorization\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"authorizeFrostCancellation\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"claimFrostCancellationBudget\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"verifier\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"runtimeHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"qualificationRecord\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"}],\"name\":\"configureFrostFunding\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"genesis\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"finalityBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumCertificateBlocks\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"watchtower\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"legacyTransitionEvidence\",\"type\":\"bytes32\"}],\"name\":\"configureFrostRedemptions\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"registry\",\"type\":\"address\"}],\"name\":\"configureFrostRegistry\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"script\",\"type\":\"bytes\"}],\"internalType\":\"structFrostFraud.Prevout[]\",\"name\":\"prevouts\",\"type\":\"tuple[]\"},{\"internalType\":\"uint32\",\"name\":\"inputIndex\",\"type\":\"uint32\"},{\"internalType\":\"bytes32\",\"name\":\"leafHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"authorization\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"authorizationRef\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostFraud.Defense\",\"name\":\"defense\",\"type\":\"tuple\"}],\"name\":\"defeatFrostFraudChallenge\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"}],\"name\":\"defeatFrostFraudChallengeWithHeartbeat\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"finalizeFrostWalletClosing\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"frostCancellationAlternative\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"snapshot\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"fee\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"sponsor\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"admittedBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"budgetSettled\",\"type\":\"bool\"}],\"internalType\":\"structFrostCancellationHistory.Record\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"}],\"name\":\"frostCancellationCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"frostCancellationHash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"}],\"name\":\"frostCancellationWinner\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostClosureObligations\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"open\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"frostCustodyOutput\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"spent\",\"type\":\"bool\"}],\"internalType\":\"structFrostCustody.Output\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"frostDeposit\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"bridge\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"fullWalletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"internalType\":\"bytes8\",\"name\":\"blinding\",\"type\":\"bytes8\"},{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refundKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"refundLocktime\",\"type\":\"uint32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostDepositProfile.Terms\",\"name\":\"terms\",\"type\":\"tuple\"}],\"name\":\"frostDepositConstruction\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"key\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"root\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"parity\",\"type\":\"uint8\"}],\"internalType\":\"structFrostDepositAdmission.Output\",\"name\":\"output\",\"type\":\"tuple\"},{\"internalType\":\"bytes32\",\"name\":\"receipt\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"walletLeaf\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"refundLeaf\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"walletControl\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"refundControl\",\"type\":\"bytes\"}],\"internalType\":\"structFrostDepositAdmission.Construction\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"bridge\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"fullWalletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"internalType\":\"bytes8\",\"name\":\"blinding\",\"type\":\"bytes8\"},{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refundKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"refundLocktime\",\"type\":\"uint32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostDepositProfile.Terms\",\"name\":\"terms\",\"type\":\"tuple\"}],\"name\":\"frostDepositOutput\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"key\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"root\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"parity\",\"type\":\"uint8\"}],\"internalType\":\"structFrostDepositAdmission.Output\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"frostDepositRefundConstruction\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"key\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"root\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"parity\",\"type\":\"uint8\"}],\"internalType\":\"structFrostDepositAdmission.Output\",\"name\":\"output\",\"type\":\"tuple\"},{\"internalType\":\"bytes32\",\"name\":\"receipt\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"walletLeaf\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"refundLeaf\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"walletControl\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"refundControl\",\"type\":\"bytes\"}],\"internalType\":\"structFrostDepositAdmission.Construction\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"source\",\"type\":\"bytes20\"}],\"name\":\"frostDrainTargets\",\"outputs\":[{\"internalType\":\"bytes20[]\",\"name\":\"\",\"type\":\"bytes20[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"}],\"name\":\"frostFraudChallenge\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"challenger\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"reportedAt\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"resolved\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"depositAmount\",\"type\":\"uint256\"}],\"internalType\":\"structFrostFraudState.Challenge\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"}],\"name\":\"frostHeartbeatDigest\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"inactiveSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bool\",\"name\":\"heartbeatFailed\",\"type\":\"bool\"}],\"name\":\"frostInactivityClaimDigest\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostInactivityNonce\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"frostIncoming\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"target\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"source\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"createdAt\",\"type\":\"uint64\"},{\"internalType\":\"enumFrostMovementState.IncomingState\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"uint64\",\"name\":\"sweepFeeCap\",\"type\":\"uint64\"}],\"internalType\":\"structFrostMovementState.Incoming\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostMovementCounters\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"pendingIncoming\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"inboundCommitments\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"eligibleTargets\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"drainEnabled\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"}],\"name\":\"frostMovingFundsCommitment\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"mainOutpoint\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"committedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"provenAt\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"escalated\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"retired\",\"type\":\"bool\"},{\"internalType\":\"uint64\",\"name\":\"maxFee\",\"type\":\"uint64\"},{\"internalType\":\"bytes20[]\",\"name\":\"targets\",\"type\":\"bytes20[]\"},{\"internalType\":\"bytes32[]\",\"name\":\"descriptorHashes\",\"type\":\"bytes32[]\"}],\"internalType\":\"structFrostMovementState.Commitment\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostOpenChallenges\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"frostProvenTransaction\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"frostRedemptionConfiguration\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"finalityBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumCertificateBlocks\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"watchtower\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"legacyTransitionEvidence\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostRedemptionState.Configuration\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostRedemptionEscrow\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"netLiability\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"frostRedemptionPolicy\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"watchtower\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"policyId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"notBefore\",\"type\":\"uint64\"}],\"internalType\":\"structFrostRedemptionState.RequestPolicy\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"frostRedemptionRequest\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"treasuryFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumBitcoinFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"finalityBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timeoutBlock\",\"type\":\"uint64\"},{\"internalType\":\"enumFrostRedemptionLedger.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"bytes\",\"name\":\"script\",\"type\":\"bytes\"}],\"internalType\":\"structFrostRedemptionLedger.Request\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"frostRegistry\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"}],\"name\":\"frostReservation\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"generation\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"intentCommitment\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"requestIdsHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"conflictTxHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"conflictOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"minimumFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumSatPerVByte\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"}],\"internalType\":\"structFrostReservationCertificate.Reservation\",\"name\":\"certificate\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"admittedBlock\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"snapshot\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"internalType\":\"enumFrostRedemptionLedger.IntentState\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"bytes32[]\",\"name\":\"requestIds\",\"type\":\"bytes32[]\"},{\"internalType\":\"uint64[]\",\"name\":\"payouts\",\"type\":\"uint64[]\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"txHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"txOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"txOutputValue\",\"type\":\"uint64\"}],\"internalType\":\"structBitcoinTx.UTXO[]\",\"name\":\"inputs\",\"type\":\"tuple[]\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"cancellationHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"cancellationSnapshot\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"cancellationFee\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"cancellationSponsor\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"cancellationAdmittedBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"cancellationSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"cancellationSignatures\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"reservedNet\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"cancellationValidUntilBlock\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"sweepResolutionHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"sweepResolutionBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"sweepResolutionValidUntilBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"sweepResolutionSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes32\",\"name\":\"sweepResolutionSignaturesHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"sweepResolutionAuthorizationHash\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostRedemptionLedger.Intent\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostWalletCustody\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"generation\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"mainOutpoint\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"activeReservation\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"cancellationExposure\",\"type\":\"uint64\"}],\"internalType\":\"structFrostCustody.Wallet\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostWalletLifecycle\",\"outputs\":[{\"components\":[{\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"movingFundsRequestedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"closingStartedAt\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"dust\",\"type\":\"bool\"},{\"internalType\":\"uint64\",\"name\":\"readyAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"terminatedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"inactivityNonce\",\"type\":\"uint64\"}],\"internalType\":\"structFrostMovementState.Lifecycle\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"}],\"name\":\"frostWalletQuarantine\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"reasonHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"evidenceHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"authority\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"recordedBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"previousStateVersion\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"}],\"internalType\":\"structFrostRedemptionState.QuarantineRecord\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"label\",\"type\":\"bytes20\"}],\"name\":\"isFrostFundingTarget\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostFraudChallengeDefeatTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostMovedFundsSweepTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostMovingFundsBelowDust\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostMovingFundsTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"inactiveSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bool\",\"name\":\"heartbeatFailed\",\"type\":\"bool\"},{\"internalType\":\"uint16[]\",\"name\":\"signingSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"notifyFrostOperatorInactivity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostRedemptionTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostWalletCloseable\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostWalletRedemptionTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"expectedStateVersion\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"reasonHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"evidenceHash\",\"type\":\"bytes32\"}],\"name\":\"quarantineFrostWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"refundResolvedFrostRedemption\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"refundUnreservedFrostRedemption\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"source\",\"type\":\"bytes20\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"txHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"txOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"txOutputValue\",\"type\":\"uint64\"}],\"internalType\":\"structBitcoinTx.UTXO\",\"name\":\"main\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"releaseFrostDrainOnConflict\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"script\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"}],\"name\":\"requestFrostRedemption\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"requestNewFrostWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"generation\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"intentCommitment\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"requestIdsHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"conflictTxHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"conflictOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"minimumFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumSatPerVByte\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"}],\"internalType\":\"structFrostReservationCertificate.Reservation\",\"name\":\"certificate\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"txHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"txOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"txOutputValue\",\"type\":\"uint64\"}],\"internalType\":\"structBitcoinTx.UTXO[]\",\"name\":\"inputs\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"id\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"script\",\"type\":\"bytes\"}],\"internalType\":\"structFrostSigningIntent.Request[]\",\"name\":\"requests\",\"type\":\"tuple[]\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"internalType\":\"structFrostRedemptionState.ReservationProposal\",\"name\":\"proposal\",\"type\":\"tuple\"}],\"name\":\"reserveFrostRedemption\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"resetFrostMovingFundsTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"output\",\"type\":\"bytes\"}],\"name\":\"resolveFrostOutputScript\",\"outputs\":[{\"internalType\":\"bytes20\",\"name\":\"\",\"type\":\"bytes20\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"registry\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"id\",\"type\":\"bytes32\"}],\"name\":\"resolveWallet\",\"outputs\":[{\"internalType\":\"bytes20\",\"name\":\"\",\"type\":\"bytes20\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"q\",\"type\":\"bytes32\"}],\"name\":\"resolveWalletOutput\",\"outputs\":[{\"internalType\":\"bytes20\",\"name\":\"\",\"type\":\"bytes20\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"bridge\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"fullWalletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"internalType\":\"bytes8\",\"name\":\"blinding\",\"type\":\"bytes8\"},{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refundKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"refundLocktime\",\"type\":\"uint32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostDepositProfile.Terms\",\"name\":\"terms\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"internalType\":\"uint32\",\"name\":\"outputIndex\",\"type\":\"uint32\"}],\"name\":\"revealFrostDeposit\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"setFrostDrainEnabled\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"addressesEnabled\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"revealEnabled\",\"type\":\"bool\"}],\"name\":\"setFrostFundingGates\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"setFrostRedemptionsEnabled\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"setFrostRequestsEnabled\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"submitFrostCancellationProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"includeMain\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"}],\"internalType\":\"structFrostDepositSweep.Sweep\",\"name\":\"request\",\"type\":\"tuple\"}],\"name\":\"submitFrostDepositSweepProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"name\":\"submitFrostFraudChallenge\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"submitFrostMovedFundsSweepProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint16\",\"name\":\"seat\",\"type\":\"uint16\"},{\"internalType\":\"bytes20[]\",\"name\":\"targets\",\"type\":\"bytes20[]\"}],\"name\":\"submitFrostMovingFundsCommitment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"submitFrostMovingFundsProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"submitFrostRedemptionProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"includeMain\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"}],\"internalType\":\"structFrostDepositSweep.Sweep\",\"name\":\"sweep\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"}],\"internalType\":\"structFrostSweepResolutionCertificate.Authorization\",\"name\":\"authorization\",\"type\":\"tuple\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"internalType\":\"structFrostDepositSweep.Resolution\",\"name\":\"resolution\",\"type\":\"tuple\"}],\"name\":\"submitFrostSweepResolutionProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"label\",\"type\":\"bytes20\"}],\"name\":\"walletDescriptor\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"label\",\"type\":\"bytes20\"}],\"name\":\"walletScheme\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"fee\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"sponsor\",\"type\":\"address\"}],\"name\":\"FrostCancellationAuthorized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"sponsor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"fee\",\"type\":\"uint64\"}],\"name\":\"FrostCancellationBudgetReturned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"FrostCancellationConfirmed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"receipt\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"}],\"name\":\"FrostDepositRevealed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"outputValue\",\"type\":\"uint64\"}],\"name\":\"FrostDepositsSwept\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"FrostRedemptionPaid\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"}],\"name\":\"FrostRedemptionRefundAvailable\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"}],\"name\":\"FrostRedemptionRefunded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"treasuryFee\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"maximumBitcoinFee\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"}],\"name\":\"FrostRedemptionRequested\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"timeoutBlock\",\"type\":\"uint64\"}],\"name\":\"FrostRedemptionTimeoutPending\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"genesis\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"finalityBlocks\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"maximumCertificateBlocks\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"watchtower\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"legacyTransitionEvidence\",\"type\":\"bytes32\"}],\"name\":\"FrostRedemptionsConfigured\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"FrostRedemptionsEnabled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"registry\",\"type\":\"address\"}],\"name\":\"FrostRegistryConfigured\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"FrostRequestsEnabled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"intentCommitment\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"generation\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"}],\"name\":\"FrostReservationAdmitted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"FrostReservationResolvedBySweep\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"FrostSweepResolutionApproved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletExpired\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"reasonHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"evidenceHash\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletQuarantined\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletReady\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes20\",\"name\":\"label\",\"type\":\"bytes20\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"}],\"name\":\"FrostWalletRegistered\",\"type\":\"event\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"manifestHash\",\"type\":\"bytes32\"}],\"name\":\"FrostCutoverCompleted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"margin\",\"type\":\"uint32\"}],\"name\":\"FrostDepositReservationMarginSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"}],\"name\":\"FrostDepositReserved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"FrostDrainEnabled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes20\",\"name\":\"source\",\"type\":\"bytes20\"}],\"name\":\"FrostDrainReleased\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"controller\",\"type\":\"address\"}],\"name\":\"FrostExposureControllerInstalled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"}],\"name\":\"FrostFraudChallengeDefeatTimedOut\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"}],\"name\":\"FrostFraudChallengeDefeated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"name\":\"FrostFraudChallengeSubmitted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"addressesEnabled\",\"type\":\"bool\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"revealEnabled\",\"type\":\"bool\"}],\"name\":\"FrostFundingGatesChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"verifier\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"runtimeHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"qualificationRecord\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"}],\"name\":\"FrostFundingInstalled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"FrostIncomingEscalated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"target\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"source\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"outputIndex\",\"type\":\"uint32\"}],\"name\":\"FrostIncomingRecorded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"}],\"name\":\"FrostMovedFundsSwept\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"}],\"name\":\"FrostMovingFundsBelowDust\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"}],\"name\":\"FrostMovingFundsCommitmentRetired\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"mainOutpoint\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes20[]\",\"name\":\"targets\",\"type\":\"bytes20[]\"},{\"indexed\":false,\"internalType\":\"bytes32[]\",\"name\":\"descriptorHashes\",\"type\":\"bytes32[]\"}],\"name\":\"FrostMovingFundsCommitted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"FrostMovingFundsCompleted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostMovingFundsEscalated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostMovingFundsTimeoutReset\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint16[]\",\"name\":\"inactiveSeats\",\"type\":\"uint16[]\"},{\"indexed\":false,\"internalType\":\"address[]\",\"name\":\"inactiveOperators\",\"type\":\"address[]\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"heartbeatFailed\",\"type\":\"bool\"}],\"name\":\"FrostOperatorInactivityNotified\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"reason\",\"type\":\"bytes32\"}],\"name\":\"FrostSanctionNotified\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletClosed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletClosing\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"reason\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletMovingFunds\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletReopened\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"policyRecord\",\"type\":\"bytes32\"}],\"name\":\"LegacyDkgDrainAborted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"LegacyDkgDrainBegun\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"descriptor\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"}],\"name\":\"__snowfallWalletCreated\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"id\",\"type\":\"bytes32\"}],\"name\":\"__snowfallWalletExpired\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"id\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"generation\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"capabilityVersion\",\"type\":\"uint32\"}],\"name\":\"__snowfallWalletReady\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"policyRecord\",\"type\":\"bytes32\"}],\"name\":\"abortLegacyDkgDrain\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"snapshot\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"fee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"}],\"internalType\":\"structFrostCancellationCertificate.Authorization\",\"name\":\"authorization\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"authorizeFrostCancellation\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"beginLegacyDkgDrain\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"claimFrostCancellationBudget\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"manifestHash\",\"type\":\"bytes32\"}],\"name\":\"completeFrostCutover\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"verifier\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"runtimeHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"qualificationRecord\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"}],\"name\":\"configureFrostFunding\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"genesis\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"finalityBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumCertificateBlocks\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"watchtower\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"legacyTransitionEvidence\",\"type\":\"bytes32\"}],\"name\":\"configureFrostRedemptions\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"registry\",\"type\":\"address\"}],\"name\":\"configureFrostRegistry\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"script\",\"type\":\"bytes\"}],\"internalType\":\"structFrostFraud.Prevout[]\",\"name\":\"prevouts\",\"type\":\"tuple[]\"},{\"internalType\":\"uint32\",\"name\":\"inputIndex\",\"type\":\"uint32\"},{\"internalType\":\"bytes32\",\"name\":\"leafHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"authorization\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"authorizationRef\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostFraud.Defense\",\"name\":\"defense\",\"type\":\"tuple\"}],\"name\":\"defeatFrostFraudChallenge\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"}],\"name\":\"defeatFrostFraudChallengeWithHeartbeat\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"finalizeFrostWalletClosing\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"frostCancellationAlternative\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"snapshot\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"fee\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"sponsor\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"admittedBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"budgetSettled\",\"type\":\"bool\"}],\"internalType\":\"structFrostCancellationHistory.Record\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"}],\"name\":\"frostCancellationCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"frostCancellationHash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"}],\"name\":\"frostCancellationWinner\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostClosureObligations\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"open\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"frostCreationMode\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"frostCustodyOutput\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"spent\",\"type\":\"bool\"}],\"internalType\":\"structFrostCustody.Output\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"frostCutoverManifest\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"frostDeposit\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"bridge\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"fullWalletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"internalType\":\"bytes8\",\"name\":\"blinding\",\"type\":\"bytes8\"},{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refundKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"refundLocktime\",\"type\":\"uint32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostDepositProfile.Terms\",\"name\":\"terms\",\"type\":\"tuple\"}],\"name\":\"frostDepositConstruction\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"key\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"root\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"parity\",\"type\":\"uint8\"}],\"internalType\":\"structFrostDepositAdmission.Output\",\"name\":\"output\",\"type\":\"tuple\"},{\"internalType\":\"bytes32\",\"name\":\"receipt\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"walletLeaf\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"refundLeaf\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"walletControl\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"refundControl\",\"type\":\"bytes\"}],\"internalType\":\"structFrostDepositAdmission.Construction\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"bridge\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"fullWalletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"internalType\":\"bytes8\",\"name\":\"blinding\",\"type\":\"bytes8\"},{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refundKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"refundLocktime\",\"type\":\"uint32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostDepositProfile.Terms\",\"name\":\"terms\",\"type\":\"tuple\"}],\"name\":\"frostDepositOutput\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"key\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"root\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"parity\",\"type\":\"uint8\"}],\"internalType\":\"structFrostDepositAdmission.Output\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"frostDepositRefundConstruction\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"key\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"root\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"parity\",\"type\":\"uint8\"}],\"internalType\":\"structFrostDepositAdmission.Output\",\"name\":\"output\",\"type\":\"tuple\"},{\"internalType\":\"bytes32\",\"name\":\"receipt\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"walletLeaf\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"refundLeaf\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"walletControl\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"refundControl\",\"type\":\"bytes\"}],\"internalType\":\"structFrostDepositAdmission.Construction\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"frostDepositReservationMargin\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"frostDepositReserved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"source\",\"type\":\"bytes20\"}],\"name\":\"frostDrainReservationId\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"source\",\"type\":\"bytes20\"}],\"name\":\"frostDrainTargets\",\"outputs\":[{\"internalType\":\"bytes20[]\",\"name\":\"\",\"type\":\"bytes20[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"frostExposureController\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"}],\"name\":\"frostFraudChallenge\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"challenger\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"reportedAt\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"resolved\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"depositAmount\",\"type\":\"uint256\"}],\"internalType\":\"structFrostFraudState.Challenge\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"}],\"name\":\"frostHeartbeatDigest\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"inactiveSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bool\",\"name\":\"heartbeatFailed\",\"type\":\"bool\"}],\"name\":\"frostInactivityClaimDigest\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostInactivityNonce\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"frostIncoming\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"target\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"source\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"createdAt\",\"type\":\"uint64\"},{\"internalType\":\"enumFrostMovementState.IncomingState\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"uint64\",\"name\":\"sweepFeeCap\",\"type\":\"uint64\"}],\"internalType\":\"structFrostMovementState.Incoming\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostMovementCounters\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"pendingIncoming\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"inboundCommitments\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"eligibleTargets\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"drainEnabled\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"}],\"name\":\"frostMovingFundsCommitment\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"mainOutpoint\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"committedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"provenAt\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"escalated\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"retired\",\"type\":\"bool\"},{\"internalType\":\"uint64\",\"name\":\"maxFee\",\"type\":\"uint64\"},{\"internalType\":\"bytes20[]\",\"name\":\"targets\",\"type\":\"bytes20[]\"},{\"internalType\":\"bytes32[]\",\"name\":\"descriptorHashes\",\"type\":\"bytes32[]\"}],\"internalType\":\"structFrostMovementState.Commitment\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostOpenChallenges\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"frostProvenTransaction\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"frostRedemptionConfiguration\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"finalityBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumCertificateBlocks\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"watchtower\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"legacyTransitionEvidence\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostRedemptionState.Configuration\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostRedemptionEscrow\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"netLiability\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"frostRedemptionPolicy\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"watchtower\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"policyId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"notBefore\",\"type\":\"uint64\"}],\"internalType\":\"structFrostRedemptionState.RequestPolicy\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"frostRedemptionRequest\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"treasuryFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumBitcoinFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"finalityBlocks\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timeoutBlock\",\"type\":\"uint64\"},{\"internalType\":\"enumFrostRedemptionLedger.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"bytes\",\"name\":\"script\",\"type\":\"bytes\"}],\"internalType\":\"structFrostRedemptionLedger.Request\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"frostRegistry\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"}],\"name\":\"frostReservation\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"generation\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"intentCommitment\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"requestIdsHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"conflictTxHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"conflictOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"minimumFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumSatPerVByte\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"}],\"internalType\":\"structFrostReservationCertificate.Reservation\",\"name\":\"certificate\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"admittedBlock\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"snapshot\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"internalType\":\"enumFrostRedemptionLedger.IntentState\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"bytes32[]\",\"name\":\"requestIds\",\"type\":\"bytes32[]\"},{\"internalType\":\"uint64[]\",\"name\":\"payouts\",\"type\":\"uint64[]\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"txHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"txOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"txOutputValue\",\"type\":\"uint64\"}],\"internalType\":\"structBitcoinTx.UTXO[]\",\"name\":\"inputs\",\"type\":\"tuple[]\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"cancellationHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"cancellationSnapshot\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"cancellationFee\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"cancellationSponsor\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"cancellationAdmittedBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"cancellationSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"cancellationSignatures\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"reservedNet\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"cancellationValidUntilBlock\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"sweepResolutionHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"sweepResolutionBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"sweepResolutionValidUntilBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"sweepResolutionSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes32\",\"name\":\"sweepResolutionSignaturesHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"sweepResolutionAuthorizationHash\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostRedemptionLedger.Intent\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostWalletCustody\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"generation\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"mainOutpoint\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"activeReservation\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"cancellationExposure\",\"type\":\"uint64\"}],\"internalType\":\"structFrostCustody.Wallet\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"frostWalletLifecycle\",\"outputs\":[{\"components\":[{\"internalType\":\"uint32\",\"name\":\"period\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"movingFundsRequestedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"closingStartedAt\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"dust\",\"type\":\"bool\"},{\"internalType\":\"uint64\",\"name\":\"readyAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"terminatedAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"inactivityNonce\",\"type\":\"uint64\"}],\"internalType\":\"structFrostMovementState.Lifecycle\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"}],\"name\":\"frostWalletQuarantine\",\"outputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"reasonHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"evidenceHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"authority\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"recordedBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"previousStateVersion\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"}],\"internalType\":\"structFrostRedemptionState.QuarantineRecord\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"controller\",\"type\":\"address\"}],\"name\":\"installFrostExposureController\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"label\",\"type\":\"bytes20\"}],\"name\":\"isFrostFundingTarget\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostFraudChallengeDefeatTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostMovedFundsSweepTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostMovingFundsBelowDust\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostMovingFundsTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"},{\"internalType\":\"uint16[]\",\"name\":\"inactiveSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bool\",\"name\":\"heartbeatFailed\",\"type\":\"bool\"},{\"internalType\":\"uint16[]\",\"name\":\"signingSeats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"notifyFrostOperatorInactivity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostRedemptionTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostWalletCloseable\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"notifyFrostWalletRedemptionTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"expectedStateVersion\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"reasonHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"evidenceHash\",\"type\":\"bytes32\"}],\"name\":\"quarantineFrostWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"refundResolvedFrostRedemption\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"}],\"name\":\"refundUnreservedFrostRedemption\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"source\",\"type\":\"bytes20\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"txHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"txOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"txOutputValue\",\"type\":\"uint64\"}],\"internalType\":\"structBitcoinTx.UTXO\",\"name\":\"main\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"releaseFrostDrainOnConflict\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"script\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"}],\"name\":\"requestFrostRedemption\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"requestNewFrostWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"fundingTx\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"reserveFrostDeposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"generation\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"intentCommitment\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"requestIdsHash\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"conflictTxHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"conflictOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"minimumFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumFee\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"maximumSatPerVByte\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"}],\"internalType\":\"structFrostReservationCertificate.Reservation\",\"name\":\"certificate\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"txHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"txOutputIndex\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"txOutputValue\",\"type\":\"uint64\"}],\"internalType\":\"structBitcoinTx.UTXO[]\",\"name\":\"inputs\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"id\",\"type\":\"bytes32\"},{\"internalType\":\"uint64\",\"name\":\"value\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"script\",\"type\":\"bytes\"}],\"internalType\":\"structFrostSigningIntent.Request[]\",\"name\":\"requests\",\"type\":\"tuple[]\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"internalType\":\"structFrostRedemptionState.ReservationProposal\",\"name\":\"proposal\",\"type\":\"tuple\"}],\"name\":\"reserveFrostRedemption\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"resetFrostMovingFundsTimeout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"output\",\"type\":\"bytes\"}],\"name\":\"resolveFrostOutputScript\",\"outputs\":[{\"internalType\":\"bytes20\",\"name\":\"\",\"type\":\"bytes20\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"registry\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"id\",\"type\":\"bytes32\"}],\"name\":\"resolveWallet\",\"outputs\":[{\"internalType\":\"bytes20\",\"name\":\"\",\"type\":\"bytes20\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"q\",\"type\":\"bytes32\"}],\"name\":\"resolveWalletOutput\",\"outputs\":[{\"internalType\":\"bytes20\",\"name\":\"\",\"type\":\"bytes20\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"bridge\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"bitcoinGenesis\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"fullWalletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"internalType\":\"bytes8\",\"name\":\"blinding\",\"type\":\"bytes8\"},{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refundKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"refundLocktime\",\"type\":\"uint32\"},{\"internalType\":\"bytes32\",\"name\":\"extraData\",\"type\":\"bytes32\"}],\"internalType\":\"structFrostDepositProfile.Terms\",\"name\":\"terms\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"internalType\":\"uint32\",\"name\":\"outputIndex\",\"type\":\"uint32\"}],\"name\":\"revealFrostDeposit\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"margin\",\"type\":\"uint32\"}],\"name\":\"setFrostDepositReservationMargin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"setFrostDrainEnabled\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"addressesEnabled\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"revealEnabled\",\"type\":\"bool\"}],\"name\":\"setFrostFundingGates\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"setFrostRedemptionsEnabled\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"setFrostRequestsEnabled\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"submitFrostCancellationProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"includeMain\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"}],\"internalType\":\"structFrostDepositSweep.Sweep\",\"name\":\"request\",\"type\":\"tuple\"}],\"name\":\"submitFrostDepositSweepProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"digest\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"name\":\"submitFrostFraudChallenge\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"submitFrostMovedFundsSweepProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"internalType\":\"uint16\",\"name\":\"seat\",\"type\":\"uint16\"},{\"internalType\":\"bytes20[]\",\"name\":\"targets\",\"type\":\"bytes20[]\"}],\"name\":\"submitFrostMovingFundsCommitment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"submitFrostMovingFundsProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"}],\"name\":\"submitFrostRedemptionProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes4\",\"name\":\"version\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"inputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"outputVector\",\"type\":\"bytes\"},{\"internalType\":\"bytes4\",\"name\":\"locktime\",\"type\":\"bytes4\"}],\"internalType\":\"structBitcoinTx.Info\",\"name\":\"transaction\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"merkleProof\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"txIndexInBlock\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bitcoinHeaders\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"coinbasePreimage\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"coinbaseProof\",\"type\":\"bytes\"}],\"internalType\":\"structBitcoinTx.Proof\",\"name\":\"proof\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"includeMain\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"}],\"internalType\":\"structFrostDepositSweep.Sweep\",\"name\":\"sweep\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"}],\"internalType\":\"structFrostSweepResolutionCertificate.Authorization\",\"name\":\"authorization\",\"type\":\"tuple\"},{\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"internalType\":\"structFrostDepositSweep.Resolution\",\"name\":\"resolution\",\"type\":\"tuple\"}],\"name\":\"submitFrostSweepResolutionProof\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"label\",\"type\":\"bytes20\"}],\"name\":\"walletDescriptor\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes20\",\"name\":\"label\",\"type\":\"bytes20\"}],\"name\":\"walletScheme\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"fee\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"sponsor\",\"type\":\"address\"}],\"name\":\"FrostCancellationAuthorized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"sponsor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"fee\",\"type\":\"uint64\"}],\"name\":\"FrostCancellationBudgetReturned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"FrostCancellationConfirmed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"outpoint\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"receipt\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"}],\"name\":\"FrostDepositRevealed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"outputValue\",\"type\":\"uint64\"}],\"name\":\"FrostDepositsSwept\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"FrostRedemptionPaid\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"}],\"name\":\"FrostRedemptionRefundAvailable\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"}],\"name\":\"FrostRedemptionRefunded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"redeemer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"gross\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"treasuryFee\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"maximumBitcoinFee\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"}],\"name\":\"FrostRedemptionRequested\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"requestId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"timeoutBlock\",\"type\":\"uint64\"}],\"name\":\"FrostRedemptionTimeoutPending\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"genesis\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"finalityBlocks\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"maximumCertificateBlocks\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"watchtower\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"legacyTransitionEvidence\",\"type\":\"bytes32\"}],\"name\":\"FrostRedemptionsConfigured\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"FrostRedemptionsEnabled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"registry\",\"type\":\"address\"}],\"name\":\"FrostRegistryConfigured\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"}],\"name\":\"FrostRequestsEnabled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"intentCommitment\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"generation\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"}],\"name\":\"FrostReservationAdmitted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"}],\"name\":\"FrostReservationResolvedBySweep\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"transactionHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"validUntilBlock\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint16[]\",\"name\":\"seats\",\"type\":\"uint16[]\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"FrostSweepResolutionApproved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletExpired\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"reservationId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"stateVersion\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"reasonHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"evidenceHash\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletQuarantined\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"}],\"name\":\"FrostWalletReady\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"walletId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes20\",\"name\":\"label\",\"type\":\"bytes20\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"descriptorHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"}],\"name\":\"FrostWalletRegistered\",\"type\":\"event\"}]",
 }
 
 // FrostBridgeABI is the input ABI used to generate the binding from.
@@ -622,6 +622,37 @@ func (_FrostBridge *FrostBridgeCallerSession) FrostClosureObligations(walletId [
 	return _FrostBridge.Contract.FrostClosureObligations(&_FrostBridge.CallOpts, walletId)
 }
 
+// FrostCreationMode is a free data retrieval call binding the contract method 0x1c600c3f.
+//
+// Solidity: function frostCreationMode() view returns(uint8)
+func (_FrostBridge *FrostBridgeCaller) FrostCreationMode(opts *bind.CallOpts) (uint8, error) {
+	var out []interface{}
+	err := _FrostBridge.contract.Call(opts, &out, "frostCreationMode")
+
+	if err != nil {
+		return *new(uint8), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
+
+	return out0, err
+
+}
+
+// FrostCreationMode is a free data retrieval call binding the contract method 0x1c600c3f.
+//
+// Solidity: function frostCreationMode() view returns(uint8)
+func (_FrostBridge *FrostBridgeSession) FrostCreationMode() (uint8, error) {
+	return _FrostBridge.Contract.FrostCreationMode(&_FrostBridge.CallOpts)
+}
+
+// FrostCreationMode is a free data retrieval call binding the contract method 0x1c600c3f.
+//
+// Solidity: function frostCreationMode() view returns(uint8)
+func (_FrostBridge *FrostBridgeCallerSession) FrostCreationMode() (uint8, error) {
+	return _FrostBridge.Contract.FrostCreationMode(&_FrostBridge.CallOpts)
+}
+
 // FrostCustodyOutput is a free data retrieval call binding the contract method 0x451153d1.
 //
 // Solidity: function frostCustodyOutput(bytes32 outpoint) view returns((bytes32,uint64,bool))
@@ -651,6 +682,37 @@ func (_FrostBridge *FrostBridgeSession) FrostCustodyOutput(outpoint [32]byte) (F
 // Solidity: function frostCustodyOutput(bytes32 outpoint) view returns((bytes32,uint64,bool))
 func (_FrostBridge *FrostBridgeCallerSession) FrostCustodyOutput(outpoint [32]byte) (FrostCustodyOutput, error) {
 	return _FrostBridge.Contract.FrostCustodyOutput(&_FrostBridge.CallOpts, outpoint)
+}
+
+// FrostCutoverManifest is a free data retrieval call binding the contract method 0x3c8ad847.
+//
+// Solidity: function frostCutoverManifest() view returns(bytes32)
+func (_FrostBridge *FrostBridgeCaller) FrostCutoverManifest(opts *bind.CallOpts) ([32]byte, error) {
+	var out []interface{}
+	err := _FrostBridge.contract.Call(opts, &out, "frostCutoverManifest")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// FrostCutoverManifest is a free data retrieval call binding the contract method 0x3c8ad847.
+//
+// Solidity: function frostCutoverManifest() view returns(bytes32)
+func (_FrostBridge *FrostBridgeSession) FrostCutoverManifest() ([32]byte, error) {
+	return _FrostBridge.Contract.FrostCutoverManifest(&_FrostBridge.CallOpts)
+}
+
+// FrostCutoverManifest is a free data retrieval call binding the contract method 0x3c8ad847.
+//
+// Solidity: function frostCutoverManifest() view returns(bytes32)
+func (_FrostBridge *FrostBridgeCallerSession) FrostCutoverManifest() ([32]byte, error) {
+	return _FrostBridge.Contract.FrostCutoverManifest(&_FrostBridge.CallOpts)
 }
 
 // FrostDeposit is a free data retrieval call binding the contract method 0x677bca9a.
@@ -777,6 +839,99 @@ func (_FrostBridge *FrostBridgeCallerSession) FrostDepositRefundConstruction(out
 	return _FrostBridge.Contract.FrostDepositRefundConstruction(&_FrostBridge.CallOpts, outpoint)
 }
 
+// FrostDepositReservationMargin is a free data retrieval call binding the contract method 0x5b6a0624.
+//
+// Solidity: function frostDepositReservationMargin() view returns(uint32)
+func (_FrostBridge *FrostBridgeCaller) FrostDepositReservationMargin(opts *bind.CallOpts) (uint32, error) {
+	var out []interface{}
+	err := _FrostBridge.contract.Call(opts, &out, "frostDepositReservationMargin")
+
+	if err != nil {
+		return *new(uint32), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
+
+	return out0, err
+
+}
+
+// FrostDepositReservationMargin is a free data retrieval call binding the contract method 0x5b6a0624.
+//
+// Solidity: function frostDepositReservationMargin() view returns(uint32)
+func (_FrostBridge *FrostBridgeSession) FrostDepositReservationMargin() (uint32, error) {
+	return _FrostBridge.Contract.FrostDepositReservationMargin(&_FrostBridge.CallOpts)
+}
+
+// FrostDepositReservationMargin is a free data retrieval call binding the contract method 0x5b6a0624.
+//
+// Solidity: function frostDepositReservationMargin() view returns(uint32)
+func (_FrostBridge *FrostBridgeCallerSession) FrostDepositReservationMargin() (uint32, error) {
+	return _FrostBridge.Contract.FrostDepositReservationMargin(&_FrostBridge.CallOpts)
+}
+
+// FrostDepositReserved is a free data retrieval call binding the contract method 0xe25c5ccc.
+//
+// Solidity: function frostDepositReserved(bytes32 outpoint) view returns(bool)
+func (_FrostBridge *FrostBridgeCaller) FrostDepositReserved(opts *bind.CallOpts, outpoint [32]byte) (bool, error) {
+	var out []interface{}
+	err := _FrostBridge.contract.Call(opts, &out, "frostDepositReserved", outpoint)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// FrostDepositReserved is a free data retrieval call binding the contract method 0xe25c5ccc.
+//
+// Solidity: function frostDepositReserved(bytes32 outpoint) view returns(bool)
+func (_FrostBridge *FrostBridgeSession) FrostDepositReserved(outpoint [32]byte) (bool, error) {
+	return _FrostBridge.Contract.FrostDepositReserved(&_FrostBridge.CallOpts, outpoint)
+}
+
+// FrostDepositReserved is a free data retrieval call binding the contract method 0xe25c5ccc.
+//
+// Solidity: function frostDepositReserved(bytes32 outpoint) view returns(bool)
+func (_FrostBridge *FrostBridgeCallerSession) FrostDepositReserved(outpoint [32]byte) (bool, error) {
+	return _FrostBridge.Contract.FrostDepositReserved(&_FrostBridge.CallOpts, outpoint)
+}
+
+// FrostDrainReservationId is a free data retrieval call binding the contract method 0xb5cf3f14.
+//
+// Solidity: function frostDrainReservationId(bytes20 source) view returns(bytes32)
+func (_FrostBridge *FrostBridgeCaller) FrostDrainReservationId(opts *bind.CallOpts, source [20]byte) ([32]byte, error) {
+	var out []interface{}
+	err := _FrostBridge.contract.Call(opts, &out, "frostDrainReservationId", source)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// FrostDrainReservationId is a free data retrieval call binding the contract method 0xb5cf3f14.
+//
+// Solidity: function frostDrainReservationId(bytes20 source) view returns(bytes32)
+func (_FrostBridge *FrostBridgeSession) FrostDrainReservationId(source [20]byte) ([32]byte, error) {
+	return _FrostBridge.Contract.FrostDrainReservationId(&_FrostBridge.CallOpts, source)
+}
+
+// FrostDrainReservationId is a free data retrieval call binding the contract method 0xb5cf3f14.
+//
+// Solidity: function frostDrainReservationId(bytes20 source) view returns(bytes32)
+func (_FrostBridge *FrostBridgeCallerSession) FrostDrainReservationId(source [20]byte) ([32]byte, error) {
+	return _FrostBridge.Contract.FrostDrainReservationId(&_FrostBridge.CallOpts, source)
+}
+
 // FrostDrainTargets is a free data retrieval call binding the contract method 0x37ab3fd8.
 //
 // Solidity: function frostDrainTargets(bytes20 source) view returns(bytes20[])
@@ -806,6 +961,37 @@ func (_FrostBridge *FrostBridgeSession) FrostDrainTargets(source [20]byte) ([][2
 // Solidity: function frostDrainTargets(bytes20 source) view returns(bytes20[])
 func (_FrostBridge *FrostBridgeCallerSession) FrostDrainTargets(source [20]byte) ([][20]byte, error) {
 	return _FrostBridge.Contract.FrostDrainTargets(&_FrostBridge.CallOpts, source)
+}
+
+// FrostExposureController is a free data retrieval call binding the contract method 0xbd747c62.
+//
+// Solidity: function frostExposureController() view returns(address)
+func (_FrostBridge *FrostBridgeCaller) FrostExposureController(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _FrostBridge.contract.Call(opts, &out, "frostExposureController")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// FrostExposureController is a free data retrieval call binding the contract method 0xbd747c62.
+//
+// Solidity: function frostExposureController() view returns(address)
+func (_FrostBridge *FrostBridgeSession) FrostExposureController() (common.Address, error) {
+	return _FrostBridge.Contract.FrostExposureController(&_FrostBridge.CallOpts)
+}
+
+// FrostExposureController is a free data retrieval call binding the contract method 0xbd747c62.
+//
+// Solidity: function frostExposureController() view returns(address)
+func (_FrostBridge *FrostBridgeCallerSession) FrostExposureController() (common.Address, error) {
+	return _FrostBridge.Contract.FrostExposureController(&_FrostBridge.CallOpts)
 }
 
 // FrostFraudChallenge is a free data retrieval call binding the contract method 0x6d3af04b.
@@ -1653,6 +1839,27 @@ func (_FrostBridge *FrostBridgeTransactorSession) SnowfallWalletReady(id [32]byt
 	return _FrostBridge.Contract.SnowfallWalletReady(&_FrostBridge.TransactOpts, id, descriptorHash, generation, capabilityVersion)
 }
 
+// AbortLegacyDkgDrain is a paid mutator transaction binding the contract method 0x0a472517.
+//
+// Solidity: function abortLegacyDkgDrain(bytes32 policyRecord) returns()
+func (_FrostBridge *FrostBridgeTransactor) AbortLegacyDkgDrain(opts *bind.TransactOpts, policyRecord [32]byte) (*types.Transaction, error) {
+	return _FrostBridge.contract.Transact(opts, "abortLegacyDkgDrain", policyRecord)
+}
+
+// AbortLegacyDkgDrain is a paid mutator transaction binding the contract method 0x0a472517.
+//
+// Solidity: function abortLegacyDkgDrain(bytes32 policyRecord) returns()
+func (_FrostBridge *FrostBridgeSession) AbortLegacyDkgDrain(policyRecord [32]byte) (*types.Transaction, error) {
+	return _FrostBridge.Contract.AbortLegacyDkgDrain(&_FrostBridge.TransactOpts, policyRecord)
+}
+
+// AbortLegacyDkgDrain is a paid mutator transaction binding the contract method 0x0a472517.
+//
+// Solidity: function abortLegacyDkgDrain(bytes32 policyRecord) returns()
+func (_FrostBridge *FrostBridgeTransactorSession) AbortLegacyDkgDrain(policyRecord [32]byte) (*types.Transaction, error) {
+	return _FrostBridge.Contract.AbortLegacyDkgDrain(&_FrostBridge.TransactOpts, policyRecord)
+}
+
 // AuthorizeFrostCancellation is a paid mutator transaction binding the contract method 0xf70bba80.
 //
 // Solidity: function authorizeFrostCancellation((bytes32,bytes32,bytes32,uint64,uint64) authorization, (bytes4,bytes,bytes,bytes4) transaction, uint16[] seats, bytes signatures) returns()
@@ -1674,6 +1881,27 @@ func (_FrostBridge *FrostBridgeTransactorSession) AuthorizeFrostCancellation(aut
 	return _FrostBridge.Contract.AuthorizeFrostCancellation(&_FrostBridge.TransactOpts, authorization, transaction, seats, signatures)
 }
 
+// BeginLegacyDkgDrain is a paid mutator transaction binding the contract method 0xc92ad680.
+//
+// Solidity: function beginLegacyDkgDrain() returns()
+func (_FrostBridge *FrostBridgeTransactor) BeginLegacyDkgDrain(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _FrostBridge.contract.Transact(opts, "beginLegacyDkgDrain")
+}
+
+// BeginLegacyDkgDrain is a paid mutator transaction binding the contract method 0xc92ad680.
+//
+// Solidity: function beginLegacyDkgDrain() returns()
+func (_FrostBridge *FrostBridgeSession) BeginLegacyDkgDrain() (*types.Transaction, error) {
+	return _FrostBridge.Contract.BeginLegacyDkgDrain(&_FrostBridge.TransactOpts)
+}
+
+// BeginLegacyDkgDrain is a paid mutator transaction binding the contract method 0xc92ad680.
+//
+// Solidity: function beginLegacyDkgDrain() returns()
+func (_FrostBridge *FrostBridgeTransactorSession) BeginLegacyDkgDrain() (*types.Transaction, error) {
+	return _FrostBridge.Contract.BeginLegacyDkgDrain(&_FrostBridge.TransactOpts)
+}
+
 // ClaimFrostCancellationBudget is a paid mutator transaction binding the contract method 0xf0e6e3fb.
 //
 // Solidity: function claimFrostCancellationBudget(bytes32 reservationId, bytes32 transactionHash) returns()
@@ -1693,6 +1921,27 @@ func (_FrostBridge *FrostBridgeSession) ClaimFrostCancellationBudget(reservation
 // Solidity: function claimFrostCancellationBudget(bytes32 reservationId, bytes32 transactionHash) returns()
 func (_FrostBridge *FrostBridgeTransactorSession) ClaimFrostCancellationBudget(reservationId [32]byte, transactionHash [32]byte) (*types.Transaction, error) {
 	return _FrostBridge.Contract.ClaimFrostCancellationBudget(&_FrostBridge.TransactOpts, reservationId, transactionHash)
+}
+
+// CompleteFrostCutover is a paid mutator transaction binding the contract method 0x6dc8a891.
+//
+// Solidity: function completeFrostCutover(bytes32 manifestHash) returns()
+func (_FrostBridge *FrostBridgeTransactor) CompleteFrostCutover(opts *bind.TransactOpts, manifestHash [32]byte) (*types.Transaction, error) {
+	return _FrostBridge.contract.Transact(opts, "completeFrostCutover", manifestHash)
+}
+
+// CompleteFrostCutover is a paid mutator transaction binding the contract method 0x6dc8a891.
+//
+// Solidity: function completeFrostCutover(bytes32 manifestHash) returns()
+func (_FrostBridge *FrostBridgeSession) CompleteFrostCutover(manifestHash [32]byte) (*types.Transaction, error) {
+	return _FrostBridge.Contract.CompleteFrostCutover(&_FrostBridge.TransactOpts, manifestHash)
+}
+
+// CompleteFrostCutover is a paid mutator transaction binding the contract method 0x6dc8a891.
+//
+// Solidity: function completeFrostCutover(bytes32 manifestHash) returns()
+func (_FrostBridge *FrostBridgeTransactorSession) CompleteFrostCutover(manifestHash [32]byte) (*types.Transaction, error) {
+	return _FrostBridge.Contract.CompleteFrostCutover(&_FrostBridge.TransactOpts, manifestHash)
 }
 
 // ConfigureFrostFunding is a paid mutator transaction binding the contract method 0xca8fdb25.
@@ -1819,6 +2068,27 @@ func (_FrostBridge *FrostBridgeSession) FinalizeFrostWalletClosing(walletId [32]
 // Solidity: function finalizeFrostWalletClosing(bytes32 walletId) returns()
 func (_FrostBridge *FrostBridgeTransactorSession) FinalizeFrostWalletClosing(walletId [32]byte) (*types.Transaction, error) {
 	return _FrostBridge.Contract.FinalizeFrostWalletClosing(&_FrostBridge.TransactOpts, walletId)
+}
+
+// InstallFrostExposureController is a paid mutator transaction binding the contract method 0x6dcf7b07.
+//
+// Solidity: function installFrostExposureController(address controller) returns()
+func (_FrostBridge *FrostBridgeTransactor) InstallFrostExposureController(opts *bind.TransactOpts, controller common.Address) (*types.Transaction, error) {
+	return _FrostBridge.contract.Transact(opts, "installFrostExposureController", controller)
+}
+
+// InstallFrostExposureController is a paid mutator transaction binding the contract method 0x6dcf7b07.
+//
+// Solidity: function installFrostExposureController(address controller) returns()
+func (_FrostBridge *FrostBridgeSession) InstallFrostExposureController(controller common.Address) (*types.Transaction, error) {
+	return _FrostBridge.Contract.InstallFrostExposureController(&_FrostBridge.TransactOpts, controller)
+}
+
+// InstallFrostExposureController is a paid mutator transaction binding the contract method 0x6dcf7b07.
+//
+// Solidity: function installFrostExposureController(address controller) returns()
+func (_FrostBridge *FrostBridgeTransactorSession) InstallFrostExposureController(controller common.Address) (*types.Transaction, error) {
+	return _FrostBridge.Contract.InstallFrostExposureController(&_FrostBridge.TransactOpts, controller)
 }
 
 // NotifyFrostFraudChallengeDefeatTimeout is a paid mutator transaction binding the contract method 0x662b8319.
@@ -2115,6 +2385,27 @@ func (_FrostBridge *FrostBridgeTransactorSession) RequestNewFrostWallet() (*type
 	return _FrostBridge.Contract.RequestNewFrostWallet(&_FrostBridge.TransactOpts)
 }
 
+// ReserveFrostDeposit is a paid mutator transaction binding the contract method 0x44c9c6f1.
+//
+// Solidity: function reserveFrostDeposit(bytes32 outpoint, (bytes4,bytes,bytes,bytes4) fundingTx, (bytes,uint256,bytes,bytes32,bytes) proof) returns()
+func (_FrostBridge *FrostBridgeTransactor) ReserveFrostDeposit(opts *bind.TransactOpts, outpoint [32]byte, fundingTx BitcoinTxInfo, proof BitcoinTxProof) (*types.Transaction, error) {
+	return _FrostBridge.contract.Transact(opts, "reserveFrostDeposit", outpoint, fundingTx, proof)
+}
+
+// ReserveFrostDeposit is a paid mutator transaction binding the contract method 0x44c9c6f1.
+//
+// Solidity: function reserveFrostDeposit(bytes32 outpoint, (bytes4,bytes,bytes,bytes4) fundingTx, (bytes,uint256,bytes,bytes32,bytes) proof) returns()
+func (_FrostBridge *FrostBridgeSession) ReserveFrostDeposit(outpoint [32]byte, fundingTx BitcoinTxInfo, proof BitcoinTxProof) (*types.Transaction, error) {
+	return _FrostBridge.Contract.ReserveFrostDeposit(&_FrostBridge.TransactOpts, outpoint, fundingTx, proof)
+}
+
+// ReserveFrostDeposit is a paid mutator transaction binding the contract method 0x44c9c6f1.
+//
+// Solidity: function reserveFrostDeposit(bytes32 outpoint, (bytes4,bytes,bytes,bytes4) fundingTx, (bytes,uint256,bytes,bytes32,bytes) proof) returns()
+func (_FrostBridge *FrostBridgeTransactorSession) ReserveFrostDeposit(outpoint [32]byte, fundingTx BitcoinTxInfo, proof BitcoinTxProof) (*types.Transaction, error) {
+	return _FrostBridge.Contract.ReserveFrostDeposit(&_FrostBridge.TransactOpts, outpoint, fundingTx, proof)
+}
+
 // ReserveFrostRedemption is a paid mutator transaction binding the contract method 0xb4c5bc13.
 //
 // Solidity: function reserveFrostRedemption(((bytes32,bytes32,uint64,uint64,bytes32,bytes32,bytes32,uint32,uint64,uint64,uint64,uint64),(bytes4,bytes,bytes,bytes4),(bytes32,uint32,uint64)[],(bytes32,uint64,bytes)[],uint16[],bytes) proposal) returns(bytes32)
@@ -2176,6 +2467,27 @@ func (_FrostBridge *FrostBridgeSession) RevealFrostDeposit(terms FrostDepositPro
 // Solidity: function revealFrostDeposit((uint256,address,bytes32,bytes32,bytes32,address,address,bytes8,uint64,bytes32,uint32,bytes32) terms, (bytes4,bytes,bytes,bytes4) transaction, uint32 outputIndex) returns(bytes32)
 func (_FrostBridge *FrostBridgeTransactorSession) RevealFrostDeposit(terms FrostDepositProfileTerms, transaction BitcoinTxInfo, outputIndex uint32) (*types.Transaction, error) {
 	return _FrostBridge.Contract.RevealFrostDeposit(&_FrostBridge.TransactOpts, terms, transaction, outputIndex)
+}
+
+// SetFrostDepositReservationMargin is a paid mutator transaction binding the contract method 0xef75037e.
+//
+// Solidity: function setFrostDepositReservationMargin(uint32 margin) returns()
+func (_FrostBridge *FrostBridgeTransactor) SetFrostDepositReservationMargin(opts *bind.TransactOpts, margin uint32) (*types.Transaction, error) {
+	return _FrostBridge.contract.Transact(opts, "setFrostDepositReservationMargin", margin)
+}
+
+// SetFrostDepositReservationMargin is a paid mutator transaction binding the contract method 0xef75037e.
+//
+// Solidity: function setFrostDepositReservationMargin(uint32 margin) returns()
+func (_FrostBridge *FrostBridgeSession) SetFrostDepositReservationMargin(margin uint32) (*types.Transaction, error) {
+	return _FrostBridge.Contract.SetFrostDepositReservationMargin(&_FrostBridge.TransactOpts, margin)
+}
+
+// SetFrostDepositReservationMargin is a paid mutator transaction binding the contract method 0xef75037e.
+//
+// Solidity: function setFrostDepositReservationMargin(uint32 margin) returns()
+func (_FrostBridge *FrostBridgeTransactorSession) SetFrostDepositReservationMargin(margin uint32) (*types.Transaction, error) {
+	return _FrostBridge.Contract.SetFrostDepositReservationMargin(&_FrostBridge.TransactOpts, margin)
 }
 
 // SetFrostDrainEnabled is a paid mutator transaction binding the contract method 0x003d5513.
@@ -2877,6 +3189,419 @@ func (_FrostBridge *FrostBridgeFilterer) ParseFrostCancellationConfirmed(log typ
 	return event, nil
 }
 
+// FrostBridgeFrostCutoverCompletedIterator is returned from FilterFrostCutoverCompleted and is used to iterate over the raw logs and unpacked data for FrostCutoverCompleted events raised by the FrostBridge contract.
+type FrostBridgeFrostCutoverCompletedIterator struct {
+	Event *FrostBridgeFrostCutoverCompleted // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *FrostBridgeFrostCutoverCompletedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(FrostBridgeFrostCutoverCompleted)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(FrostBridgeFrostCutoverCompleted)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *FrostBridgeFrostCutoverCompletedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *FrostBridgeFrostCutoverCompletedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// FrostBridgeFrostCutoverCompleted represents a FrostCutoverCompleted event raised by the FrostBridge contract.
+type FrostBridgeFrostCutoverCompleted struct {
+	ManifestHash [32]byte
+	Raw          types.Log // Blockchain specific contextual infos
+}
+
+// FilterFrostCutoverCompleted is a free log retrieval operation binding the contract event 0xbdfe7760e764a8f7d7c7257120f53c834e39064154315f25c8c4b7557e2f870e.
+//
+// Solidity: event FrostCutoverCompleted(bytes32 manifestHash)
+func (_FrostBridge *FrostBridgeFilterer) FilterFrostCutoverCompleted(opts *bind.FilterOpts) (*FrostBridgeFrostCutoverCompletedIterator, error) {
+
+	logs, sub, err := _FrostBridge.contract.FilterLogs(opts, "FrostCutoverCompleted")
+	if err != nil {
+		return nil, err
+	}
+	return &FrostBridgeFrostCutoverCompletedIterator{contract: _FrostBridge.contract, event: "FrostCutoverCompleted", logs: logs, sub: sub}, nil
+}
+
+// WatchFrostCutoverCompleted is a free log subscription operation binding the contract event 0xbdfe7760e764a8f7d7c7257120f53c834e39064154315f25c8c4b7557e2f870e.
+//
+// Solidity: event FrostCutoverCompleted(bytes32 manifestHash)
+func (_FrostBridge *FrostBridgeFilterer) WatchFrostCutoverCompleted(opts *bind.WatchOpts, sink chan<- *FrostBridgeFrostCutoverCompleted) (event.Subscription, error) {
+
+	logs, sub, err := _FrostBridge.contract.WatchLogs(opts, "FrostCutoverCompleted")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(FrostBridgeFrostCutoverCompleted)
+				if err := _FrostBridge.contract.UnpackLog(event, "FrostCutoverCompleted", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseFrostCutoverCompleted is a log parse operation binding the contract event 0xbdfe7760e764a8f7d7c7257120f53c834e39064154315f25c8c4b7557e2f870e.
+//
+// Solidity: event FrostCutoverCompleted(bytes32 manifestHash)
+func (_FrostBridge *FrostBridgeFilterer) ParseFrostCutoverCompleted(log types.Log) (*FrostBridgeFrostCutoverCompleted, error) {
+	event := new(FrostBridgeFrostCutoverCompleted)
+	if err := _FrostBridge.contract.UnpackLog(event, "FrostCutoverCompleted", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// FrostBridgeFrostDepositReservationMarginSetIterator is returned from FilterFrostDepositReservationMarginSet and is used to iterate over the raw logs and unpacked data for FrostDepositReservationMarginSet events raised by the FrostBridge contract.
+type FrostBridgeFrostDepositReservationMarginSetIterator struct {
+	Event *FrostBridgeFrostDepositReservationMarginSet // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *FrostBridgeFrostDepositReservationMarginSetIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(FrostBridgeFrostDepositReservationMarginSet)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(FrostBridgeFrostDepositReservationMarginSet)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *FrostBridgeFrostDepositReservationMarginSetIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *FrostBridgeFrostDepositReservationMarginSetIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// FrostBridgeFrostDepositReservationMarginSet represents a FrostDepositReservationMarginSet event raised by the FrostBridge contract.
+type FrostBridgeFrostDepositReservationMarginSet struct {
+	Margin uint32
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterFrostDepositReservationMarginSet is a free log retrieval operation binding the contract event 0x6f22aff8251a6376192e1055cbbee7042d3a04e2f784f2355911da24b2414f97.
+//
+// Solidity: event FrostDepositReservationMarginSet(uint32 margin)
+func (_FrostBridge *FrostBridgeFilterer) FilterFrostDepositReservationMarginSet(opts *bind.FilterOpts) (*FrostBridgeFrostDepositReservationMarginSetIterator, error) {
+
+	logs, sub, err := _FrostBridge.contract.FilterLogs(opts, "FrostDepositReservationMarginSet")
+	if err != nil {
+		return nil, err
+	}
+	return &FrostBridgeFrostDepositReservationMarginSetIterator{contract: _FrostBridge.contract, event: "FrostDepositReservationMarginSet", logs: logs, sub: sub}, nil
+}
+
+// WatchFrostDepositReservationMarginSet is a free log subscription operation binding the contract event 0x6f22aff8251a6376192e1055cbbee7042d3a04e2f784f2355911da24b2414f97.
+//
+// Solidity: event FrostDepositReservationMarginSet(uint32 margin)
+func (_FrostBridge *FrostBridgeFilterer) WatchFrostDepositReservationMarginSet(opts *bind.WatchOpts, sink chan<- *FrostBridgeFrostDepositReservationMarginSet) (event.Subscription, error) {
+
+	logs, sub, err := _FrostBridge.contract.WatchLogs(opts, "FrostDepositReservationMarginSet")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(FrostBridgeFrostDepositReservationMarginSet)
+				if err := _FrostBridge.contract.UnpackLog(event, "FrostDepositReservationMarginSet", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseFrostDepositReservationMarginSet is a log parse operation binding the contract event 0x6f22aff8251a6376192e1055cbbee7042d3a04e2f784f2355911da24b2414f97.
+//
+// Solidity: event FrostDepositReservationMarginSet(uint32 margin)
+func (_FrostBridge *FrostBridgeFilterer) ParseFrostDepositReservationMarginSet(log types.Log) (*FrostBridgeFrostDepositReservationMarginSet, error) {
+	event := new(FrostBridgeFrostDepositReservationMarginSet)
+	if err := _FrostBridge.contract.UnpackLog(event, "FrostDepositReservationMarginSet", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// FrostBridgeFrostDepositReservedIterator is returned from FilterFrostDepositReserved and is used to iterate over the raw logs and unpacked data for FrostDepositReserved events raised by the FrostBridge contract.
+type FrostBridgeFrostDepositReservedIterator struct {
+	Event *FrostBridgeFrostDepositReserved // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *FrostBridgeFrostDepositReservedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(FrostBridgeFrostDepositReserved)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(FrostBridgeFrostDepositReserved)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *FrostBridgeFrostDepositReservedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *FrostBridgeFrostDepositReservedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// FrostBridgeFrostDepositReserved represents a FrostDepositReserved event raised by the FrostBridge contract.
+type FrostBridgeFrostDepositReserved struct {
+	Outpoint [32]byte
+	Amount   uint64
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
+// FilterFrostDepositReserved is a free log retrieval operation binding the contract event 0xf6faea93506ff9d6fad755eca47249bec52b828735f4f2c6acdabbd355b9ce08.
+//
+// Solidity: event FrostDepositReserved(bytes32 indexed outpoint, uint64 amount)
+func (_FrostBridge *FrostBridgeFilterer) FilterFrostDepositReserved(opts *bind.FilterOpts, outpoint [][32]byte) (*FrostBridgeFrostDepositReservedIterator, error) {
+
+	var outpointRule []interface{}
+	for _, outpointItem := range outpoint {
+		outpointRule = append(outpointRule, outpointItem)
+	}
+
+	logs, sub, err := _FrostBridge.contract.FilterLogs(opts, "FrostDepositReserved", outpointRule)
+	if err != nil {
+		return nil, err
+	}
+	return &FrostBridgeFrostDepositReservedIterator{contract: _FrostBridge.contract, event: "FrostDepositReserved", logs: logs, sub: sub}, nil
+}
+
+// WatchFrostDepositReserved is a free log subscription operation binding the contract event 0xf6faea93506ff9d6fad755eca47249bec52b828735f4f2c6acdabbd355b9ce08.
+//
+// Solidity: event FrostDepositReserved(bytes32 indexed outpoint, uint64 amount)
+func (_FrostBridge *FrostBridgeFilterer) WatchFrostDepositReserved(opts *bind.WatchOpts, sink chan<- *FrostBridgeFrostDepositReserved, outpoint [][32]byte) (event.Subscription, error) {
+
+	var outpointRule []interface{}
+	for _, outpointItem := range outpoint {
+		outpointRule = append(outpointRule, outpointItem)
+	}
+
+	logs, sub, err := _FrostBridge.contract.WatchLogs(opts, "FrostDepositReserved", outpointRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(FrostBridgeFrostDepositReserved)
+				if err := _FrostBridge.contract.UnpackLog(event, "FrostDepositReserved", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseFrostDepositReserved is a log parse operation binding the contract event 0xf6faea93506ff9d6fad755eca47249bec52b828735f4f2c6acdabbd355b9ce08.
+//
+// Solidity: event FrostDepositReserved(bytes32 indexed outpoint, uint64 amount)
+func (_FrostBridge *FrostBridgeFilterer) ParseFrostDepositReserved(log types.Log) (*FrostBridgeFrostDepositReserved, error) {
+	event := new(FrostBridgeFrostDepositReserved)
+	if err := _FrostBridge.contract.UnpackLog(event, "FrostDepositReserved", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // FrostBridgeFrostDepositRevealedIterator is returned from FilterFrostDepositRevealed and is used to iterate over the raw logs and unpacked data for FrostDepositRevealed events raised by the FrostBridge contract.
 type FrostBridgeFrostDepositRevealedIterator struct {
 	Event *FrostBridgeFrostDepositRevealed // Event containing the contract specifics and raw log
@@ -3467,6 +4192,140 @@ func (_FrostBridge *FrostBridgeFilterer) WatchFrostDrainReleased(opts *bind.Watc
 func (_FrostBridge *FrostBridgeFilterer) ParseFrostDrainReleased(log types.Log) (*FrostBridgeFrostDrainReleased, error) {
 	event := new(FrostBridgeFrostDrainReleased)
 	if err := _FrostBridge.contract.UnpackLog(event, "FrostDrainReleased", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// FrostBridgeFrostExposureControllerInstalledIterator is returned from FilterFrostExposureControllerInstalled and is used to iterate over the raw logs and unpacked data for FrostExposureControllerInstalled events raised by the FrostBridge contract.
+type FrostBridgeFrostExposureControllerInstalledIterator struct {
+	Event *FrostBridgeFrostExposureControllerInstalled // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *FrostBridgeFrostExposureControllerInstalledIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(FrostBridgeFrostExposureControllerInstalled)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(FrostBridgeFrostExposureControllerInstalled)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *FrostBridgeFrostExposureControllerInstalledIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *FrostBridgeFrostExposureControllerInstalledIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// FrostBridgeFrostExposureControllerInstalled represents a FrostExposureControllerInstalled event raised by the FrostBridge contract.
+type FrostBridgeFrostExposureControllerInstalled struct {
+	Controller common.Address
+	Raw        types.Log // Blockchain specific contextual infos
+}
+
+// FilterFrostExposureControllerInstalled is a free log retrieval operation binding the contract event 0xfa7b4b005905f140db55016548ee14833d9df68fff3feb6535a273460e11b73a.
+//
+// Solidity: event FrostExposureControllerInstalled(address controller)
+func (_FrostBridge *FrostBridgeFilterer) FilterFrostExposureControllerInstalled(opts *bind.FilterOpts) (*FrostBridgeFrostExposureControllerInstalledIterator, error) {
+
+	logs, sub, err := _FrostBridge.contract.FilterLogs(opts, "FrostExposureControllerInstalled")
+	if err != nil {
+		return nil, err
+	}
+	return &FrostBridgeFrostExposureControllerInstalledIterator{contract: _FrostBridge.contract, event: "FrostExposureControllerInstalled", logs: logs, sub: sub}, nil
+}
+
+// WatchFrostExposureControllerInstalled is a free log subscription operation binding the contract event 0xfa7b4b005905f140db55016548ee14833d9df68fff3feb6535a273460e11b73a.
+//
+// Solidity: event FrostExposureControllerInstalled(address controller)
+func (_FrostBridge *FrostBridgeFilterer) WatchFrostExposureControllerInstalled(opts *bind.WatchOpts, sink chan<- *FrostBridgeFrostExposureControllerInstalled) (event.Subscription, error) {
+
+	logs, sub, err := _FrostBridge.contract.WatchLogs(opts, "FrostExposureControllerInstalled")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(FrostBridgeFrostExposureControllerInstalled)
+				if err := _FrostBridge.contract.UnpackLog(event, "FrostExposureControllerInstalled", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseFrostExposureControllerInstalled is a log parse operation binding the contract event 0xfa7b4b005905f140db55016548ee14833d9df68fff3feb6535a273460e11b73a.
+//
+// Solidity: event FrostExposureControllerInstalled(address controller)
+func (_FrostBridge *FrostBridgeFilterer) ParseFrostExposureControllerInstalled(log types.Log) (*FrostBridgeFrostExposureControllerInstalled, error) {
+	event := new(FrostBridgeFrostExposureControllerInstalled)
+	if err := _FrostBridge.contract.UnpackLog(event, "FrostExposureControllerInstalled", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -8780,6 +9639,273 @@ func (_FrostBridge *FrostBridgeFilterer) WatchFrostWalletReopened(opts *bind.Wat
 func (_FrostBridge *FrostBridgeFilterer) ParseFrostWalletReopened(log types.Log) (*FrostBridgeFrostWalletReopened, error) {
 	event := new(FrostBridgeFrostWalletReopened)
 	if err := _FrostBridge.contract.UnpackLog(event, "FrostWalletReopened", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// FrostBridgeLegacyDkgDrainAbortedIterator is returned from FilterLegacyDkgDrainAborted and is used to iterate over the raw logs and unpacked data for LegacyDkgDrainAborted events raised by the FrostBridge contract.
+type FrostBridgeLegacyDkgDrainAbortedIterator struct {
+	Event *FrostBridgeLegacyDkgDrainAborted // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *FrostBridgeLegacyDkgDrainAbortedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(FrostBridgeLegacyDkgDrainAborted)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(FrostBridgeLegacyDkgDrainAborted)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *FrostBridgeLegacyDkgDrainAbortedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *FrostBridgeLegacyDkgDrainAbortedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// FrostBridgeLegacyDkgDrainAborted represents a LegacyDkgDrainAborted event raised by the FrostBridge contract.
+type FrostBridgeLegacyDkgDrainAborted struct {
+	PolicyRecord [32]byte
+	Raw          types.Log // Blockchain specific contextual infos
+}
+
+// FilterLegacyDkgDrainAborted is a free log retrieval operation binding the contract event 0xb32afcb72f5ac2c43684e8f934c986201fd528c5c1c26b848b6294c61b828935.
+//
+// Solidity: event LegacyDkgDrainAborted(bytes32 policyRecord)
+func (_FrostBridge *FrostBridgeFilterer) FilterLegacyDkgDrainAborted(opts *bind.FilterOpts) (*FrostBridgeLegacyDkgDrainAbortedIterator, error) {
+
+	logs, sub, err := _FrostBridge.contract.FilterLogs(opts, "LegacyDkgDrainAborted")
+	if err != nil {
+		return nil, err
+	}
+	return &FrostBridgeLegacyDkgDrainAbortedIterator{contract: _FrostBridge.contract, event: "LegacyDkgDrainAborted", logs: logs, sub: sub}, nil
+}
+
+// WatchLegacyDkgDrainAborted is a free log subscription operation binding the contract event 0xb32afcb72f5ac2c43684e8f934c986201fd528c5c1c26b848b6294c61b828935.
+//
+// Solidity: event LegacyDkgDrainAborted(bytes32 policyRecord)
+func (_FrostBridge *FrostBridgeFilterer) WatchLegacyDkgDrainAborted(opts *bind.WatchOpts, sink chan<- *FrostBridgeLegacyDkgDrainAborted) (event.Subscription, error) {
+
+	logs, sub, err := _FrostBridge.contract.WatchLogs(opts, "LegacyDkgDrainAborted")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(FrostBridgeLegacyDkgDrainAborted)
+				if err := _FrostBridge.contract.UnpackLog(event, "LegacyDkgDrainAborted", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseLegacyDkgDrainAborted is a log parse operation binding the contract event 0xb32afcb72f5ac2c43684e8f934c986201fd528c5c1c26b848b6294c61b828935.
+//
+// Solidity: event LegacyDkgDrainAborted(bytes32 policyRecord)
+func (_FrostBridge *FrostBridgeFilterer) ParseLegacyDkgDrainAborted(log types.Log) (*FrostBridgeLegacyDkgDrainAborted, error) {
+	event := new(FrostBridgeLegacyDkgDrainAborted)
+	if err := _FrostBridge.contract.UnpackLog(event, "LegacyDkgDrainAborted", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// FrostBridgeLegacyDkgDrainBegunIterator is returned from FilterLegacyDkgDrainBegun and is used to iterate over the raw logs and unpacked data for LegacyDkgDrainBegun events raised by the FrostBridge contract.
+type FrostBridgeLegacyDkgDrainBegunIterator struct {
+	Event *FrostBridgeLegacyDkgDrainBegun // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *FrostBridgeLegacyDkgDrainBegunIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(FrostBridgeLegacyDkgDrainBegun)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(FrostBridgeLegacyDkgDrainBegun)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *FrostBridgeLegacyDkgDrainBegunIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *FrostBridgeLegacyDkgDrainBegunIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// FrostBridgeLegacyDkgDrainBegun represents a LegacyDkgDrainBegun event raised by the FrostBridge contract.
+type FrostBridgeLegacyDkgDrainBegun struct {
+	Raw types.Log // Blockchain specific contextual infos
+}
+
+// FilterLegacyDkgDrainBegun is a free log retrieval operation binding the contract event 0xb923e6b930c7a36515c083366d23e8a8e2d1d8e5b44eb603264b48d2c3f75297.
+//
+// Solidity: event LegacyDkgDrainBegun()
+func (_FrostBridge *FrostBridgeFilterer) FilterLegacyDkgDrainBegun(opts *bind.FilterOpts) (*FrostBridgeLegacyDkgDrainBegunIterator, error) {
+
+	logs, sub, err := _FrostBridge.contract.FilterLogs(opts, "LegacyDkgDrainBegun")
+	if err != nil {
+		return nil, err
+	}
+	return &FrostBridgeLegacyDkgDrainBegunIterator{contract: _FrostBridge.contract, event: "LegacyDkgDrainBegun", logs: logs, sub: sub}, nil
+}
+
+// WatchLegacyDkgDrainBegun is a free log subscription operation binding the contract event 0xb923e6b930c7a36515c083366d23e8a8e2d1d8e5b44eb603264b48d2c3f75297.
+//
+// Solidity: event LegacyDkgDrainBegun()
+func (_FrostBridge *FrostBridgeFilterer) WatchLegacyDkgDrainBegun(opts *bind.WatchOpts, sink chan<- *FrostBridgeLegacyDkgDrainBegun) (event.Subscription, error) {
+
+	logs, sub, err := _FrostBridge.contract.WatchLogs(opts, "LegacyDkgDrainBegun")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(FrostBridgeLegacyDkgDrainBegun)
+				if err := _FrostBridge.contract.UnpackLog(event, "LegacyDkgDrainBegun", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseLegacyDkgDrainBegun is a log parse operation binding the contract event 0xb923e6b930c7a36515c083366d23e8a8e2d1d8e5b44eb603264b48d2c3f75297.
+//
+// Solidity: event LegacyDkgDrainBegun()
+func (_FrostBridge *FrostBridgeFilterer) ParseLegacyDkgDrainBegun(log types.Log) (*FrostBridgeLegacyDkgDrainBegun, error) {
+	event := new(FrostBridgeLegacyDkgDrainBegun)
+	if err := _FrostBridge.contract.UnpackLog(event, "LegacyDkgDrainBegun", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

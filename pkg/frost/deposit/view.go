@@ -13,7 +13,9 @@ var (
 	ErrNotFinal      = errors.New("FROST deposit reveal is not finalized")
 	ErrSwept         = errors.New("FROST deposit already swept")
 	ErrRefundMargin  = errors.New("FROST deposit at or past its refund safety margin")
+	ErrFundingSpent  = errors.New("FROST deposit funding output is spent")
 	ErrForeignWallet = errors.New("FROST deposit belongs to another wallet")
+	ErrUnreserved    = errors.New("FROST deposit has no exposure reservation")
 )
 
 // Clock reads Bitcoin's current median-time-past (BIP113): the clock a CLTV
@@ -33,11 +35,12 @@ type Policy struct {
 	RefundMargin uint64
 }
 
-// Deposit is one C-05 record with its reveal log and key.
+// Deposit is one C-05 record with its reveal log, key and C-10 reservation.
 type Deposit struct {
-	Key    [32]byte
-	Record Record
-	Reveal Reveal
+	Key      [32]byte
+	Record   Record
+	Reveal   Reveal
+	Reserved bool
 }
 
 // Snapshot is one internally consistent read: every chain value at Head,
@@ -97,7 +100,11 @@ func (v *View) Read(ctx context.Context, wallet [32]byte, keys [][32]byte) (Snap
 		if canonical != reveal.BlockHash {
 			return Snapshot{}, fmt.Errorf("%w: reveal block %d is not canonical", ErrNotFinal, reveal.Block)
 		}
-		s.Deposits = append(s.Deposits, Deposit{Key: key, Record: record, Reveal: reveal})
+		reserved, err := v.finallyReserved(ctx, head.Number, key)
+		if err != nil {
+			return Snapshot{}, err
+		}
+		s.Deposits = append(s.Deposits, Deposit{Key: key, Record: record, Reveal: reveal, Reserved: reserved})
 	}
 	if s.Custody, err = v.Chain.Custody(ctx, head.Number, wallet); err != nil {
 		return Snapshot{}, err
@@ -121,8 +128,29 @@ func (v *View) Read(ctx context.Context, wallet [32]byte, keys [][32]byte) (Snap
 	return s, nil
 }
 
+// finallyReserved reports a C-10 reservation that is open at block at and
+// already existed FinalityBlocks earlier, so a shallow reorganization cannot
+// remove it after the sweep is broadcast (review of #20). The caller checks
+// that both reads lie on one canonical chain.
+func (v *View) finallyReserved(ctx context.Context, at uint64, key [32]byte) (bool, error) {
+	return reservedAtDepth(ctx, v.Chain, at, v.Policy.FinalityBlocks, key)
+}
+
+func reservedAtDepth(ctx context.Context, chain Reader, at, depth uint64, key [32]byte) (bool, error) {
+	if at < depth {
+		return false, nil
+	}
+	for _, block := range []uint64{at - depth, at} {
+		if ok, err := chain.Reserved(ctx, block, key); err != nil || !ok {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
 // Sweepable checks one deposit of the snapshot for wallet: revealed for this
-// wallet at a finalized canonical block, not swept, and before its margin.
+// wallet at a finalized canonical block, not swept, reserved against the C-10
+// budget at a finalized depth, and before its margin.
 func (v *View) Sweepable(s Snapshot, d Deposit, wallet [32]byte) error {
 	r := d.Record
 	if r.RevealedAt == 0 || d.Reveal.Outpoint != d.Key {
@@ -137,8 +165,17 @@ func (v *View) Sweepable(s Snapshot, d Deposit, wallet [32]byte) error {
 	if r.SweptAt != 0 {
 		return ErrSwept
 	}
-	if s.MedianTimePast+v.Policy.RefundMargin >= uint64(r.Terms.RefundLocktime) {
-		return fmt.Errorf("%w: median-time-past %d, margin %d, locktime %d", ErrRefundMargin, s.MedianTimePast, v.Policy.RefundMargin, r.Terms.RefundLocktime)
+	if !d.Reserved {
+		return ErrUnreserved
+	}
+	return v.Policy.BeforeMargin(s.MedianTimePast, r)
+}
+
+// BeforeMargin checks that a deposit is still before its refund safety
+// margin at Bitcoin median-time-past mtp: MTP + margin < locktime.
+func (p Policy) BeforeMargin(mtp uint64, r Record) error {
+	if mtp+p.RefundMargin >= uint64(r.Terms.RefundLocktime) {
+		return fmt.Errorf("%w: median-time-past %d, margin %d, locktime %d", ErrRefundMargin, mtp, p.RefundMargin, r.Terms.RefundLocktime)
 	}
 	return nil
 }

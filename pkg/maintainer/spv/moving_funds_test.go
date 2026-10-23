@@ -235,6 +235,18 @@ func TestGetUnprovenMovingFundsTransactions(t *testing.T) {
 	// Add moving funds commitment submitted events for the wallets.
 	// The block number field is just to make them distinguishable while reading.
 	events := []*tbtc.MovingFundsCommitmentSubmittedEvent{
+		// A commitment of wallet 1 that C-10 released before the wallet
+		// committed again: only the later commitment may be proven, so its
+		// transactions must not be returned twice.
+		{
+			WalletPublicKeyHash: wallets[0].walletPublicKeyHash,
+			TargetWallets: [][20]byte{
+				bytes20FromHex("3091d288521caec06ea912eacfd733edc5a36d6e"),
+				bytes20FromHex("92a6ec889a8fa34f731e639edede4c75e184307c"),
+				bytes20FromHex("c7302d75072d78be94eb8d36c4b77583c7abb06e"),
+			},
+			BlockNumber: 50,
+		},
 		{
 			WalletPublicKeyHash: wallets[0].walletPublicKeyHash,
 			TargetWallets: [][20]byte{

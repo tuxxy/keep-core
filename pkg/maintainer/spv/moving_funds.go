@@ -147,9 +147,10 @@ func getUnprovenMovingFundsTransactions(
 	// searched for.
 	startBlock := currentBlock - historyDepth
 
-	// The `MovingFundsCommitmentSubmitted` event can only be emitted once for
-	// a given wallet. Therefore there will always be only one event for a wallet.
-	// We do not have to worry about duplicate events for the same wallet.
+	// The `MovingFundsCommitmentSubmitted` event is emitted once per wallet
+	// unless C-10 cleared the commitment: a legacy proof that replaces a
+	// drain-committed main releases the drain, and the source commits again.
+	// Only a wallet's most recent commitment can still be proven.
 	events, err :=
 		spvChain.PastMovingFundsCommitmentSubmittedEvents(
 			&tbtc.MovingFundsCommitmentSubmittedEventFilter{
@@ -163,9 +164,21 @@ func getUnprovenMovingFundsTransactions(
 		)
 	}
 
+	latest := make(map[[20]byte]*tbtc.MovingFundsCommitmentSubmittedEvent)
+	for _, event := range events {
+		previous, ok := latest[event.WalletPublicKeyHash]
+		if !ok || event.BlockNumber > previous.BlockNumber {
+			latest[event.WalletPublicKeyHash] = event
+		}
+	}
+
 	unprovenMovingFundsTransactions := []*bitcoin.Transaction{}
 
 	for _, event := range events {
+		if latest[event.WalletPublicKeyHash] != event {
+			continue
+		}
+
 		walletPublicKeyHash := event.WalletPublicKeyHash
 		targetWallets := event.TargetWallets
 

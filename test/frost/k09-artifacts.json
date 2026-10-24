@@ -1,0 +1,24 @@
+{
+  "keep-core": {
+    "contracts/test/FrostTestDependencies.sol:FrostTestToken": "test-adapter",
+    "contracts/test/FrostTestDependencies.sol:FrostTestStakeSource": "test-adapter",
+    "contracts/test/FrostTestDependencies.sol:FrostTestBeacon": "test-adapter",
+    "@keep-network/sortition-pools/contracts/SortitionPool.sol:SortitionPool": "production",
+    "contracts/frost/FrostAdmission.sol:FrostAdmission": "production",
+    "contracts/frost/FrostDkgValidator.sol:FrostDkgValidator": "production",
+    "contracts/frost/FrostWalletRegistry.sol:FrostWalletRegistry": "production"
+  },
+  "tbtc-v2": {
+    "contracts/bridge/Bridge.sol:Bridge": "production",
+    "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol:ProxyAdmin": "production",
+    "contracts/bank/Bank.sol:Bank": "production",
+    "contracts/test/FrostPublicFundingRegistryFixture.sol:FrostPublicFundingRegtestRelay": "test-adapter",
+    "contracts/frost/FrostVerifier.sol:FrostVerifier": "production",
+    "contracts/test/FrostDrainRegistryFixture.sol:FrostDrainRegistryFixture": "test-adapter",
+    "@keep-network/random-beacon/contracts/ReimbursementPool.sol:ReimbursementPool": "production",
+    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol:TransparentUpgradeableProxy": "production",
+    "contracts/frost/IFrostBridge.sol:IFrostBridge": "abi",
+    "contracts/frost/FrostExposureController.sol:FrostExposureController": "production",
+    "contracts/bridge/WalletProposalValidator.sol:WalletProposalValidator": "production"
+  }
+}

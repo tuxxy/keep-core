@@ -1,0 +1,208 @@
+{
+  "date": "2026-10-24",
+  "scope": "K-09a concrete review corrections; not K-09 exit or V-05 closure",
+  "governingSpecCommit": "51b9a168e6b6c73d4d471f7d302267a065407fb5",
+  "acceptance": "implementation/K-09/review-feedback-2026-10-24/run/result.json",
+  "feedback": [
+    {
+      "id": "K09-1",
+      "status": "implemented",
+      "change": "Whole Go module, actual go-list build/embed inputs, recursive local replacements; shared fully qualified native deployment roots and linked libraries.",
+      "witness": "source/artifact manifests; controls for omitted internal and package artifact inputs"
+    },
+    {
+      "id": "K09-2",
+      "status": "implemented",
+      "change": "Fresh sequential run required on final source bytes; historical partial records are superseded.",
+      "witness": "run/result.json and post-commit correspondence"
+    },
+    {
+      "id": "K09-3",
+      "status": "OPEN exit requirement",
+      "change": "Legacy-to-FROST drain is a seeded component control. Public legacy upgrade fixtures do not join cutover/containment to that drain.",
+      "witness": "Owner: integration lead; add public legacy obligation through upgrade, cutover, containment and FROST incoming sweep before K-09 exit; no approved deferral"
+    },
+    {
+      "id": "K09-4",
+      "status": "partial; OPEN exit requirement",
+      "change": "New real post-cutover FROST DKG added to joined lifecycle. Legacy cross-cutover drain remains under K09-3.",
+      "witness": "TestFrostCompleteLocalLifecycle#k09-post-cutover-dkg"
+    },
+    {
+      "id": "K09-5",
+      "status": "implemented bounded coverage; broader interleavings OPEN",
+      "change": "Public upgrade cases cover deposit sweep, redemption settlement/timeout, fraud defense/timeout, outgoing proof/timeout, incoming proof/timeout, source closing, and watchtower records. Alias redeemer/notifier and duplicate calls are checked.",
+      "witness": "Frost.LifecycleUpgrade.test.ts; Frost.LegacyReconciliation.test.ts; no exhaustive actor permutations"
+    },
+    {
+      "id": "K09-6",
+      "status": "OPEN exit requirement",
+      "change": "Two in-process operator bundles use authenticated transport and firewall.Disabled; harness dispatches host components.",
+      "witness": "Owner: node integration lead; real node process dispatch/firewall qualification remains required for K-09 exit, not an approved K-11 deferral"
+    },
+    {
+      "id": "K09-7",
+      "status": "implemented bounded crash witness",
+      "change": "SIGKILL a child while an actual journal signing claim is active; reopen same store; consumed claim stays claimed; fresh claim succeeds; same lifecycle defense consumes durable record.",
+      "witness": "k09_crash_test.go; controlled parent fence survives; not host power-loss/fence qualification"
+    },
+    {
+      "id": "K09-8",
+      "status": "implemented policy fix; full proof join OPEN",
+      "change": "FROST CLI derives proof depth using existing Bridge-factor/relay-epoch accumulated-work algorithm. Tests cover rising/falling retarget, DIFF1, insufficient work, relay range and caller floor.",
+      "witness": "TestFrostDifficultyProofDepth; TestGetProofInfo; realistic header suite is library-level, not full FROST entry-point proof. Owner: SPV integration owner for remaining production-settings producer/entry-point join"
+    },
+    {
+      "id": "K09-9",
+      "status": "implemented",
+      "change": "Private diagnostics, generated public summaries only, supplementary forbidden-output refusal.",
+      "witness": "k09-controls.py; no opaque worker-record decoding/export"
+    },
+    {
+      "id": "K09-10",
+      "status": "implemented",
+      "change": "Reap process group on leader success/failure, timeout and interruption.",
+      "witness": "k09-controls.py child-survival controls"
+    },
+    {
+      "id": "K09-11",
+      "status": "implemented",
+      "change": "Direct contract finalizeClosing rejection for open challenge plus full state frame, then successful closure after defense.",
+      "witness": "TestFrostCompleteLocalLifecycle#k09-closure"
+    },
+    {
+      "id": "K09-12",
+      "status": "implemented",
+      "change": "Exact legacy-cutover reason; valid packed deposit reveal reaches contained-exposure guard with exact reason and unchanged frame.",
+      "witness": "TestFrostCompleteLocalLifecycle#k09-cutover"
+    },
+    {
+      "id": "K09-13",
+      "status": "implemented",
+      "change": "Ten explicit machine checkpoint markers, exact ordering validator and missing/duplicate/reordered controls. Checkpoint references use #, not fictitious Go subtests.",
+      "witness": "COMPOSITION-K09A.json; k09-controls.py"
+    },
+    {
+      "id": "K09-14",
+      "status": "implemented",
+      "change": "Replay supplies current target main, reaching the input-count guard (the original transaction has one input). A separate explicitly seeded production-library control consumes Pending once, then reaches the Processed request-state guard with unchanged frame. Native digest binary is SHA256 pinned with no fallback.",
+      "witness": "Frost.LifecycleUpgrade.test.ts; frost-legacy-bitcoin.ts; k09-local.py"
+    }
+  ],
+  "verificationNotRun": [
+    "K-09b final mutation campaign (explicit request required)",
+    "KC-VER models and required replays",
+    "V-05 authoritative closure",
+    "production configuration, scale and specialist qualification"
+  ],
+  "legacyObligations": [
+    {
+      "class": "revealed unswept deposit",
+      "status": "witness",
+      "path": "Frost.LifecycleUpgrade: retains a revealed deposit and open heartbeat fraud challenge, then sweeps and defends publicly"
+    },
+    {
+      "class": "redemption escrow and exact signed settlement",
+      "status": "witness",
+      "path": "Frost.LegacyReconciliation: preserves original liabilities/policy, mines identical pre-upgrade bytes and fulfills exactly once"
+    },
+    {
+      "class": "redemption original-deadline refund",
+      "status": "witness",
+      "path": "Frost.LifecycleUpgrade: preserves the original redemption deadline when redeemer and timeout notifier alias"
+    },
+    {
+      "class": "fraud challenge defense",
+      "status": "witness",
+      "path": "Frost.LifecycleUpgrade: retains a revealed deposit and open heartbeat fraud challenge, then sweeps and defends publicly"
+    },
+    {
+      "class": "fraud challenge original-deadline timeout",
+      "status": "witness",
+      "path": "Frost.LifecycleUpgrade: preserves a public fraud challenge through upgrade until its original timeout"
+    },
+    {
+      "class": "outgoing moving funds commitment proof and timeout",
+      "status": "witness",
+      "path": "Frost.LifecycleUpgrade: outgoing and outgoing-timeout"
+    },
+    {
+      "class": "incoming moved funds request proof and timeout",
+      "status": "witness",
+      "path": "Frost.LifecycleUpgrade: incoming and incoming-timeout"
+    },
+    {
+      "class": "closing-period discharge",
+      "status": "witness",
+      "path": "Frost.LifecycleUpgrade: outgoing and incoming, after completed incoming sweep"
+    },
+    {
+      "class": "watchtower policy/request identity",
+      "status": "witness",
+      "path": "Frost.LegacyReconciliation: signed redemption upgrade and policy frame"
+    },
+    {
+      "class": "legacy obligations across cutover/containment into FROST target",
+      "status": "not run; OPEN K-09 exit",
+      "owner": "integration verification lead",
+      "path": "seeded TestCrossSchemeDrainAndSweep does not discharge this requirement"
+    }
+  ],
+  "k09Requirements": [
+    {
+      "requirement": "DKG/readiness and multiple wallets",
+      "status": "bounded concrete witness",
+      "witness": "joined #k09-ready and #k09-post-cutover-dkg"
+    },
+    {
+      "requirement": "deposit/sweep, redemption and closure",
+      "status": "bounded concrete witness",
+      "witness": "joined #k09-credit, #k09-payment, #k09-closure"
+    },
+    {
+      "requirement": "independent refund and reservation timeout",
+      "status": "bounded concrete witnesses",
+      "witness": "offline-refund and refund-timeout stages"
+    },
+    {
+      "requirement": "fraud admission/defense/timeout",
+      "status": "bounded concrete witnesses",
+      "witness": "fraud-recovery plus public upgrade cases"
+    },
+    {
+      "requirement": "authenticated inactivity and crash recovery",
+      "status": "bounded concrete witnesses",
+      "witness": "joined #k09-inactivity and #k09-restarted-defense"
+    },
+    {
+      "requirement": "cutover and continued FROST duties",
+      "status": "bounded concrete witness; legacy join OPEN",
+      "witness": "joined #k09-cutover/#k09-movement/#k09-post-cutover-dkg; K09-3"
+    },
+    {
+      "requirement": "public cross-scheme movement",
+      "status": "not run; OPEN exit requirement",
+      "witness": "K09-3; seeded component control only"
+    },
+    {
+      "requirement": "aliased actors and adversarial contract interleavings",
+      "status": "bounded concrete witnesses",
+      "witness": "post-upgrade aliased timeout, duplicate proof/timeout, original deadline retained; not all role permutations"
+    },
+    {
+      "requirement": "real nodes, workers, authenticated libp2p",
+      "status": "partial; real nodes/firewall OPEN",
+      "witness": "real worker and authenticated transport; two in-process bundles, explicit dispatch, firewall.Disabled"
+    },
+    {
+      "requirement": "actual SPV settings and realistic headers",
+      "status": "library witness and derived-depth policy tests; full FROST join OPEN",
+      "witness": "spv and proof-depth stages; K09-8"
+    },
+    {
+      "requirement": "models/replays, composition exit and final campaign",
+      "status": "not run; OPEN exit requirements",
+      "witness": "authoritative V-05 and K-09b remain open"
+    }
+  ]
+}

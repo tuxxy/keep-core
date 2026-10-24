@@ -25,6 +25,7 @@ type FrostSweepMaintainer struct {
 	Chain         deposit.Chain
 	Bitcoin       bitcoin.Chain
 	Confirmations uint
+	ProofDepth    FrostProofDepth
 	// Funding, Clock and RefundMargin gate ReserveDeposit with the planner's
 	// eligibility: a spent or late deposit is never swept, and its
 	// reservation could never be released.
@@ -92,11 +93,15 @@ func (m FrostSweepMaintainer) ProveSweep(ctx context.Context, wallet, hash [32]b
 	if m.Confirmations == 0 {
 		return action, errors.New("confirmations must be positive")
 	}
+	depth, err := frostProofDepth(ctx, bitcoin.Hash(hash), m.Confirmations, m.ProofDepth)
+	if err != nil {
+		return action, err
+	}
 	n, err := m.Bitcoin.GetTransactionConfirmations(ctx, bitcoin.Hash(hash))
-	if err != nil || n < m.Confirmations {
+	if err != nil || n < depth {
 		return action, ErrSweepNotConfirmed
 	}
-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
+	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), depth, m.Bitcoin)
 	if err != nil {
 		return action, err
 	}
@@ -189,8 +194,12 @@ func (m FrostSweepMaintainer) ReserveDeposit(ctx context.Context, key [32]byte) 
 		return action, nil
 	}
 	hash := bitcoin.Hash(record.FundingTransactionHash)
+	depth, err := frostProofDepth(ctx, hash, m.Confirmations, m.ProofDepth)
+	if err != nil {
+		return action, err
+	}
 	n, err := m.Bitcoin.GetTransactionConfirmations(ctx, hash)
-	if err != nil || n < m.Confirmations {
+	if err != nil || n < depth {
 		return action, ErrFundingNotConfirmed
 	}
 	unspent, err := m.Funding.Unspent(ctx, bitcoin.TransactionOutpoint{TransactionHash: hash, OutputIndex: record.FundingOutputIndex})
@@ -213,7 +222,7 @@ func (m FrostSweepMaintainer) ReserveDeposit(ctx context.Context, key [32]byte) 
 	if assemble == nil {
 		assemble = bitcoin.AssembleSpvProof
 	}
-	tx, proof, err := assemble(hash, m.Confirmations, m.Bitcoin)
+	tx, proof, err := assemble(hash, depth, m.Bitcoin)
 	if err != nil {
 		return action, err
 	}

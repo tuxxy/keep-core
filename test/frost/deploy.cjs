@@ -2,6 +2,7 @@
 // Anvil keeps EIP-170 enabled; no stubs or unlimited-size switch are used.
 const fs = require('fs');
 const path = require('path');
+const inventory = require('./k09-artifacts.json');
 const { ethers } = require(path.join(__dirname, '../../solidity/ecdsa/node_modules/ethers'));
 async function main() {
  const [url, tbRoot, output, patternText, mode, genesis] = process.argv.slice(2);
@@ -17,11 +18,15 @@ async function main() {
  const admin = await signer.getAddress();
  const libraries = new Map();
  const artifacts = {};
- function artifact(root, source, name) { return JSON.parse(fs.readFileSync(path.join(root, 'solidity', root===kcRoot?'ecdsa/build':'build', source, name+'.json'))); }
+ const allowed = new Map([[kcRoot,new Set(Object.keys(inventory['keep-core']))],[tbRoot,new Set(Object.keys(inventory['tbtc-v2']))]]);
+ function artifact(root, source, name) {
+  if(!allowed.get(root)?.has(source+':'+name)) throw Error('artifact absent from deployment inventory: '+source+':'+name);
+  return JSON.parse(fs.readFileSync(path.join(root, 'solidity', root===kcRoot?'ecdsa/build':'build', source, name+'.json'))); }
  async function deploy(root, source, name, args=[]) {
   const a = artifact(root,source,name);let bytecode=a.bytecode;
   for(const [file,names] of Object.entries(a.linkReferences||{})) {
    for(const [lib,positions] of Object.entries(names)) {
+    allowed.get(root).add(file+':'+lib);
     const key=root+file+lib;
     if(!libraries.has(key)) libraries.set(key,(await deploy(root,file,lib)).address);
     const address=libraries.get(key).slice(2);

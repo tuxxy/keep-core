@@ -18,9 +18,11 @@ type FrostRedemptionMaintainer struct {
 	Chain         redemption.Chain
 	Bitcoin       bitcoin.Chain
 	Confirmations uint
+	ProofDepth    FrostProofDepth
 	Wallet        [32]byte
 	// FromBlock bounds log scans (the wallet's funding block or later).
 	FromBlock uint64
+	assemble  func(bitcoin.Hash, uint, bitcoin.Chain) (*bitcoin.Transaction, *bitcoin.SpvProof, error)
 }
 
 // FrostAction records one submitted maintainer transaction.
@@ -37,7 +39,15 @@ func TransactionInfo(tx *bitcoin.Transaction) redemption.BitcoinInfo {
 }
 
 func (m FrostRedemptionMaintainer) proof(hash [32]byte) (redemption.BitcoinInfo, redemption.BitcoinProof, error) {
-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
+	depth, err := frostProofDepth(context.Background(), bitcoin.Hash(hash), m.Confirmations, m.ProofDepth)
+	if err != nil {
+		return redemption.BitcoinInfo{}, redemption.BitcoinProof{}, err
+	}
+	assemble := m.assemble
+	if assemble == nil {
+		assemble = bitcoin.AssembleSpvProof
+	}
+	tx, proof, err := assemble(bitcoin.Hash(hash), depth, m.Bitcoin)
 	if err != nil {
 		return redemption.BitcoinInfo{}, redemption.BitcoinProof{}, err
 	}
@@ -48,8 +58,12 @@ func (m FrostRedemptionMaintainer) proof(hash [32]byte) (redemption.BitcoinInfo,
 }
 
 func (m FrostRedemptionMaintainer) confirmed(hash [32]byte) bool {
+	depth, err := frostProofDepth(context.Background(), bitcoin.Hash(hash), m.Confirmations, m.ProofDepth)
+	if err != nil {
+		return false
+	}
 	n, err := m.Bitcoin.GetTransactionConfirmations(context.Background(), bitcoin.Hash(hash))
-	return err == nil && n >= m.Confirmations
+	return err == nil && n >= depth
 }
 
 // ProveSettlements submits one inclusion proof for every unresolved

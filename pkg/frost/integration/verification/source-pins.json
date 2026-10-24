@@ -1,0 +1,87 @@
+{
+  "recorded": "2026-10-23",
+  "purpose": "K-09a boundary bases, before code",
+  "spec": {
+    "commit": "51b9a168e6b6c73d4d471f7d302267a065407fb5",
+    "files": [
+      {
+        "path": "keep-core-integration-spec.md",
+        "blob": "98f8589a48ab95d065d5b95307734d66b93618f1"
+      },
+      {
+        "path": "keep-core-verification-spec.md",
+        "blob": "ab1815f31cf311ca5b3b7d04e7a70dd37dfa1d3d"
+      }
+    ]
+  },
+  "keep-core": {
+    "commit": "c09f8e76cf97a18c69f7de1a23c60d36688cc8b7",
+    "files": [
+      {
+        "path": "test/frost/deploy.cjs",
+        "blob": "ed2d0c99238a9c76b4a81160f4f274f89dbb9750",
+        "sha256": "e9c541c0b87745e14e8082609180148830cfab7a345c28e765c86b315afd61ef"
+      },
+      {
+        "path": "pkg/frost/integration/integration_test.go",
+        "blob": "c52fd63c7cc546d97490796eea58d52bf0d4788f",
+        "sha256": "95b5518efe662ca215c9d4947460925ac70773d0fcdc8431d9069069b29aa3c3"
+      },
+      {
+        "path": "pkg/frost/integration/k06_fixture_test.go",
+        "blob": "2b8411a22e5b28dd6f8153e29ce50087b76a9896",
+        "sha256": "588945043dea20048915135a19deea52d4f326be21b6cbf1925bedd21b0ca913"
+      },
+      {
+        "path": "pkg/frost/integration/k07_fixture_test.go",
+        "blob": "4e54d8668bfb9fae6c1e70fb41eea4b63c6e2911",
+        "sha256": "43e93300744a77bcc023dbb6a27ae955044a48a32dfbfb25d0cedebfa7f665cf"
+      },
+      {
+        "path": "pkg/frost/integration/k08_test.go",
+        "blob": "907283e565189e26cf8e962b0042f585c7a32d39",
+        "sha256": "ea06e81bf6fc31b62a53acaa14f7d6af48146f0cc496882b58639b8174fe9f51"
+      },
+      {
+        "path": "pkg/frost/signing/executor.go",
+        "blob": "6c49c0075b99ecdef07766211b68c6661e1e316c",
+        "sha256": "78e1f603c0f348192f5eea6a0bdeb211787ae3d4a96abc7944ad97ad04c7b2ec"
+      },
+      {
+        "path": "pkg/frost/enforcement/defender.go",
+        "blob": "a718c34ba51bbfea99d2d20038e5d7edad971012",
+        "sha256": "c06145adb653cee5d11fb3ad177da46b9e244e3605afdaf495205bf549a800b8"
+      },
+      {
+        "path": "pkg/frost/verification/COMPOSITION.json",
+        "blob": "43a6601452fe2bc27ae4774f87708ef4dee2efe9",
+        "sha256": "ef4d6e9729c02aa265365ca56dcc7ed01509be8d21d5e550174c9c6f3cf855ed"
+      }
+    ]
+  },
+  "tbtc-v2": {
+    "commit": "767ce3a33061028e54f9a78fd84c2a77c699b9c6",
+    "files": [
+      {
+        "path": "solidity/contracts/bridge/Bridge.sol",
+        "blob": "0d11f83ca3c33f3464f846ac7fc2b95b543da07d",
+        "sha256": "88c064619bc6552178247a0ebcdc524331d88168a4ee4ec85bd3e6bff605b205"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostExposureController.sol",
+        "blob": "9e0e768b7256e3218d49aad32c3022fe5d9c8e2d",
+        "sha256": "793aeff1e6f50858582ab3a2a30b3a92e6a245b149a7af123553a1c347b6bdfe"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostLifecycle.sol",
+        "blob": "7db6ca7ba712e2048eb4d5c79cce9f74ec152a5a",
+        "sha256": "1cb31b018dee6c7d2be13e6a4318387ef04e2c5bfca7d62f72c7a2cb7062d733"
+      },
+      {
+        "path": "solidity/test/bridge/Frost.LegacyReconciliation.test.ts",
+        "blob": "d29f7c5fc64d2db34af7e36a98a0d047f59771de",
+        "sha256": "b62a0301aa56dedd9394ac93ed0cdb86d455dc513444500e30246ff553d70bbf"
+      }
+    ]
+  }
+}

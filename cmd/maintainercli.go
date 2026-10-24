@@ -497,7 +497,11 @@ var frostRedemptionsCommand = cobra.Command{
 		if confirmations == 0 {
 			return fmt.Errorf("--%s is required for FROST proofs", confirmationsFlagName)
 		}
-		maintainer := spv.FrostRedemptionMaintainer{Chain: frostChain, Bitcoin: btcChain, Confirmations: confirmations, Wallet: [32]byte(raw), FromBlock: fromBlock}
+		epochs, err := ethereum.ConnectBitcoinDifficulty(ctx, clientConfig.Ethereum, clientConfig.Maintainer)
+		if err != nil {
+			return fmt.Errorf("could not connect proof difficulty relay: %w", err)
+		}
+		maintainer := spv.FrostRedemptionMaintainer{Chain: frostChain, Bitcoin: btcChain, Confirmations: confirmations, ProofDepth: spv.DifficultyProofDepth(btcChain, frostChain, epochs, confirmations), Wallet: [32]byte(raw), FromBlock: fromBlock}
 		for _, step := range []func(context.Context) ([]spv.FrostAction, error){maintainer.ProveSettlements, maintainer.ProcessRequests, maintainer.ClaimBudgets} {
 			actions, err := step(ctx)
 			for _, a := range actions {

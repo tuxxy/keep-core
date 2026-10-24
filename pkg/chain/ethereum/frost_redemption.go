@@ -54,6 +54,11 @@ func NewFrostRedemptionChain(ctx context.Context, client *ethclient.Client, key 
 	return &FrostRedemptionChain{client: client, bridge: b, legacy: l, address: bridge, key: key, chainID: id}, nil
 }
 
+// TxProofDifficultyFactor is the Bridge's actual SPV work multiplier.
+func (c *FrostRedemptionChain) TxProofDifficultyFactor() (*big.Int, error) {
+	return c.legacy.TxProofDifficultyFactor(&bind.CallOpts{})
+}
+
 func (c *FrostRedemptionChain) ChainID() uint64  { return c.chainID.Uint64() }
 func (c *FrostRedemptionChain) Bridge() [20]byte { return c.address }
 

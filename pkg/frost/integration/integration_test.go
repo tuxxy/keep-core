@@ -344,6 +344,9 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 	return f
 }
 func (f *fixture) run() ([]dkg.WalletRecord, []error) {
+	return f.runWithContext(f.ctx)
+}
+func (f *fixture) runWithContext(ctx context.Context) ([]dkg.WalletRecord, []error) {
 	records := make([]dkg.WalletRecord, len(f.executors))
 	errs := make([]error, len(records))
 	var wg sync.WaitGroup
@@ -351,7 +354,7 @@ func (f *fixture) run() ([]dkg.WalletRecord, []error) {
 		wg.Add(1)
 		go func(i int, e *dkg.Executor) {
 			defer wg.Done()
-			records[i], errs[i] = tbtc.ExecuteFrostDKG(f.ctx, e)
+			records[i], errs[i] = tbtc.ExecuteFrostDKG(ctx, e)
 			f.t.Logf("operator %d exited state=%s error=%v", i, records[i].State, errs[i])
 			if errs[i] != nil && (strings.Contains(f.t.Name(), "Foreign") || strings.Contains(f.t.Name(), "PublicApproval")) {
 				f.cancel()

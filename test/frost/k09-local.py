@@ -14,14 +14,18 @@ import time
 
 KC = Path(__file__).resolve().parents[2]
 WORKER_SHA = "d775dc36c508559f1bd997ab2552cea3aed94587540f6307352fec4628400765"
+DIGEST_SHA = "6be09a87119822348daf05d2177855c72a03294c99628d9c746829d4e58b84ba"
 CORE_SHA = "f4b9d78a74643c726d022840ca506dc317d41f8825aaef80b7bb705e12c5fda8"
+DEPLOYMENT_ARTIFACTS = json.loads(Path(__file__).with_name("k09-artifacts.json").read_text())
 GO_CASES = {
     "joined": ["TestFrostCompleteLocalLifecycle"],
     "offline-refund": ["TestFrostLifecycleRefundWithSignersOffline"],
     "refund-timeout": ["TestDepositorRefundWithoutOperators", "TestReservationTimeoutRace"],
     "fraud-recovery": ["TestFrostFraudPublicAdmissionDefenseTimeout"],
     "legacy-drain": ["TestCrossSchemeDrainAndSweep"],
+    "proof-depth": ["TestFrostDifficultyProofDepth", "TestGetProofInfo"],
 }
+JOINED_CHECKPOINTS = ["k09-ready", "k09-credit", "k09-payment", "k09-heartbeat", "k09-inactivity", "k09-cutover", "k09-movement", "k09-restarted-defense", "k09-closure", "k09-post-cutover-dkg"]
 REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "config-controls", "build", *GO_CASES, "spv", "upgrade"]
 
 
@@ -49,6 +53,11 @@ def require_go(log, expected):
             raise ValueError("required Go case did not pass exactly once: " + name)
     if any(r.get("Action") in ("fail", "skip") for r in rows):
         raise ValueError("a Go case failed or skipped")
+    if "TestFrostCompleteLocalLifecycle" in expected:
+        checkpoints = [point for row in rows if row.get("Action") == "output" and row.get("Test") == "TestFrostCompleteLocalLifecycle"
+                       for point in re.findall(r"K09-CHECKPOINT:([a-z0-9-]+)", row.get("Output", ""))]
+        if checkpoints != JOINED_CHECKPOINTS:
+            raise ValueError("lifecycle checkpoints missing, duplicated or out of order")
 
 
 def require_mocha(log, count):
@@ -74,20 +83,32 @@ def require_exit(code):
 def artifact_binding(tb):
     # Validate each production runtime used by deploy.cjs against its own
     # compiler input and output. A copied or stale build cannot silently pass.
-    manifest = {}
-    for repo, build, names in [
-        (KC / "solidity/ecdsa", KC / "solidity/ecdsa/build", ["FrostWalletRegistry", "FrostDkgValidator", "FrostAdmission"]),
-        (tb / "solidity", tb / "solidity/build", ["Bridge", "Bank", "FrostBridge", "FrostVerifier", "FrostExposureController"]),
-    ]:
-        for name in names:
-            matches = list((build / "contracts").rglob(name + ".json"))
-            if len(matches) != 1:
-                raise ValueError("missing or ambiguous artifact: " + name)
-            file = matches[0]
+    manifest, infos, inputs = {}, {}, {}
+    for label, repo in [("keep-core", KC / "solidity/ecdsa"), ("tbtc-v2", tb / "solidity")]:
+        build = repo / "build"
+        pending = list(DEPLOYMENT_ARTIFACTS[label])
+        seen = set()
+        while pending:
+            qualified = pending.pop()
+            if qualified in seen:
+                continue
+            seen.add(qualified)
+            source_name, name = qualified.rsplit(":", 1)
+            file = build / source_name / (name + ".json")
+            if not file.is_file():
+                raise ValueError("missing qualified artifact: " + qualified)
             artifact = json.loads(file.read_text())
             debug = json.loads(file.with_suffix(".dbg.json").read_text())
-            info = json.loads((file.parent / debug["buildInfo"]).read_text())
-            compiled = info["output"]["contracts"][artifact["sourceName"]][name]
+            info_path = (file.parent / debug["buildInfo"]).resolve()
+            if info_path not in infos:
+                info = json.loads(info_path.read_text())
+                infos[info_path] = (info, sha(info_path), hashlib.sha256(json.dumps(info["input"], sort_keys=True).encode()).hexdigest())
+            info, info_sha, input_sha = infos[info_path]
+            if artifact["sourceName"] != source_name:
+                raise ValueError("artifact identity mismatch: " + qualified)
+            compiled = info["output"]["contracts"][source_name][name]
+            if artifact.get("abi") != compiled.get("abi"):
+                raise ValueError("artifact ABI mismatch: " + qualified)
             for key in ("bytecode", "deployedBytecode"):
                 if artifact[key] != "0x" + compiled["evm"][key]["object"]:
                     raise ValueError("artifact/compiler output mismatch: " + name)
@@ -98,17 +119,18 @@ def artifact_binding(tb):
                 source_path = repo / source if source.startswith("contracts/") else repo / "node_modules" / source
                 if not source_path.is_file():
                     raise ValueError("missing compiler input: " + source)
-                if source_path.read_text() != value["content"]:
+                if source_path not in inputs:
+                    content = source_path.read_bytes()
+                    inputs[source_path] = (content.decode(), hashlib.sha256(content).hexdigest())
+                if inputs[source_path][0] != value["content"]:
                     raise ValueError("artifact/source mismatch: " + source)
-                sources[source] = {"path": str(source_path.resolve()), "sha256": sha(source_path)}
+                sources[source] = {"path": str(source_path.resolve()), "sha256": inputs[source_path][1]}
             manifest[str(file)] = {"sha256": sha(file), "sources": sources,
-                                   "buildInfoSha256": sha(file.parent / debug["buildInfo"]),
+                                   "buildInfoSha256": info_sha,
                                    "compiler": info.get("solcLongVersion", info.get("solcVersion")),
-                                   "inputSha256": hashlib.sha256(json.dumps(info["input"], sort_keys=True).encode()).hexdigest()}
-            for libraries in artifact.get("linkReferences", {}).values():
-                for library in libraries:
-                    if library not in names:
-                        names.append(library)
+                                   "inputSha256": input_sha}
+            for source, libraries in artifact.get("linkReferences", {}).items():
+                pending.extend(source + ":" + library for library in libraries)
     return manifest
 
 
@@ -194,7 +216,7 @@ def tree_sources(root, patterns):
 def source_snapshot(tb, env):
     sources = {}
     for label, repo, patterns in [
-        ("keep-core", KC, ["pkg", "third_party", "test/frost", "scripts/frost-lifecycle-local.sh", "go.mod", "go.sum", "solidity/ecdsa/contracts", "solidity/ecdsa/hardhat.config.ts", "solidity/ecdsa/package.json", "solidity/ecdsa/yarn.lock"]),
+        ("keep-core", KC, ["."]),
         ("tbtc-v2", tb, ["solidity/contracts", "solidity/test", "solidity/hardhat.config.ts", "solidity/hardhat.k09.config.ts", "solidity/package.json", "solidity/yarn.lock"]),
     ]:
         sources[label] = {"root": str(repo.resolve()),
@@ -218,6 +240,26 @@ def source_snapshot(tb, env):
                 raise ValueError("missing local Go replacement")
             sources["go-local:" + str(root)] = {"root": str(root), "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True, timeout=15).strip(), "files": tree_sources(root, ["."])}
             pending.append(root)
+    metadata = subprocess.check_output(
+        ["go", "list", "-mod=readonly", "-deps", "-test", "-json", "./..."],
+        cwd=KC, env=env, text=True, timeout=120)
+    decoder, offset, inputs = json.JSONDecoder(), 0, {}
+    while offset < len(metadata):
+        offset = re.compile(r"\s*").match(metadata, offset).end()
+        if offset == len(metadata):
+            break
+        package, end = decoder.raw_decode(metadata, offset)
+        offset = end
+        if package.get("ImportPath", "").endswith(".test"):
+            continue  # Generated test-main cache file, not a source input.
+        directory = Path(package.get("Dir", "."))
+        for field in ("GoFiles", "CgoFiles", "CFiles", "HFiles", "SFiles", "SysoFiles", "EmbedFiles", "TestGoFiles", "XTestGoFiles", "TestEmbedFiles", "XTestEmbedFiles"):
+            for name in package.get(field, []):
+                path = (directory / name).resolve()
+                if not path.is_file():
+                    raise ValueError("missing Go build input")
+                inputs[str(path)] = sha(path)
+    sources["go-build-inputs"] = {"root": str(KC.resolve()), "files": dict(sorted(inputs.items()))}
     return sources
 
 
@@ -253,6 +295,7 @@ def main():
     result = {"scope": "K-09a", "evidenceClass": "concrete testing", "status": "running", "requiredStages": REQUIRED,
               "limits": {"cores": 8, "nodeHeapMiB": 8192, "compileHeapMiB": 16384, "stageWallSeconds": 900},
               "privateEvidence": str(private), "publicEvidencePolicy": "generated summaries only; raw logs/artifacts remain private",
+              "k09ExitStatus": "open", "openExitRequirements": ["public legacy obligation through upgrade, cutover and containment into FROST drain/incoming sweep (integration lead)", "real node dispatch and firewall qualification (node integration lead)", "realistic production-settings proof assembled by the FROST producer and accepted by its full entry point (SPV integration owner)"],
               "stages": [], "mutationCampaign": "not run; explicit owner request required"}
     result_path = evidence / "result.json"
     env = local_environment(os.environ)
@@ -262,18 +305,20 @@ def main():
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, interrupted)
     try:
-        for name in ["FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "SNOWFALL_WORKER_SHA256", "FROST_K04_BITCOIND", "FROST_K04_BITCOIND_SHA256", "FROST_C04_LEGACY_BASELINE_BUILD"]:
+        for name in ["FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "SNOWFALL_WORKER_SHA256", "FROST_K04_BITCOIND", "FROST_K04_BITCOIND_SHA256", "FROST_C04_LEGACY_BASELINE_BUILD", "FROST_C04_DIGEST_BINARY"]:
             if not env.get(name):
                 raise ValueError("missing environment: " + name)
         require_pin(env["SNOWFALL_WORKER"], WORKER_SHA)
         require_pin(env["FROST_K04_BITCOIND"], CORE_SHA)
+        require_pin(env["FROST_C04_DIGEST_BINARY"], DIGEST_SHA)
+        env["FROST_C04_DIGEST_SHA256"] = DIGEST_SHA
         if env["SNOWFALL_WORKER_SHA256"] != WORKER_SHA or env["FROST_K04_BITCOIND_SHA256"] != CORE_SHA:
             raise ValueError("environment pins differ from reviewed binaries")
         tb = Path(env["FROST_K03_TBTC"]).resolve()
         env.update({"GOMAXPROCS": "8", "NODE_OPTIONS": "--max-old-space-size=8192",
                     "FROST_C04_LEGACY_PUBLIC_EVIDENCE": str(private / "legacy"),
                     "FROST_C04_LEGACY_EVIDENCE": str(private / "legacy-piece1")})
-        result["environment"] = {k: env[k] for k in ["FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "SNOWFALL_WORKER_SHA256", "FROST_K04_BITCOIND", "FROST_K04_BITCOIND_SHA256", "FROST_C04_LEGACY_BASELINE_BUILD", "HARDHAT_NETWORK", "GOWORK", "GOFLAGS", "GOPROXY", "GOSUMDB"]}
+        result["environment"] = {k: env[k] for k in ["FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "SNOWFALL_WORKER_SHA256", "FROST_K04_BITCOIND", "FROST_K04_BITCOIND_SHA256", "FROST_C04_LEGACY_BASELINE_BUILD", "FROST_C04_DIGEST_BINARY", "FROST_C04_DIGEST_SHA256", "HARDHAT_NETWORK", "GOWORK", "GOFLAGS", "GOPROXY", "GOSUMDB"]}
         sources = source_snapshot(tb, env)
         public_json(evidence / "sources.json", sources)
         result["sourcesSha256"] = sha(evidence / "sources.json")
@@ -290,13 +335,15 @@ def main():
         stages = [("compile", [hardhat, "--config", "hardhat.k09.config.ts", "--network", "hardhat", "compile"], tb / "solidity", None)]
         stages += [("compile-registry", [str(KC / "solidity/ecdsa/node_modules/.bin/hardhat"), "--network", "hardhat", "compile"], KC / "solidity/ecdsa", None), ("artifact-binding", None, KC, None), ("controls", [sys.executable, str(KC / "test/frost/k09-controls.py"), "--self-test"], KC, None), ("config-controls", ["node", "test/bridge/k09-config-control.cjs"], tb / "solidity", None), ("build", ["go", "build", "-p", "2", "./..."], KC, None)]
         for label, names in GO_CASES.items():
-            stages.append((label, ["go", "test", "-json", "./pkg/frost/integration", "-run", "^(" + "|".join(names) + ")$", "-count=1", "-timeout", "14m"], KC, names))
+            stages.append((label, ["go", "test", "-json", "./pkg/maintainer/spv" if label == "proof-depth" else "./pkg/frost/integration", "-run", "^(" + "|".join(names) + ")$", "-count=1", "-timeout", "14m"], KC, names))
         stages += [("spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleSpv.test.ts"), tb / "solidity", 6),
-                   ("upgrade", hardhat_test(hardhat, "test/bridge/Frost.LifecycleUpgrade.test.ts", "test/bridge/Frost.LegacyReconciliation.test.ts"), tb / "solidity", 9)]
+                   ("upgrade", hardhat_test(hardhat, "test/bridge/Frost.LifecycleUpgrade.test.ts", "test/bridge/Frost.LegacyReconciliation.test.ts"), tb / "solidity", 14)]
         for label, command, cwd, expected in stages:
             if args.only and label not in args.only:
                 continue
             current = {"name": label, "command": command, "cwd": str(cwd), "wallLimitSeconds": 900, "status": "running"}
+            if label == "legacy-drain":
+                current["evidenceClass"] = "seeded component control; not the public upgrade/cutover legacy-to-FROST join"
             result["stages"].append(current)
             public_json(result_path, result)
             print(label + ": running", flush=True)

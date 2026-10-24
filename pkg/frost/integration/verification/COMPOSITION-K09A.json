@@ -1,8 +1,8 @@
 {
-  "date": "2026-10-23",
+  "date": "2026-10-24",
   "scope": "K-09a concrete composition evidence appendix; does not close the authoritative V-05 ledger",
   "evidenceClass": "concrete testing",
-  "evidenceRoot": "implementation/K-09/local-2026-10-23",
+  "evidenceRoot": "implementation/K-09/review-feedback-2026-10-24",
   "rows": [
     {
       "v3Row": 1,
@@ -25,7 +25,7 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle/k09-ready"
+        "TestFrostCompleteLocalLifecycle#k09-ready"
       ],
       "remaining": "Production-size and specialist cryptographic qualification remain open."
     },
@@ -50,8 +50,8 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle/k09-ready",
-        "TestFrostCompleteLocalLifecycle/k09-closure"
+        "TestFrostCompleteLocalLifecycle#k09-ready",
+        "TestFrostCompleteLocalLifecycle#k09-closure"
       ],
       "remaining": "Concrete reload witnesses; production storage/fence qualification remains open."
     },
@@ -76,7 +76,8 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle/k09-ready"
+        "TestFrostCompleteLocalLifecycle#k09-ready",
+        "TestFrostCompleteLocalLifecycle#k09-post-cutover-dkg"
       ],
       "remaining": "Controlled stake/beacon and three-seat local policy."
     },
@@ -101,7 +102,7 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle/k09-credit",
+        "TestFrostCompleteLocalLifecycle#k09-credit",
         "TestFrostLifecycleRefundWithSignersOffline"
       ],
       "remaining": "Shared Go/contract construction and Core acceptance; C-07 named qualification is not supplied here."
@@ -127,7 +128,7 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle/k09-payment",
+        "TestFrostCompleteLocalLifecycle#k09-payment",
         "TestReservationTimeoutRace"
       ],
       "remaining": "Local finality and fee policy are OPEN test values."
@@ -148,15 +149,15 @@
         {
           "repository": "keep-core",
           "path": "pkg/maintainer/spv/frost_movement.go",
-          "blob": "63f52450afcdcb4ed5c11e8dbd99aac4ebde2389",
-          "sha256": "22ef0d5bdef2df8b1d2588e19e134cf8d128d88196ea38fd7dcf16a20b8798ca"
+          "blob": "8f965fda8f51e8f12696773f210cfa2d2df824a3",
+          "sha256": "e7bbe25a877db989f74e3eb14e9185936a5f6c78b57897129c04761b95ed59fb"
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle/k09-movement",
+        "TestFrostCompleteLocalLifecycle#k09-movement",
         "TestCrossSchemeDrainAndSweep"
       ],
-      "remaining": "Real Core bytes and production proof entry points; regtest relay is controlled."
+      "remaining": "Live Core/FROST proof joins use controlled regtest relay. TestCrossSchemeDrainAndSweep is a seeded component control; the public upgrade/cutover/containment-to-FROST drain remains OPEN, owned by integration lead."
     },
     {
       "v3Row": 7,
@@ -166,8 +167,8 @@
         {
           "repository": "keep-core",
           "path": "pkg/maintainer/spv/frost_sweeps.go",
-          "blob": "a2dd0d720cc37ff9ffbf8816625b0e417af2de16",
-          "sha256": "5a7d1889e6b542ae4be15e3f2a01638415722ef6120b780703d084135270331f"
+          "blob": "a2f3a332f301ddbb9e9bf95252c6034cd046fa4a",
+          "sha256": "6525519b08287e5e778e33f1a7ac30485910302f836f98b586bdc7475da1585a"
         }
       ],
       "consumerSources": [
@@ -179,10 +180,10 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle/k09-credit",
+        "TestFrostCompleteLocalLifecycle#k09-credit",
         "K-09 realistic-header SPV at production difficulty factor"
       ],
-      "remaining": "Separate mainnet-header validation does not qualify a relay deployment."
+      "remaining": "Separate realistic-header library validation is not the full FROST producer/entry-point join. Difficulty-aware producer depth is unit tested; SPV integration owner retains that OPEN exit requirement."
     },
     {
       "v3Row": 8,
@@ -205,10 +206,10 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle/k09-restarted-defense",
+        "TestFrostCompleteLocalLifecycle#k09-restarted-defense",
         "TestFrostFraudPublicAdmissionDefenseTimeout"
       ],
-      "remaining": "Restarted defense before deadline; inclusion assumptions and C-07 qualification remain owned."
+      "remaining": "SIGKILL active durable claim then same-store defense before deadline, under surviving controlled fence. Host power-loss, authority durability and C-07 qualification remain open."
     },
     {
       "v3Row": 9,
@@ -231,7 +232,7 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle/k09-closure"
+        "TestFrostCompleteLocalLifecycle#k09-closure"
       ],
       "remaining": "Local closure only. K-12 archive inventory and key destruction are outside K-09a."
     },
@@ -243,16 +244,16 @@
         {
           "repository": "keep-core",
           "path": "test/frost/k09-local.py",
-          "blob": "333d9cbab338abab5a5e8df1ea94e9cb0280e0f5",
-          "sha256": "e785bb204af519e52af051330c0654755640528f29970f1a4d47cfa68ffd7329"
+          "blob": "c923171016ee6203d0b62702b0bdb093720d59a3",
+          "sha256": "1a49185743f6add41bfe1a9ac8703f4b28e6389e2f36b18cd3c7e366003ca16d"
         }
       ],
       "consumerSources": [
         {
           "repository": "tbtc-v2",
           "path": "solidity/test/bridge/Frost.LifecycleUpgrade.test.ts",
-          "blob": "0f06159b20fc2930341fdcd921f9706141bfa880",
-          "sha256": "4ba56a3a2c05b5d16255509f0c3ad0698ad00c9a693910c200163a0646a5b686"
+          "blob": "1d6292c340e56b3ebf03e25ff491f12350a6ab8c",
+          "sha256": "aa55251cb2eb3d0f207de2379e22edd5051b16b523570eba2b4bbb27a045d372"
         }
       ],
       "witnesses": [
@@ -261,5 +262,7 @@
       ],
       "remaining": "Local artifact/source and proxy-upgrade correspondence only; C-11/K-10 production deployment remains open."
     }
-  ]
+  ],
+  "checkpointReferenceFormat": "TestName#checkpoint names assertion markers, not Go subtests; k09-local.py requires all ten markers exactly once in order",
+  "coverageLedger": "K09-COVERAGE.json"
 }

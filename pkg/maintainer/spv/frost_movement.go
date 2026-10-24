@@ -17,6 +17,7 @@ type FrostMovementMaintainer struct {
 	Chain         movement.Chain
 	Bitcoin       bitcoin.Chain
 	Confirmations uint
+	ProofDepth    FrostProofDepth
 	boundary      func(string) error
 }
 
@@ -50,8 +51,12 @@ func (m FrostMovementMaintainer) prove(ctx context.Context, wallet, hash [32]byt
 	if m.Confirmations == 0 {
 		return action, errors.New("confirmations must be positive")
 	}
+	depth, err := frostProofDepth(ctx, bitcoin.Hash(hash), m.Confirmations, m.ProofDepth)
+	if err != nil {
+		return action, err
+	}
 	n, err := m.Bitcoin.GetTransactionConfirmations(ctx, bitcoin.Hash(hash))
-	if err != nil || n < m.Confirmations {
+	if err != nil || n < depth {
 		return action, ErrMovementNotConfirmed
 	}
 	done, err := m.proven(ctx, wallet, hash)
@@ -62,7 +67,7 @@ func (m FrostMovementMaintainer) prove(ctx context.Context, wallet, hash [32]byt
 		action.Kind = "already-proven"
 		return action, nil
 	}
-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
+	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), depth, m.Bitcoin)
 	if err != nil {
 		return action, err
 	}

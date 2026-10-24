@@ -52,7 +52,8 @@ before K-09b; K-09a records joins without declaring the campaign complete.
 
 ## Boundary hooks
 
-K-09 adds test orchestration only. Reuse the component hooks verbatim:
+K-09 primarily adds orchestration. Review corrections also wire the FROST CLI
+to the existing difficulty-aware proof policy (see K09-COVERAGE.json). Reuse the component hooks verbatim:
 transaction-frozen, before-intent-record, before-defense-record,
 before-worker-start, after-signature, before-done-accept, challenge-seen,
 defense-record-read, before-defense, defense-submitted, before-timeout-notify,
@@ -61,7 +62,8 @@ claim-submitted. Existing storage/fence faults stay test adapters.
 
 Joined lifecycle checkpoints are test-only assertion names, not production
 hooks: k09-ready, k09-credit, k09-payment, k09-heartbeat, k09-inactivity,
-k09-movement, k09-restarted-defense, k09-closure. Their order and component
+k09-cutover, k09-movement, k09-restarted-defense, k09-closure,
+k09-post-cutover-dkg. Their order and component
 outputs must be checked; aggregating disconnected passing suites is not the
 joined lifecycle witness.
 
@@ -86,7 +88,7 @@ checking only the revert string is insufficient.
 
 ## Bounds and assumptions
 
-Two operator processes; three seats, threshold two (one operator has two
+Two in-process operator bundles with firewall.Disabled; three seats, threshold two (one operator has two
 seats); at least two real DKG wallets. Local finality two blocks, signing
 round ten blocks; D-02/D-09/D-11 values are OPEN test values. D-03 sanctions
 are notification only, D-05 uses AUTH_SELF, and D-10 uses local ceilings.
@@ -98,9 +100,8 @@ scale, production funding gate or proof of the Go source is claimed.
 
 1. K-09a demonstrates the lifecycle; K-09 exit remains incomplete until the
    separately authorized K-09b and required verification/composition exits.
-2. Local scheduling invokes real host components explicitly. Production
-   daemon scheduling and claim-signature exchange stay K-11 scope; this
-   lifecycle must say which operations its harness dispatches.
+2. Local scheduling invokes real host components explicitly. Real node process dispatch and firewall qualification remain OPEN K-09
+   exit requirements. No K-11 deferral is approved by this local record.
 3. Realistic-header SPV can use retained public Bitcoin transaction/header
    vectors through production validation, separate from the live regtest run.
 4. Public-upgrade obligations may use separate reachable legacy fixtures
@@ -120,13 +121,13 @@ The joined test follows the fixed assertion checkpoints, using the existing
 component hooks without adding production hooks. The local closing period is
 one second (OPEN) so the restart defense is checked before the fraud deadline.
 The runbook dispatches the components, validates every required case and
-retains source/command/log hashes. Eleven throwaway guard controls, their harness self-test, and a config-only
+retains source/command/log hashes. Thirteen throwaway guard controls, their harness self-test, and a config-only
 Hardhat control cover the runner guards. Production artifact binding
-walks every linked library (27 artifacts in the recorded run).
+walks all shared fully qualified deployment roots and linked libraries.
 
 A separate offline-refund witness removes operator signing resources before
-constructing the refund. The contract side supplies three reachable public
-legacy upgrade checkpoints and six production-factor SPV cases. The scoped
+constructing the refund. The contract side supplies seven reachable public
+legacy upgrade cases and six production-factor SPV cases. The scoped
 acceptance record is `test/frost/K09.md`; `COMPOSITION-K09A.json` records the
 concrete joins without promoting them into V-05 discharge or source proofs.
 K-09b has not run. All readings above remain OPEN for owner review.
@@ -159,3 +160,15 @@ The focused controls exercise stale imports, edited local replacement code,
 ignored added Go files, external network/fork inputs, child survival after
 success/failure/timeout, forbidden output and the actual runner export path.
 No final mutation campaign or new model result is implied by these controls.
+
+## Second-review corrections (24 October 2026)
+
+See K09-COVERAGE.json for every review item and OPEN exit ownership. The
+legacy-to-FROST drain is explicitly a seeded component control. The public
+upgrade suite is separate, and does not discharge the missing cutover join.
+The SIGKILL witness covers an active durable claim and same-store defense
+recovery under a surviving controlled fence, not machine or authority loss.
+The shared deployment inventory includes independently deployed package
+contracts; source binding includes root/internal/cmd/config Go inputs and
+actual compiler source/embed dependencies. Ten machine checkpoints must pass
+in order. Historical runs do not substitute for fresh changed-source evidence.

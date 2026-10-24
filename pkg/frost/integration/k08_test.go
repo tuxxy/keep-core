@@ -144,8 +144,8 @@ func (w *k08World) heartbeat(round enforcement.Round, operators ...int) ([]enfor
 	return outcomes, errs
 }
 
-// restart closes operator i's store and reopens it from disk, as a process
-// restart does, and returns the reopened records.
+// restart gracefully closes an idle store and reopens it in this process.
+// It is a reload witness, not process-death or interrupted-write evidence.
 func (w *k08World) restart(i int) *store.Scoped {
 	w.t.Helper()
 	domain := w.f.journals[i].Domain()

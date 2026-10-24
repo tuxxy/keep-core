@@ -43,6 +43,16 @@ def probe(source, selected=None):
             with self.assertRaisesRegex(ValueError, "contract cases", msg="control MissingContractCase assertion"):
                 runner["require_mocha"](json.dumps(result), 1)
 
+        def test_checkpoint_order(self):
+            name = "TestFrostCompleteLocalLifecycle"
+            def log(points):
+                return "\n".join([json.dumps({"Action": "output", "Test": name, "Output": "K09-CHECKPOINT:" + point}) for point in points] + [json.dumps({"Action": "pass", "Test": name})])
+            points = runner["JOINED_CHECKPOINTS"]
+            runner["require_go"](log(points), [name])
+            for bad in (points[:-1], points[:1] + points, list(reversed(points))):
+                with self.assertRaisesRegex(ValueError, "lifecycle checkpoints", msg="control CheckpointOrder assertion"):
+                    runner["require_go"](log(bad), [name])
+
         def test_command_failure(self):
             with self.assertRaisesRegex(ValueError, "stage command failed", msg="control CommandFailure assertion"):
                 runner["require_exit"](1)
@@ -53,29 +63,37 @@ def probe(source, selected=None):
             with tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 kc, tb = root / "kc", root / "tb"
-                for repo, names in [(kc / "solidity/ecdsa", ["FrostWalletRegistry", "FrostDkgValidator", "FrostAdmission"]),
-                                    (tb / "solidity", ["Bridge", "Bank", "FrostBridge", "FrostVerifier", "FrostExposureController"])]:
-                    for name in names:
-                        source_name = "contracts/" + name + ".sol"
-                        (repo / "contracts").mkdir(parents=True, exist_ok=True)
-                        (repo / source_name).write_text("original source")
-                        artifact = {"sourceName": source_name, "bytecode": "0x00", "deployedBytecode": "0x00"}
-                        dest = repo / "build" / source_name
+                for label, repo in [("keep-core", kc / "solidity/ecdsa"), ("tbtc-v2", tb / "solidity")]:
+                    for qualified in runner["DEPLOYMENT_ARTIFACTS"][label]:
+                        source, name = qualified.rsplit(":", 1)
+                        path = repo / source if source.startswith("contracts/") else repo / "node_modules" / source
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_text("original source")
+                        artifact = {"sourceName": source, "bytecode": "0x00", "deployedBytecode": "0x00"}
+                        dest = repo / "build" / source
                         dest.mkdir(parents=True, exist_ok=True)
                         (dest / (name + ".json")).write_text(json.dumps(artifact))
-                        (dest / (name + ".dbg.json")).write_text(json.dumps({"buildInfo": "info.json"}))
+                        (dest / (name + ".dbg.json")).write_text(json.dumps({"buildInfo": name + "-info.json"}))
                         dependency = repo / "node_modules/@openzeppelin/contracts/Dependency.sol"
                         dependency.parent.mkdir(parents=True, exist_ok=True)
                         dependency.write_text("original dependency")
-                        info = {"input": {"sources": {source_name: {"content": "original source"}, "@openzeppelin/contracts/Dependency.sol": {"content": "original dependency"}}},
-                                "output": {"contracts": {source_name: {name: {"evm": {"bytecode": {"object": "00"}, "deployedBytecode": {"object": "00"}}}}}}}
-                        (dest / "info.json").write_text(json.dumps(info))
+                        info = {"input": {"sources": {source: {"content": "original source"}, "@openzeppelin/contracts/Dependency.sol": {"content": "original dependency"}}},
+                                "output": {"contracts": {source: {name: {"evm": {"bytecode": {"object": "00"}, "deployedBytecode": {"object": "00"}}}}}}}
+                        (dest / (name + "-info.json")).write_text(json.dumps(info))
                 runner["artifact_binding"].__globals__["KC"] = kc
-                self.assertEqual(len(runner["artifact_binding"](tb)), 8)
+                self.assertEqual(len(runner["artifact_binding"](tb)), sum(map(len, runner["DEPLOYMENT_ARTIFACTS"].values())))
+                if selected == "test_deployed_package_output":
+                    artifact_path = tb / "solidity/build/@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol/ProxyAdmin.json"
+                    bad = json.loads(artifact_path.read_text())
+                    bad["bytecode"] = "0x01"
+                    artifact_path.write_text(json.dumps(bad))
+                    with self.assertRaisesRegex(ValueError, "artifact/compiler output mismatch", msg="control DeployedPackage assertion"):
+                        runner["artifact_binding"](tb)
+                    return
                 if selected == "test_imported_artifact_source":
                     changed = kc / "solidity/ecdsa/node_modules/@openzeppelin/contracts/Dependency.sol"
                 else:
-                    changed = kc / "solidity/ecdsa/contracts/FrostAdmission.sol"
+                    changed = kc / "solidity/ecdsa/contracts/frost/FrostAdmission.sol"
                 changed.write_text("changed source")
                 with self.assertRaisesRegex(ValueError, "artifact/source mismatch", msg="control " + ("ImportedSource" if selected == "test_imported_artifact_source" else "ArtifactSource") + " assertion"):
                     runner["artifact_binding"](tb)
@@ -85,6 +103,15 @@ def probe(source, selected=None):
             nonlocal selected
             previous = selected
             selected = "test_imported_artifact_source"
+            try:
+                self.test_artifact_source()
+            finally:
+                selected = previous
+
+        def test_deployed_package_output(self):
+            nonlocal selected
+            previous = selected
+            selected = "test_deployed_package_output"
             try:
                 self.test_artifact_source()
             finally:
@@ -148,6 +175,20 @@ def probe(source, selected=None):
                     runner["require_sources_unchanged"](before, after)
                 (dep / "added.go").unlink()
                 runner["require_sources_unchanged"](before, runner["source_snapshot"](tb, env))
+                (kc / "internal/probe").mkdir(parents=True)
+                native = kc / "internal/probe/probe.go"
+                native.write_text("package probe\n")
+                before = runner["source_snapshot"](tb, env)
+                self.assertIn("internal/probe/probe.go", before["keep-core"]["files"])
+                native.write_text("package probe\n// changed\n")
+                with self.assertRaisesRegex(ValueError, "sources changed"):
+                    runner["require_sources_unchanged"](before, runner["source_snapshot"](tb, env))
+                native.write_text("package probe\n")
+                (kc / ".gitignore").write_text("internal/probe/added.go\n")
+                before = runner["source_snapshot"](tb, env)
+                (native.parent / "added.go").write_text("package probe\n")
+                with self.assertRaisesRegex(ValueError, "sources changed"):
+                    runner["require_sources_unchanged"](before, runner["source_snapshot"](tb, env))
 
         def test_runner_output_boundary(self):
             # Exercise the actual promotion/error path with real Python children.
@@ -157,12 +198,13 @@ def probe(source, selected=None):
                     required = "TestFrostCompleteLocalLifecycle"
                     output = "secret_share=PRIVATE_SENTINEL" if forbidden else "opaque=PRIVATE_SENTINEL"
                     events = [json.dumps({"Action": "output", "Test": required, "Output": output}), json.dumps({"Action": "pass", "Test": required})]
+                    events[1:1] = [json.dumps({"Action": "output", "Test": required, "Output": "K09-CHECKPOINT:" + point}) for point in runner["JOINED_CHECKPOINTS"]]
                     program = "print(" + repr("\n".join(events)) + ")"
                     launch = runner["run_command"]
                     def command_stub(command, cwd, env, log_path):
                         self.assertEqual(env["HARDHAT_NETWORK"], "hardhat")
                         return launch([sys.executable, "-c", program], root, env, log_path, timeout=3, grace=.1)
-                    env = {k: str(root) for k in ("FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "FROST_K04_BITCOIND", "FROST_C04_LEGACY_BASELINE_BUILD")}
+                    env = {k: str(root) for k in ("FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "FROST_K04_BITCOIND", "FROST_C04_LEGACY_BASELINE_BUILD", "FROST_C04_DIGEST_BINARY")}
                     env.update({"SNOWFALL_WORKER_SHA256": runner["WORKER_SHA"], "FROST_K04_BITCOIND_SHA256": runner["CORE_SHA"]})
                     globals_ = runner["main"].__globals__
                     with patch.dict(os.environ, env), patch.object(sys, "argv", ["runner", str(root / "public"), "--only", "joined"]), patch.dict(globals_, {"require_pin": lambda *args: None, "source_snapshot": lambda *args: {}, "artifact_binding": lambda *args: {}, "run_command": command_stub}), patch.object(subprocess, "check_output", return_value="1.2.3"):
@@ -249,9 +291,11 @@ def main():
         ("MismatchedPin", "test_mismatched_pin", '    if sha(path) != expected:', '    if False:'),
         ("SkippedGo", "test_skipped_go", '        if outcomes != ["pass"]:', '        if False:'),
         ("MissingContractCase", "test_missing_contract_case", '            if stats.get("passes") != count or stats.get("failures") != 0 or stats.get("pending") != 0 or stats.get("tests") != count:', '            if False:'),
+        ("CheckpointOrder", "test_checkpoint_order", '        if checkpoints != JOINED_CHECKPOINTS:', '        if False:'),
         ("CommandFailure", "test_command_failure", '    if code != 0:', '    if False:'),
-        ("ArtifactSource", "test_artifact_source", '                if source_path.read_text() != value["content"]:', '                if False:'),
-        ("ImportedSource", "test_imported_artifact_source", '                if source_path.read_text() != value["content"]:', '                if source.startswith("contracts/") and source_path.read_text() != value["content"]:'),
+        ("ArtifactSource", "test_artifact_source", '                if inputs[source_path][0] != value["content"]:', '                if False:'),
+        ("ImportedSource", "test_imported_artifact_source", '                if inputs[source_path][0] != value["content"]:', '                if source.startswith("contracts/") and inputs[source_path][0] != value["content"]:'),
+        ("DeployedPackage", "test_deployed_package_output", '                if artifact[key] != "0x" + compiled["evm"][key]["object"]:', '                if False:'),
         ("LocalNetwork", "test_local_network", '"HARDHAT_NETWORK": "hardhat",', '"HARDHAT_NETWORK": parent.get("HARDHAT_NETWORK"),'),
         ("SecretOutput", "test_forbidden_output", '    if SECRET_OUTPUT.search(text):', '    if False:'),
         ("LocalReplacement", "test_local_replacement", '    if before != after:', '    if False:'),
@@ -268,6 +312,7 @@ def main():
                 weakened = weakened.replace('    if any(r.get("Action") in ("fail", "skip") for r in rows):', '    if any(r.get("Action") == "fail" for r in rows):')
             target = Path(tmp) / (name + ".py")
             target.write_text(weakened)
+            (Path(tmp) / "k09-artifacts.json").write_text((HERE / "k09-artifacts.json").read_text())
             result = subprocess.run([sys.executable, str(Path(__file__).resolve()), "--probe", str(target), "--case", case], capture_output=True, text=True, timeout=30)
             if result.returncode != 1 or "AssertionError: " not in result.stderr or ("control " + name + " assertion") not in result.stderr or "ERROR:" in result.stderr:
                 raise RuntimeError("control is not killed at its own assertion: " + name + "\n" + result.stderr)

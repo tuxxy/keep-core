@@ -1,16 +1,20 @@
 package integration
 
 import (
+	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
+	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
 	legacyabi "github.com/keep-network/keep-core/pkg/chain/ethereum/tbtc/gen/abi"
 	"github.com/keep-network/keep-core/pkg/frost/enforcement"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
@@ -46,6 +50,7 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 		return w.legacy.UpdateWalletParameters(o, localParameters.WalletCreationPeriod, localParameters.WalletCreationMinBtcBalance, localParameters.WalletCreationMaxBtcBalance, localParameters.WalletClosureMinBtcBalance, localParameters.WalletMaxAge, localParameters.WalletMaxBtcTransfer, 1)
 	})
 	t.Log("k09-ready: two wallets, durable keys on both real operators")
+	t.Log("K09-CHECKPOINT:k09-ready")
 
 	// The first main comes only from a Core-funded deposit and real sweep.
 	w.fundBySweep()
@@ -53,6 +58,7 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 		t.Fatal("k09-credit: sweep did not activate funded custody")
 	}
 	t.Log("k09-credit: deposit -> signed sweep -> SPV -> Bank credit")
+	t.Log("K09-CHECKPOINT:k09-credit")
 
 	// The reservation must consume that sweep's main, and the payment must
 	// become the main used by the later movement.
@@ -89,6 +95,7 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 	}
 	mainAfterPayment := w.custody(w.a.id)
 	t.Logf("k09-payment: settled %x, change is next custody", payment.BitcoinTransactionHash())
+	t.Log("K09-CHECKPOINT:k09-payment")
 
 	// Complete one signed heartbeat before the absence window. Its success
 	// must not count toward inactivity.
@@ -100,6 +107,7 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 		}
 	}
 	t.Log("k09-heartbeat: guarded heartbeat on both operators")
+	t.Log("K09-CHECKPOINT:k09-heartbeat")
 	anchor := round.Anchor
 	for n := 0; n < k08Failures; n++ {
 		round = e.nextHeartbeat(anchor)
@@ -125,6 +133,7 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 		t.Fatal("k09-inactivity: claim must start movement:", err)
 	}
 	t.Log("k09-inactivity: authenticated seat 3 absence -> threshold claim -> MovingFunds")
+	t.Log("K09-CHECKPOINT:k09-inactivity")
 
 	// Cut over DKG and contain new exposure before the existing movement.
 	// These exits must keep working with both gates closed.
@@ -141,8 +150,8 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 	cutoverCredit := w.balance(w.adminAddr)
 	if _, err = w.trySend(func(o *bind.TransactOpts) (*types.Transaction, error) {
 		return w.legacy.RequestNewWallet(o, legacyabi.BitcoinTxUTXO{})
-	}); err == nil {
-		t.Fatal("k09-cutover: new legacy DKG request was accepted")
+	}); err == nil || !strings.Contains(err.Error(), "Legacy wallet creation closed") {
+		t.Fatal("k09-cutover: expected legacy creation gate refusal:", err)
 	}
 	afterMode, err := w.bridge.FrostCreationMode(&bind.CallOpts{Context: ctx})
 	if err != nil || afterMode != mode || !reflect.DeepEqual(cutoverCustody, w.custody(w.a.id)) || cutoverOpen != w.obligations(w.a.id) || cutoverCredit != w.balance(w.adminAddr) {
@@ -152,6 +161,18 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 	w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
 		return controller.Transact(o, "contain", crypto.Keccak256Hash([]byte("K-09 local containment; OPEN")))
 	})
+	containedA, containedB := w.custody(w.a.id), w.custody(w.b.id)
+	containedOpen, containedCredit := w.obligations(w.a.id), w.balance(w.adminAddr)
+	containedTreasury := w.balance(w.f.deployment.Treasury)
+	if _, err = w.trySend(func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return w.bridge.RevealFrostDeposit(o, abiTerms(w.terms(3_000, w.locktime(k06RefundDelay), [20]byte{})), frostbridgeabi.BitcoinTxInfo{}, 0)
+	}); err == nil || !strings.Contains(err.Error(), "FROST exposure contained") {
+		t.Fatal("k09-containment: expected the exposure gate before deposit validation:", err)
+	}
+	if !reflect.DeepEqual(containedA, w.custody(w.a.id)) || !reflect.DeepEqual(containedB, w.custody(w.b.id)) || containedOpen != w.obligations(w.a.id) || containedCredit != w.balance(w.adminAddr) || containedTreasury != w.balance(w.f.deployment.Treasury) {
+		t.Fatal("k09-containment: rejected reveal changed custody, obligations or credits")
+	}
+	t.Log("K09-CHECKPOINT:k09-cutover")
 	if targets := w.commit(w.a); len(targets) != 1 || targets[0] != w.b.label() {
 		t.Fatalf("k09-movement: targets %x", targets)
 	}
@@ -168,6 +189,7 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 		t.Fatal("k09-movement: value conservation or receiving wallet state")
 	}
 	t.Log("k09-movement: payment change -> B commitment -> movement -> incoming sweep under containment/cutover")
+	t.Log("K09-CHECKPOINT:k09-movement")
 
 	// Challenge the actual movement signature. The complete relevant frame
 	// must survive a refused close. Restart a store and defend from its
@@ -189,10 +211,13 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 	if err = w.a.closures[0].Close(ctx, w.a.id); !errors.Is(err, movement.ErrObligations) {
 		t.Fatal("k09-closure: close with public challenge:", err)
 	}
+	if err = w.chain.FinalizeClosing(ctx, w.a.id); err == nil || !strings.Contains(err.Error(), "FROST closure obligations") {
+		t.Fatal("k09-closure: contract must refuse the open challenge:", err)
+	}
 	if !reflect.DeepEqual(beforeA, w.custody(w.a.id)) || !reflect.DeepEqual(beforeB, w.custody(w.b.id)) || beforeOpen != w.obligations(w.a.id) || beforeState != w.state(w.a.id) || credit != w.balance(w.adminAddr) || treasury != w.balance(w.f.deployment.Treasury) {
 		t.Fatal("k09-closure: rejected closure changed custody, obligations, state or credits")
 	}
-	records := e.restart(1)
+	records := k09CrashReopen(t, w.f, 1, w.f.journals[1].Domain())
 	defender := &enforcement.Defender{Chain: e.own[1], Wallet: w.a.id, Records: records, From: w.fromBlock}
 	challenge, err := w.chain.Challenge(ctx, w.a.id, digest)
 	if err != nil {
@@ -209,6 +234,7 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 	if err != nil || defendedAt >= challenge.ReportedAt+timeout {
 		t.Fatal("k09-restarted-defense: missed the public challenge deadline", err)
 	}
+	t.Log("K09-CHECKPOINT:k09-restarted-defense")
 	w.mine(k06Finality)
 	if w.obligations(w.a.id) != 0 {
 		t.Fatal("k09-closure: obligations remain after defense")
@@ -228,4 +254,46 @@ func TestFrostCompleteLocalLifecycle(t *testing.T) {
 		}
 	}
 	t.Logf("k09-closure: A closed after restarted defense; B retains %d sats; both keys retained", remaining)
+	t.Log("K09-CHECKPOINT:k09-closure")
+	// Creation after irreversible cutoff must still use a real FROST DKG.
+	// Do this after settlement so the additional eligible target cannot alter
+	// the already checked one-target movement commitment.
+	w.f.nextEpoch()
+	mining, stopMining := context.WithTimeout(ctx, 60*time.Second)
+	defer stopMining()
+	miningDone := make(chan struct{})
+	go func() {
+		defer close(miningDone)
+		ticker := time.NewTicker(25 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-mining.Done():
+				return
+			case <-ticker.C:
+				w.f.chainMu.Lock()
+				_ = w.f.rpc.CallContext(mining, nil, "evm_mine")
+				w.f.chainMu.Unlock()
+			}
+		}
+	}()
+	fresh, failures := w.f.runWithContext(mining)
+	stopMining()
+	<-miningDone
+	for i, failure := range failures {
+		if failure != nil {
+			t.Fatalf("post-cutover FROST DKG operator %d: %v", i, failure)
+		}
+		if _, failure = w.f.journals[i].LoadKey(ctx); failure != nil {
+			t.Fatal(failure)
+		}
+	}
+	if len(fresh) == 0 || w.state(fresh[0].ID) != movement.StateReadyUnfunded || fresh[0].ID == w.a.id || fresh[0].ID == w.b.id {
+		t.Fatal("post-cutover DKG must create a distinct wallet")
+	}
+	mode, err = w.bridge.FrostCreationMode(&bind.CallOpts{Context: ctx})
+	if err != nil || mode != 2 {
+		t.Fatal("creation mode rolled back", mode, err)
+	}
+	t.Log("K09-CHECKPOINT:k09-post-cutover-dkg")
 }

@@ -13,14 +13,68 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
+	legacyabi "github.com/keep-network/keep-core/pkg/chain/ethereum/tbtc/gen/abi"
+	"github.com/keep-network/keep-core/pkg/frost"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	frostnode "github.com/keep-network/keep-core/pkg/frost/node"
+	"github.com/keep-network/keep-core/pkg/maintainer/spv"
 )
 
-// Pause the actual DKG executor after chain certification, before its local
-// wallet save. This is the permanently crash-looping state from K09-21.
+// A certified wallet interrupted before its local ReadyUnfunded save must
+// recover its durable key and actually spend a subsequent incoming drain.
 func TestFrostNodeCertifiedEpochInterruption(t *testing.T) {
-	testFrostNodeEpochInterruption(t, "after-readiness-postcondition")
+	testCertifiedRecovery(t, "after-readiness-postcondition")
+}
+func TestFrostNodeCertificateSubmitInterruption(t *testing.T) {
+	testCertifiedRecovery(t, "after-certificate-submit")
+}
+func testCertifiedRecovery(t *testing.T, boundary string) {
+	for _, killed := range []bool{false, true} {
+		name := "sigint"
+		if killed {
+			name = "sigkill"
+		}
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("FROST_K09_PAUSE_BOUNDARY", boundary)
+			var origin k09LegacyOrigin
+			k6 := newK06WorldWith(t, k06Options{mode: "k09-public", remote: true, prepare: bootstrapPublicLegacy(t, &origin), beforeDKG: func(f *fixture) {
+				node := f.remotes[1]
+				paused := false
+				for until := time.Now().Add(90 * time.Second); time.Now().Before(until); time.Sleep(50 * time.Millisecond) {
+					if _, err := os.Stat(node.config.VerificationPause.Marker); err == nil {
+						paused = true
+						break
+					}
+				}
+				if !paused {
+					t.Fatal("real certified recovery boundary not reached")
+				}
+				restartRemoteNode(f, 1, killed)
+			}})
+			status, err := k6.f.remotes[1].status(k6.f.ctx)
+			if err != nil || len(status.Wallets) != 1 || len(status.LostEpochs) != 0 {
+				t.Fatal("durable certified seat was not recovered", err)
+			}
+			w := &k07World{k06World: k6}
+			w.view = &movement.View{Chain: k6.chain, Policy: movement.Policy{FinalityBlocks: k06Finality}}
+			w.proofs = spv.FrostMovementMaintainer{Chain: k6.chain, Bitcoin: k6.btc, Confirmations: 1}
+			w.legacy, err = legacyabi.NewBridge(k6.f.deployment.Bridge, k6.f.client)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var requests []frost.DKGRequest
+			for _, executor := range k6.f.executors {
+				requests = append(requests, executor.Request)
+			}
+			w.a = w.host(k6.wallet, k6.journals, requests, k6.locks)
+			w.b = w.a // One eligible wallet: the drain must reach the recovered key.
+			finishPublicLegacyFlow(t, w, origin, true)
+			if w.custody(w.a.id).Value == 0 {
+				t.Fatal("recovered certified key did not settle incoming")
+			}
+			t.Log("K09-RECOVERY:", boundary, name, "certified key recovered and incoming settled")
+		})
+	}
 }
 
 func TestFrostNodeSignedIncomingInterruption(t *testing.T) {
@@ -241,4 +295,62 @@ func testFrostNodeEpochInterruption(t *testing.T, boundary string) {
 			t.Log("K09-RECOVERY:", boundary, "interruption isolated; new epoch ready")
 		})
 	}
+}
+
+// Public recipes are stale after a fee-policy change. Neither operator has
+// released a signature at this boundary. Both must abandon the old durable
+// recipe after SIGKILL, agree the new one and consume the incoming output once.
+func TestFrostNodeUnsignedIncomingReplansAfterRestart(t *testing.T) {
+	var restarted bool
+	var expected, walletID [32]byte
+	w := runPublicLegacyFlow(t, true, func(w *k07World) {
+		for i, node := range w.f.remotes {
+			node.config.VerificationPause = &frostnode.VerificationPause{Boundary: "after-incoming-retain", Marker: filepath.Join(t.TempDir(), "public-retained-boundary")}
+			raw, err := json.Marshal(node.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = os.WriteFile(node.command.Args[2], raw, 0600); err != nil {
+				t.Fatal(err)
+			}
+			restartRemoteNode(w.f, i)
+		}
+		w.observeIncoming = func() {
+			if restarted {
+				return
+			}
+			for _, node := range w.f.remotes {
+				if _, err := os.Stat(node.config.VerificationPause.Marker); err != nil {
+					return
+				}
+			}
+			for _, target := range []*walletHost{w.a, w.b} {
+				p := movement.Planner{View: w.view, Bitcoin: w.btc, Wallet: target.desc, Genesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash), FeeRate: 3, MaximumSatPerVByte: k06MaxRate}
+				plan, err := p.IncomingSweep(w.f.ctx)
+				if err == nil {
+					expected, walletID = plan.BitcoinTransactionHash(), target.id
+				}
+			}
+			if expected == ([32]byte{}) {
+				t.Fatal("stale recipe has no public replacement")
+			}
+			for i, node := range w.f.remotes {
+				node.config.FeeRate = 3
+				node.config.VerificationPause = nil
+				raw, err := json.Marshal(node.config)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err = os.WriteFile(node.command.Args[2], raw, 0600); err != nil {
+					t.Fatal(err)
+				}
+				restartRemoteNode(w.f, i, true)
+			}
+			restarted = true
+		}
+	})
+	if !restarted || w.custody(walletID).MainOutpoint != movement.OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(expected)}) {
+		t.Fatal("unsigned stale plan did not converge after SIGKILL")
+	}
+	t.Log("K09-RECOVERY: unsigned stale intent abandoned durably; replacement settled once")
 }

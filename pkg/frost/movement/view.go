@@ -11,6 +11,7 @@ import (
 
 // Refusals of a movement or incoming sweep. Each stops it before any grant.
 var (
+	ErrMainReserved = fmt.Errorf("%w: target main reserved", ErrPlanMismatch)
 	ErrNotFinal     = errors.New("FROST movement record is not finalized")
 	ErrPlanMismatch = errors.New("FROST movement plan differs from the C-06 record")
 	ErrWalletState  = errors.New("FROST wallet state does not allow this movement")
@@ -56,8 +57,11 @@ type Target struct {
 
 // View reads C-06 state for planning and authorization.
 type View struct {
-	Chain    Reader
-	Policy   Policy
+	Chain  Reader
+	Policy Policy
+	// At restricts a planning snapshot to a common canonical round anchor.
+	// Authorization views leave it nil and always recheck current state.
+	At       *uint64
 	boundary func(string) error
 }
 
@@ -174,6 +178,16 @@ func (v *View) Target(ctx context.Context, wallet [32]byte, keys [][32]byte) (Ta
 	head, err := v.Chain.Head(ctx)
 	if err != nil {
 		return Target{}, err
+	}
+	if v.At != nil {
+		if *v.At > head.Number {
+			return Target{}, ErrNotFinal
+		}
+		hash, err := v.Chain.HeaderHash(ctx, *v.At)
+		if err != nil {
+			return Target{}, err
+		}
+		head = redemption.Head{Number: *v.At, Hash: hash}
 	}
 	t := Target{Head: head}
 	if t.Wallet, err = v.Chain.Wallet(ctx, head.Number, Label(wallet)); err != nil {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/keep-network/keep-core/pkg/frost"
 )
 
 type outcomeChain struct {
@@ -66,6 +67,14 @@ func TestReconcileWalletOutcome(t *testing.T) {
 type outcomeJournal struct {
 	Journal
 	saved WalletRecord
+	key   *frost.KeyReady
+}
+
+func (j *outcomeJournal) LoadKey(context.Context) (frost.KeyReady, error) {
+	if j.key == nil {
+		return frost.KeyReady{}, errors.New("no durable key")
+	}
+	return *j.key, nil
 }
 
 func (j *outcomeJournal) SaveWallet(_ context.Context, w WalletRecord) error { j.saved = w; return nil }
@@ -233,5 +242,36 @@ func TestMonitorPublicationAfterObservationSnapshot(t *testing.T) {
 	}
 	if err := e.inspectSubmission(context.Background()); err != nil || !published {
 		t.Fatalf("canonical older snapshot falsely classified: published=%t error=%v", published, err)
+	}
+}
+
+func TestDurableKeyCancellationDoesNotQuarantine(t *testing.T) {
+	for _, ready := range []bool{false, true} {
+		j := &outcomeJournal{}
+		e := Executor{Journal: j, keyReady: ready, record: WalletRecord{ID: [32]byte{1}, State: "RegisteredPendingReady"}}
+		_, err := e.finishFailure(context.Background(), context.Canceled)
+		if !errors.Is(err, context.Canceled) || j.saved.Quarantined == ready {
+			t.Fatal("control DurableKeyInterruption assertion: wrong cancellation classification", ready, err)
+		}
+	}
+	// A classified approval conflict still dominates a completed key.
+	j := &outcomeJournal{}
+	e := Executor{Journal: j, keyReady: true, callbackErr: ErrQuarantined, record: WalletRecord{ID: [32]byte{1}, State: "RegisteredPendingReady"}}
+	_, err := e.finishFailure(context.Background(), context.Canceled)
+	if !errors.Is(err, ErrQuarantined) || !j.saved.Quarantined {
+		t.Fatal("durable key erased an approval conflict")
+	}
+}
+
+func TestDurableKeySurvivesLostReplyAndRPCFailure(t *testing.T) {
+	for _, lostReply := range []bool{false, true} {
+		descriptor := Descriptor{Epoch: 9, SnowfallDescriptor: [32]byte{1}, OutputKey: [32]byte{2}}
+		key := &frost.KeyReady{Candidate: frost.Candidate{Epoch: 9, Descriptor: descriptor.SnowfallDescriptor, OutputKey: descriptor.OutputKey}}
+		j := &outcomeJournal{key: key}
+		e := Executor{Journal: j, keyReady: !lostReply, record: WalletRecord{ID: [32]byte{3}, State: "RegisteredPendingReady", Descriptor: descriptor}}
+		_, err := e.finishFailure(context.Background(), errors.New("RPC unavailable after certification"))
+		if err == nil || j.saved.Quarantined {
+			t.Fatal("completed key quarantined by an unclassified transient failure")
+		}
 	}
 }

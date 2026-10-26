@@ -244,6 +244,10 @@ func TestPublicLegacyUpgradeCutoverDrainAndSweep(t *testing.T) { runPublicLegacy
 func runPublicLegacyFlow(t *testing.T, remote bool, beforeDrain ...func(*k07World)) *k07World {
 	var origin k09LegacyOrigin
 	w := newK07WorldPrepared(t, "k09-public", bootstrapPublicLegacy(t, &origin), remote)
+	return finishPublicLegacyFlow(t, w, origin, remote, beforeDrain...)
+}
+
+func finishPublicLegacyFlow(t *testing.T, w *k07World, origin k09LegacyOrigin, remote bool, beforeDrain ...func(*k07World)) *k07World {
 	ctx := w.f.ctx
 	opts := &bind.CallOpts{Context: ctx}
 	request, err := w.legacy.PendingRedemptions(opts, origin.requestKey)
@@ -292,7 +296,7 @@ func runPublicLegacyFlow(t *testing.T, remote bool, beforeDrain ...func(*k07Worl
 	}
 	if _, err = w.trySend(func(o *bind.TransactOpts) (*types.Transaction, error) {
 		return w.legacy.SubmitMovingFundsCommitment(o, origin.wallet.pkh, origin.wallet.utxo, []uint32{1}, big.NewInt(0), [][20]byte{origin.legacyTarget})
-	}); err == nil || !strings.Contains(err.Error(), "FROST drain disabled") {
+	}); err == nil || !strings.Contains(err.Error(), "Legacy targets disabled after cutover") {
 		t.Fatal("post-cutover legacy routing accepted", err)
 	}
 	sourceAfter, e1 := w.legacy.Wallets(opts, origin.wallet.pkh)

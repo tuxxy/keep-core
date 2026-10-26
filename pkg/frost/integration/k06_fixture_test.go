@@ -90,10 +90,11 @@ func newK06World(t *testing.T) *k06World {
 // still mined; afterDKG must leave f.journals and f.executors on the first
 // wallet, which this world wires.
 type k06Options struct {
-	remote   bool
-	prepare  func(*fixture, string, string) *coreChain
-	mode     string
-	afterDKG func(f *fixture)
+	remote    bool
+	prepare   func(*fixture, string, string) *coreChain
+	mode      string
+	beforeDKG func(f *fixture)
+	afterDKG  func(f *fixture)
 }
 
 func newK06WorldWith(t *testing.T, options k06Options) *k06World {
@@ -108,6 +109,9 @@ func newK06WorldWith(t *testing.T, options k06Options) *k06World {
 		setup.prepare = func(f *fixture, url, output string) { core = options.prepare(f, url, output) }
 	}
 	f := setupWith(t, "1,1,2", setup)
+	if options.beforeDKG != nil {
+		options.beforeDKG(f)
+	}
 	if core == nil {
 		core = startCore(t, f.ctx)
 	}

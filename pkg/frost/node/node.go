@@ -440,7 +440,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) (err error) {
 	} else if loadErr != nil {
 		return loadErr
 	} else {
-		if record.State != "ReadyUnfunded" || record.Quarantined {
+		if (record.State != "ReadyUnfunded" && record.State != "RegisteredPendingReady") || record.Quarantined {
 			return &lostEpochError{epoch, seats}
 		}
 		stage = "approval-view"
@@ -476,6 +476,10 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) (err error) {
 		}
 		if err = engine.ReloadKey(ctx, frost.SigningRequest{Group: w.request.Group, LocalSeats: seats, Selected: selection.Roster(), Attempt: reload, Key: key}, frost.Providers{Transport: tr, Store: journal, Acceptance: acceptance}); err != nil {
 			return &stageError{"worker-reload", err}
+		}
+		record.State = "ReadyUnfunded"
+		if err = journal.SaveWallet(ctx, record); err != nil {
+			return &stageError{"ready-record-recovery", err}
 		}
 	}
 	w.record = record
@@ -649,11 +653,56 @@ func (n *Node) Run(ctx context.Context) error {
 func (n *Node) incoming(ctx context.Context, w *wallet) error {
 	operation, stop := context.WithTimeout(ctx, time.Duration(n.cfg.ProtocolSeconds)*time.Second)
 	defer stop()
+	head, err := n.chain.Head(operation)
+	if err != nil {
+		return err
+	}
+	custody, err := n.chain.Custody(operation, head.Number, w.record.ID)
+	if err != nil {
+		return err
+	}
+	if custody.ActiveReservation != ([32]byte{}) {
+		return &stageError{"incoming-reservation", movement.ErrMainReserved}
+	}
+	round, err := w.mover.Current(operation)
+	if err != nil {
+		return err
+	}
+	// Every operator reads the same canonical anchor, rather than its own
+	// polling head. Keep the ordinary authority on a fresh, unpinned view.
+	planning := *w.mover.Authority.View
+	planning.At = &round.Anchor
+	planner := movement.Planner{View: &planning, Bitcoin: n.btc, Wallet: w.record.Descriptor, Genesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash), FeeRate: n.cfg.FeeRate, MaximumSatPerVByte: n.cfg.MaximumSatPerVByte}
+	if w.plan != nil {
+		settled, err := n.reconcileIncoming(operation, w)
+		if err != nil || settled {
+			return err
+		}
+		// Never discard a signed or possibly released intent. With no release,
+		// a changed canonical recipe (including a changed main) can be retired
+		// durably and all operators can converge on the current round's recipe.
+		if !w.signed {
+			safe, err := w.mover.CanAbandon(operation, w.plan)
+			if err != nil {
+				return err
+			}
+			if safe {
+				fresh, planErr := planner.IncomingSweep(operation)
+				if planErr == nil && fresh.Commitment() != w.plan.Commitment() || errors.Is(planErr, movement.ErrNothingIncoming) || errors.Is(planErr, movement.ErrMainReserved) {
+					if _, err := w.abandonIncoming(operation); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
 	if w.plan == nil {
-		planner := movement.Planner{View: w.mover.Authority.View, Bitcoin: n.btc, Wallet: w.record.Descriptor, Genesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash), FeeRate: n.cfg.FeeRate, MaximumSatPerVByte: n.cfg.MaximumSatPerVByte}
 		plan, err := planner.IncomingSweep(operation)
 		if errors.Is(err, movement.ErrNothingIncoming) {
 			return nil
+		}
+		if errors.Is(err, movement.ErrMainReserved) {
+			return &stageError{"incoming-reservation", err}
 		}
 		if err != nil {
 			return err
@@ -663,13 +712,9 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 			w.plan = nil
 			return err
 		}
-	}
-	// Another selected operator can finish the proof while this process is
-	// still returning from signing. Reconcile that exact plan before retrying
-	// authorization against its now-consumed inputs.
-	settled, err := n.reconcileIncoming(operation, w)
-	if err != nil || settled {
-		return err
+		if err = n.boundary(operation, w.record.Descriptor.Epoch, "after-incoming-retain"); err != nil {
+			return err
+		}
 	}
 	if !w.signed {
 		w.signed, err = w.mover.Signed(operation, w.plan)
@@ -678,10 +723,6 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 		}
 	}
 	if !w.signed {
-		round, err := w.mover.Current(operation)
-		if err != nil {
-			return err
-		}
 		n.setState("signing")
 		result, signErr := w.mover.Sign(operation, w.plan, round.Number)
 		if signErr != nil {

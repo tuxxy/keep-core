@@ -545,3 +545,104 @@ func TestClosureNeedsAnEmptyLedgerTwice(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Two polling heads straddle the finality of a second incoming record. The
+// same round anchor must still produce exactly the same transaction recipe.
+func TestIncomingPlansUseCommonRoundAnchor(t *testing.T) {
+	w := newWorld(t)
+	target := w.targets[0]
+	for i, block := range []uint64{90, 91} {
+		tx := [32]byte{byte(70 + i)}
+		key := OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(tx)})
+		w.f.incoming[key] = Incoming{Target: target.ID, Source: w.source.ID, Value: 99000, State: IncomingPending, SweepFeeCap: 5000}
+		w.f.incomingLog = append(w.f.incomingLog, IncomingLog{Log: Log{Block: block, BlockHash: w.f.hash(block)}, Outpoint: key, Target: target.ID, Source: w.source.ID, TransactionHash: tx})
+	}
+	anchor := uint64(92)
+	view := *w.view
+	view.At = &anchor
+	p := w.planner()
+	p.View = &view
+	p.Wallet = target.Descriptor
+	p.Bitcoin = unspent{}
+	var commitment [32]byte
+	for _, head := range []uint64{93, 94} {
+		w.f.head = head
+		plan, err := p.IncomingSweep(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(plan.IncomingOutputs()) != 1 {
+			t.Fatal("control IncomingAnchor assertion: polling head changed input set")
+		}
+		if commitment != ([32]byte{}) && plan.Commitment() != commitment {
+			t.Fatal("round plan diverged")
+		}
+		commitment = plan.Commitment()
+	}
+	w.f.head = 102
+	anchor = 100
+	plan, err := p.IncomingSweep(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.IncomingOutputs()) != 2 {
+		t.Fatal("next common round did not include both finalized outputs")
+	}
+}
+func TestMovementCannotAbandonPossibleRelease(t *testing.T) {
+	for _, kind := range []redemption.Kind{"", redemption.KindPossibleRelease, redemption.KindMovementSigned} {
+		w := newWorld(t)
+		plan := w.committed(t)
+		ledger := redemption.Ledger{Journal: &journal{records: map[[32]byte][]byte{}}}
+		if kind != "" {
+			if err := ledger.Append(context.Background(), redemption.Entry{Reservation: ID(plan), Kind: kind}); err != nil {
+				t.Fatal(err)
+			}
+		}
+		mover := Mover{Ledger: ledger}
+		safe, err := mover.CanAbandon(context.Background(), plan)
+		if err != nil || safe != (kind == "") {
+			t.Fatal("control IncomingRelease assertion: abandonment classification", kind, safe, err)
+		}
+	}
+}
+
+// A finalized redemption changes the main that an unsigned incoming recipe
+// expected. This controlled custody adapter checks the stale/fresh handoff;
+// it is not evidence of an autonomous node redemption payment/proof.
+func TestIncomingPlanRebuildsAfterFinalizedMainChange(t *testing.T) {
+	ctx := context.Background()
+	w := newWorld(t)
+	target := w.targets[0]
+	hash := [32]byte{71}
+	out := bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(hash)}
+	key := OutpointKey(out)
+	w.f.incoming[key] = Incoming{Target: target.ID, Value: 99000, State: IncomingPending, SweepFeeCap: 5000}
+	w.f.incomingLog = []IncomingLog{{Log: Log{Block: 90, BlockHash: w.f.hash(90)}, Outpoint: key, Target: target.ID, TransactionHash: hash}}
+	p := w.planner()
+	p.Wallet = target.Descriptor
+	p.Bitcoin = unspent{}
+	old, err := p.IncomingSweep(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	script, _ := bitcoin.PayToTaproot(target.Descriptor.OutputKey)
+	main := bitcoin.PreviousOutput{Outpoint: bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash{72}}, Value: 60000, PublicKeyScript: script}
+	mainKey := OutpointKey(main.Outpoint)
+	w.f.custody[target.ID] = redemption.Custody{Generation: 1, StateVersion: 3, Value: 60000, MainOutpoint: mainKey}
+	w.f.outputs[mainKey] = redemption.CustodyOutput{WalletID: target.ID, Value: 60000}
+	if _, err := (&Authority{View: w.view}).AuthorizeSweep(ctx, old); !errors.Is(err, ErrPlanMismatch) {
+		t.Fatal("stale main recipe remained authorized", err)
+	}
+	p.Bitcoin = unspent{outs: []bitcoin.PreviousOutput{main}}
+	fresh, err := p.IncomingSweep(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fresh.Commitment() == old.Commitment() || fresh.MovementMain() == nil || fresh.MovementMain().Outpoint != main.Outpoint {
+		t.Fatal("replacement recipe did not use finalized custody")
+	}
+	if _, err := (&Authority{View: w.view}).AuthorizeSweep(ctx, fresh); err != nil {
+		t.Fatal("fresh recipe refused", err)
+	}
+}

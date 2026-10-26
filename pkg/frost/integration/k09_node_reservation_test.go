@@ -2,6 +2,7 @@ package integration
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,13 +17,13 @@ import (
 func TestFrostNodeReservationDefersWithoutExit(t *testing.T) {
 	w := runPublicLegacyFlow(t, true)
 	ctx := w.f.ctx
-	beforeRetries := make([]uint64, len(w.f.remotes))
+	beforeFailures := make([]map[string]string, len(w.f.remotes))
 	for i, node := range w.f.remotes {
 		status, err := node.status(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		beforeRetries[i] = status.Retries
+		beforeFailures[i] = status.FailureStages
 	}
 	target := w.a
 	if w.custody(target.id).Value == 0 {
@@ -74,18 +75,24 @@ func TestFrostNodeReservationDefersWithoutExit(t *testing.T) {
 	if reserved.ActiveReservation == ([32]byte{}) {
 		t.Fatal("real reservation not active")
 	}
+	duty := fmt.Sprintf("incoming/%d", target.desc.Epoch)
+	for _, failures := range beforeFailures {
+		if failures[duty] == "incoming-reservation" {
+			t.Fatal("negative control: reservation reported before admission")
+		}
+	}
 	incoming := movement.Planner{View: w.view, Bitcoin: w.btc, Wallet: target.desc, Genesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash), FeeRate: k06FeeRate, MaximumSatPerVByte: k06MaxRate}
 	if _, err := incoming.IncomingSweep(ctx); !errors.Is(err, movement.ErrPlanMismatch) {
 		t.Fatal("reservation did not reach the reviewed incoming deferral guard", err)
 	}
 	for deadline := time.Now().Add(10 * time.Second); ; time.Sleep(100 * time.Millisecond) {
 		retried := true
-		for i, node := range w.f.remotes {
+		for _, node := range w.f.remotes {
 			status, err := node.status(ctx)
 			if err != nil {
 				t.Fatal("active reservation stopped a node", err)
 			}
-			retried = retried && status.Retries > beforeRetries[i]
+			retried = retried && status.FailureStages[duty] == "incoming-reservation"
 		}
 		if retried {
 			break

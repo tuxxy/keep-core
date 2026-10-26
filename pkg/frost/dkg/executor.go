@@ -22,6 +22,7 @@ import (
 type Executor struct {
 	// Boundary is a verification-only pause/fault callback. Normal callers leave it nil.
 	Boundary             func(string) error
+	keyReady             bool
 	approvalSeen         bool
 	approvalGeneration   uint64
 	observedApprovalID   [32]byte
@@ -106,6 +107,7 @@ func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 	if err != nil {
 		return e.finishFailure(ctx, err)
 	}
+	e.keyReady = true
 	if err = e.atBoundary("after-key-ready"); err != nil {
 		return e.finishFailure(ctx, err)
 	}
@@ -638,7 +640,20 @@ func (e *Executor) finishFailure(ctx context.Context, err error) (WalletRecord, 
 		}
 	}
 	if e.record.ID != ([32]byte{}) {
-		e.record.Quarantined = !errors.Is(err, ErrExpired)
+		// The worker reply can be lost after SaveKey committed. Consult the
+		// normal journal API before treating this interruption as pre-KeyReady.
+		// Approval conflicts and existing quarantine are never cleared.
+		if !e.keyReady && e.record.State == "RegisteredPendingReady" && !errors.Is(err, ErrQuarantined) && !errors.Is(err, ErrExpired) {
+			key, loadErr := e.Journal.LoadKey(context.WithoutCancel(ctx))
+			if loadErr == nil && key.Candidate.Epoch == e.record.Descriptor.Epoch && key.Candidate.OutputKey == e.record.Descriptor.OutputKey && key.Candidate.Descriptor == e.record.Descriptor.SnowfallDescriptor {
+				e.keyReady = true
+			}
+		}
+		// A completed key survives transient RPC/transport/host failures.
+		// A later fresh process still requires exact canonical certification
+		// and a successful guarded key reload before it can sign.
+		recoverableReady := e.keyReady && !errors.Is(err, ErrQuarantined) && !errors.Is(err, ErrExpired)
+		e.record.Quarantined = e.record.Quarantined || (!errors.Is(err, ErrExpired) && !recoverableReady)
 		if errors.Is(err, ErrExpired) && e.record.ApprovalBlock != 0 {
 			e.record.State = "Closed"
 		}

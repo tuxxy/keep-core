@@ -41,3 +41,17 @@ signing. Restart validates the retained public recipe and reuses a durable
 accepted signature. The node also performs public DKG/readiness expiry even
 when no local executor can resume the abandoned epoch. FailureStages exposes
 fixed stage names only; worker error text never enters public status.
+
+Round-four recovery keeps a completed key reloadable after transient failures,
+including a lost worker reply after its durable save. A pending local wallet
+record advances to ReadyUnfunded only after exact canonical certification and
+successful guarded reload. Candidate/no-key attempts and classified conflicts
+remain unavailable; existing quarantine is never silently cleared.
+
+Incoming planning reads the common canonical round anchor. An unsigned stale
+recipe can be retired with an append-only abandonment marker only if every
+attempt has no durable result or possible release. Signed/possibly released
+recipes stay retained until their chain outcome. The incoming/<epoch> status
+stage names reservation deferral explicitly. Independent-node test rounds are
+100 blocks; component harness rounds remain ten. These fast-chain timing inputs
+and the full reserve/pay/prove stale-plan witness remain open qualification.

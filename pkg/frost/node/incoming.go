@@ -49,7 +49,7 @@ func (w *wallet) restoreIncoming(ctx context.Context) error {
 			return err
 		}
 		commitment := plan.Commitment()
-		if !bytes.Equal(completion, commitment[:]) {
+		if !bytes.Equal(completion, commitment[:]) && !bytes.Equal(completion, append([]byte("abandoned/"), commitment[:]...)) {
 			return errors.New("incoming completion does not match retained intent")
 		}
 		w.incomingSlot++
@@ -72,4 +72,20 @@ func (w *wallet) finishIncoming(ctx context.Context) error {
 	w.incomingSlot++
 	w.plan, w.signed = nil, false
 	return nil
+}
+
+// Abandonment is distinct from settlement and cannot erase a possibly signed
+// intent. The caller has serialized this wallet's duty; no signing job races it.
+func (w *wallet) abandonIncoming(ctx context.Context) (bool, error) {
+	safe, err := w.mover.CanAbandon(ctx, w.plan)
+	if err != nil || !safe {
+		return false, err
+	}
+	commitment := w.plan.Commitment()
+	if err = w.journal.RetainSigningRecord(ctx, incomingRecord(w.journal.Domain().ID(), w.incomingSlot, true), append([]byte("abandoned/"), commitment[:]...)); err != nil {
+		return false, err
+	}
+	w.incomingSlot++
+	w.plan, w.signed = nil, false
+	return true, nil
 }

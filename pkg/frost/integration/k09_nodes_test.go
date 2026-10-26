@@ -31,6 +31,12 @@ import (
 	"github.com/keep-network/keep-core/pkg/operator"
 )
 
+// Independent nodes poll with wall-clock backoff while the test mines much
+// faster than Ethereum. Leave a common round longer than that polling skew;
+// component harnesses retain their separate ten-block schedule. Both are OPEN
+// local timing inputs, not production availability qualification.
+const k09NodeRoundBlocks = 100
+
 type remoteNode struct {
 	done        chan struct{}
 	command     *exec.Cmd
@@ -190,7 +196,7 @@ func startRemoteNodes(f *fixture, url, root string) {
 		}
 		id := [32]byte{byte(operatorIndex)}
 		fenceURL, revoke := localNodeFence(f, id)
-		config := frostnode.Config{LocalRegtest: true, EthereumURL: url, BitcoinURL: f.core.url, CookieFile: f.core.cookiePath, Registry: f.deployment.Registry, Bridge: f.deployment.Bridge, OperatorKeyFile: keyFile, StoreKeyFile: storeFile, Keystore: filepath.Join(dir, "keys"), FenceURL: fenceURL, StorageID: id, Worker: snowfallengine.WorkerConfig{Path: worker, SHA256: workerHash}, Peers: bootstrap, FinalityBlocks: k06Finality, RoundBlocks: k06RoundBlocks, FeeRate: k06FeeRate, MaximumSatPerVByte: k06MaxRate, ProtocolSeconds: 120}
+		config := frostnode.Config{LocalRegtest: true, EthereumURL: url, BitcoinURL: f.core.url, CookieFile: f.core.cookiePath, Registry: f.deployment.Registry, Bridge: f.deployment.Bridge, OperatorKeyFile: keyFile, StoreKeyFile: storeFile, Keystore: filepath.Join(dir, "keys"), FenceURL: fenceURL, StorageID: id, Worker: snowfallengine.WorkerConfig{Path: worker, SHA256: workerHash}, Peers: bootstrap, FinalityBlocks: k06Finality, RoundBlocks: k09NodeRoundBlocks, FeeRate: k06FeeRate, MaximumSatPerVByte: k06MaxRate, ProtocolSeconds: 120}
 		// Peers retain this advertised loopback endpoint across process death.
 		// Port zero would silently give a restarted bootstrap node a new address.
 		_, networkPort, err := net.SplitHostPort(localPort(f))
@@ -327,6 +333,9 @@ func waitRemoteIncoming(w *k07World, target *walletHost, inputValue uint64) uint
 		w.t.Fatal(err)
 	}
 	for deadline := time.Now().Add(90 * time.Second); time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
+		// The fixture stopped interval mining after DKG. Canonical round
+		// anchors must still advance while autonomous duties poll the chain.
+		w.mine(1)
 		if w.observeIncoming != nil {
 			w.observeIncoming()
 		}
@@ -378,6 +387,12 @@ func waitRemoteIncoming(w *k07World, target *walletHost, inputValue uint64) uint
 				}
 			}
 			w.t.Fatal("node durable outcomes did not reconcile after final proof")
+		}
+	}
+	for _, node := range w.f.remotes {
+		status, err := node.status(ctx)
+		if err == nil {
+			w.t.Logf("incoming wait status: state=%s retries=%d stages=%v", status.State, status.Retries, status.FailureStages)
 		}
 	}
 	w.t.Fatal("automatic incoming sweep did not finish within its bound")

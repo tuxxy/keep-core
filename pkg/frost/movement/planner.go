@@ -234,7 +234,7 @@ func (p Planner) IncomingSweep(ctx context.Context) (*signing.Plan, error) {
 		return nil, err
 	}
 	if t.Custody.ActiveReservation != ([32]byte{}) {
-		return nil, fmt.Errorf("%w: target main reserved", ErrPlanMismatch)
+		return nil, ErrMainReserved
 	}
 	script, err := bitcoin.PayToTaproot(p.Wallet.OutputKey)
 	if err != nil {

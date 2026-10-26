@@ -142,7 +142,7 @@ func (a *Authority) incoming(ctx context.Context, plan *signing.Plan) (signing.R
 		}
 	}
 	if t.Custody.ActiveReservation != ([32]byte{}) {
-		return signing.ReservationReceipt{}, fmt.Errorf("%w: target main reserved", ErrPlanMismatch)
+		return signing.ReservationReceipt{}, ErrMainReserved
 	}
 	main := plan.MovementMain()
 	if (main == nil) != (t.Custody.MainOutpoint == ([32]byte{})) || (main != nil && OutpointKey(main.Outpoint) != t.Custody.MainOutpoint) {

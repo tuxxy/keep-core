@@ -246,6 +246,41 @@ func (m *Mover) Signed(ctx context.Context, plan *signing.Plan) (bool, error) {
 	return signed, err
 }
 
+// CanAbandon checks every attempted session, including an interrupted attempt
+// whose ledger lacks its result marker. A possible released share pins the exact
+// intent until chain settlement; read failures are never permission to replan.
+func (m *Mover) CanAbandon(ctx context.Context, plan *signing.Plan) (bool, error) {
+	entries, err := m.Ledger.Entries(ctx, ID(plan))
+	if err != nil {
+		return false, err
+	}
+	for _, entry := range entries {
+		if entry.Kind == redemption.KindPossibleRelease || entry.Kind == redemption.KindMovementSigned {
+			return false, nil
+		}
+		if entry.Kind != redemption.KindMovementAttempt {
+			continue
+		}
+		number, err := strconv.ParseUint(entry.Detail, 10, 64)
+		if err != nil {
+			return false, err
+		}
+		round, err := m.roundAt(ctx, number, plan)
+		if err != nil {
+			return false, err
+		}
+		executor, err := m.executor(plan, round)
+		if err != nil {
+			return false, err
+		}
+		released, err := executor.PossibleRelease(ctx)
+		if err != nil || released {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
 // Broadcast sends the durable result through the executor, which rechecks the
 // C-06 records and the lock first.
 func (m *Mover) Broadcast(ctx context.Context, plan *signing.Plan) error {

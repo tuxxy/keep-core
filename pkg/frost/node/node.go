@@ -11,6 +11,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math/big"
 	"net/http"
@@ -64,6 +65,35 @@ type Config struct {
 	FinalityBlocks, RoundBlocks                       uint64
 	FeeRate, MaximumSatPerVByte                       int64
 	ProtocolSeconds                                   int
+	VerificationPause                                 *VerificationPause
+}
+
+// VerificationPause is an explicit local-only fault adapter. It pauses a real
+// component boundary after writing public progress, without reading worker data.
+type VerificationPause struct {
+	Epoch            uint64
+	Boundary, Marker string
+}
+
+func (n *Node) boundary(ctx context.Context, epoch uint64, name string) error {
+	p := n.cfg.VerificationPause
+	if p == nil || p.Epoch != epoch || p.Boundary != name {
+		return nil
+	}
+	file, err := os.OpenFile(p.Marker, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(file, "epoch=%d boundary=%s\n", epoch, name)
+	closeErr := file.Close()
+	if err != nil {
+		return err
+	}
+	if closeErr != nil {
+		return closeErr
+	}
+	<-ctx.Done()
+	return ctx.Err()
 }
 
 // Status contains public observations only. It never exports keys, nonces,
@@ -73,7 +103,22 @@ type Status struct {
 	State            string
 	Addresses, Peers []string
 	Wallets          []dkg.WalletRecord
+	LostEpochs       []LostEpoch
+	Retries          uint64
 }
+type LostEpoch struct {
+	Epoch uint64
+	Seats []uint16
+}
+type lostEpochError struct {
+	epoch uint64
+	seats []uint16
+}
+
+func (e *lostEpochError) Error() string {
+	return "local epoch seats unavailable; other wallets remain serviceable"
+}
+
 type Node struct {
 	policy    *observedFirewall
 	signer    chain.Signing
@@ -90,6 +135,7 @@ type Node struct {
 	admission *eligibility
 	chain     *eth.FrostRedemptionChain
 	mu        sync.RWMutex
+	txMu      sync.Mutex
 	status    Status
 	wallets   map[uint64]*wallet
 }
@@ -223,8 +269,9 @@ func New(ctx context.Context, c Config) (n *Node, err error) {
 	if err != nil {
 		return nil, err
 	}
+	n.chain.WithTransactionMutex(&n.txMu)
 	n.policy = &observedFirewall{Firewall: policy}
-	n.network, err = libp2p.Connect(child, libp2p.Config{Peers: c.Peers, Port: c.NetworkPort}, n.private, n.policy, retransmission.NewTimeTicker(child, 100*time.Millisecond))
+	n.network, err = libp2p.Connect(child, libp2p.Config{LoopbackOnly: true, Peers: c.Peers, Port: c.NetworkPort}, n.private, n.policy, retransmission.NewTimeTicker(child, 100*time.Millisecond))
 	if err != nil {
 		return nil, err
 	}
@@ -259,6 +306,10 @@ func (n *Node) Status() Status {
 	}
 	out.Addresses = append([]string(nil), out.Addresses...)
 	out.Wallets = append([]dkg.WalletRecord(nil), out.Wallets...)
+	out.LostEpochs = append([]LostEpoch(nil), out.LostEpochs...)
+	for i := range out.LostEpochs {
+		out.LostEpochs[i].Seats = append([]uint16(nil), out.LostEpochs[i].Seats...)
+	}
 	if n.network != nil {
 		out.Peers = n.network.ConnectionManager().ConnectedPeers()
 	}
@@ -284,6 +335,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 	if err != nil {
 		return err
 	}
+	adapter.WithTransactionMutex(&n.txMu)
 	parameters, err := adapter.Parameters(ctx)
 	if err != nil {
 		return err
@@ -330,6 +382,13 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 	}
 	record, loadErr := journal.LoadWallet(ctx)
 	if errors.Is(loadErr, store.ErrMissing) {
+		// A claim or key without a completed wallet record is not permission
+		// to rerun this epoch. Its seats are lost locally, not for every wallet.
+		if _, statusErr := journal.DKGStatus(ctx); statusErr == nil {
+			return &lostEpochError{epoch, seats}
+		} else if !errors.Is(statusErr, store.ErrMissing) {
+			return statusErr
+		}
 		n.setState("dkg")
 		tr, closeTransport, err := n.transport(ctx, w, attempt)
 		if err != nil {
@@ -341,6 +400,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 			return err
 		}
 		execution := &dkg.Executor{Chain: adapter, Engine: engine, Journal: journal, Bus: bus, Signer: n.key, Request: w.request, Providers: frost.Providers{Transport: tr, Store: journal}, FinalityBlocks: n.cfg.FinalityBlocks, PollInterval: 50 * time.Millisecond}
+		execution.Boundary = func(name string) error { return n.boundary(ctx, epoch, name) }
 		record, err = execution.Run(ctx)
 		if err != nil {
 			return err
@@ -349,11 +409,14 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 		return loadErr
 	} else {
 		if record.State != "ReadyUnfunded" || record.Quarantined {
-			return errors.New("wallet is not dispatchable after restart")
+			return &lostEpochError{epoch, seats}
 		}
 		view, err := adapter.View(ctx, epoch)
-		if err != nil || view.ApprovedID != record.ID || view.Approved.State != 2 {
-			return errors.New("restart wallet approval changed")
+		if err != nil {
+			return err
+		}
+		if view.ApprovedID != record.ID || view.Approved.State != 2 {
+			return &lostEpochError{epoch, seats}
 		}
 		key, err := journal.LoadKey(ctx)
 		if err != nil {
@@ -386,8 +449,8 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 		return n.transport(ctx, w, a)
 	}}
 	w.mover = &movement.Mover{Chain: n.chain, Authority: &movement.Authority{View: view}, Lock: &deposit.MainLock{Journal: journal}, Ledger: redemption.Ledger{Journal: journal}, Schedule: redemption.Schedule{FinalityBlocks: n.cfg.FinalityBlocks, RoundBlocks: n.cfg.RoundBlocks}, Wallet: record.Descriptor, Base: base}
-	n.wallets[epoch] = w
 	n.mu.Lock()
+	n.wallets[epoch] = w
 	n.status.Wallets = append(n.status.Wallets, record)
 	n.status.State = "ready"
 	n.mu.Unlock()
@@ -397,63 +460,113 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 // Run owns discovery and dispatch. The parent process supplies public chain
 // activity, not calls into this node's component methods or opaque records.
 func (n *Node) Run(ctx context.Context) error {
+	runCtx, cancel := context.WithCancel(ctx)
+	var workers sync.WaitGroup
+	defer func() { cancel(); workers.Wait() }()
+	type result struct {
+		key   string
+		epoch uint64
+		err   error
+	}
+	results := make(chan result, 128)
+	running := make(map[string]bool)
+	retryAt := make(map[string]time.Time)
+	failures := make(map[string]uint)
+	lost := make(map[uint64]bool)
+	launch := func(key string, epoch uint64, work func(context.Context) error) {
+		if running[key] || time.Now().Before(retryAt[key]) {
+			return
+		}
+		running[key] = true
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			operation, stop := context.WithTimeout(runCtx, time.Duration(n.cfg.ProtocolSeconds)*time.Second)
+			defer stop()
+			err := work(operation)
+			select {
+			case results <- result{key, epoch, err}:
+			case <-runCtx.Done():
+			}
+		}()
+	}
+	snapshot := func() map[uint64]*wallet {
+		n.mu.RLock()
+		defer n.mu.RUnlock()
+		out := make(map[uint64]*wallet, len(n.wallets))
+		for epoch, w := range n.wallets {
+			out[epoch] = w
+		}
+		return out
+	}
+	scheduleEpoch := func(epoch uint64) {
+		if epoch == 0 || lost[epoch] {
+			return
+		}
+		n.mu.RLock()
+		ready := n.wallets[epoch] != nil
+		n.mu.RUnlock()
+		if !ready {
+			launch(fmt.Sprintf("epoch/%d", epoch), epoch, func(ctx context.Context) error { return n.loadEpoch(ctx, epoch) })
+		}
+	}
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
+		case finished := <-results:
+			running[finished.key] = false
+			var unavailable *lostEpochError
+			if errors.As(finished.err, &unavailable) {
+				if !lost[unavailable.epoch] {
+					lost[unavailable.epoch] = true
+					n.mu.Lock()
+					n.status.LostEpochs = append(n.status.LostEpochs, LostEpoch{unavailable.epoch, append([]uint16(nil), unavailable.seats...)})
+					n.mu.Unlock()
+				}
+			} else if finished.err != nil {
+				failures[finished.key]++
+				delay := time.Second * time.Duration(1<<min(failures[finished.key]-1, 3))
+				retryAt[finished.key] = time.Now().Add(delay)
+				n.mu.Lock()
+				n.status.Retries++
+				n.mu.Unlock()
+			} else {
+				failures[finished.key] = 0
+				retryAt[finished.key] = time.Now().Add(time.Second)
+			}
 		case <-ticker.C:
-		}
-		epoch, err := n.registry.Epoch(&bind.CallOpts{Context: ctx})
-		if err != nil {
-			return err
-		}
-		if epoch > 0 && n.wallets[epoch] == nil {
-			operation, stop := context.WithTimeout(ctx, time.Duration(n.cfg.ProtocolSeconds)*time.Second)
-			err = n.loadEpoch(operation, epoch)
-			stop()
-			if err != nil {
-				return err
+			// Discovery and DKG execute independently from wallet duties. A failed or
+			// unfinished epoch never holds up an already loaded wallet's incoming work.
+			if epoch, err := n.registry.Epoch(&bind.CallOpts{Context: runCtx}); err == nil {
+				scheduleEpoch(epoch)
 			}
-		}
-		// Recover older owned wallets from public registry events as well as
-		// the latest epoch. Their keys are only loaded through the scoped API.
-		head, err := n.chain.Head(ctx)
-		if err != nil {
-			return err
-		}
-		ids, err := n.chain.ReadyWallets(ctx, 0, head.Number)
-		if err != nil {
-			return err
-		}
-		for _, id := range ids {
-			public, err := n.chain.Wallet(ctx, head.Number, movement.Label(id))
-			if err != nil {
-				return err
-			}
-			owned := false
-			for _, address := range public.Descriptor.Operators {
-				if address == crypto.PubkeyToAddress(n.key.PublicKey) {
-					owned = true
+			if head, err := n.chain.Head(runCtx); err == nil {
+				if ids, err := n.chain.ReadyWallets(runCtx, 0, head.Number); err == nil {
+					for _, id := range ids {
+						public, err := n.chain.Wallet(runCtx, head.Number, movement.Label(id))
+						if err != nil {
+							continue
+						}
+						for _, address := range public.Descriptor.Operators {
+							if address == crypto.PubkeyToAddress(n.key.PublicKey) {
+								scheduleEpoch(public.Descriptor.Epoch)
+								break
+							}
+						}
+					}
 				}
 			}
-			if owned && n.wallets[public.Descriptor.Epoch] == nil {
-				operation, stop := context.WithTimeout(ctx, time.Duration(n.cfg.ProtocolSeconds)*time.Second)
-				err = n.loadEpoch(operation, public.Descriptor.Epoch)
-				stop()
-				if err != nil {
-					return err
-				}
-			}
-		}
-		for _, wallet := range n.wallets {
-			if err = n.incoming(ctx, wallet); err != nil {
-				return err
+			for epoch, w := range snapshot() {
+				current := w
+				launch(fmt.Sprintf("incoming/%d", epoch), epoch, func(ctx context.Context) error { return n.incoming(ctx, current) })
 			}
 		}
 	}
 }
+
 func (n *Node) incoming(ctx context.Context, w *wallet) error {
 	operation, stop := context.WithTimeout(ctx, time.Duration(n.cfg.ProtocolSeconds)*time.Second)
 	defer stop()
@@ -488,6 +601,9 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 			return err
 		}
 		w.signed = true
+		if err = n.boundary(operation, w.record.Descriptor.Epoch, "after-incoming-sign"); err != nil {
+			return err
+		}
 	}
 	// The lowest selected seat owns public broadcast/proof submission. Every
 	// operator independently signs and reconciles its durable intent.
@@ -504,8 +620,12 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 			return err
 		}
 		if confirmations > 0 {
-			maintainer := spv.FrostMovementMaintainer{Chain: n.chain, Bitcoin: n.btc, Confirmations: 1}
+			maintainer := spv.FrostMovementMaintainer{Chain: n.chain, Bitcoin: n.btc, Confirmations: 1,
+				ProofDepth: spv.DifficultyProofDepth(n.btc, n.chain, n.chain, 1)}
 			if _, err = maintainer.ProveIncomingSweep(operation, w.record.ID, w.plan.BitcoinTransactionHash()); err != nil {
+				if errors.Is(err, spv.ErrFrostProofNotReady) {
+					return nil
+				}
 				return err
 			}
 		}

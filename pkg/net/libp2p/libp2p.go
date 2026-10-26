@@ -78,6 +78,9 @@ const pingTestTimeout = 60 * time.Second
 
 // Config defines the configuration for the libp2p network provider.
 type Config struct {
+	// LoopbackOnly binds local rehearsals with public fixture identities to
+	// loopback; it does not change production listeners unless requested.
+	LoopbackOnly       bool
 	Bootstrap          bool
 	Peers              []string
 	Port               int
@@ -333,6 +336,7 @@ func Connect(
 		config.AnnouncedAddresses,
 		firewall,
 		&metricsRecorderRef,
+		config.LoopbackOnly,
 	)
 	if err != nil {
 		return nil, err
@@ -412,11 +416,12 @@ func discoverAndListen(
 	announcedAddresses []string,
 	firewall net.Firewall,
 	metricsRecorderRef *atomic.Value,
+	loopbackOnly ...bool,
 ) (host.Host, error) {
 	var err error
 
 	// Get available network ifaces, for a specific port, as multiaddrs
-	addrs, err := getListenAddrs(port)
+	addrs, err := getListenAddrs(port, loopbackOnly...)
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +484,14 @@ func discoverAndListen(
 	return libp2p.New(options...)
 }
 
-func getListenAddrs(port int) ([]ma.Multiaddr, error) {
+func getListenAddrs(port int, loopbackOnly ...bool) ([]ma.Multiaddr, error) {
+	if len(loopbackOnly) > 0 && loopbackOnly[0] {
+		address, err := ma.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", port))
+		if err != nil {
+			return nil, err
+		}
+		return []ma.Multiaddr{address}, nil
+	}
 	ia, err := addrutil.InterfaceAddresses()
 	if err != nil {
 		return nil, err

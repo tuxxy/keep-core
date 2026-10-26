@@ -29,7 +29,12 @@ type FrostChain struct {
 	key                   *ecdsa.PrivateKey
 	chainID               *big.Int
 	txMu                  sync.Mutex
+	sharedTxMu            *sync.Mutex
 }
+
+// WithTransactionMutex joins adapters using the same Ethereum signer. Configure
+// it before concurrent use; the lock covers nonce selection through receipt.
+func (c *FrostChain) WithTransactionMutex(mu *sync.Mutex) *FrostChain { c.sharedTxMu = mu; return c }
 
 func NewFrostChain(ctx context.Context, client *ethclient.Client, key *ecdsa.PrivateKey, registry, bridge common.Address) (*FrostChain, error) {
 	if client == nil || key == nil || registry == (common.Address{}) || bridge == (common.Address{}) {
@@ -203,8 +208,12 @@ func (c *FrostChain) Validate(ctx context.Context, epoch uint64, r dkg.Result) (
 	return c.registry.IsResultValid(&bind.CallOpts{Context: ctx}, r, epoch)
 }
 func (c *FrostChain) transact(ctx context.Context, send func(*bind.TransactOpts) (*types.Transaction, error)) error {
-	c.txMu.Lock()
-	defer c.txMu.Unlock()
+	mu := &c.txMu
+	if c.sharedTxMu != nil {
+		mu = c.sharedTxMu
+	}
+	mu.Lock()
+	defer mu.Unlock()
 	opts, err := bind.NewKeyedTransactorWithChainID(c.key, c.chainID)
 	if err != nil {
 		return err

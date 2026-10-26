@@ -276,7 +276,7 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 			}
 		}
 		membership := group.NewMembershipValidator(&testutils.MockLogger{}, addresses, signing)
-		network, err := libp2p.Connect(ctx, libp2p.Config{Peers: bootstrap}, private, firewall.Disabled, retransmission.NewTimeTicker(ctx, 100*time.Millisecond))
+		network, err := libp2p.Connect(ctx, libp2p.Config{LoopbackOnly: true, Peers: bootstrap}, private, firewall.Disabled, retransmission.NewTimeTicker(ctx, 100*time.Millisecond))
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -31,11 +31,12 @@ import (
 )
 
 type remoteNode struct {
-	done     chan struct{}
-	command  *exec.Cmd
-	endpoint string
-	config   frostnode.Config
-	log      *os.File
+	done        chan struct{}
+	command     *exec.Cmd
+	endpoint    string
+	config      frostnode.Config
+	log         *os.File
+	revokeFence func()
 }
 
 func (n *remoteNode) status(ctx context.Context) (frostnode.Status, error) {
@@ -65,7 +66,7 @@ func localPort(f *fixture) string {
 	_ = listener.Close()
 	return address
 }
-func localNodeFence(f *fixture, id [32]byte) string {
+func localNodeFence(f *fixture, id [32]byte) (string, func()) {
 	var mu sync.Mutex
 	var lease store.FenceLease
 	authority := &authority{}
@@ -117,7 +118,16 @@ func localNodeFence(f *fixture, id [32]byte) string {
 		}
 	}))
 	f.t.Cleanup(server.Close)
-	return server.URL
+	return server.URL, func() {
+		mu.Lock()
+		defer mu.Unlock()
+		if lease != nil {
+			if err := lease.Close(); err != nil {
+				f.t.Fatal(err)
+			}
+			lease = nil
+		}
+	}
 }
 func startRemoteNodes(f *fixture, url, root string) {
 	f.t.Helper()
@@ -138,7 +148,20 @@ func startRemoteNodes(f *fixture, url, root string) {
 	}
 	var workerHash [32]byte
 	copy(workerHash[:], pin)
-	diagnostics, err := os.MkdirTemp("", "k09-node-private-")
+	diagnostics := f.t.TempDir()
+	if retained := os.Getenv("FROST_K09_NODE_LOG_ROOT"); retained != "" {
+		if !filepath.IsAbs(retained) {
+			f.t.Fatal("absolute retained node-log root required")
+		}
+		if err = os.MkdirAll(retained, 0700); err != nil {
+			f.t.Fatal(err)
+		}
+		info, statErr := os.Stat(retained)
+		if statErr != nil || info.Mode().Perm()&0077 != 0 {
+			f.t.Fatal("private node-log root permissions required")
+		}
+		diagnostics, err = os.MkdirTemp(retained, "nodes-")
+	}
 	if err != nil {
 		f.t.Fatal(err)
 	}
@@ -165,7 +188,11 @@ func startRemoteNodes(f *fixture, url, root string) {
 			f.t.Fatal(err)
 		}
 		id := [32]byte{byte(operatorIndex)}
-		config := frostnode.Config{LocalRegtest: true, EthereumURL: url, BitcoinURL: f.core.url, CookieFile: f.core.cookiePath, Registry: f.deployment.Registry, Bridge: f.deployment.Bridge, OperatorKeyFile: keyFile, StoreKeyFile: storeFile, Keystore: filepath.Join(dir, "keys"), FenceURL: localNodeFence(f, id), StorageID: id, Worker: snowfallengine.WorkerConfig{Path: worker, SHA256: workerHash}, Peers: bootstrap, FinalityBlocks: k06Finality, RoundBlocks: k06RoundBlocks, FeeRate: k06FeeRate, MaximumSatPerVByte: k06MaxRate, ProtocolSeconds: 120}
+		fenceURL, revoke := localNodeFence(f, id)
+		config := frostnode.Config{LocalRegtest: true, EthereumURL: url, BitcoinURL: f.core.url, CookieFile: f.core.cookiePath, Registry: f.deployment.Registry, Bridge: f.deployment.Bridge, OperatorKeyFile: keyFile, StoreKeyFile: storeFile, Keystore: filepath.Join(dir, "keys"), FenceURL: fenceURL, StorageID: id, Worker: snowfallengine.WorkerConfig{Path: worker, SHA256: workerHash}, Peers: bootstrap, FinalityBlocks: k06Finality, RoundBlocks: k06RoundBlocks, FeeRate: k06FeeRate, MaximumSatPerVByte: k06MaxRate, ProtocolSeconds: 120}
+		if point := os.Getenv("FROST_K09_PAUSE_BOUNDARY"); point != "" && operatorIndex == 2 {
+			config.VerificationPause = &frostnode.VerificationPause{Epoch: f.deployment.Epoch, Boundary: point, Marker: filepath.Join(dir, "public-boundary.txt")}
+		}
 		raw, err := json.Marshal(config)
 		if err != nil {
 			f.t.Fatal(err)
@@ -185,7 +212,7 @@ func startRemoteNodes(f *fixture, url, root string) {
 		if err = command.Start(); err != nil {
 			f.t.Fatal(err)
 		}
-		node := &remoteNode{done: make(chan struct{}), command: command, endpoint: "http://" + address, config: config, log: log}
+		node := &remoteNode{done: make(chan struct{}), command: command, endpoint: "http://" + address, config: config, log: log, revokeFence: revoke}
 		go func() { _ = node.command.Wait(); close(node.done) }()
 		f.remotes = append(f.remotes, node)
 		f.t.Cleanup(func() {
@@ -402,7 +429,7 @@ func TestK09UnadmittedPeerHelper(t *testing.T) {
 	private := &operator.PrivateKey{PublicKey: operator.PublicKey{Curve: operator.Secp256k1, X: key.X, Y: key.Y}, D: key.D}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	network, err := libp2p.Connect(ctx, libp2p.Config{Peers: peers}, private, firewall.Disabled, retransmission.NewTimeTicker(ctx, 100*time.Millisecond))
+	network, err := libp2p.Connect(ctx, libp2p.Config{LoopbackOnly: true, Peers: peers}, private, firewall.Disabled, retransmission.NewTimeTicker(ctx, 100*time.Millisecond))
 	if err != nil {
 		if !strings.Contains(err.Error(), "bootstrap failed") {
 			t.Fatal("peer probe harness failed")
@@ -419,14 +446,19 @@ func TestK09UnadmittedPeerHelper(t *testing.T) {
 	fmt.Println("K09-PEER-REJECTED")
 }
 
-func restartRemoteNode(f *fixture, index int) {
+func restartRemoteNode(f *fixture, index int, killed ...bool) {
 	f.t.Helper()
 	node := f.remotes[index]
 	before, err := node.status(f.ctx)
 	if err != nil {
 		f.t.Fatal(err)
 	}
-	if err = node.command.Process.Signal(os.Interrupt); err != nil {
+	if len(killed) > 0 && killed[0] {
+		err = node.command.Process.Kill()
+	} else {
+		err = node.command.Process.Signal(os.Interrupt)
+	}
+	if err != nil {
 		f.t.Fatal(err)
 	}
 	select {
@@ -434,6 +466,9 @@ func restartRemoteNode(f *fixture, index int) {
 	case <-time.After(10 * time.Second):
 		f.t.Fatal("node did not close its store on cancellation")
 	}
+	// The test authority revokes ownership only after confirmed process death.
+	// Its monotone fence point is retained across both SIGINT and SIGKILL.
+	node.revokeFence()
 	oldPID := node.command.Process.Pid
 	oldArgs := node.command.Args
 	node.command = exec.CommandContext(f.ctx, oldArgs[0], oldArgs[1:]...)

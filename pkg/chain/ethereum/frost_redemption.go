@@ -23,13 +23,21 @@ import (
 // Reads take an explicit block number; writes wait for the mined receipt and
 // treat a revert as an error.
 type FrostRedemptionChain struct {
-	client  *ethclient.Client
-	bridge  *frostbridgeabi.FrostBridge
-	legacy  *legacy.Bridge
-	address common.Address
-	key     *ecdsa.PrivateKey
-	chainID *big.Int
-	txMu    sync.Mutex
+	client     *ethclient.Client
+	bridge     *frostbridgeabi.FrostBridge
+	legacy     *legacy.Bridge
+	address    common.Address
+	key        *ecdsa.PrivateKey
+	chainID    *big.Int
+	txMu       sync.Mutex
+	sharedTxMu *sync.Mutex
+}
+
+// WithTransactionMutex joins adapters using the same Ethereum signer. Configure
+// it before concurrent use; the lock covers nonce selection through receipt.
+func (c *FrostRedemptionChain) WithTransactionMutex(mu *sync.Mutex) *FrostRedemptionChain {
+	c.sharedTxMu = mu
+	return c
 }
 
 func NewFrostRedemptionChain(ctx context.Context, client *ethclient.Client, key *ecdsa.PrivateKey, bridge common.Address) (*FrostRedemptionChain, error) {
@@ -262,8 +270,12 @@ func (c *FrostRedemptionChain) send(ctx context.Context, call func(*bind.Transac
 	if c.key == nil {
 		return errors.New("read-only FROST redemption chain")
 	}
-	c.txMu.Lock()
-	defer c.txMu.Unlock()
+	mu := &c.txMu
+	if c.sharedTxMu != nil {
+		mu = c.sharedTxMu
+	}
+	mu.Lock()
+	defer mu.Unlock()
 	opts, err := bind.NewKeyedTransactorWithChainID(c.key, c.chainID)
 	if err != nil {
 		return err

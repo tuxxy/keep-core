@@ -110,6 +110,8 @@ type nodeConfig struct {
 	worker     snowfallengine.WorkerConfig
 }
 type fixture struct {
+	remotes     []*remoteNode
+	core        *coreChain
 	chainMu     sync.RWMutex
 	nodes       []nodeConfig
 	t           *testing.T
@@ -128,6 +130,7 @@ type fixture struct {
 }
 
 type setupOptions struct {
+	remote  bool
 	timeout time.Duration
 	prepare func(*fixture, string, string)
 	// mode "k05" deploys a real Bank, regtest relay and verifier and enables
@@ -239,6 +242,11 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 	for i := range selected {
 		roster = append(roster, uint16(i+1))
 	}
+	if options.remote {
+		startRemoteNodes(f, url, root)
+		f.startMining()
+		return f
+	}
 	var bootstrap []string
 	for operatorIndex := 1; operatorIndex <= 3; operatorIndex++ {
 		secret := make([]byte, 32)
@@ -325,10 +333,14 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 		f.nodes = append(f.nodes, nodeConfig{rootStore, network, membership, private, key, snowfallengine.WorkerConfig{Path: workerCopy, SHA256: hash}})
 		f.executors = append(f.executors, &dkg.Executor{Chain: lockedChain{chainView, &f.chainMu}, Engine: engine, Journal: journal, Bus: bus, Signer: key, Request: frost.DKGRequest{Group: frost.Group{Roster: roster, Threshold: 2, Quorum: 3, Epoch: domain.Epoch}, LocalSeats: locals, Participants: roster, Attempt: attempt}, Providers: frost.Providers{Transport: tr, Store: journal}, FinalityBlocks: 2, PollInterval: 50 * time.Millisecond})
 	}
-	miningCtx, stop := context.WithCancel(ctx)
+	f.startMining()
+	return f
+}
+func (f *fixture) startMining() {
+	miningCtx, stop := context.WithCancel(f.ctx)
 	miningDone := make(chan struct{})
 	f.stopMining = func() { stop(); <-miningDone }
-	t.Cleanup(f.stopMining)
+	f.t.Cleanup(f.stopMining)
 	go func() {
 		defer close(miningDone)
 		ticker := time.NewTicker(150 * time.Millisecond)
@@ -341,14 +353,16 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 				var out interface{}
 				// Finish an in-flight mine before the deadline tests proceed.
 				f.chainMu.Lock()
-				_ = rpcClient.CallContext(ctx, &out, "evm_mine")
+				_ = f.rpc.CallContext(f.ctx, &out, "evm_mine")
 				f.chainMu.Unlock()
 			}
 		}
 	}()
-	return f
 }
 func (f *fixture) run() ([]dkg.WalletRecord, []error) {
+	if len(f.remotes) > 0 {
+		return f.remoteRecords()
+	}
 	return f.runWithContext(f.ctx)
 }
 func (f *fixture) runWithContext(ctx context.Context) ([]dkg.WalletRecord, []error) {

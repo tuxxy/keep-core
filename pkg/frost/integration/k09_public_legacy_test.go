@@ -51,6 +51,7 @@ func bootstrapPublicLegacy(t *testing.T, origin *k09LegacyOrigin) func(*fixture,
 		}
 		ctx := f.ctx
 		core := startCore(t, ctx)
+		f.core = core
 		admin, err := crypto.HexToECDSA(anvilKey0)
 		if err != nil {
 			t.Fatal(err)
@@ -215,9 +216,11 @@ func legacyProof(proof *bitcoin.SpvProof) legacyabi.BitcoinTxProof {
 	return legacyabi.BitcoinTxProof{MerkleProof: proof.MerkleProof, TxIndexInBlock: big.NewInt(int64(proof.TxIndexInBlock)), BitcoinHeaders: proof.BitcoinHeaders, CoinbasePreimage: proof.CoinbasePreimage, CoinbaseProof: proof.CoinbaseProof}
 }
 
-func TestPublicLegacyUpgradeCutoverDrainAndSweep(t *testing.T) {
+func TestPublicLegacyUpgradeCutoverDrainAndSweep(t *testing.T) { runPublicLegacyFlow(t, false) }
+
+func runPublicLegacyFlow(t *testing.T, remote bool) *k07World {
 	var origin k09LegacyOrigin
-	w := newK07WorldPrepared(t, "k09-public", bootstrapPublicLegacy(t, &origin))
+	w := newK07WorldPrepared(t, "k09-public", bootstrapPublicLegacy(t, &origin), remote)
 	ctx := w.f.ctx
 	opts := &bind.CallOpts{Context: ctx}
 	request, err := w.legacy.PendingRedemptions(opts, origin.requestKey)
@@ -269,10 +272,16 @@ func TestPublicLegacyUpgradeCutoverDrainAndSweep(t *testing.T) {
 		t.Fatal("public legacy drain did not create exact FROST incoming obligation", err)
 	}
 	w.mine(int(k06Finality))
-	sweep := w.incomingSweep(w.a)
-	w.settle(w.a, sweep, w.proofs.ProveIncomingSweep)
+	var fee uint64
+	if remote {
+		fee = waitRemoteIncoming(w, origin.wallet.utxo.TxOutputValue-k07DrainFee)
+	} else {
+		sweep := w.incomingSweep(w.a)
+		w.settle(w.a, sweep, w.proofs.ProveIncomingSweep)
+		fee = uint64(sweep.Snapshot().Fee())
+	}
 	custody := w.custody(w.a.id)
-	if custody.Value != origin.wallet.utxo.TxOutputValue-k07DrainFee-uint64(sweep.Snapshot().Fee()) {
+	if custody.Value != origin.wallet.utxo.TxOutputValue-k07DrainFee-fee {
 		t.Fatal("public cross-scheme custody/value conservation")
 	}
 	incoming, err = w.chain.Incoming(ctx, w.head(), key)
@@ -284,4 +293,5 @@ func TestPublicLegacyUpgradeCutoverDrainAndSweep(t *testing.T) {
 		t.Fatal("creation mode rolled back", err)
 	}
 	t.Log("K09-PUBLIC:public-frost-drain-swept")
+	return w
 }

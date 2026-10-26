@@ -33,6 +33,7 @@ func init() {
 
 	RootCmd.AddCommand(
 		StartCommand,
+		FrostLocalNodeCommand,
 		PingCommand,
 		EthereumCommand,
 		MaintainerCommand,

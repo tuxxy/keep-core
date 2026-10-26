@@ -31,6 +31,8 @@ async function main(){
  await(await frost.configureFrostRedemptions(genesis,2,1000,ethers.constants.AddressZero,ethers.utils.id('UNQUALIFIED K09 local D08 reference'))).wait();
  await(await frost.setFrostRedemptionsEnabled(true)).wait();
  await(await frost.setFrostDrainEnabled(true)).wait();
+ const bridge=new ethers.Contract(d.bridge,artifact('contracts/bridge/Bridge.sol:Bridge').abi,signer);
+ await(await bridge.setSpvMaintainerStatus(d.operators[0],true)).wait();
  await(await registry.setRequestsEnabled(true)).wait();await(await frost.setFrostRequestsEnabled(true)).wait();
  await(await frost.requestNewFrostWallet()).wait();
  let seed=1;for(;seed<10000;seed++){

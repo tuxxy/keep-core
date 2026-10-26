@@ -35,9 +35,9 @@
     },
     {
       "id": "K09-6",
-      "status": "OPEN exit requirement",
-      "change": "Two in-process operator bundles use authenticated transport and firewall.Disabled; harness dispatches host components.",
-      "witness": "Owner: node integration lead; real node process dispatch/firewall qualification remains required for K-09 exit, not an approved K-11 deferral"
+      "status": "implemented bounded separate-node witness; review OPEN",
+      "change": "Separate OS executables own independent stores, real workers and authenticated libp2p with production eligibility firewall. Automatic DKG/readiness and incoming dispatch; older epoch reload rechecks original canonical approval. Other lifecycle duties remain joined component witnesses.",
+      "witness": "TestFrostNodeProcessesDKGAndDispatch; local fence and stake/beacon adapters, operator-1 SPV alias; not production all-duty scheduler qualification"
     },
     {
       "id": "K09-7",
@@ -47,9 +47,9 @@
     },
     {
       "id": "K09-8",
-      "status": "implemented policy fix; full proof join OPEN",
-      "change": "FROST CLI derives proof depth using existing Bridge-factor/relay-epoch accumulated-work algorithm. Tests cover rising/falling retarget, DIFF1, insufficient work, relay range and caller floor.",
-      "witness": "TestFrostDifficultyProofDepth; TestGetProofInfo; realistic header suite is library-level, not full FROST entry-point proof. Owner: SPV integration owner for remaining production-settings producer/entry-point join"
+      "status": "implemented bounded full producer/consumer witness",
+      "change": "Actual FROST maintainer, DifficultyProofDepth and default Bitcoin assembler produce a retained mainnet Taproot proof across a rising retarget; full Bridge entrypoint consumes identical args at factor six.",
+      "witness": "TestFrostRetainedMainnetMovementProof; Frost.LifecycleRealisticSpv five cases cover valid proof, insufficient work, wrong inclusion, relay range, custody mismatch and replay. Custody origin/lifecycle and relay publication are controlled adapters, not mainnet custody/relay qualification"
     },
     {
       "id": "K09-9",
@@ -189,13 +189,13 @@
     },
     {
       "requirement": "real nodes, workers, authenticated libp2p",
-      "status": "partial; real nodes/firewall OPEN",
-      "witness": "real worker and authenticated transport; two in-process bundles, explicit dispatch, firewall.Disabled"
+      "status": "bounded separate-process witness; owner review OPEN",
+      "witness": "TestFrostNodeProcessesDKGAndDispatch; local fence and stake/beacon adapters, operator-1 SPV alias; not production all-duty scheduler qualification"
     },
     {
       "requirement": "actual SPV settings and realistic headers",
-      "status": "library witness and derived-depth policy tests; full FROST join OPEN",
-      "witness": "spv and proof-depth stages; K09-8"
+      "status": "bounded full FROST producer/consumer witness",
+      "witness": "TestFrostRetainedMainnetMovementProof; Frost.LifecycleRealisticSpv five cases cover valid proof, insufficient work, wrong inclusion, relay range, custody mismatch and replay. Custody origin/lifecycle and relay publication are controlled adapters, not mainnet custody/relay qualification"
     },
     {
       "requirement": "models/replays, composition exit and final campaign",
@@ -215,6 +215,26 @@
         "cores": 8
       },
       "elapsedSeconds": 56.23
+    },
+    {
+      "scope": "node and Core domain/reload/firewall owning controls",
+      "class": "focused concrete controls, not K09b",
+      "record": "implementation/K-09/completion-2026-10-26/node-controls-3/result.json",
+      "status": "pass",
+      "controls": 7
+    },
+    {
+      "scope": "actual FROST producer and full Bridge consumer",
+      "class": "concrete testing",
+      "status": "scoped producer and five consumer cases pass; committed-head acceptance pending",
+      "vectorSha256": "6139d0175dbd00be7815050866f007ebd11ce9d4a66ad3a4eb0a140de5bc13bd"
     }
-  ]
+  ],
+  "currentAcceptance": {
+    "record": "implementation/K-09/completion-2026-10-26/final/run/result.json",
+    "status": "pending fresh committed-head execution; record determines result",
+    "expectedStages": 19,
+    "expectedNamedGoCases": 11,
+    "expectedContractCases": 25
+  }
 }

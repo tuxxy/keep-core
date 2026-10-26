@@ -156,9 +156,11 @@
       "witnesses": [
         "TestFrostCompleteLocalLifecycle#k09-movement",
         "TestCrossSchemeDrainAndSweep",
-        "TestPublicLegacyUpgradeCutoverDrainAndSweep"
+        "TestPublicLegacyUpgradeCutoverDrainAndSweep",
+        "TestFrostNodeProcessesDKGAndDispatch",
+        "TestFrostRetainedMainnetMovementProof -> Frost.LifecycleRealisticSpv"
       ],
-      "remaining": "Public baseline funding/upgrade/cutover and admitted legacy-to-FROST commitment complete under containment with real Core/tss-lib/FROST worker bytes. Regtest relay remains controlled; realistic production-settings FROST proof join remains open."
+      "remaining": "Real nodes automatically dispatch the Core incoming sweep; full Bridge movement consumer accepts retained retarget-crossing Go proof. Controlled custody-origin/lifecycle and relay publication are explicit for the historical proof; production scale/relay qualification and owner review remain open."
     },
     {
       "v3Row": 7,
@@ -181,10 +183,9 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle#k09-credit",
-        "K-09 realistic-header SPV at production difficulty factor"
+        "TestFrostCompleteLocalLifecycle#k09-credit"
       ],
-      "remaining": "Separate realistic-header library validation is not the full FROST producer/entry-point join. Difficulty-aware producer depth is unit tested; SPV integration owner retains that OPEN exit requirement."
+      "remaining": "Deposit credit witness remains live regtest. The distinct realistic full movement producer/consumer join is row 6; it is not promoted to a realistic deposit-sweep witness."
     },
     {
       "v3Row": 8,
@@ -245,8 +246,8 @@
         {
           "repository": "keep-core",
           "path": "test/frost/k09-local.py",
-          "blob": "dac76715bfe9b6535c92a14f1694b5701d837e25",
-          "sha256": "50c1adfd8f270bc083f3a637b88dc29d699f21832ddab7c0b7fd4567c971fa63"
+          "blob": "1f3b522760123949e0928cbcbfd627ed1baef652",
+          "sha256": "6145c4a0518e0d84057cbfe93e0af66ebd724bd6a46184eba56b518f329435d0"
         }
       ],
       "consumerSources": [
@@ -266,5 +267,18 @@
   ],
   "checkpointReferenceFormat": "TestName#checkpoint names assertion markers, not Go subtests; k09-local.py requires all ten markers exactly once in order",
   "coverageLedger": "K09-COVERAGE.json",
-  "completionEvidenceRoot": "implementation/K-09/completion-2026-10-26"
+  "completionEvidenceRoot": "implementation/K-09/completion-2026-10-26",
+  "currentEvidenceRoot": "implementation/K-09/completion-2026-10-26/final/run; pending fresh committed-head execution",
+  "realisticProofBoundary": {
+    "producer": "pkg/maintainer/spv/frost_retained_mainnet_test.go: actual FrostMovementMaintainer/DifficultyProofDepth/bitcoin.AssembleSpvProof",
+    "consumer": "tbtc-v2 solidity/contracts/frost/FrostMovement.sol via submitFrostMovingFundsProof",
+    "handoff": "private generated exact proof args, factor six, actual mainnet headers 838655..838660",
+    "assumptions": [
+      "retained historical chain snapshot",
+      "controlled relay epoch publication",
+      "controlled actual-parent custody pre-state and lifecycle",
+      "registry fixture descriptors do not establish threshold ownership of historical keys"
+    ],
+    "evidenceClass": "concrete testing; no formal composition result or V-05 closure"
+  }
 }

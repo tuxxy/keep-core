@@ -172,3 +172,24 @@ The shared deployment inventory includes independently deployed package
 contracts; source binding includes root/internal/cmd/config Go inputs and
 actual compiler source/embed dependencies. Ten machine checkpoints must pass
 in order. Historical runs do not substitute for fresh changed-source evidence.
+
+## 26 October bounded implementation update
+
+The historical open node/proof joins above now have implementations and scoped
+concrete witnesses. Separate executables own real workers/stores, production
+eligibility firewall, automatic DKG/readiness/incoming dispatch and same-disk
+reload of both epochs. Other lifecycle duties remain joined component witnesses;
+production all-duty scheduling/fence/scale qualification is not established.
+The actual FROST maintainer/default assembler produces a pinned mainnet Taproot
+retarget-crossing proof consumed unchanged by the full Bridge movement
+entrypoint at factor six. Five contract cases cover acceptance, insufficient
+work, wrong inclusion, relay range, custody mismatch and replay with relevant
+unchanged-state frames. Historical custody/lifecycle and relay publication are
+controlled adapters, not funding-origin or canonical-relay qualification.
+
+The new 19-stage acceptance is pending at
+implementation/K-09/completion-2026-10-26/final/run/result.json. The exact
+committed-head source/artifact manifests and result determine acceptance;
+scoped passes do not predeclare it. KC-VER models/replays, owner review and
+authoritative V-05 closure remain open. No final campaign or release gate is
+completed. See the paired K09-COVERAGE.json for current dispositions.

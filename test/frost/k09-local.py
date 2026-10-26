@@ -24,11 +24,13 @@ GO_CASES = {
     "fraud-recovery": ["TestFrostFraudPublicAdmissionDefenseTimeout"],
     "legacy-drain": ["TestCrossSchemeDrainAndSweep"],
     "public-legacy": ["TestPublicLegacyUpgradeCutoverDrainAndSweep"],
+    "nodes": ["TestFrostNodeProcessesDKGAndDispatch"],
     "proof-depth": ["TestFrostDifficultyProofDepth", "TestGetProofInfo"],
+    "realistic-proof": ["TestFrostRetainedMainnetMovementProof"],
 }
 JOINED_CHECKPOINTS = ["k09-ready", "k09-credit", "k09-payment", "k09-heartbeat", "k09-inactivity", "k09-cutover", "k09-movement", "k09-restarted-defense", "k09-closure", "k09-post-cutover-dkg"]
 PUBLIC_LEGACY_CHECKPOINTS = ["public-legacy-funded", "legacy-upgraded", "legacy-cutover-contained", "public-frost-drain-swept"]
-REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "config-controls", "build", *GO_CASES, "spv", "upgrade"]
+REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "node-guards", "config-controls", "build", *GO_CASES, "spv", "realistic-spv", "upgrade"]
 
 
 def sha(path):
@@ -61,8 +63,9 @@ def require_go(log, expected):
         if checkpoints != JOINED_CHECKPOINTS:
             raise ValueError("lifecycle checkpoints missing, duplicated or out of order")
 
-    if "TestPublicLegacyUpgradeCutoverDrainAndSweep" in expected:
-        checkpoints = [point for row in rows if row.get("Action") == "output" and row.get("Test") == "TestPublicLegacyUpgradeCutoverDrainAndSweep"
+    public_case = next((name for name in expected if name in ("TestPublicLegacyUpgradeCutoverDrainAndSweep", "TestFrostNodeProcessesDKGAndDispatch")), None)
+    if public_case:
+        checkpoints = [point for row in rows if row.get("Action") == "output" and row.get("Test") == public_case
                        for point in re.findall(r"K09-PUBLIC:([a-z0-9-]+)", row.get("Output", ""))]
         if checkpoints != PUBLIC_LEGACY_CHECKPOINTS:
             raise ValueError("public legacy checkpoints missing, duplicated or out of order")
@@ -306,7 +309,7 @@ def main():
     result = {"scope": "K-09a", "evidenceClass": "concrete testing", "status": "running", "requiredStages": REQUIRED,
               "limits": {"cores": 8, "nodeHeapMiB": 8192, "compileHeapMiB": 16384, "stageWallSeconds": 900},
               "privateEvidence": str(private), "publicEvidencePolicy": "generated summaries only; raw logs/artifacts remain private",
-              "k09ExitStatus": "open", "openExitRequirements": ["real node dispatch and firewall qualification (node integration lead)", "realistic production-settings proof assembled by the FROST producer and accepted by its full entry point (SPV integration owner)"],
+              "k09ExitStatus": "open", "openExitRequirements": ["owner review of bounded K-09 implementation and composition assumptions", "KC-VER models/replays and authoritative V-05 closure", "explicitly requested K-09b campaign after V-05 closure"],
               "stages": [], "mutationCampaign": "not run; explicit owner request required"}
     result_path = evidence / "result.json"
     env = local_environment(os.environ)
@@ -327,6 +330,8 @@ def main():
             raise ValueError("environment pins differ from reviewed binaries")
         tb = Path(env["FROST_K03_TBTC"]).resolve()
         env.update({"GOMAXPROCS": "8", "NODE_OPTIONS": "--max-old-space-size=8192",
+                    "FROST_K09_REALISTIC_VECTOR": str(tb / "solidity/test/data/k09-taproot-retarget.json"),
+                    "FROST_K09_REALISTIC_PROOF_PRIVATE": str(private / "realistic-proof.json"),
                     "FROST_C04_LEGACY_PUBLIC_EVIDENCE": str(private / "legacy"),
                     "FROST_C04_LEGACY_EVIDENCE": str(private / "legacy-piece1")})
         result["environment"] = {k: env[k] for k in ["FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "SNOWFALL_WORKER_SHA256", "FROST_K04_BITCOIND", "FROST_K04_BITCOIND_SHA256", "FROST_C04_LEGACY_BASELINE_BUILD", "FROST_C04_DIGEST_BINARY", "FROST_C04_DIGEST_SHA256", "HARDHAT_NETWORK", "GOWORK", "GOFLAGS", "GOPROXY", "GOSUMDB"]}
@@ -345,9 +350,11 @@ def main():
         hardhat = str(tb / "solidity/node_modules/.bin/hardhat")
         stages = [("compile", [hardhat, "--config", "hardhat.k09.config.ts", "--network", "hardhat", "compile"], tb / "solidity", None)]
         stages += [("compile-registry", [str(KC / "solidity/ecdsa/node_modules/.bin/hardhat"), "--network", "hardhat", "compile"], KC / "solidity/ecdsa", None), ("artifact-binding", None, KC, None), ("controls", [sys.executable, str(KC / "test/frost/k09-controls.py"), "--self-test"], KC, None), ("config-controls", ["node", "test/bridge/k09-config-control.cjs"], tb / "solidity", None), ("build", ["go", "build", "-p", "2", "./..."], KC, None)]
+        stages.insert(4, ("node-guards", [sys.executable, str(KC / "test/frost/k09-node-controls.py"), str(private / "node-guards")], KC, None))
         for label, names in GO_CASES.items():
-            stages.append((label, ["go", "test", "-json", "./pkg/maintainer/spv" if label == "proof-depth" else "./pkg/frost/integration", "-run", "^(" + "|".join(names) + ")$", "-count=1", "-timeout", "14m"], KC, names))
+            stages.append((label, ["go", "test", "-json", "./pkg/maintainer/spv" if label in ("proof-depth", "realistic-proof") else "./pkg/frost/integration", "-run", "^(" + "|".join(names) + ")$", "-count=1", "-timeout", "14m"], KC, names))
         stages += [("spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleSpv.test.ts"), tb / "solidity", 6),
+                   ("realistic-spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleRealisticSpv.test.ts"), tb / "solidity", 5),
                    ("upgrade", hardhat_test(hardhat, "test/bridge/Frost.LifecycleUpgrade.test.ts", "test/bridge/Frost.LegacyReconciliation.test.ts"), tb / "solidity", 14)]
         for label, command, cwd, expected in stages:
             if args.only and label not in args.only:
@@ -359,7 +366,7 @@ def main():
             public_json(result_path, result)
             print(label + ": running", flush=True)
             start = time.monotonic()
-            if (label in GO_CASES or label in ("spv", "upgrade")) and artifacts is None:
+            if (label in GO_CASES or label in ("spv", "realistic-spv", "upgrade")) and artifacts is None:
                 artifacts = artifact_binding(tb, env["FROST_C04_LEGACY_BASELINE_BUILD"])
                 public_json(evidence / "artifacts.json", artifacts)
             if label == "artifact-binding":

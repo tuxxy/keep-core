@@ -318,6 +318,16 @@ def local_environment(parent):
     return env
 
 
+def stage_environment(label, env):
+    result = dict(env)
+    # These files are exclusive producer/consumer handoffs. A broad package
+    # regression must not run an integration helper with the final export path.
+    if label not in ("realistic-proof", "realistic-spv"):
+        for name in ("FROST_K09_REALISTIC_PROOF_PRIVATE", "FROST_K09_REALISTIC_SWEEP_PRIVATE", "FROST_K09_REALISTIC_REDEMPTION_PRIVATE"):
+            result.pop(name, None)
+    return result
+
+
 def hardhat_test(hardhat, *files):
     return [hardhat, "--config", "hardhat.k09.config.ts", "--network", "hardhat", "test", "--no-compile", *files]
 
@@ -417,7 +427,7 @@ def main():
                 public_json(evidence / "artifacts.json", artifacts)
             else:
                 log_path = private / (label + ".log")
-                stage_env = dict(env)
+                stage_env = stage_environment(label, env)
                 if label in ("compile", "compile-registry"):
                     stage_env["NODE_OPTIONS"] = "--max-old-space-size=16384"
                 code = run_command(command, cwd, stage_env, log_path)

@@ -172,6 +172,14 @@ def probe(source, selected=None):
                 # Unknown opaque producer data has no route into this summary.
                 runner["require_public_output"]("ordinary public test result")
 
+        def test_proof_handoff_scope(self):
+            keys = ("FROST_K09_REALISTIC_PROOF_PRIVATE", "FROST_K09_REALISTIC_SWEEP_PRIVATE", "FROST_K09_REALISTIC_REDEMPTION_PRIVATE")
+            env = {key: "/private/test/" + key for key in keys}
+            for stage in runner["REQUIRED"]:
+                actual = runner["stage_environment"](stage, env)
+                self.assertEqual(set(actual) & set(keys), set(keys) if stage in ("realistic-proof", "realistic-spv") else set(), "control ProofHandoffScope assertion")
+            self.assertEqual(set(env), set(keys))
+
         def test_cutover_control_record(self):
             good = {"status": "pass", "positiveCases": 6, "guard": "LegacyTimeoutRecovery", "outcome": "killed at owning assertion"}
             runner["require_cutover_controls"](good)
@@ -368,6 +376,7 @@ def main():
         ("EnvironmentAllowlist", "test_local_network", '    env = {key: value for key, value in parent.items() if key in allowed}', '    env = dict(parent)'),
         ("ReviewCoverage", "test_review_coverage", '    if not expected <= rows.keys() or aliases != {"K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03"}:', '    if False:'),
         ("SecretOutput", "test_forbidden_output", '    if SECRET_OUTPUT.search(text):', '    if False:'),
+        ("ProofHandoffScope", "test_proof_handoff_scope", '    if label not in ("realistic-proof", "realistic-spv"):', '    if False:'),
         ("CutoverControlBinding", "test_cutover_control_record", '    if controls.get("status") != "pass" or controls.get("positiveCases") != 6 or controls.get("guard") != "LegacyTimeoutRecovery" or controls.get("outcome") != "killed at owning assertion":', '    if False:'),
         ("NodeEvidenceBoundary", "test_node_log_boundary", '                if label in ("nodes", "node-recovery", "node-guards"):', '                if False:'),
         ("LocalReplacement", "test_local_replacement", '    if before != after:', '    if False:'),

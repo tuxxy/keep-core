@@ -421,7 +421,7 @@
     }
   ],
   "currentAcceptance": {
-    "record": "implementation/K-09/review4-fixes-2026-10-26/final/run/result.json",
+    "record": "implementation/K-09/review4-fixes-2026-10-26/final-2/run/result.json",
     "status": "pending; previous round-three result applies only to its exact heads"
   },
   "reviewAliases": [

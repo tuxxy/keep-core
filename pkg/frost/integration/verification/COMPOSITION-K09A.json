@@ -254,8 +254,8 @@
         {
           "repository": "keep-core",
           "path": "test/frost/k09-local.py",
-          "blob": "62cea11206520b74284d230b352da825c70ef5f2",
-          "sha256": "9840a0460520c7d4da1a9915cd444b63f71acc3978202c2f4bfef6a94ca48b01"
+          "blob": "4b9dfa8d61a88419515d82355e64daf1a556dbb8",
+          "sha256": "41ba5e5bbbd9e91fbeb6f94c221ca78a061b728ee01bd7088a46d4ec00578428"
         }
       ],
       "consumerSources": [
@@ -276,7 +276,7 @@
   "checkpointReferenceFormat": "TestName#checkpoint names assertion markers, not Go subtests; k09-local.py requires all ten markers exactly once in order",
   "coverageLedger": "K09-COVERAGE.json",
   "completionEvidenceRoot": "implementation/K-09/review4-fixes-2026-10-26",
-  "currentEvidenceRoot": "implementation/K-09/review4-fixes-2026-10-26/final/run; consult actual status and source binding",
+  "currentEvidenceRoot": "implementation/K-09/review4-fixes-2026-10-26/final-2/run; consult actual status and source binding",
   "realisticProofBoundary": {
     "producer": "Actual FrostMovementMaintainer, FrostSweepMaintainer and FrostRedemptionMaintainer with DifficultyProofDepth and default Bitcoin assembler",
     "consumer": "Full Bridge movement, sweep and redemption entrypoints",

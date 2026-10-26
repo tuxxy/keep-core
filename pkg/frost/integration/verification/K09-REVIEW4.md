@@ -35,3 +35,11 @@ copies. Limits before runs: <=8 Go cores, <=900 seconds per command; serialize
 Core/tss jobs. Private output remains scanned/hashed under retained evidence.
 No merge/release, Docker, CI, Kani or final mutation campaign. Models/replays,
 V-05, all-duty automation and existing remaining findings stay open.
+
+As implemented: completed keys also survive transient post-KeyReady RPC/transport
+failures and a lost worker reply after SaveKey, without clearing classified or
+existing quarantine. Scope tests separate real-node unsigned fee-policy recovery
+from the OPEN combined real-node reserve/pay/prove stale-main witness. Local
+independent-node round timing is 100 blocks; component timing remains ten.
+The bound runner explicitly records unavailable legacy Bridge suites and requires
+all changed legacy Go packages, full C-06 movement cases and owning guard controls.

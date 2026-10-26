@@ -24,6 +24,10 @@ def main():
  ('NodeBootstrapGate','pkg/frost/node/node.go','if !strings.HasPrefix(peer,','TestNodeBootstrapGatePrecedesCredentials','./pkg/frost/node'),
  ('NodeReloadCandidate','pkg/frost/node/reload.go','if hash != a.record.DescriptorHash','TestNodeReloadRequiresOriginalApproval','./pkg/frost/node'),
  ('NodeReloadApproval','pkg/frost/node/reload.go','if view.ApprovedID != a.record.ID','TestNodeReloadRequiresOriginalApproval','./pkg/frost/node'),
+ ('UnconfiguredTarget','pkg/chain/ethereum/frost_movement.go','if _, err := tc.GetWallet(label);','TestUnconfiguredHostRefusesUnknownCommittedTarget','./pkg/chain/ethereum'),
+ ('IncomingAnchor','pkg/frost/movement/view.go','if v.At != nil {','TestIncomingPlansUseCommonRoundAnchor','./pkg/frost/movement'),
+ ('IncomingRelease','pkg/frost/node/incoming.go','if err != nil || !safe {','TestIncomingAbandonmentSurvivesReopen','./pkg/frost/node'),
+ ('DurableKeyInterruption','pkg/frost/dkg/executor.go','recoverableReady := e.keyReady &&','TestDurableKeyCancellationDoesNotQuarantine','./pkg/frost/dkg'),
  ('CoreRegtestDomain','pkg/bitcoin/bitcoincore/local.go','if genesis != [32]byte','TestLocalCoreDomainAndKnownTransaction','./pkg/bitcoin/bitcoincore'),
  ('CoreKnownTransaction','pkg/bitcoin/bitcoincore/local.go','if other.Deserialize(known) == nil','TestLocalCoreDomainAndKnownTransaction','./pkg/bitcoin/bitcoincore'),
  ]
@@ -31,7 +35,7 @@ def main():
  record={'scope':'focused owning guards, not K09b','limits':{'cores':8,'unitWallSeconds':120,'firewallWallSeconds':900},'controls':[],'status':'running'}
  def save():(root/'result.json').write_text(json.dumps(record,indent=2)+'\n')
  save()
- positive=['go','test','-p','2','./pkg/frost/node','./pkg/bitcoin/bitcoincore','-count=1','-timeout','2m']
+ positive=['go','test','-p','2','./pkg/frost/node','./pkg/frost/movement','./pkg/frost/dkg','./pkg/chain/ethereum','./pkg/bitcoin/bitcoincore','-count=1','-timeout','2m']
  code=RUNNER['run_command'](positive,KC,env,root/'positive.log',timeout=120);RUNNER['require_exit'](code)
  with tempfile.TemporaryDirectory(prefix='k09-overlay-')as tmp:
   tmp=Path(tmp)
@@ -40,8 +44,11 @@ def main():
    if len(matches)!=1:raise RuntimeError('guard selector is ambiguous: '+name)
    index=matches[0]
    if name=='NodeFirewall':lines[index]=lines[index].replace('n.private, n.policy,','n.private, firewall.Disabled,')
+   elif name=='DurableKeyInterruption':lines[index]=lines[index].replace(':= e.keyReady &&',':= false && e.keyReady &&')
    else:
-    line=lines[index];assert line.rstrip().endswith('{');condition=line.strip()[3:-1].strip();lines[index]=line[:len(line)-len(line.lstrip())]+'if false && ('+condition+') {'
+    line=lines[index];assert line.rstrip().endswith('{');condition=line.strip()[3:-1].strip();prefix=''
+    if ';' in condition:prefix,condition=condition.rsplit(';',1);prefix+=';'
+    lines[index]=line[:len(line)-len(line.lstrip())]+'if '+prefix+' false && ('+condition+') {'
    altered=tmp/(name+'.go');altered.write_text('\n'.join(lines)+'\n')
    overlay=tmp/(name+'.json');overlay.write_text(json.dumps({'Replace':{str(source):str(altered)}}))
    current=dict(env);current['GOFLAGS']='-mod=readonly -overlay='+str(overlay)

@@ -157,7 +157,7 @@ def probe(source, selected=None):
                 root = Path(tmp)
                 ledger = root / "pkg/frost/integration/verification/K09-COVERAGE.json"
                 ledger.parent.mkdir(parents=True)
-                data = {"feedback": [{"id": "K09-" + str(i), "resolution": "open"} for i in range(1, 27)],
+                data = {"feedback": [{"id": "K09-" + str(i), "resolution": "open"} for i in range(1, 34)],
                         "reviewAliases": [{"id": name} for name in ("K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03")]}
                 ledger.write_text(json.dumps(data))
                 with patch.dict(runner["review_coverage"].__globals__, {"KC": root}):
@@ -171,6 +171,15 @@ def probe(source, selected=None):
                         runner["review_coverage"]()
                 # Unknown opaque producer data has no route into this summary.
                 runner["require_public_output"]("ordinary public test result")
+
+        def test_cutover_control_record(self):
+            good = {"status": "pass", "positiveCases": 6, "guard": "LegacyTimeoutRecovery", "outcome": "killed at owning assertion"}
+            runner["require_cutover_controls"](good)
+            for field in good:
+                bad = dict(good)
+                bad.pop(field)
+                with self.assertRaisesRegex(ValueError, "bound cutover recovery control missing", msg="control CutoverControlBinding assertion"):
+                    runner["require_cutover_controls"](bad)
 
         def test_local_replacement(self):
             # Real git enumeration and go.mod JSON parsing; no Go build/test.
@@ -359,7 +368,8 @@ def main():
         ("EnvironmentAllowlist", "test_local_network", '    env = {key: value for key, value in parent.items() if key in allowed}', '    env = dict(parent)'),
         ("ReviewCoverage", "test_review_coverage", '    if not expected <= rows.keys() or aliases != {"K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03"}:', '    if False:'),
         ("SecretOutput", "test_forbidden_output", '    if SECRET_OUTPUT.search(text):', '    if False:'),
-        ("NodeEvidenceBoundary", "test_node_log_boundary", '                if label in ("nodes", "node-guards"):', '                if False:'),
+        ("CutoverControlBinding", "test_cutover_control_record", '    if controls.get("status") != "pass" or controls.get("positiveCases") != 6 or controls.get("guard") != "LegacyTimeoutRecovery" or controls.get("outcome") != "killed at owning assertion":', '    if False:'),
+        ("NodeEvidenceBoundary", "test_node_log_boundary", '                if label in ("nodes", "node-recovery", "node-guards"):', '                if False:'),
         ("LocalReplacement", "test_local_replacement", '    if before != after:', '    if False:'),
         ("ProcessCleanup", "test_process_cleanup", '            terminate_group(process, grace)', '            process.poll()'),
     ]

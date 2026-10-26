@@ -25,17 +25,18 @@ GO_CASES = {
     "fraud-recovery": ["TestFrostFraudPublicAdmissionDefenseTimeout"],
     "legacy-drain": ["TestCrossSchemeDrainAndSweep"],
     "public-legacy": ["TestPublicLegacyUpgradeCutoverDrainAndSweep"],
-    "nodes": ["TestFrostNodeProcessesDKGAndDispatch", "TestFrostNodeCertifiedEpochInterruption", "TestFrostNodeCandidateEpochInterruption", "TestFrostNodeApprovedEpochInterruption", "TestFrostNodeIncomingDuringStalledDKG", "TestFrostNodeSignedIncomingInterruption", "TestFrostNodeReservationDefersWithoutExit"],
+    "nodes": ["TestFrostNodeProcessesDKGAndDispatch", "TestFrostNodeCandidateEpochInterruption", "TestFrostNodeApprovedEpochInterruption", "TestFrostNodeIncomingDuringStalledDKG", "TestFrostNodeSignedIncomingInterruption", "TestFrostNodeReservationDefersWithoutExit"],
+    "node-recovery": ["TestFrostNodeCertifiedEpochInterruption", "TestFrostNodeCertificateSubmitInterruption", "TestFrostNodeUnsignedIncomingReplansAfterRestart"],
     "proof-depth": ["TestFrostDifficultyProofDepth", "TestGetProofInfo"],
     "realistic-proof": ["TestFrostRetainedMainnetMovementProof", "TestFrostRetainedMainnetSweepProof", "TestFrostRetainedMainnetRedemptionProof"],
 }
 JOINED_CHECKPOINTS = ["k09-ready", "k09-credit", "k09-payment", "k09-heartbeat", "k09-inactivity", "k09-cutover", "k09-movement", "k09-restarted-defense", "k09-closure", "k09-post-cutover-dkg"]
 PUBLIC_LEGACY_CHECKPOINTS = ["public-legacy-funded", "legacy-upgraded", "legacy-drain-committed", "legacy-cutover-contained", "public-frost-drain-swept"]
-REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "node-guards", "config-controls", "build", "legacy-regression", *GO_CASES, "spv", "realistic-spv", "upgrade"]
+REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "node-guards", "cutover-guards", "config-controls", "build", "legacy-regression", *GO_CASES, "spv", "realistic-spv", "upgrade", "movement-regression"]
 
 def review_coverage():
     ledger = json.loads((KC / "pkg/frost/integration/verification/K09-COVERAGE.json").read_text())
-    expected = {"K09-" + str(i) for i in range(1, 27)}
+    expected = {"K09-" + str(i) for i in range(1, 34)}
     rows = {r["id"]: r for r in ledger["feedback"]}
     aliases = {r["id"] for r in ledger.get("reviewAliases", [])}
     if not expected <= rows.keys() or aliases != {"K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03"}:
@@ -44,6 +45,12 @@ def review_coverage():
     # those IDs from the open exit list on the author's own assertion.
     closed = {"fixed in round 3 review", "fixed; reviewed"}
     return [key for key in sorted(expected & rows.keys()) if rows[key].get("resolution") not in closed]
+
+
+def require_cutover_controls(controls):
+    if controls.get("status") != "pass" or controls.get("positiveCases") != 6 or controls.get("guard") != "LegacyTimeoutRecovery" or controls.get("outcome") != "killed at owning assertion":
+        raise ValueError("bound cutover recovery control missing")
+    return {"guard": "LegacyTimeoutRecovery", "status": "killed at owning assertion"}
 
 
 def sha(path):
@@ -376,16 +383,22 @@ def main():
             if not token:
                 raise ValueError("missing tool version")
             result.setdefault("tools", []).append({"tool": label, "version": token[0]})
+        result["legacyBridgeExclusions"] = [
+            {"suite": name, "reason": "shared install lacks external ReimbursementPool deployment record; unmodified suite fails in deployments.fixture before tests; dependency deployment/install mutation excluded", "attempt": "implementation/K-09/review4-fixes-2026-10-26/legacy-bridge-attempt/result.json"}
+            for name in ("Bridge.MovingFunds", "Bridge.Wallets")
+        ]
         hardhat = str(tb / "solidity/node_modules/.bin/hardhat")
         stages = [("compile", [hardhat, "--config", "hardhat.k09.config.ts", "--network", "hardhat", "compile", "--force"], tb / "solidity", None)]
         stages += [("compile-registry", [str(KC / "solidity/ecdsa/node_modules/.bin/hardhat"), "--network", "hardhat", "compile"], KC / "solidity/ecdsa", None), ("artifact-binding", None, KC, None), ("controls", [sys.executable, str(KC / "test/frost/k09-controls.py"), "--self-test"], KC, None), ("config-controls", ["node", "test/bridge/k09-config-control.cjs"], tb / "solidity", None), ("build", ["go", "build", "-p", "2", "./..."], KC, None)]
         stages.insert(4, ("node-guards", [sys.executable, str(KC / "test/frost/k09-node-controls.py"), str(private / "node-guards"), "--firewall"], KC, None))
-        stages.append(("legacy-regression", ["go", "test", "-p", "2", "./config", "./cmd", "./pkg/tbtcpg", "-count=1", "-timeout", "3m"], KC, None))
+        stages.insert(5, ("cutover-guards", [sys.executable, str(KC / "test/frost/k09-cutover-controls.py"), str(private / "cutover-guards")], KC, None))
+        stages.append(("legacy-regression", ["go", "test", "-p", "2", "./config", "./cmd", "./pkg/tbtcpg", "./pkg/tbtc", "./pkg/chain/ethereum", "./pkg/net/libp2p", "./pkg/maintainer/spv", "-count=1", "-timeout", "8m"], KC, None))
         for label, names in GO_CASES.items():
             stages.append((label, ["go", "test", "-json", "./pkg/maintainer/spv" if label in ("proof-depth", "realistic-proof") else "./pkg/frost/integration", "-run", "^(" + "|".join(names) + ")$", "-count=1", "-timeout", "14m"], KC, names))
         stages += [("spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleSpv.test.ts"), tb / "solidity", 6),
                    ("realistic-spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleRealisticSpv.test.ts", "test/bridge/Frost.LifecycleRealisticObligations.test.ts"), tb / "solidity", 7),
-                   ("upgrade", hardhat_test(hardhat, "test/bridge/Frost.LifecycleUpgrade.test.ts", "test/bridge/Frost.LegacyReconciliation.test.ts"), tb / "solidity", 14)]
+                   ("upgrade", hardhat_test(hardhat, "test/bridge/Frost.LifecycleUpgrade.test.ts", "test/bridge/Frost.LegacyReconciliation.test.ts"), tb / "solidity", 14),
+                   ("movement-regression", hardhat_test(hardhat, "test/bridge/Frost.Movement.test.ts"), tb / "solidity", 27)]
         for label, command, cwd, expected in stages:
             if args.only and label not in args.only:
                 continue
@@ -396,7 +409,7 @@ def main():
             public_json(result_path, result)
             print(label + ": running", flush=True)
             start = time.monotonic()
-            if (label in GO_CASES or label in ("spv", "realistic-spv", "upgrade")) and artifacts is None:
+            if (label in GO_CASES or label in ("spv", "realistic-spv", "upgrade", "movement-regression", "cutover-guards")) and artifacts is None:
                 artifacts = artifact_binding(tb, env["FROST_C04_LEGACY_BASELINE_BUILD"])
                 public_json(evidence / "artifacts.json", artifacts)
             if label == "artifact-binding":
@@ -418,7 +431,11 @@ def main():
                         raise ValueError("bound firewall control missing")
                     current["controls"] = [{"guard": c["guard"], "status": c["status"]} for c in controls["controls"]]
                     current["sourcesSha256"] = result["sourcesSha256"]
-                if label in ("nodes", "node-guards"):
+                if label == "cutover-guards":
+                    controls = json.loads((private / "cutover-guards/result.json").read_text())
+                    current["controls"] = [require_cutover_controls(controls)]
+                    current["sourcesSha256"] = result["sourcesSha256"]
+                if label in ("nodes", "node-recovery", "node-guards"):
                     require_private_evidence(private / "nodes")
                 if isinstance(expected, list):
                     require_go(text, expected)

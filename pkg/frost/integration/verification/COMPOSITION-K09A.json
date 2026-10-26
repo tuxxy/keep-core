@@ -20,8 +20,8 @@
         {
           "repository": "keep-core",
           "path": "pkg/frost/dkg/executor.go",
-          "blob": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d",
-          "sha256": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a"
+          "blob": "0d28f3cd05940ba9e5247f7c18137b62e389b9a7",
+          "sha256": "58f2e0396e258aba81722d4cab5565b7506693a25677c0055fc4f2c720b203c1"
         }
       ],
       "witnesses": [
@@ -45,8 +45,8 @@
         {
           "repository": "keep-core",
           "path": "pkg/frost/dkg/executor.go",
-          "blob": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d",
-          "sha256": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a"
+          "blob": "0d28f3cd05940ba9e5247f7c18137b62e389b9a7",
+          "sha256": "58f2e0396e258aba81722d4cab5565b7506693a25677c0055fc4f2c720b203c1"
         }
       ],
       "witnesses": [
@@ -254,8 +254,8 @@
         {
           "repository": "keep-core",
           "path": "test/frost/k09-local.py",
-          "blob": "c2d696799f154714b423545119e2accbf7adc6af",
-          "sha256": "89f7296b38361486ec0dc6ef2a48ea04fb482a97b2aa42e3edbf99f5d5217806"
+          "blob": "62cea11206520b74284d230b352da825c70ef5f2",
+          "sha256": "9840a0460520c7d4da1a9915cd444b63f71acc3978202c2f4bfef6a94ca48b01"
         }
       ],
       "consumerSources": [
@@ -275,8 +275,8 @@
   ],
   "checkpointReferenceFormat": "TestName#checkpoint names assertion markers, not Go subtests; k09-local.py requires all ten markers exactly once in order",
   "coverageLedger": "K09-COVERAGE.json",
-  "completionEvidenceRoot": "implementation/K-09/review3-fixes-2026-10-26",
-  "currentEvidenceRoot": "implementation/K-09/review3-fixes-2026-10-26/final/run; consult retained result and matching sources",
+  "completionEvidenceRoot": "implementation/K-09/review4-fixes-2026-10-26",
+  "currentEvidenceRoot": "implementation/K-09/review4-fixes-2026-10-26/final/run; consult actual status and source binding",
   "realisticProofBoundary": {
     "producer": "Actual FrostMovementMaintainer, FrostSweepMaintainer and FrostRedemptionMaintainer with DifficultyProofDepth and default Bitcoin assembler",
     "consumer": "Full Bridge movement, sweep and redemption entrypoints",
@@ -288,5 +288,6 @@
       "registry fixture descriptors do not establish threshold ownership of historical keys"
     ],
     "evidenceClass": "concrete testing; no formal composition result or V-05 closure"
-  }
+  },
+  "round4Boundary": "Production legacy resolver has a generated-binding RPC witness and refuses unknown labels without the optional alias. Public producer retains explicit membership/key/clock adapters. Unsigned recipe convergence has a real-node SIGKILL witness; combined redemption/stale-main and all-duty automation remain open. No V-05 closure."
 }

@@ -16,6 +16,7 @@ KC = Path(__file__).resolve().parents[2]
 WORKER_SHA = "d775dc36c508559f1bd997ab2552cea3aed94587540f6307352fec4628400765"
 DIGEST_SHA = "6be09a87119822348daf05d2177855c72a03294c99628d9c746829d4e58b84ba"
 CORE_SHA = "f4b9d78a74643c726d022840ca506dc317d41f8825aaef80b7bb705e12c5fda8"
+ANVIL_SHA = "b20eaa1ca89974f84baf1267a12d619e9724566bbef8588b83b5c5422872418e"
 DEPLOYMENT_ARTIFACTS = json.loads(Path(__file__).with_name("k09-artifacts.json").read_text())
 GO_CASES = {
     "joined": ["TestFrostCompleteLocalLifecycle"],
@@ -24,13 +25,25 @@ GO_CASES = {
     "fraud-recovery": ["TestFrostFraudPublicAdmissionDefenseTimeout"],
     "legacy-drain": ["TestCrossSchemeDrainAndSweep"],
     "public-legacy": ["TestPublicLegacyUpgradeCutoverDrainAndSweep"],
-    "nodes": ["TestFrostNodeProcessesDKGAndDispatch"],
+    "nodes": ["TestFrostNodeProcessesDKGAndDispatch", "TestFrostNodeCertifiedEpochInterruption", "TestFrostNodeCandidateEpochInterruption", "TestFrostNodeApprovedEpochInterruption", "TestFrostNodeIncomingDuringStalledDKG", "TestFrostNodeSignedIncomingInterruption", "TestFrostNodeReservationDefersWithoutExit"],
     "proof-depth": ["TestFrostDifficultyProofDepth", "TestGetProofInfo"],
-    "realistic-proof": ["TestFrostRetainedMainnetMovementProof"],
+    "realistic-proof": ["TestFrostRetainedMainnetMovementProof", "TestFrostRetainedMainnetSweepProof", "TestFrostRetainedMainnetRedemptionProof"],
 }
 JOINED_CHECKPOINTS = ["k09-ready", "k09-credit", "k09-payment", "k09-heartbeat", "k09-inactivity", "k09-cutover", "k09-movement", "k09-restarted-defense", "k09-closure", "k09-post-cutover-dkg"]
-PUBLIC_LEGACY_CHECKPOINTS = ["public-legacy-funded", "legacy-upgraded", "legacy-cutover-contained", "public-frost-drain-swept"]
-REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "node-guards", "config-controls", "build", *GO_CASES, "spv", "realistic-spv", "upgrade"]
+PUBLIC_LEGACY_CHECKPOINTS = ["public-legacy-funded", "legacy-upgraded", "legacy-drain-committed", "legacy-cutover-contained", "public-frost-drain-swept"]
+REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "node-guards", "config-controls", "build", "legacy-regression", *GO_CASES, "spv", "realistic-spv", "upgrade"]
+
+def review_coverage():
+    ledger = json.loads((KC / "pkg/frost/integration/verification/K09-COVERAGE.json").read_text())
+    expected = {"K09-" + str(i) for i in range(1, 27)}
+    rows = {r["id"]: r for r in ledger["feedback"]}
+    aliases = {r["id"] for r in ledger.get("reviewAliases", [])}
+    if not expected <= rows.keys() or aliases != {"K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03"}:
+        raise ValueError("review coverage IDs missing")
+    # Author-implemented changes still await review; never silently remove
+    # those IDs from the open exit list on the author's own assertion.
+    closed = {"fixed in round 3 review", "fixed; reviewed"}
+    return [key for key in sorted(expected & rows.keys()) if rows[key].get("resolution") not in closed]
 
 
 def sha(path):
@@ -283,7 +296,12 @@ def require_sources_unchanged(before, after):
 
 
 def local_environment(parent):
-    env = dict(parent)
+    allowed = {"PATH", "HOME", "TMPDIR", "USER", "LOGNAME", "LANG", "LC_ALL", "TERM", "SHELL",
+               "GOPATH", "GOCACHE", "GOMODCACHE", "GOTOOLCHAIN", "CGO_ENABLED", "CC", "CXX", "SDKROOT", "MACOSX_DEPLOYMENT_TARGET",
+               "FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "SNOWFALL_WORKER_SHA256",
+               "FROST_K04_BITCOIND", "FROST_K04_BITCOIND_SHA256", "FROST_C04_LEGACY_BASELINE_BUILD",
+               "FROST_C04_DIGEST_BINARY", "FROST_C04_DIGEST_SHA256", "FROST_K09_NODE_LOG_ROOT"}
+    env = {key: value for key, value in parent.items() if key in allowed}
     # CLI --network is also supplied. Remove fork variables before config load;
     # the K-09 config additionally disables forks after dotenv has loaded.
     env.update({"HARDHAT_NETWORK": "hardhat", "GOWORK": "off", "GOFLAGS": "-mod=readonly",
@@ -305,7 +323,8 @@ def main():
     evidence = args.evidence.resolve()
     evidence.mkdir(parents=True, exist_ok=False, mode=0o700)
     old_umask = os.umask(0o077)
-    private = Path(tempfile.mkdtemp(prefix="k09-private-"))
+    private = evidence / "private"
+    private.mkdir(mode=0o700)
     result = {"scope": "K-09a", "evidenceClass": "concrete testing", "status": "running", "requiredStages": REQUIRED,
               "limits": {"cores": 8, "nodeHeapMiB": 8192, "compileHeapMiB": 16384, "stageWallSeconds": 900},
               "privateEvidence": str(private), "publicEvidencePolicy": "generated summaries only; raw logs/artifacts remain private",
@@ -325,16 +344,26 @@ def main():
         require_pin(env["SNOWFALL_WORKER"], WORKER_SHA)
         require_pin(env["FROST_K04_BITCOIND"], CORE_SHA)
         require_pin(env["FROST_C04_DIGEST_BINARY"], DIGEST_SHA)
+        require_pin(env["FROST_K03_ANVIL"], ANVIL_SHA)
         env["FROST_C04_DIGEST_SHA256"] = DIGEST_SHA
         if env["SNOWFALL_WORKER_SHA256"] != WORKER_SHA or env["FROST_K04_BITCOIND_SHA256"] != CORE_SHA:
             raise ValueError("environment pins differ from reviewed binaries")
         tb = Path(env["FROST_K03_TBTC"]).resolve()
+        result["openReviewFindings"] = review_coverage()
+        result["openExitRequirements"] += result["openReviewFindings"]
+        result["anvilSha256"] = ANVIL_SHA
         env.update({"GOMAXPROCS": "8", "NODE_OPTIONS": "--max-old-space-size=8192",
+                    "FROST_K09_NODE_LOG_ROOT": str(private / "nodes"),
+                    "FROST_C04_LEGACY_SOURCE_ROOT": str(tb),
                     "FROST_K09_REALISTIC_VECTOR": str(tb / "solidity/test/data/k09-taproot-retarget.json"),
                     "FROST_K09_REALISTIC_PROOF_PRIVATE": str(private / "realistic-proof.json"),
+                    "FROST_K09_REALISTIC_SWEEP_PRIVATE": str(private / "realistic-sweep.json"),
+                    "FROST_K09_REALISTIC_REDEMPTION_VECTOR": str(tb / "solidity/test/data/k09-redemption-retarget.json"),
+                    "FROST_K09_REALISTIC_REDEMPTION_PRIVATE": str(private / "realistic-redemption.json"),
                     "FROST_C04_LEGACY_PUBLIC_EVIDENCE": str(private / "legacy"),
                     "FROST_C04_LEGACY_EVIDENCE": str(private / "legacy-piece1")})
         result["environment"] = {k: env[k] for k in ["FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "SNOWFALL_WORKER_SHA256", "FROST_K04_BITCOIND", "FROST_K04_BITCOIND_SHA256", "FROST_C04_LEGACY_BASELINE_BUILD", "FROST_C04_DIGEST_BINARY", "FROST_C04_DIGEST_SHA256", "HARDHAT_NETWORK", "GOWORK", "GOFLAGS", "GOPROXY", "GOSUMDB"]}
+        result["environment"].update({key: env[key] for key in ("FROST_C04_LEGACY_SOURCE_ROOT", "FROST_K09_NODE_LOG_ROOT")})
         sources = source_snapshot(tb, env)
         public_json(evidence / "sources.json", sources)
         result["sourcesSha256"] = sha(evidence / "sources.json")
@@ -348,13 +377,14 @@ def main():
                 raise ValueError("missing tool version")
             result.setdefault("tools", []).append({"tool": label, "version": token[0]})
         hardhat = str(tb / "solidity/node_modules/.bin/hardhat")
-        stages = [("compile", [hardhat, "--config", "hardhat.k09.config.ts", "--network", "hardhat", "compile"], tb / "solidity", None)]
+        stages = [("compile", [hardhat, "--config", "hardhat.k09.config.ts", "--network", "hardhat", "compile", "--force"], tb / "solidity", None)]
         stages += [("compile-registry", [str(KC / "solidity/ecdsa/node_modules/.bin/hardhat"), "--network", "hardhat", "compile"], KC / "solidity/ecdsa", None), ("artifact-binding", None, KC, None), ("controls", [sys.executable, str(KC / "test/frost/k09-controls.py"), "--self-test"], KC, None), ("config-controls", ["node", "test/bridge/k09-config-control.cjs"], tb / "solidity", None), ("build", ["go", "build", "-p", "2", "./..."], KC, None)]
-        stages.insert(4, ("node-guards", [sys.executable, str(KC / "test/frost/k09-node-controls.py"), str(private / "node-guards")], KC, None))
+        stages.insert(4, ("node-guards", [sys.executable, str(KC / "test/frost/k09-node-controls.py"), str(private / "node-guards"), "--firewall"], KC, None))
+        stages.append(("legacy-regression", ["go", "test", "-p", "2", "./config", "./cmd", "./pkg/tbtcpg", "-count=1", "-timeout", "3m"], KC, None))
         for label, names in GO_CASES.items():
             stages.append((label, ["go", "test", "-json", "./pkg/maintainer/spv" if label in ("proof-depth", "realistic-proof") else "./pkg/frost/integration", "-run", "^(" + "|".join(names) + ")$", "-count=1", "-timeout", "14m"], KC, names))
         stages += [("spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleSpv.test.ts"), tb / "solidity", 6),
-                   ("realistic-spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleRealisticSpv.test.ts"), tb / "solidity", 5),
+                   ("realistic-spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleRealisticSpv.test.ts", "test/bridge/Frost.LifecycleRealisticObligations.test.ts"), tb / "solidity", 7),
                    ("upgrade", hardhat_test(hardhat, "test/bridge/Frost.LifecycleUpgrade.test.ts", "test/bridge/Frost.LegacyReconciliation.test.ts"), tb / "solidity", 14)]
         for label, command, cwd, expected in stages:
             if args.only and label not in args.only:
@@ -382,6 +412,14 @@ def main():
                 require_exit(code)
                 text = log_path.read_text()
                 require_public_output(text)
+                if label == "node-guards":
+                    controls = json.loads((private / "node-guards/result.json").read_text())
+                    if controls.get("status") != "pass" or not any(c.get("guard") == "NodeFirewall" and c.get("status") == "killed at owning assertion" for c in controls.get("controls", [])):
+                        raise ValueError("bound firewall control missing")
+                    current["controls"] = [{"guard": c["guard"], "status": c["status"]} for c in controls["controls"]]
+                    current["sourcesSha256"] = result["sourcesSha256"]
+                if label in ("nodes", "node-guards"):
+                    require_private_evidence(private / "nodes")
                 if isinstance(expected, list):
                     require_go(text, expected)
                     current["cases"] = [{"name": name, "status": "pass"} for name in expected]
@@ -396,6 +434,9 @@ def main():
         if artifacts is not None:
             require_sources_unchanged(artifacts, artifact_binding(tb, env["FROST_C04_LEGACY_BASELINE_BUILD"]))
         require_private_evidence(private)
+        result["privateFiles"] = {str(path.relative_to(private)): {"sha256": sha(path), "bytes": path.stat().st_size}
+                                  for path in sorted(private.rglob("*")) if path.is_file()}
+        result["privateFilesSourcesSha256"] = result["sourcesSha256"]
         result["status"] = "partial" if args.only else "pass"
         return 0
     except (Exception, KeyboardInterrupt) as error:
@@ -410,6 +451,12 @@ def main():
     finally:
         signal.signal(signal.SIGTERM, previous_term)
         try:
+            # Retain a complete hash inventory on failed/quarantined runs too;
+            # never promote their contents or label them accepted evidence.
+            result["privateFiles"] = {str(path.relative_to(private)): {"sha256": sha(path), "bytes": path.stat().st_size}
+                                      for path in sorted(private.rglob("*")) if path.is_file()}
+            if "sourcesSha256" in result:
+                result["privateFilesSourcesSha256"] = result["sourcesSha256"]
             public_json(result_path, result)
         finally:
             os.umask(old_umask)

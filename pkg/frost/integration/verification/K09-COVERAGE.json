@@ -7,85 +7,221 @@
       "id": "K09-1",
       "status": "implemented",
       "change": "Whole Go module, actual go-list build/embed inputs, recursive local replacements; shared fully qualified native deployment roots and linked libraries.",
-      "witness": "source/artifact manifests; controls for omitted internal and package artifact inputs"
+      "witness": "source/artifact manifests; controls for omitted internal and package artifact inputs",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-2",
       "status": "implemented",
       "change": "Fresh sequential run required on final source bytes; historical partial records are superseded.",
-      "witness": "run/result.json and post-commit correspondence"
+      "witness": "run/result.json and post-commit correspondence",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-3",
       "status": "implemented bounded public witness",
       "change": "Public baseline request/callback, real tss-lib deposit sweep and escrow; actual proxy upgrade; original legacy timeout after cutover; admitted drain commitment proved and FROST-swept under containment.",
-      "witness": "TestPublicLegacyUpgradeCutoverDrainAndSweep; no Bridge/Bank storage injection. New commitments remain prohibited under containment; the target is admitted beforehand."
+      "witness": "TestPublicLegacyUpgradeCutoverDrainAndSweep; current remediation invokes the actual MovingFundsTask with a controlled membership adapter; reviewed round-3 head used a harness commitment. No Bridge/Bank storage injection.",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-4",
       "status": "implemented bounded public witnesses",
       "change": "Real post-cutover FROST DKG plus public pre-upgrade legacy redemption deadline/refund, followed by legacy-to-FROST drain under containment.",
-      "witness": "TestFrostCompleteLocalLifecycle#k09-post-cutover-dkg and TestPublicLegacyUpgradeCutoverDrainAndSweep"
+      "witness": "TestFrostCompleteLocalLifecycle#k09-post-cutover-dkg and TestPublicLegacyUpgradeCutoverDrainAndSweep; current remediation invokes the actual MovingFundsTask with a controlled membership adapter; reviewed round-3 head used a harness commitment. No Bridge/Bank storage injection.",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-5",
-      "status": "implemented bounded coverage; broader interleavings OPEN",
-      "change": "Public upgrade cases cover deposit sweep, redemption settlement/timeout, fraud defense/timeout, outgoing proof/timeout, incoming proof/timeout, source closing, and watchtower records. Alias redeemer/notifier and duplicate calls are checked.",
-      "witness": "Frost.LifecycleUpgrade.test.ts; Frost.LegacyReconciliation.test.ts; no exhaustive actor permutations"
+      "status": "implemented upgrade/cutover obligation matrix; final bound acceptance pending",
+      "change": "Public deposit, redemption settlement/timeout, fraud defense/timeout and outgoing/incoming proof/timeout obligations cross upgrade and FrostOnly cutover before discharge. Outgoing proof interleaves with a different wallet's open challenge; original state frames and public duplicate refusals are checked.",
+      "witness": "Fourteen-case upgrade/reconciliation suite includes exact pre-upgrade signed payment through FrostOnly; see currentAcceptance for final source-bound result.",
+      "resolution": "partial; open",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-6",
       "status": "implemented bounded separate-node witness; review OPEN",
       "change": "Separate OS executables own independent stores, real workers and authenticated libp2p with production eligibility firewall. Automatic DKG/readiness and incoming dispatch; older epoch reload rechecks original canonical approval. Other lifecycle duties remain joined component witnesses.",
-      "witness": "TestFrostNodeProcessesDKGAndDispatch; local fence and stake/beacon adapters, operator-1 SPV alias; not production all-duty scheduler qualification"
+      "witness": "TestFrostNodeProcessesDKGAndDispatch; local fence and stake/beacon adapters, operator-1 SPV alias; not production all-duty scheduler qualification",
+      "resolution": "partial; open",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-7",
-      "status": "implemented bounded crash witness",
-      "change": "SIGKILL a child while an actual journal signing claim is active; reopen same store; consumed claim stays claimed; fresh claim succeeds; same lifecycle defense consumes durable record.",
-      "witness": "k09_crash_test.go; controlled parent fence survives; not host power-loss/fence qualification"
+      "status": "real DKG and signed-step interruption witnesses implemented; full exit review OPEN",
+      "change": "Retain the old fabricated-claim helper only as a store control. Separate real nodes now pause actual DKG candidate, approval and certification boundaries and the completed incoming-sign boundary, then restart with SIGINT/SIGKILL.",
+      "witness": "Separate-node candidate, approval and certification interruption cases passed; signed-witness-final passed SIGINT/SIGKILL with byte-identical complete Bitcoin transaction. Full source-bound run pending; automatic all-duty recovery remains open.",
+      "resolution": "partial; open",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-8",
-      "status": "implemented bounded full producer/consumer witness",
-      "change": "Actual FROST maintainer, DifficultyProofDepth and default Bitcoin assembler produce a retained mainnet Taproot proof across a rising retarget; full Bridge entrypoint consumes identical args at factor six.",
-      "witness": "TestFrostRetainedMainnetMovementProof; Frost.LifecycleRealisticSpv five cases cover valid proof, insufficient work, wrong inclusion, relay range, custody mismatch and replay. Custody origin/lifecycle and relay publication are controlled adapters, not mainnet custody/relay qualification"
+      "status": "all three real-header producers and full Bridge consumers passed; node proof depth implemented",
+      "change": "Actual movement, sweep and redemption maintainers produce real retarget-header proofs through the default Bitcoin assembler; corresponding full Bridge entrypoints consume identical arguments at factor six.",
+      "witness": "review3-fixes-2026-10-26/realistic-obligations-2/result.json: three actual Go maintainers and seven full Bridge cases at factor six, real mainnet retarget headers; prior funding/admission and relay publication are controlled adapters",
+      "resolution": "fixed; awaiting review and final bound acceptance",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-9",
       "status": "implemented",
       "change": "Private diagnostics, generated public summaries only, supplementary forbidden-output refusal.",
-      "witness": "k09-controls.py; no opaque worker-record decoding/export"
+      "witness": "k09-controls.py; no opaque worker-record decoding/export",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-10",
       "status": "implemented",
       "change": "Reap process group on leader success/failure, timeout and interruption.",
-      "witness": "k09-controls.py child-survival controls"
+      "witness": "k09-controls.py child-survival controls",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-11",
       "status": "implemented",
       "change": "Direct contract finalizeClosing rejection for open challenge plus full state frame, then successful closure after defense.",
-      "witness": "TestFrostCompleteLocalLifecycle#k09-closure"
+      "witness": "TestFrostCompleteLocalLifecycle#k09-closure",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-12",
       "status": "implemented",
       "change": "Exact legacy-cutover reason; valid packed deposit reveal reaches contained-exposure guard with exact reason and unchanged frame.",
-      "witness": "TestFrostCompleteLocalLifecycle#k09-cutover"
+      "witness": "TestFrostCompleteLocalLifecycle#k09-cutover",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-13",
       "status": "implemented",
       "change": "Ten explicit machine checkpoint markers, exact ordering validator and missing/duplicate/reordered controls. Checkpoint references use #, not fictitious Go subtests.",
-      "witness": "COMPOSITION-K09A.json; k09-controls.py"
+      "witness": "COMPOSITION-K09A.json; k09-controls.py",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
     },
     {
       "id": "K09-14",
       "status": "implemented",
       "change": "Replay supplies current target main, reaching the input-count guard (the original transaction has one input). A separate explicitly seeded production-library control consumes Pending once, then reaches the Processed request-state guard with unchanged frame. Native digest binary is SHA256 pinned with no fallback.",
-      "witness": "Frost.LifecycleUpgrade.test.ts; frost-legacy-bitcoin.ts; k09-local.py"
+      "witness": "Frost.LifecycleUpgrade.test.ts; frost-legacy-bitcoin.ts; k09-local.py",
+      "resolution": "fixed in round 3 review",
+      "owner": "integration verification owner"
+    },
+    {
+      "id": "K09-15",
+      "priority": 1,
+      "owner": "legacy proposal-generator owner",
+      "status": "implemented; public-precursor regression passed",
+      "resolution": "fixed; awaiting review",
+      "change": "Actual tbtcpg MovingFundsTask produces ECDSA-to-FROST drain commitments, including zero legacy Live wallets; FROST policy is explicit same-proxy opt-in.",
+      "witness": "review3-fixes-2026-10-26/public-producer-4/result.json: valid legacy-target refusal after FrostOnly with unchanged state, then real MovingFundsTask commitment with zero legacy Live wallets and real tss/Core/FROST settlement"
+    },
+    {
+      "id": "K09-16",
+      "priority": 2,
+      "owner": "contract movement owner",
+      "status": "implemented; public-precursor regression passed",
+      "resolution": "fixed; awaiting review",
+      "change": "FrostOnly rejects new legacy-to-legacy target commitments while preserving admitted obligations.",
+      "witness": "review3-fixes-2026-10-26/public-producer-4/result.json: valid legacy-target refusal after FrostOnly with unchanged state, then real MovingFundsTask commitment with zero legacy Live wallets and real tss/Core/FROST settlement"
+    },
+    {
+      "id": "K09-17",
+      "priority": 3,
+      "owner": "acceptance runner owner",
+      "status": "fixed in round 3 review",
+      "resolution": "fixed in round 3 review",
+      "change": "Go input inventory",
+      "witness": "Review 5653710165 (keep-core) / 5653710870 (tbtc-v2); fresh regression evidence pending"
+    },
+    {
+      "id": "K09-18",
+      "priority": 3,
+      "owner": "acceptance runner owner",
+      "status": "implemented; owning controls passed; final bound acceptance pending",
+      "resolution": "fixed; awaiting review and final bound acceptance",
+      "change": "Durable private evidence and complete witness hash manifest",
+      "witness": "Private logs and artifacts retained under acceptance root with complete SHA256/size manifest, including failed runs. See currentAcceptance for final source-bound result."
+    },
+    {
+      "id": "K09-19",
+      "priority": 3,
+      "owner": "acceptance runner owner",
+      "status": "implemented; owning controls passed; final bound acceptance pending",
+      "resolution": "fixed; awaiting review and final bound acceptance",
+      "change": "Environment allowlist, source-root binding and Anvil pin",
+      "witness": "Strict environment allowlist, explicit source-root binding and pinned Anvil binary. See currentAcceptance for final source-bound result."
+    },
+    {
+      "id": "K09-20",
+      "priority": 3,
+      "owner": "node integration owner",
+      "status": "implemented; loopback unit regression passed",
+      "resolution": "fixed; awaiting bound acceptance",
+      "change": "Public fixture identities listening outside loopback",
+      "witness": "LoopbackOnly transport configuration in real nodes and peer helper; IPv4/IPv6 listener regression in host-unit result."
+    },
+    {
+      "id": "K09-21",
+      "priority": 2,
+      "owner": "node integration owner",
+      "status": "implemented: epoch/operation isolation, independent public expiry, exact incoming recovery",
+      "resolution": "fixed; awaiting review and final bound acceptance",
+      "change": "Per-epoch recovery and per-wallet duty isolation",
+      "witness": "Separate-node candidate/approval/certification restart and stalled-DKG incoming cases passed individually. signed-witness-final/result.json passed both kill modes with identical complete Bitcoin transaction, including witness. Node admission/DKG reservation isolation also passed. Final source-bound run pending."
+    },
+    {
+      "id": "K09-22",
+      "priority": 3,
+      "owner": "node integration owner",
+      "status": "retry isolation implemented; real reservation and independent DKG passed; full criterion OPEN",
+      "resolution": "open",
+      "change": "Normal redemption reservation must defer incoming work",
+      "witness": "node-reservation-final/result.json: real admitted reservation causes deferred incoming retries while independent DKG completes. Automatic redemption payment/proof and another-wallet incoming remain required by the review criterion."
+    },
+    {
+      "id": "K09-23",
+      "priority": 2,
+      "owner": "integration verification owner",
+      "status": "implemented; owning controls passed; final bound acceptance pending",
+      "resolution": "fixed; awaiting review and final bound acceptance",
+      "change": "Complete review ledger and honest producer correspondence",
+      "witness": "All 26 numbered findings plus five review aliases recorded; actual and seeded producer paths distinguished; unresolved findings remain in acceptance output. See currentAcceptance for final source-bound result."
+    },
+    {
+      "id": "K09-24",
+      "priority": 3,
+      "owner": "acceptance runner owner",
+      "status": "implemented; owning controls passed; final bound acceptance pending",
+      "resolution": "fixed; awaiting review and final bound acceptance",
+      "change": "Node logs must enter retained private scan/hash scope",
+      "witness": "Every node log routed under retained private evidence and checked and hashed in the bound run. See currentAcceptance for final source-bound result."
+    },
+    {
+      "id": "K09-25",
+      "priority": 3,
+      "owner": "configuration owner",
+      "status": "implemented; config/cmd regression passed",
+      "resolution": "fixed; awaiting bound acceptance",
+      "change": "Inherited config activation assertion and regression stage",
+      "witness": "host-unit result passes config and cmd; revised runner requires legacy-regression stage."
+    },
+    {
+      "id": "K09-26",
+      "priority": 3,
+      "owner": "acceptance runner owner",
+      "status": "implemented; owning controls passed; final bound acceptance pending",
+      "resolution": "fixed; awaiting review and final bound acceptance",
+      "change": "Firewall negative control bound to acceptance sources",
+      "witness": "The node-guards stage invokes --firewall and requires/promotes the owning NodeFirewall refusal with the same source digest. See currentAcceptance for final source-bound result."
     }
   ],
   "verificationNotRun": [
@@ -195,7 +331,7 @@
     {
       "requirement": "actual SPV settings and realistic headers",
       "status": "bounded full FROST producer/consumer witness",
-      "witness": "TestFrostRetainedMainnetMovementProof; Frost.LifecycleRealisticSpv five cases cover valid proof, insufficient work, wrong inclusion, relay range, custody mismatch and replay. Custody origin/lifecycle and relay publication are controlled adapters, not mainnet custody/relay qualification"
+      "witness": "Three actual Go maintainers feed seven full Bridge consumer cases for movement, deposit sweep and redemption across real retarget headers. Prior custody/admission/descriptors and relay publication are explicit controlled adapters."
     },
     {
       "requirement": "models/replays, composition exit and final campaign",
@@ -231,10 +367,51 @@
     }
   ],
   "currentAcceptance": {
-    "record": "implementation/K-09/completion-2026-10-26/final/run/result.json",
-    "status": "pending fresh committed-head execution; record determines result",
-    "expectedStages": 19,
-    "expectedNamedGoCases": 11,
-    "expectedContractCases": 25
+    "record": "implementation/K-09/review3-fixes-2026-10-26/final/run/result.json",
+    "status": "Consult the retained result and matching sources; no pass is claimed before completion. The prior 19-stage run is historical.",
+    "expectedStages": 20,
+    "expectedContractCases": 27,
+    "expectedNamedGoCases": 19
+  },
+  "reviewAliases": [
+    {
+      "id": "K09A-B01",
+      "resolution": "fixed in round 3 review",
+      "residual": null,
+      "owner": "integration verification owner"
+    },
+    {
+      "id": "K09A-B02",
+      "resolution": "fixed in round 3 review",
+      "residual": null,
+      "owner": "integration verification owner"
+    },
+    {
+      "id": "K09A-C01",
+      "resolution": "fixed in round 3 review",
+      "residual": null,
+      "owner": "integration verification owner"
+    },
+    {
+      "id": "K09A-C02",
+      "resolution": "fixed in round 3 review",
+      "residual": null,
+      "owner": "integration verification owner"
+    },
+    {
+      "id": "K09A-C03",
+      "resolution": "fixed in round 3 review",
+      "residual": "K09-24",
+      "owner": "integration verification owner"
+    }
+  ],
+  "round3": {
+    "keepCoreHead": "9fdcab15bcf38a57daa499d597c2fbb599ee0eb4",
+    "tbtcHead": "85e4505b1a96de6592dd399be314bd544eb5cb0b",
+    "reviews": [
+      "5653710165",
+      "5653710870"
+    ],
+    "status": "Review corrections implemented with explicit partial findings; final bound acceptance and independent review pending."
   }
 }

@@ -128,11 +128,11 @@ def probe(source, selected=None):
                 selected = previous
 
         def test_local_network(self):
-            inherited = {"HARDHAT_NETWORK": "mainnet", "FORKING_URL": "https://invalid.example", "FORKING_BLOCK": "1", "CHAIN_API_URL": "https://invalid.example", "CONTRACT_OWNER_ACCOUNT_PRIVATE_KEY": "SYNTHETIC_NOT_A_KEY"}
+            inherited = {"HARDHAT_NETWORK": "mainnet", "FORKING_URL": "https://invalid.example", "FORKING_BLOCK": "1", "CHAIN_API_URL": "https://invalid.example", "CONTRACT_OWNER_ACCOUNT_PRIVATE_KEY": "SYNTHETIC_NOT_A_KEY", "FROST_C04_LEGACY_SOURCE_ROOT": "/wrong/source", "UNREVIEWED_SETTING": "1"}
             env = runner["local_environment"](inherited)
             command = runner["hardhat_test"]("hardhat", "fixture.ts")
             self.assertEqual(env["HARDHAT_NETWORK"], "hardhat", "control LocalNetwork assertion")
-            self.assertFalse(any(k in env for k in ("FORKING_URL", "FORKING_BLOCK", "CHAIN_API_URL", "CONTRACT_OWNER_ACCOUNT_PRIVATE_KEY")))
+            self.assertFalse(any(k in env for k in ("FORKING_URL", "FORKING_BLOCK", "CHAIN_API_URL", "CONTRACT_OWNER_ACCOUNT_PRIVATE_KEY", "FROST_C04_LEGACY_SOURCE_ROOT", "UNREVIEWED_SETTING")), "control EnvironmentAllowlist assertion")
             self.assertEqual(command[command.index("--network") + 1], "hardhat")
 
         def test_forbidden_output(self):
@@ -151,6 +151,24 @@ def probe(source, selected=None):
                 self.assertFalse(public.exists())
                 runner["public_json"](public, {"cases": [{"name": "Required", "status": "pass"}]})
                 self.assertNotIn("SENTINEL", public.read_text())
+
+        def test_review_coverage(self):
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                ledger = root / "pkg/frost/integration/verification/K09-COVERAGE.json"
+                ledger.parent.mkdir(parents=True)
+                data = {"feedback": [{"id": "K09-" + str(i), "resolution": "open"} for i in range(1, 27)],
+                        "reviewAliases": [{"id": name} for name in ("K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03")]}
+                ledger.write_text(json.dumps(data))
+                with patch.dict(runner["review_coverage"].__globals__, {"KC": root}):
+                    self.assertIn("K09-15", runner["review_coverage"]())
+                    data["feedback"][14]["resolution"] = "fixed; awaiting review"
+                    ledger.write_text(json.dumps(data))
+                    self.assertIn("K09-15", runner["review_coverage"]())
+                    data["feedback"] = [r for r in data["feedback"] if r["id"] != "K09-15"]
+                    ledger.write_text(json.dumps(data))
+                    with self.assertRaisesRegex(ValueError, "review coverage IDs missing", msg="control ReviewCoverage assertion"):
+                        runner["review_coverage"]()
                 # Unknown opaque producer data has no route into this summary.
                 runner["require_public_output"]("ordinary public test result")
 
@@ -217,7 +235,7 @@ def probe(source, selected=None):
                     env = {k: str(root) for k in ("FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "FROST_K04_BITCOIND", "FROST_C04_LEGACY_BASELINE_BUILD", "FROST_C04_DIGEST_BINARY")}
                     env.update({"SNOWFALL_WORKER_SHA256": runner["WORKER_SHA"], "FROST_K04_BITCOIND_SHA256": runner["CORE_SHA"]})
                     globals_ = runner["main"].__globals__
-                    with patch.dict(os.environ, env), patch.object(sys, "argv", ["runner", str(root / "public"), "--only", "joined"]), patch.dict(globals_, {"require_pin": lambda *args: None, "source_snapshot": lambda *args: {}, "artifact_binding": lambda *args: {}, "run_command": command_stub}), patch.object(subprocess, "check_output", return_value="1.2.3"):
+                    with patch.dict(os.environ, env), patch.object(sys, "argv", ["runner", str(root / "public"), "--only", "joined"]), patch.dict(globals_, {"require_pin": lambda *args: None, "source_snapshot": lambda *args: {}, "artifact_binding": lambda *args: {}, "review_coverage": lambda: [], "run_command": command_stub}), patch.object(subprocess, "check_output", return_value="1.2.3"):
                         code = runner["main"]()
                     result = json.loads((root / "public/result.json").read_text())
                     private = Path(result["privateEvidence"])
@@ -226,11 +244,41 @@ def probe(source, selected=None):
                         self.assertEqual(result["status"], "fail" if forbidden else "partial")
                         self.assertEqual(private.stat().st_mode & 0o777, 0o700)
                         self.assertIn("PRIVATE_SENTINEL", (private / "joined.log").read_text())
+                        if not forbidden:
+                            self.assertEqual(result["privateFiles"]["joined.log"]["sha256"], runner["sha"](private / "joined.log"))
+                            self.assertEqual(result["privateFilesSourcesSha256"], result["sourcesSha256"])
                         for public in (root / "public").iterdir():
-                            self.assertNotIn("PRIVATE_SENTINEL", public.read_text())
-                        self.assertEqual(set(p.name for p in (root / "public").iterdir()), {"result.json", "sources.json", "artifacts.json"})
+                            if public.is_file(): self.assertNotIn("PRIVATE_SENTINEL", public.read_text())
+                        self.assertEqual(set(p.name for p in (root / "public").iterdir()), {"result.json", "sources.json", "artifacts.json", "private"})
                     finally:
                         shutil.rmtree(private)
+
+        def test_node_log_boundary(self):
+            for forbidden in (False, True):
+                with self.subTest(forbidden=forbidden), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    name = "TestFrostNodeProcessesDKGAndDispatch"
+                    events = [json.dumps({"Action": "output", "Test": name, "Output": "K09-PUBLIC:" + p}) for p in runner["PUBLIC_LEGACY_CHECKPOINTS"]]
+                    events.append(json.dumps({"Action": "pass", "Test": name}))
+                    events.extend(json.dumps({"Action": "pass", "Test": case}) for case in runner["GO_CASES"]["nodes"] if case != name)
+                    program = "print(" + repr("\n".join(events)) + ")"
+                    launch = runner["run_command"]
+                    after_stage = []
+                    def command_stub(command, cwd, env, log_path):
+                        node = Path(env["FROST_K09_NODE_LOG_ROOT"]) / "session" / "operator.log"
+                        node.parent.mkdir(parents=True)
+                        node.write_text("secret_share=CANARY" if forbidden else "public node status")
+                        return launch([sys.executable, "-c", program], root, env, log_path, timeout=3, grace=.1)
+                    env = {k: str(root) for k in ("FROST_K03_TBTC", "FROST_K03_ANVIL", "SNOWFALL_WORKER", "FROST_K04_BITCOIND", "FROST_C04_LEGACY_BASELINE_BUILD", "FROST_C04_DIGEST_BINARY")}
+                    env.update({"SNOWFALL_WORKER_SHA256": runner["WORKER_SHA"], "FROST_K04_BITCOIND_SHA256": runner["CORE_SHA"]})
+                    with patch.dict(os.environ, env), patch.object(sys, "argv", ["runner", str(root / "evidence"), "--only", "nodes"]), patch.dict(runner["main"].__globals__, {"require_pin": lambda *a: None, "source_snapshot": lambda *a: {}, "artifact_binding": lambda *a: {}, "review_coverage": lambda: [], "run_command": command_stub, "require_sources_unchanged": lambda *a: after_stage.append(True)}), patch.object(subprocess, "check_output", return_value="1.2.3"):
+                        code = runner["main"]()
+                    self.assertEqual(code, 1 if forbidden else 0, "control NodeEvidenceBoundary assertion")
+                    if forbidden: self.assertFalse(after_stage, "control NodeEvidenceBoundary assertion")
+                    result = json.loads((root / "evidence/result.json").read_text())
+                    self.assertEqual(result["stages"][-1]["status"], "fail" if forbidden else "pass")
+                    if not forbidden:
+                        self.assertIn("nodes/session/operator.log", result["privateFiles"])
 
         def test_process_cleanup(self):
             # Limits: Python-only process groups, <5s each; exact owned cleanup.
@@ -308,7 +356,10 @@ def main():
         ("ImportedSource", "test_imported_artifact_source", '                if inputs[source_path][0] != value["content"]:', '                if source.startswith("contracts/") and inputs[source_path][0] != value["content"]:'),
         ("DeployedPackage", "test_deployed_package_output", '                if artifact[key] != "0x" + compiled["evm"][key]["object"]:', '                if False:'),
         ("LocalNetwork", "test_local_network", '"HARDHAT_NETWORK": "hardhat",', '"HARDHAT_NETWORK": parent.get("HARDHAT_NETWORK"),'),
+        ("EnvironmentAllowlist", "test_local_network", '    env = {key: value for key, value in parent.items() if key in allowed}', '    env = dict(parent)'),
+        ("ReviewCoverage", "test_review_coverage", '    if not expected <= rows.keys() or aliases != {"K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03"}:', '    if False:'),
         ("SecretOutput", "test_forbidden_output", '    if SECRET_OUTPUT.search(text):', '    if False:'),
+        ("NodeEvidenceBoundary", "test_node_log_boundary", '                if label in ("nodes", "node-guards"):', '                if False:'),
         ("LocalReplacement", "test_local_replacement", '    if before != after:', '    if False:'),
         ("ProcessCleanup", "test_process_cleanup", '            terminate_group(process, grace)', '            process.poll()'),
     ]

@@ -158,9 +158,15 @@
         "TestCrossSchemeDrainAndSweep",
         "TestPublicLegacyUpgradeCutoverDrainAndSweep",
         "TestFrostNodeProcessesDKGAndDispatch",
-        "TestFrostRetainedMainnetMovementProof -> Frost.LifecycleRealisticSpv"
+        "TestFrostRetainedMainnetMovementProof -> Frost.LifecycleRealisticSpv",
+        "TestFrostNodeSignedIncomingInterruption (complete signed bytes unchanged after SIGINT/SIGKILL)"
       ],
-      "remaining": "Real nodes automatically dispatch the Core incoming sweep; full Bridge movement consumer accepts retained retarget-crossing Go proof. Controlled custody-origin/lifecycle and relay publication are explicit for the historical proof; production scale/relay qualification and owner review remain open."
+      "remaining": "Other automatic node lifecycle duties beyond DKG/incoming, signing-to-proof interruption windows, formal correspondence and production qualification remain open.",
+      "witnessClasses": {
+        "TestCrossSchemeDrainAndSweep": "seeded component control; harness commitment",
+        "TestPublicLegacyUpgradeCutoverDrainAndSweep": "public baseline origin; MovingFundsTask produces commitment at current remediation, known membership adapter",
+        "TestFrostNodeProcessesDKGAndDispatch": "separate nodes own DKG/incoming; legacy producer still runs in the test process"
+      }
     },
     {
       "v3Row": 7,
@@ -183,9 +189,11 @@
         }
       ],
       "witnesses": [
-        "TestFrostCompleteLocalLifecycle#k09-credit"
+        "TestFrostCompleteLocalLifecycle#k09-credit",
+        "TestFrostRetainedMainnetSweepProof -> Frost.LifecycleRealisticObligations",
+        "TestFrostRetainedMainnetRedemptionProof -> Frost.LifecycleRealisticObligations"
       ],
-      "remaining": "Deposit credit witness remains live regtest. The distinct realistic full movement producer/consumer join is row 6; it is not promoted to a realistic deposit-sweep witness."
+      "remaining": "Realistic full Bridge sweep/redemption proof consumers use explicit controlled prior funding/admission/descriptors and relay publication. Historical threshold key ownership and historical deposit-template admission are not claimed."
     },
     {
       "v3Row": 8,
@@ -211,7 +219,7 @@
         "TestFrostCompleteLocalLifecycle#k09-restarted-defense",
         "TestFrostFraudPublicAdmissionDefenseTimeout"
       ],
-      "remaining": "SIGKILL active durable claim then same-store defense before deadline, under surviving controlled fence. Host power-loss, authority durability and C-07 qualification remain open."
+      "remaining": "The historical helper remains a fabricated store-claim control. Separate-node tests cover real candidate, approval, certification and completed incoming-sign boundaries with both kill modes. Same-lifecycle defense after those crashes, proof/broadcast windows and production fence durability remain open."
     },
     {
       "v3Row": 9,
@@ -246,16 +254,16 @@
         {
           "repository": "keep-core",
           "path": "test/frost/k09-local.py",
-          "blob": "1f3b522760123949e0928cbcbfd627ed1baef652",
-          "sha256": "6145c4a0518e0d84057cbfe93e0af66ebd724bd6a46184eba56b518f329435d0"
+          "blob": "c2d696799f154714b423545119e2accbf7adc6af",
+          "sha256": "89f7296b38361486ec0dc6ef2a48ea04fb482a97b2aa42e3edbf99f5d5217806"
         }
       ],
       "consumerSources": [
         {
           "repository": "tbtc-v2",
           "path": "solidity/test/bridge/Frost.LifecycleUpgrade.test.ts",
-          "blob": "1d6292c340e56b3ebf03e25ff491f12350a6ab8c",
-          "sha256": "aa55251cb2eb3d0f207de2379e22edd5051b16b523570eba2b4bbb27a045d372"
+          "blob": "b617d50110493be26870fabd6d587c00e05aa33d",
+          "sha256": "227e6c92d8570e4e1d77337df60539044e59fa3349402995bb49bf885c3efd61"
         }
       ],
       "witnesses": [
@@ -267,12 +275,12 @@
   ],
   "checkpointReferenceFormat": "TestName#checkpoint names assertion markers, not Go subtests; k09-local.py requires all ten markers exactly once in order",
   "coverageLedger": "K09-COVERAGE.json",
-  "completionEvidenceRoot": "implementation/K-09/completion-2026-10-26",
-  "currentEvidenceRoot": "implementation/K-09/completion-2026-10-26/final/run; pending fresh committed-head execution",
+  "completionEvidenceRoot": "implementation/K-09/review3-fixes-2026-10-26",
+  "currentEvidenceRoot": "implementation/K-09/review3-fixes-2026-10-26/final/run; consult retained result and matching sources",
   "realisticProofBoundary": {
-    "producer": "pkg/maintainer/spv/frost_retained_mainnet_test.go: actual FrostMovementMaintainer/DifficultyProofDepth/bitcoin.AssembleSpvProof",
-    "consumer": "tbtc-v2 solidity/contracts/frost/FrostMovement.sol via submitFrostMovingFundsProof",
-    "handoff": "private generated exact proof args, factor six, actual mainnet headers 838655..838660",
+    "producer": "Actual FrostMovementMaintainer, FrostSweepMaintainer and FrostRedemptionMaintainer with DifficultyProofDepth and default Bitcoin assembler",
+    "consumer": "Full Bridge movement, sweep and redemption entrypoints",
+    "handoff": "Private generated exact proof arguments, factor six, actual mainnet retarget headers 838655..838660",
     "assumptions": [
       "retained historical chain snapshot",
       "controlled relay epoch publication",

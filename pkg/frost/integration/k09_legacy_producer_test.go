@@ -228,7 +228,7 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 	}
 	for _, host := range []*walletHost{w.a, w.b} {
 		if proposal.TargetWallets[0] == host.label() {
-			w.t.Log("K09-PRODUCER:legacy-drain-committed")
+			w.t.Log("K09-PUBLIC:legacy-drain-committed")
 			return host, proposal.MovingFundsTxFee.Int64()
 		}
 	}

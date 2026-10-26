@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-24",
+  "date": "2026-10-26",
   "scope": "K-09a concrete composition evidence appendix; does not close the authoritative V-05 ledger",
   "evidenceClass": "concrete testing",
   "evidenceRoot": "implementation/K-09/review-feedback-2026-10-24",
@@ -155,9 +155,10 @@
       ],
       "witnesses": [
         "TestFrostCompleteLocalLifecycle#k09-movement",
-        "TestCrossSchemeDrainAndSweep"
+        "TestCrossSchemeDrainAndSweep",
+        "TestPublicLegacyUpgradeCutoverDrainAndSweep"
       ],
-      "remaining": "Live Core/FROST proof joins use controlled regtest relay. TestCrossSchemeDrainAndSweep is a seeded component control; the public upgrade/cutover/containment-to-FROST drain remains OPEN, owned by integration lead."
+      "remaining": "Public baseline funding/upgrade/cutover and admitted legacy-to-FROST commitment complete under containment with real Core/tss-lib/FROST worker bytes. Regtest relay remains controlled; realistic production-settings FROST proof join remains open."
     },
     {
       "v3Row": 7,
@@ -244,8 +245,8 @@
         {
           "repository": "keep-core",
           "path": "test/frost/k09-local.py",
-          "blob": "c923171016ee6203d0b62702b0bdb093720d59a3",
-          "sha256": "1a49185743f6add41bfe1a9ac8703f4b28e6389e2f36b18cd3c7e366003ca16d"
+          "blob": "dac76715bfe9b6535c92a14f1694b5701d837e25",
+          "sha256": "50c1adfd8f270bc083f3a637b88dc29d699f21832ddab7c0b7fd4567c971fa63"
         }
       ],
       "consumerSources": [
@@ -264,5 +265,6 @@
     }
   ],
   "checkpointReferenceFormat": "TestName#checkpoint names assertion markers, not Go subtests; k09-local.py requires all ten markers exactly once in order",
-  "coverageLedger": "K09-COVERAGE.json"
+  "coverageLedger": "K09-COVERAGE.json",
+  "completionEvidenceRoot": "implementation/K-09/completion-2026-10-26"
 }

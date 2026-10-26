@@ -8,7 +8,8 @@ async function main() {
  const [url, tbRoot, output, patternText, mode, genesis] = process.argv.slice(2);
  // K-07 is K-05 plus a controlled legacy registry root, a reimbursement pool
  // and the open drain gate, for the ECDSA-to-FROST drain.
- const k07 = mode === 'k07';
+ const publicLegacy = mode === 'k09-public';
+ const k07 = mode === 'k07' || publicLegacy;
  const k05 = mode === 'k05' || k07;
  if (k05 && !/^0x[0-9a-f]{64}$/.test(genesis||'')) throw Error('K-05 needs the regtest genesis');
  if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(url)) throw Error('local RPC required');
@@ -39,13 +40,15 @@ async function main() {
   return c;
  }
  const implementation=await deploy(tbRoot,'contracts/bridge/Bridge.sol','Bridge');
+ const baseline=publicLegacy?await require('./k09-baseline.cjs').deployBaseline(tbRoot,signer):null;
+ const initialImplementation=baseline?baseline.implementation:implementation;
  const proxyAdmin=await deploy(tbRoot,'@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol','ProxyAdmin');
  // K-05 adds a real Bank, the zero-difficulty regtest relay test contract and the
  // prototype verifier; the treasury is a separate account so fees are observable.
  let bank, relay, verifier, exposure, treasury=admin;
  if(k05){
   treasury=await provider.getSigner(1).getAddress();
-  bank=await deploy(tbRoot,'contracts/bank/Bank.sol','Bank');
+  bank=baseline?baseline.bank:await deploy(tbRoot,'contracts/bank/Bank.sol','Bank');
   relay=await deploy(tbRoot,'contracts/test/FrostPublicFundingRegistryFixture.sol','FrostPublicFundingRegtestRelay');
   verifier=await deploy(tbRoot,'contracts/frost/FrostVerifier.sol','FrostVerifier');
  }
@@ -54,8 +57,8 @@ async function main() {
   legacyRegistry=await deploy(tbRoot,'contracts/test/FrostDrainRegistryFixture.sol','FrostDrainRegistryFixture');
   reimbursementPool=await deploy(tbRoot,'@keep-network/random-beacon/contracts/ReimbursementPool.sol','ReimbursementPool',[0,0]);
  }
- const initializer=k05?implementation.interface.encodeFunctionData('initialize',[bank.address,relay.address,treasury,k07?legacyRegistry.address:admin,k07?reimbursementPool.address:admin,1]):implementation.interface.encodeFunctionData('initialize',[admin,admin,admin,admin,admin,1]);
- const proxy=await deploy(tbRoot,'@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol','TransparentUpgradeableProxy',[implementation.address,proxyAdmin.address,initializer]);
+ const initializer=k05?initialImplementation.interface.encodeFunctionData('initialize',[bank.address,relay.address,treasury,k07?legacyRegistry.address:admin,k07?reimbursementPool.address:admin,1]):implementation.interface.encodeFunctionData('initialize',[admin,admin,admin,admin,admin,1]);
+ const proxy=await deploy(tbRoot,'@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol','TransparentUpgradeableProxy',[initialImplementation.address,proxyAdmin.address,initializer]);
  const bridge=implementation.attach(proxy.address);
  const iface=artifact(tbRoot,'contracts/frost/IFrostBridge.sol','IFrostBridge');
  const frostBridge=new ethers.Contract(bridge.address,iface.abi,signer);
@@ -68,10 +71,10 @@ async function main() {
  const validator=await deploy(kcRoot,'contracts/frost/FrostDkgValidator.sol','FrostDkgValidator',[3,2,2,0,0]);
  const registry=await deploy(kcRoot,'contracts/frost/FrostWalletRegistry.sol','FrostWalletRegistry',[pool.address,validator.address,admission.address,beacon.address,bridge.address,[10000,1000,10,1000],3]);
  await (await pool.transferOwnership(registry.address)).wait();
- await (await frostBridge.configureFrostRegistry(registry.address)).wait();
+ if(!publicLegacy)await (await frostBridge.configureFrostRegistry(registry.address)).wait();
  // Both independent creation gates start disabled.
  if(await registry.requestsEnabled())throw Error('registry enabled by default');
- let refused=false;try{await frostBridge.callStatic.requestNewFrostWallet()}catch{refused=true}if(!refused)throw Error('Bridge enabled by default');
+ if(!publicLegacy){let refused=false;try{await frostBridge.callStatic.requestNewFrostWallet()}catch{refused=true}if(!refused)throw Error('Bridge enabled by default');}
  const operators=[];
  for(let i=1;i<=3;i++){
   const w=new ethers.Wallet(ethers.utils.hexZeroPad(ethers.utils.hexlify(i),32),provider);operators.push(w.address);
@@ -86,6 +89,7 @@ async function main() {
   await(await bridge.updateMovingFundsParameters(...movement)).wait();
   // Local test values (D-09 OPEN): 2,000 sat caps and a 3,600 s timeout.
   await(await bridge.updateRedemptionParameters(3000,100,2000,2000,3600,0,0)).wait();
+  if(!publicLegacy){
   await(await frostBridge.configureFrostFunding(verifier.address,ethers.utils.keccak256(await provider.getCode(verifier.address)),ethers.utils.id('UNQUALIFIED K-05 local verifier reference'),genesis)).wait();
   // C-10: the exposure controller, before any gate opens. The ceilings are
   // test values (D-10 OPEN): uint64 max, so no earlier K-05..K-08 path is
@@ -96,25 +100,29 @@ async function main() {
   await(await frostBridge.setFrostFundingGates(true,true)).wait();
   await(await frostBridge.configureFrostRedemptions(genesis,2,1000,ethers.constants.AddressZero,ethers.utils.id('UNQUALIFIED K-05 local D-08 reference'))).wait();
   await(await frostBridge.setFrostRedemptionsEnabled(true)).wait();
+  }
  }
  let legacy;
  if(k07){
   await(await legacyRegistry.bindWalletOwner(bridge.address)).wait();
   await(await legacyRegistry.setMember(admin)).wait();
   await(await reimbursementPool.authorize(bridge.address)).wait();
-  await(await frostBridge.setFrostDrainEnabled(true)).wait();
+  if(!publicLegacy)await(await frostBridge.setFrostDrainEnabled(true)).wait();
   legacy=legacyLayout(tbRoot);
   legacy.registry=legacyRegistry.address;
   // The real legacy proposal validator, for the legacy host's drain proposal.
   legacy.validator=(await deploy(tbRoot,'contracts/bridge/WalletProposalValidator.sol','WalletProposalValidator',[bridge.address])).address;
  }
+ const pattern=(patternText||'1,2,3').split(',').map(Number);
+ let epoch=0, seed=0;
+ if(!publicLegacy){
  await(await registry.setRequestsEnabled(true)).wait();await(await frostBridge.setFrostRequestsEnabled(true)).wait();
  await(await frostBridge.requestNewFrostWallet()).wait();
- const pattern=(patternText||'1,2,3').split(',').map(Number);
- let seed=1;for(;seed<10000;seed++) {const members=await pool.selectGroup(3,ethers.utils.hexZeroPad(ethers.utils.hexlify(seed),32));if(members.every((v,i)=>Number(v)===pattern[i]))break;}if(seed===10000)throw Error('selection seed not found');
+ seed=1;for(;seed<10000;seed++) {const members=await pool.selectGroup(3,ethers.utils.hexZeroPad(ethers.utils.hexlify(seed),32));if(members.every((v,i)=>Number(v)===pattern[i]))break;}if(seed===10000)throw Error('selection seed not found');
  await(await beacon.fulfill(seed)).wait();
- const epoch=Number(await registry.epoch());
- fs.writeFileSync(output,JSON.stringify({legacy,bank:bank?bank.address:undefined,exposure:exposure?exposure.address:undefined,treasury,registry:registry.address,bridge:bridge.address,pool:pool.address,validator:validator.address,beacon:beacon.address,epoch,seed,operators,pattern,artifacts},null,2));
+ epoch=Number(await registry.epoch());
+ }
+ fs.writeFileSync(output,JSON.stringify({proxyAdmin:proxyAdmin.address,implementation:implementation.address,verifier:verifier?.address,baseline:baseline?.manifest,legacy,bank:bank?bank.address:undefined,exposure:exposure?exposure.address:undefined,treasury,registry:registry.address,bridge:bridge.address,pool:pool.address,validator:validator.address,beacon:beacon.address,epoch,seed,operators,pattern,artifacts},null,2));
 }
 // legacyLayout reads the compiler's Bridge storage layout, so the K-07 tests
 // can set the controlled legacy wallet markers (main UTXO hash, state) without

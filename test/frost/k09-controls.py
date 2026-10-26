@@ -53,6 +53,16 @@ def probe(source, selected=None):
                 with self.assertRaisesRegex(ValueError, "lifecycle checkpoints", msg="control CheckpointOrder assertion"):
                     runner["require_go"](log(bad), [name])
 
+        def test_public_checkpoint_order(self):
+            name = "TestPublicLegacyUpgradeCutoverDrainAndSweep"
+            points = runner["PUBLIC_LEGACY_CHECKPOINTS"]
+            def log(sequence):
+                return "\n".join([json.dumps({"Action": "output", "Test": name, "Output": "K09-PUBLIC:" + point}) for point in sequence] + [json.dumps({"Action": "pass", "Test": name})])
+            runner["require_go"](log(points), [name])
+            for bad in (points[:-1], points[:1] + points, list(reversed(points))):
+                with self.assertRaisesRegex(ValueError, "public legacy checkpoints", msg="control PublicCheckpointOrder assertion"):
+                    runner["require_go"](log(bad), [name])
+
         def test_command_failure(self):
             with self.assertRaisesRegex(ValueError, "stage command failed", msg="control CommandFailure assertion"):
                 runner["require_exit"](1)
@@ -292,6 +302,7 @@ def main():
         ("SkippedGo", "test_skipped_go", '        if outcomes != ["pass"]:', '        if False:'),
         ("MissingContractCase", "test_missing_contract_case", '            if stats.get("passes") != count or stats.get("failures") != 0 or stats.get("pending") != 0 or stats.get("tests") != count:', '            if False:'),
         ("CheckpointOrder", "test_checkpoint_order", '        if checkpoints != JOINED_CHECKPOINTS:', '        if False:'),
+        ("PublicCheckpointOrder", "test_public_checkpoint_order", '        if checkpoints != PUBLIC_LEGACY_CHECKPOINTS:', '        if False:'),
         ("CommandFailure", "test_command_failure", '    if code != 0:', '    if False:'),
         ("ArtifactSource", "test_artifact_source", '                if inputs[source_path][0] != value["content"]:', '                if False:'),
         ("ImportedSource", "test_imported_artifact_source", '                if inputs[source_path][0] != value["content"]:', '                if source.startswith("contracts/") and inputs[source_path][0] != value["content"]:'),
@@ -325,6 +336,7 @@ def main():
             if result.returncode == 0 or "AssertionError: " in result.stderr:
                 raise RuntimeError("harness outage misclassified")
             print("self-test: unchanged runner survives; harness outage is an error")
+    subprocess.run(["node", str(HERE / "k09-baseline-controls.cjs")], check=True, timeout=30)
     return 0
 
 

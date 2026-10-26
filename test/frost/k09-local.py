@@ -23,9 +23,11 @@ GO_CASES = {
     "refund-timeout": ["TestDepositorRefundWithoutOperators", "TestReservationTimeoutRace"],
     "fraud-recovery": ["TestFrostFraudPublicAdmissionDefenseTimeout"],
     "legacy-drain": ["TestCrossSchemeDrainAndSweep"],
+    "public-legacy": ["TestPublicLegacyUpgradeCutoverDrainAndSweep"],
     "proof-depth": ["TestFrostDifficultyProofDepth", "TestGetProofInfo"],
 }
 JOINED_CHECKPOINTS = ["k09-ready", "k09-credit", "k09-payment", "k09-heartbeat", "k09-inactivity", "k09-cutover", "k09-movement", "k09-restarted-defense", "k09-closure", "k09-post-cutover-dkg"]
+PUBLIC_LEGACY_CHECKPOINTS = ["public-legacy-funded", "legacy-upgraded", "legacy-cutover-contained", "public-frost-drain-swept"]
 REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "config-controls", "build", *GO_CASES, "spv", "upgrade"]
 
 
@@ -59,6 +61,12 @@ def require_go(log, expected):
         if checkpoints != JOINED_CHECKPOINTS:
             raise ValueError("lifecycle checkpoints missing, duplicated or out of order")
 
+    if "TestPublicLegacyUpgradeCutoverDrainAndSweep" in expected:
+        checkpoints = [point for row in rows if row.get("Action") == "output" and row.get("Test") == "TestPublicLegacyUpgradeCutoverDrainAndSweep"
+                       for point in re.findall(r"K09-PUBLIC:([a-z0-9-]+)", row.get("Output", ""))]
+        if checkpoints != PUBLIC_LEGACY_CHECKPOINTS:
+            raise ValueError("public legacy checkpoints missing, duplicated or out of order")
+
 
 def require_mocha(log, count):
     decoder = json.JSONDecoder()
@@ -80,7 +88,7 @@ def require_exit(code):
         raise ValueError("stage command failed: " + str(code))
 
 
-def artifact_binding(tb):
+def artifact_binding(tb, baseline=None):
     # Validate each production runtime used by deploy.cjs against its own
     # compiler input and output. A copied or stale build cannot silently pass.
     manifest, infos, inputs = {}, {}, {}
@@ -131,6 +139,9 @@ def artifact_binding(tb):
                                    "inputSha256": input_sha}
             for source, libraries in artifact.get("linkReferences", {}).items():
                 pending.extend(source + ":" + library for library in libraries)
+    if baseline is not None:
+        legacy = json.loads(subprocess.check_output(["node", str(KC / "test/frost/k09-baseline.cjs"), str(tb), str(baseline)], text=True, timeout=60))
+        manifest.update({"legacy-baseline:" + file: value for file, value in legacy.items()})
     return manifest
 
 
@@ -295,7 +306,7 @@ def main():
     result = {"scope": "K-09a", "evidenceClass": "concrete testing", "status": "running", "requiredStages": REQUIRED,
               "limits": {"cores": 8, "nodeHeapMiB": 8192, "compileHeapMiB": 16384, "stageWallSeconds": 900},
               "privateEvidence": str(private), "publicEvidencePolicy": "generated summaries only; raw logs/artifacts remain private",
-              "k09ExitStatus": "open", "openExitRequirements": ["public legacy obligation through upgrade, cutover and containment into FROST drain/incoming sweep (integration lead)", "real node dispatch and firewall qualification (node integration lead)", "realistic production-settings proof assembled by the FROST producer and accepted by its full entry point (SPV integration owner)"],
+              "k09ExitStatus": "open", "openExitRequirements": ["real node dispatch and firewall qualification (node integration lead)", "realistic production-settings proof assembled by the FROST producer and accepted by its full entry point (SPV integration owner)"],
               "stages": [], "mutationCampaign": "not run; explicit owner request required"}
     result_path = evidence / "result.json"
     env = local_environment(os.environ)
@@ -349,10 +360,10 @@ def main():
             print(label + ": running", flush=True)
             start = time.monotonic()
             if (label in GO_CASES or label in ("spv", "upgrade")) and artifacts is None:
-                artifacts = artifact_binding(tb)
+                artifacts = artifact_binding(tb, env["FROST_C04_LEGACY_BASELINE_BUILD"])
                 public_json(evidence / "artifacts.json", artifacts)
             if label == "artifact-binding":
-                artifacts = artifact_binding(tb)
+                artifacts = artifact_binding(tb, env["FROST_C04_LEGACY_BASELINE_BUILD"])
                 public_json(evidence / "artifacts.json", artifacts)
             else:
                 log_path = private / (label + ".log")
@@ -376,7 +387,7 @@ def main():
             print(label + ": pass", flush=True)
         require_sources_unchanged(sources, source_snapshot(tb, env))
         if artifacts is not None:
-            require_sources_unchanged(artifacts, artifact_binding(tb))
+            require_sources_unchanged(artifacts, artifact_binding(tb, env["FROST_C04_LEGACY_BASELINE_BUILD"]))
         require_private_evidence(private)
         result["status"] = "partial" if args.only else "pass"
         return 0

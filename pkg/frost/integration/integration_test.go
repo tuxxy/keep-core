@@ -80,6 +80,7 @@ func (l lease) Close() error { l.a.mu.Lock(); defer l.a.mu.Unlock(); l.a.leased 
 type deployment struct {
 	Registry, Bridge, Pool, Validator, Beacon common.Address
 	Bank, Treasury                            common.Address
+	ProxyAdmin, Implementation                common.Address
 	// Exposure is the C-10 controller, installed in mode "k05" and later.
 	Exposure  common.Address
 	Epoch     uint64
@@ -128,6 +129,7 @@ type fixture struct {
 
 type setupOptions struct {
 	timeout time.Duration
+	prepare func(*fixture, string, string)
 	// mode "k05" deploys a real Bank, regtest relay and verifier and enables
 	// FROST funding and redemptions with local test values. Mode "k07" adds
 	// a controlled legacy registry root, a reimbursement pool and the drain.
@@ -198,7 +200,7 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 	root := filepath.Clean(filepath.Join(filepath.Dir(file), "../../.."))
 	output := filepath.Join(t.TempDir(), "deployment.json")
 	args := []string{filepath.Join(root, "test/frost/deploy.cjs"), url, tb, output, pattern}
-	if options.mode == "k05" || options.mode == "k07" {
+	if options.mode == "k05" || options.mode == "k07" || options.mode == "k09-public" {
 		genesis := chaincfg.RegressionNetParams.GenesisHash
 		args = append(args, options.mode, "0x"+hex.EncodeToString(genesis[:]))
 	}
@@ -213,6 +215,9 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 	f := &fixture{t: t, ctx: ctx, cancel: cancel, rpc: rpcClient, client: ethclient.NewClient(rpcClient)}
 	if err = json.Unmarshal(data, &f.deployment); err != nil {
 		t.Fatal(err)
+	}
+	if options.prepare != nil {
+		options.prepare(f, url, output)
 	}
 	f.registry, err = binding.NewFrostWalletRegistry(f.deployment.Registry, f.client)
 	if err != nil {

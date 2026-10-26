@@ -72,11 +72,15 @@ type k07World struct {
 }
 
 func newK07World(t *testing.T) *k07World {
+	return newK07WorldPrepared(t, "k07", nil)
+}
+
+func newK07WorldPrepared(t *testing.T, mode string, prepare func(*fixture, string, string) *coreChain) *k07World {
 	t.Helper()
 	var bJournals []*store.Scoped
 	var bRequests []frost.DKGRequest
 	var bRecord dkg.WalletRecord
-	k6 := newK06WorldWith(t, k06Options{mode: "k07", afterDKG: func(f *fixture) {
+	k6 := newK06WorldWith(t, k06Options{mode: mode, prepare: prepare, afterDKG: func(f *fixture) {
 		aJournals, aExecutors, aEpoch := f.journals, f.executors, f.deployment.Epoch
 		t.Log("K-07: second DKG for wallet B")
 		f.nextEpoch()

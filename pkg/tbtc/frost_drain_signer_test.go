@@ -14,6 +14,7 @@ import (
 // drainRequest is the K-07 integration request file. With no Funding the
 // helper only reports the legacy wallet key.
 type drainRequest struct {
+	Deposit     *Deposit
 	Funding     string
 	OutputIndex uint32
 	Targets     []string
@@ -77,7 +78,13 @@ func TestK07DrainSigner(t *testing.T) {
 			targets = append(targets, l)
 			keys[l] = q
 		}
-		builder, err := assembleMovingFundsTransaction(btc, main, targets, request.Fee, keys)
+		var builder *bitcoin.TransactionBuilder
+		if request.Deposit != nil {
+			request.Deposit.Utxo = main
+			builder, err = assembleDepositSweepTransaction(btc, public, nil, []*Deposit{request.Deposit}, request.Fee)
+		} else {
+			builder, err = assembleMovingFundsTransaction(btc, main, targets, request.Fee, keys)
+		}
 		if err != nil {
 			t.Fatal(err)
 		}

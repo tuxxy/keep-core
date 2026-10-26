@@ -549,6 +549,7 @@ type FrostTargetResolver interface {
 type FrostDrainPolicy struct {
 	CreationMode  uint8
 	Enabled       bool
+	Contained     bool
 	EligibleCount uint64
 	Targets       [][20]byte
 }

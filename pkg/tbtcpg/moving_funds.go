@@ -1,6 +1,7 @@
 package tbtcpg
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"sort"
@@ -179,6 +180,10 @@ func (mft *MovingFundsTask) Run(request *tbtc.CoordinationProposalRequest) (
 		uint64(walletBalance),
 		liveWalletsCount,
 	)
+	if errors.Is(err, ErrMovingFundsRouteUnavailable) {
+		taskLogger.Infof("no admissible moving funds route")
+		return nil, false, nil
+	}
 	if err != nil {
 		return nil, false, fmt.Errorf("cannot find target wallets: [%w]", err)
 	}
@@ -270,53 +275,54 @@ func (mft *MovingFundsTask) findNewTargetWallets(
 		"commitment not submitted yet; looking for new target wallets",
 	)
 
-	walletParameters, err := mft.chain.GetWalletParameters()
-	if err != nil {
-		return nil, fmt.Errorf("cannot get wallet parameters: [%w]", err)
-	}
-	walletMaxBtcTransfer := walletParameters.MaxBtcTransfer
-
-	if walletMaxBtcTransfer == 0 {
-		return nil, ErrMaxBtcTransferZero
-	}
+	var policy tbtc.FrostDrainPolicy
 	if resolver, ok := mft.chain.(tbtc.FrostDrainResolver); ok {
-		policy, err := resolver.FrostDrainPolicy()
+		var err error
+		policy, err = resolver.FrostDrainPolicy()
 		if err != nil {
 			return nil, fmt.Errorf("cannot read FROST drain policy: %w", err)
 		}
 		if policy.CreationMode > 2 {
 			return nil, fmt.Errorf("unknown FROST creation mode")
 		}
-		if policy.Enabled || policy.CreationMode == 2 {
-			if !policy.Enabled {
-				return nil, fmt.Errorf("FROST drain disabled after cutover")
-			}
-			needed := uint64(0)
-			if walletBalance > 0 {
-				needed = 1 + (walletBalance-1)/walletMaxBtcTransfer
-			}
-			if policy.EligibleCount < needed {
-				needed = policy.EligibleCount
-			}
-			seen := make(map[[20]byte]bool)
-			var targets [][20]byte
-			for _, label := range policy.Targets {
-				if label != sourceWalletPublicKeyHash && !seen[label] {
-					targets = append(targets, label)
-					seen[label] = true
-				}
-			}
-			if needed == 0 || uint64(len(targets)) < needed {
-				return nil, ErrNotEnoughTargetWallets
-			}
-			sort.Slice(targets, func(i, j int) bool {
-				return new(big.Int).SetBytes(targets[i][:]).Cmp(new(big.Int).SetBytes(targets[j][:])) < 0
-			})
-			return targets[:needed], nil
-		}
 	}
-	if liveWalletsCount == 0 {
-		return nil, ErrNotEnoughTargetWallets
+	drain := policy.Enabled && !policy.Contained && policy.EligibleCount > 0
+	if !drain && (policy.CreationMode == 2 || liveWalletsCount == 0) {
+		// Preserve the legacy no-result path without reading transfer policy
+		// when no route exists; a known commitment uses the separate replay path.
+		return nil, ErrMovingFundsRouteUnavailable
+	}
+	walletParameters, err := mft.chain.GetWalletParameters()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get wallet parameters: [%w]", err)
+	}
+	walletMaxBtcTransfer := walletParameters.MaxBtcTransfer
+	if walletMaxBtcTransfer == 0 {
+		return nil, ErrMaxBtcTransferZero
+	}
+	if drain {
+		needed := uint64(0)
+		if walletBalance > 0 {
+			needed = 1 + (walletBalance-1)/walletMaxBtcTransfer
+		}
+		if policy.EligibleCount < needed {
+			needed = policy.EligibleCount
+		}
+		seen := make(map[[20]byte]bool)
+		var targets [][20]byte
+		for _, label := range policy.Targets {
+			if label != sourceWalletPublicKeyHash && !seen[label] {
+				targets = append(targets, label)
+				seen[label] = true
+			}
+		}
+		if needed == 0 || uint64(len(targets)) < needed {
+			return nil, ErrNotEnoughTargetWallets
+		}
+		sort.Slice(targets, func(i, j int) bool {
+			return new(big.Int).SetBytes(targets[i][:]).Cmp(new(big.Int).SetBytes(targets[j][:])) < 0
+		})
+		return targets[:needed], nil
 	}
 
 	ceilingDivide := func(x, y uint64) uint64 {
@@ -613,6 +619,13 @@ func (mft *MovingFundsTask) ProposeMovingFunds(
 
 	taskLogger.Infof("preparing a moving funds proposal")
 
+	// Resolve scripts even for a caller-specified fee. A valid commitment is
+	// not proof that this host understands its output scheme.
+	keys, err := tbtc.FrostTargetKeys(mft.chain, targetWallets)
+	if err != nil {
+		return nil, fmt.Errorf("cannot resolve committed target scripts: %w", err)
+	}
+
 	// Estimate fee if it's missing.
 	if fee <= 0 {
 		taskLogger.Infof("estimating moving funds transaction fee")
@@ -626,10 +639,6 @@ func (mft *MovingFundsTask) ProposeMovingFunds(
 		}
 		txMaxTotalFee := movingFundsParameters.TxMaxTotalFee
 
-		keys, err := tbtc.FrostTargetKeys(mft.chain, targetWallets)
-		if err != nil {
-			return nil, fmt.Errorf("cannot resolve committed target scripts: %w", err)
-		}
 		estimatedFee, err := estimateMovingFundsFee(mft.btcChain, len(targetWallets), txMaxTotalFee, len(keys) > 0)
 		if err != nil {
 			return nil, fmt.Errorf(
@@ -718,3 +727,6 @@ func estimateMovingFundsFee(btcChain bitcoin.Chain, targetWalletsCount int, txMa
 
 	return totalFee, nil
 }
+
+// ErrMovingFundsRouteUnavailable is normal deferral, not a proposal failure.
+var ErrMovingFundsRouteUnavailable = errors.New("no admissible moving funds route")

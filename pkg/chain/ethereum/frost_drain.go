@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -51,7 +53,24 @@ func ReadFrostDrainPolicy(ctx context.Context, backend bind.ContractBackend, add
 		return out, err
 	}
 	out.Enabled, out.EligibleCount = counters.DrainEnabled, counters.EligibleTargets
-	if !out.Enabled {
+	if out.Enabled {
+		controller, err := bridge.FrostExposureController(opts)
+		if err != nil {
+			return out, err
+		}
+		if controller == (common.Address{}) {
+			return out, errors.New("FROST exposure controller missing")
+		}
+		// The controller is immutable and read at the same block as policy.
+		method, _ := abi.JSON(strings.NewReader(`[{"name":"contained","type":"function","inputs":[],"outputs":[{"type":"bool"}]}]`))
+		var result []interface{}
+		bound := bind.NewBoundContract(controller, method, backend, nil, nil)
+		if err := bound.Call(opts, &result, "contained"); err != nil {
+			return out, err
+		}
+		out.Contained = *abi.ConvertType(result[0], new(bool)).(*bool)
+	}
+	if !out.Enabled || out.Contained {
 		return out, nil
 	}
 	end := header.Number.Uint64()
@@ -96,6 +115,9 @@ func (tc *TbtcChain) FrostDrainPolicy() (tbtc.FrostDrainPolicy, error) {
 var _ tbtc.FrostDrainResolver = (*TbtcChain)(nil)
 
 func (tc *TbtcChain) MovingFundsNow() (time.Time, error) {
+	if tc.frostBridge == nil {
+		return time.Now(), nil
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	header, err := tc.client.HeaderByNumber(ctx, nil)

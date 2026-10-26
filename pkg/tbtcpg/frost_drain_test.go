@@ -41,11 +41,49 @@ func TestFrostOnlyDoesNotFallBackToLegacyTargets(t *testing.T) {
 		t.Fatal("disabled FROST drain fell back to legacy targets")
 	}
 	c.policy.Enabled = true
-	if _, _, err := task.FindTargetWallets(&testutils.MockLogger{}, [20]byte{9}, [32]byte{}, 50, 10); !errors.Is(err, tbtcpg.ErrNotEnoughTargetWallets) {
+	if _, _, err := task.FindTargetWallets(&testutils.MockLogger{}, [20]byte{9}, [32]byte{}, 50, 10); !errors.Is(err, tbtcpg.ErrMovingFundsRouteUnavailable) {
 		t.Fatal("empty FROST target set fell back to legacy targets", err)
 	}
 	c.err = errors.New("controlled policy RPC failure")
 	if _, _, err := task.FindTargetWallets(&testutils.MockLogger{}, [20]byte{9}, [32]byte{}, 50, 10); !errors.Is(err, c.err) {
 		t.Fatal("unknown policy fell back to legacy targets", err)
+	}
+}
+
+func TestPreCutoverDrainFallback(t *testing.T) {
+	for _, mode := range []uint8{0, 1, 2} {
+		for _, contained := range []bool{false, true} {
+			c := &drainChain{LocalChain: tbtcpg.NewLocalChain(), policy: tbtc.FrostDrainPolicy{CreationMode: mode, Enabled: true, Contained: contained}}
+			if contained {
+				c.policy.EligibleCount = 1
+				c.policy.Targets = [][20]byte{{8}}
+			}
+			c.SetWalletParameters(0, 0, 0, 0, 0, 100, 0)
+			label := [20]byte{4}
+			c.SetWallet(label, &tbtc.WalletChainData{State: tbtc.StateLive})
+			c.AddPastNewWalletRegisteredEvent(nil, &tbtc.NewWalletRegisteredEvent{WalletPublicKeyHash: label})
+			task := tbtcpg.NewMovingFundsTask(c, nil)
+			targets, _, err := task.FindTargetWallets(&testutils.MockLogger{}, [20]byte{9}, [32]byte{}, 50, 1)
+			if mode == 2 {
+				if !errors.Is(err, tbtcpg.ErrMovingFundsRouteUnavailable) {
+					t.Fatal("FrostOnly fell back", err)
+				}
+			} else if err != nil || len(targets) != 1 || targets[0] != label {
+				t.Fatal("legal legacy fallback unavailable", mode, contained, err)
+			}
+		}
+	}
+}
+
+type noRouteChain struct{ *tbtcpg.LocalChain }
+
+func (*noRouteChain) GetWalletParameters() (tbtc.WalletParameters, error) {
+	return tbtc.WalletParameters{}, errors.New("unexpected transfer-policy RPC")
+}
+func TestLegacyNoTargetDoesNotReadTransferPolicy(t *testing.T) {
+	chain := &noRouteChain{tbtcpg.NewLocalChain()}
+	task := tbtcpg.NewMovingFundsTask(chain, nil)
+	if _, _, err := task.FindTargetWallets(&testutils.MockLogger{}, [20]byte{9}, [32]byte{}, 100, 0); !errors.Is(err, tbtcpg.ErrMovingFundsRouteUnavailable) {
+		t.Fatal("legacy no-target path acquired an extra RPC", err)
 	}
 }

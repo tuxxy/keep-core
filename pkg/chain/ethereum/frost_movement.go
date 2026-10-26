@@ -260,6 +260,13 @@ var _ movement.Chain = (*FrostRedemptionChain)(nil)
 // its immutable descriptor.
 func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error) {
 	if tc.frostBridge == nil {
+		// Absence of the optional extension is not evidence that an arbitrary
+		// label is a legacy HASH160. A drain commitment can be submitted by
+		// another member; never sign its labels as P2WPKH without registry
+		// evidence. This legacy read works on pre-extension deployments too.
+		if _, err := tc.GetWallet(label); err != nil {
+			return [32]byte{}, false, fmt.Errorf("unconfigured FROST routing: target is not a known legacy wallet: %w", err)
+		}
 		return [32]byte{}, false, nil
 	}
 	scheme, err := tc.frostBridge.WalletScheme(nil, label)

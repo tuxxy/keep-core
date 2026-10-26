@@ -104,6 +104,39 @@ func openTest(t *testing.T, c Config) (*Store, *Scoped) {
 	t.Cleanup(func() { must(t, s.Close()) })
 	return s, v
 }
+
+type cancelDuringHead struct {
+	FenceLease
+	cancel context.CancelFunc
+}
+
+func (f *cancelDuringHead) Head(ctx context.Context) (Point, error) {
+	if f.cancel != nil {
+		cancel := f.cancel
+		f.cancel = nil
+		cancel()
+		return Point{}, ctx.Err()
+	}
+	return f.FenceLease.Head(ctx)
+}
+
+func TestCancelledFenceReadDoesNotPoisonOtherWallets(t *testing.T) {
+	s, first := openTest(t, testConfig(t))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.fence = &cancelDuringHead{FenceLease: s.fence, cancel: cancel}
+	if _, err := first.ReadSigningRecord(ctx, [32]byte{1}); !errors.Is(err, context.Canceled) {
+		t.Fatal("cancelled authority read was not propagated", err)
+	}
+	other := testDomain()
+	other.Epoch++
+	second, err := s.Scope(other)
+	must(t, err)
+	must(t, second.RetainSigningRecord(context.Background(), [32]byte{2}, []byte("public recovery intent")))
+	if s.poisoned {
+		t.Fatal("cancelled read poisoned the shared store")
+	}
+}
 func writeTest() frost.Write {
 	return frost.Write{Kind: "candidate-record", Seat: 1, ID: [32]byte{8}, Payload: []byte("opaque test secret; never log payloads")}
 }

@@ -308,6 +308,12 @@ func (s *Store) check(ctx context.Context) error {
 		return e
 	}
 	p, e := s.fence.Head(ctx)
+	// A cancelled read has made no state transition. Require a fresh authority
+	// read on the next operation instead of poisoning unrelated wallet scopes.
+	// Unknown advance/commit outcomes still quarantine in commit below.
+	if e != nil && ctx.Err() != nil {
+		return ctx.Err()
+	}
 	if e != nil || p != s.point {
 		return s.fail(ErrQuarantined)
 	}

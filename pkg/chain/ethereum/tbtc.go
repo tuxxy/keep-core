@@ -49,6 +49,9 @@ const (
 	// alias in config, TBTC ECDSA sizing is read via eth_call instead of only
 	// network defaults from defaultGroupParameters.
 	EcdsaDkgValidatorContractName = "EcdsaDkgValidator"
+	// FrostBridgeContractName explicitly opts the legacy host into the FROST
+	// extension at the same Bridge proxy. Omit it for pre-extension deployments.
+	FrostBridgeContractName = "FrostBridge"
 )
 
 const (
@@ -123,7 +126,7 @@ func newTbtcChain(
 		)
 	}
 
-	frostBridge, err := frostbridgeabi.NewFrostBridgeCaller(bridgeAddress, baseChain.client)
+	frostBridge, frostAddress, err := configuredFrostBridge(config, bridgeAddress, baseChain.client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to attach to the FROST Bridge extension: [%v]", err)
 	}
@@ -293,7 +296,7 @@ func newTbtcChain(
 
 	return &TbtcChain{
 		frostBridge:              frostBridge,
-		frostBridgeAddress:       bridgeAddress,
+		frostBridgeAddress:       frostAddress,
 		baseChain:                baseChain,
 		bridge:                   bridge,
 		maintainerProxy:          maintainerProxy,

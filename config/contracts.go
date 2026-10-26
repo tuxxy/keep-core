@@ -40,6 +40,7 @@ func initializeContractAddressesAliases() {
 	aliasEthereumContract(chainEthereum.TokenStakingContractName)
 	aliasEthereumContract(chainEthereum.WalletRegistryContractName)
 	aliasEthereumContract(chainEthereum.BridgeContractName)
+	aliasEthereumContract(chainEthereum.FrostBridgeContractName)
 	aliasEthereumContract(chainEthereum.MaintainerProxyContractName)
 	aliasEthereumContract(chainEthereum.LightRelayContractName)
 	aliasEthereumContract(chainEthereum.LightRelayMaintainerProxyContractName)

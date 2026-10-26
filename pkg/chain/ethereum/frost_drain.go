@@ -2,14 +2,32 @@ package ethereum
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	commonEthereum "github.com/keep-network/keep-common/pkg/chain/ethereum"
 	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/tbtc"
 )
+
+func configuredFrostBridge(config commonEthereum.Config, bridge common.Address, backend bind.ContractCaller) (*frostbridgeabi.FrostBridgeCaller, common.Address, error) {
+	address, err := config.ContractAddress(FrostBridgeContractName)
+	if errors.Is(err, commonEthereum.ErrAddressNotConfigured) {
+		return nil, common.Address{}, nil
+	}
+	if err != nil {
+		return nil, common.Address{}, err
+	}
+	if address != bridge || address == (common.Address{}) {
+		return nil, common.Address{}, fmt.Errorf("FROST extension must use the configured Bridge proxy")
+	}
+	caller, err := frostbridgeabi.NewFrostBridgeCaller(address, backend)
+	return caller, address, err
+}
 
 // ReadFrostDrainPolicy reads a single block's routing policy and eligible
 // immutable descriptors. It is shared by the live legacy chain adapter and
@@ -67,6 +85,9 @@ func ReadFrostDrainPolicy(ctx context.Context, backend bind.ContractBackend, add
 }
 
 func (tc *TbtcChain) FrostDrainPolicy() (tbtc.FrostDrainPolicy, error) {
+	if tc.frostBridge == nil {
+		return tbtc.FrostDrainPolicy{}, nil
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	return ReadFrostDrainPolicy(ctx, tc.client, tc.frostBridgeAddress)

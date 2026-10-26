@@ -238,6 +238,14 @@ func (m *Mover) signedRound(ctx context.Context, plan *signing.Plan) (uint64, bo
 	return 0, false, nil
 }
 
+// Signed checks durable executor results before a caller starts a new round.
+// A restarted host can rebroadcast the exact accepted transaction without
+// producing another signature or trusting a process-local completion flag.
+func (m *Mover) Signed(ctx context.Context, plan *signing.Plan) (bool, error) {
+	_, signed, err := m.signedRound(ctx, plan)
+	return signed, err
+}
+
 // Broadcast sends the durable result through the executor, which rechecks the
 // C-06 records and the lock first.
 func (m *Mover) Broadcast(ctx context.Context, plan *signing.Plan) error {

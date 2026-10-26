@@ -241,7 +241,7 @@ func legacyProof(proof *bitcoin.SpvProof) legacyabi.BitcoinTxProof {
 
 func TestPublicLegacyUpgradeCutoverDrainAndSweep(t *testing.T) { runPublicLegacyFlow(t, false) }
 
-func runPublicLegacyFlow(t *testing.T, remote bool) *k07World {
+func runPublicLegacyFlow(t *testing.T, remote bool, beforeDrain ...func(*k07World)) *k07World {
 	var origin k09LegacyOrigin
 	w := newK07WorldPrepared(t, "k09-public", bootstrapPublicLegacy(t, &origin), remote)
 	ctx := w.f.ctx
@@ -311,6 +311,9 @@ func runPublicLegacyFlow(t *testing.T, remote bool) *k07World {
 		return controller.Transact(o, "contain", crypto.Keccak256Hash([]byte("K09 public legacy containment; OPEN")))
 	})
 	t.Log("K09-PUBLIC:legacy-cutover-contained")
+	for _, callback := range beforeDrain {
+		callback(w)
+	}
 	drain := w.drain(origin.wallet, []*walletHost{target}, drainFee)
 	key := movement.OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: drain.Hash()})
 	incoming, err := w.chain.Incoming(ctx, w.head(), key)

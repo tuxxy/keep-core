@@ -69,6 +69,9 @@ type k07World struct {
 	view   *movement.View
 	proofs spv.FrostMovementMaintainer
 	legacy *legacyabi.Bridge
+	// Optional public-observation hook for real-node interruption tests. It
+	// never receives a node store, worker or component method.
+	observeIncoming func()
 }
 
 func newK07World(t *testing.T) *k07World {

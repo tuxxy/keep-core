@@ -45,3 +45,16 @@ at most eight Go cores and 900 seconds per command; record limits first.
 Private diagnostics remain private, never decode opaque worker records.
 No Docker, CI, Kani, final campaign, release or merge is authorized here.
 Models/replays and authoritative V-05 closure remain separate open gates.
+
+Further concrete counterexamples during remediation:
+
+- A cancelled read of the remote fence head must abort that operation without
+  quarantining every wallet scope. No state transition was attempted. Any
+  uncertain fence advance, invalid point or failed integrity check remains
+  terminal. Regression must cancel inside Head and then write another scope.
+- Public epoch expiry must remain serviceable after all local DKG attempts are
+  abandoned; it cannot depend on an executor that already exited.
+- A signed incoming plan must be retained before signing and restored verbatim;
+  the accepted durable signature is reused after process death. A restart test
+  must preserve the advertised peer endpoint and verify the original txid and
+  complete signed transaction bytes, including its witness.

@@ -75,9 +75,9 @@ type VerificationPause struct {
 	Boundary, Marker string
 }
 
-func (n *Node) boundary(ctx context.Context, epoch uint64, name string) error {
+func (n *Node) boundary(ctx context.Context, epoch uint64, name string, witness ...[32]byte) error {
 	p := n.cfg.VerificationPause
-	if p == nil || p.Epoch != epoch || p.Boundary != name {
+	if p == nil || (p.Epoch != 0 && p.Epoch != epoch) || p.Boundary != name {
 		return nil
 	}
 	file, err := os.OpenFile(p.Marker, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
@@ -85,6 +85,9 @@ func (n *Node) boundary(ctx context.Context, epoch uint64, name string) error {
 		return err
 	}
 	_, err = fmt.Fprintf(file, "epoch=%d boundary=%s\n", epoch, name)
+	if err == nil && len(witness) == 1 {
+		_, err = fmt.Fprintf(file, "witness=%x\n", witness[0])
+	}
 	closeErr := file.Close()
 	if err != nil {
 		return err
@@ -105,7 +108,18 @@ type Status struct {
 	Wallets          []dkg.WalletRecord
 	LostEpochs       []LostEpoch
 	Retries          uint64
+	FailureStages    map[string]string
 }
+
+// Only fixed stage identifiers enter public status, never worker error text.
+type stageError struct {
+	stage string
+	cause error
+}
+
+func (e *stageError) Error() string { return e.stage + " failed" }
+func (e *stageError) Unwrap() error { return e.cause }
+
 type LostEpoch struct {
 	Epoch uint64
 	Seats []uint16
@@ -140,13 +154,14 @@ type Node struct {
 	wallets   map[uint64]*wallet
 }
 type wallet struct {
-	record     dkg.WalletRecord
-	journal    *store.Scoped
-	request    frost.DKGRequest
-	membership *group.MembershipValidator
-	mover      *movement.Mover
-	plan       *signing.Plan
-	signed     bool
+	record       dkg.WalletRecord
+	journal      *store.Scoped
+	request      frost.DKGRequest
+	membership   *group.MembershipValidator
+	mover        *movement.Mover
+	plan         *signing.Plan
+	signed       bool
+	incomingSlot uint64
 }
 type eligibility struct {
 	ctx      context.Context
@@ -307,6 +322,10 @@ func (n *Node) Status() Status {
 	out.Addresses = append([]string(nil), out.Addresses...)
 	out.Wallets = append([]dkg.WalletRecord(nil), out.Wallets...)
 	out.LostEpochs = append([]LostEpoch(nil), out.LostEpochs...)
+	out.FailureStages = make(map[string]string, len(n.status.FailureStages))
+	for key, stage := range n.status.FailureStages {
+		out.FailureStages[key] = stage
+	}
 	for i := range out.LostEpochs {
 		out.LostEpochs[i].Seats = append([]uint16(nil), out.LostEpochs[i].Seats...)
 	}
@@ -330,12 +349,20 @@ func (n *Node) transport(ctx context.Context, w *wallet, attempt frost.Attempt) 
 	}
 	return tr, tr.Close, nil
 }
-func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
+func (n *Node) loadEpoch(ctx context.Context, epoch uint64) (err error) {
+	stage := "chain-adapter"
+	defer func() {
+		var classified *stageError
+		if err != nil && !errors.As(err, &classified) {
+			err = &stageError{stage, err}
+		}
+	}()
 	adapter, err := eth.NewFrostChain(ctx, n.client, n.key, n.cfg.Registry, n.cfg.Bridge)
 	if err != nil {
 		return err
 	}
 	adapter.WithTransactionMutex(&n.txMu)
+	stage = "parameters"
 	parameters, err := adapter.Parameters(ctx)
 	if err != nil {
 		return err
@@ -343,6 +370,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 	if err = parameters.Validate(); err != nil {
 		return err
 	}
+	stage = "selection"
 	selection, err := adapter.Selection(ctx, epoch)
 	if err != nil {
 		return err
@@ -366,6 +394,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 	var chainID [32]byte
 	parameters.ChainID.FillBytes(chainID[:])
 	domain := frost.Domain{Network: "FROST/local-regtest", Chain: chainID, Registry: [20]byte(n.cfg.Registry), Epoch: epoch}
+	stage = "store-scope"
 	journal, err := n.root.Scope(domain)
 	if err != nil {
 		return err
@@ -376,10 +405,12 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 		return err
 	}
 	w := &wallet{journal: journal, membership: n.membership(selection), request: frost.DKGRequest{Group: frost.Group{Roster: selection.Roster(), Threshold: parameters.Threshold, Quorum: parameters.GroupSize, Epoch: epoch}, LocalSeats: seats, Participants: selection.Roster(), Attempt: attempt}}
+	stage = "worker-config"
 	engine, err := snowfallengine.NewGuarded(n.cfg.Worker, journal)
 	if err != nil {
 		return err
 	}
+	stage = "wallet-record"
 	record, loadErr := journal.LoadWallet(ctx)
 	if errors.Is(loadErr, store.ErrMissing) {
 		// A claim or key without a completed wallet record is not permission
@@ -390,6 +421,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 			return statusErr
 		}
 		n.setState("dkg")
+		stage = "dkg"
 		tr, closeTransport, err := n.transport(ctx, w, attempt)
 		if err != nil {
 			return err
@@ -411,6 +443,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 		if record.State != "ReadyUnfunded" || record.Quarantined {
 			return &lostEpochError{epoch, seats}
 		}
+		stage = "approval-view"
 		view, err := adapter.View(ctx, epoch)
 		if err != nil {
 			return err
@@ -418,6 +451,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 		if view.ApprovedID != record.ID || view.Approved.State != 2 {
 			return &lostEpochError{epoch, seats}
 		}
+		stage = "key-record"
 		key, err := journal.LoadKey(ctx)
 		if err != nil {
 			return err
@@ -430,6 +464,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 		if err != nil {
 			return err
 		}
+		stage = "reload-transport"
 		tr, stop, err := n.transport(ctx, w, reload)
 		if err != nil {
 			return err
@@ -437,10 +472,10 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 		defer stop()
 		acceptance := readyAcceptance{chain: adapter, parameters: parameters, selection: selection, record: record}
 		if _, err = acceptance.WaitCandidateAcceptance(ctx, key.Candidate); err != nil {
-			return err
+			return &stageError{"approval-recheck", err}
 		}
 		if err = engine.ReloadKey(ctx, frost.SigningRequest{Group: w.request.Group, LocalSeats: seats, Selected: selection.Roster(), Attempt: reload, Key: key}, frost.Providers{Transport: tr, Store: journal, Acceptance: acceptance}); err != nil {
-			return err
+			return &stageError{"worker-reload", err}
 		}
 	}
 	w.record = record
@@ -449,11 +484,40 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) error {
 		return n.transport(ctx, w, a)
 	}}
 	w.mover = &movement.Mover{Chain: n.chain, Authority: &movement.Authority{View: view}, Lock: &deposit.MainLock{Journal: journal}, Ledger: redemption.Ledger{Journal: journal}, Schedule: redemption.Schedule{FinalityBlocks: n.cfg.FinalityBlocks, RoundBlocks: n.cfg.RoundBlocks}, Wallet: record.Descriptor, Base: base}
+	if err = w.restoreIncoming(ctx); err != nil {
+		return &stageError{"incoming-intent-restore", err}
+	}
 	n.mu.Lock()
 	n.wallets[epoch] = w
 	n.status.Wallets = append(n.status.Wallets, record)
 	n.status.State = "ready"
 	n.mu.Unlock()
+	return nil
+}
+
+// Expiry is public chain maintenance, not ownership of a DKG attempt. If all
+// local candidates have become unusable, no executor remains to end the old
+// epoch; keeping this duty separate lets the public request cycle advance.
+func (n *Node) expireEpoch(ctx context.Context) error {
+	epoch, err := n.registry.Epoch(&bind.CallOpts{Context: ctx})
+	if err != nil || epoch == 0 {
+		return err
+	}
+	adapter, err := eth.NewFrostChain(ctx, n.client, n.key, n.cfg.Registry, n.cfg.Bridge)
+	if err != nil {
+		return err
+	}
+	adapter.WithTransactionMutex(&n.txMu)
+	view, err := adapter.View(ctx, epoch)
+	if err != nil {
+		return err
+	}
+	if (view.State == 2 || view.State == 3) && view.Head >= view.ResultDeadline {
+		return adapter.ExpireDKG(ctx)
+	}
+	if view.Approved.State == 1 && view.Head >= view.Approved.Deadline {
+		return adapter.Expire(ctx, view.ApprovedID)
+	}
 	return nil
 }
 
@@ -532,14 +596,29 @@ func (n *Node) Run(ctx context.Context) error {
 				retryAt[finished.key] = time.Now().Add(delay)
 				n.mu.Lock()
 				n.status.Retries++
+				if n.status.FailureStages == nil {
+					n.status.FailureStages = make(map[string]string)
+				}
+				stage := "operation"
+				var failure *stageError
+				if errors.As(finished.err, &failure) {
+					stage = failure.stage
+				}
+				if _, present := n.status.FailureStages[finished.key]; !present {
+					n.status.FailureStages[finished.key] = stage
+				}
 				n.mu.Unlock()
 			} else {
+				n.mu.Lock()
+				delete(n.status.FailureStages, finished.key)
+				n.mu.Unlock()
 				failures[finished.key] = 0
 				retryAt[finished.key] = time.Now().Add(time.Second)
 			}
 		case <-ticker.C:
 			// Discovery and DKG execute independently from wallet duties. A failed or
 			// unfinished epoch never holds up an already loaded wallet's incoming work.
+			launch("epoch-expiry", 0, n.expireEpoch)
 			if epoch, err := n.registry.Epoch(&bind.CallOpts{Context: runCtx}); err == nil {
 				scheduleEpoch(epoch)
 			}
@@ -580,6 +659,10 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 			return err
 		}
 		w.plan = plan
+		if err = w.retainIncoming(operation); err != nil {
+			w.plan = nil
+			return err
+		}
 	}
 	// Another selected operator can finish the proof while this process is
 	// still returning from signing. Reconcile that exact plan before retrying
@@ -589,19 +672,27 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 		return err
 	}
 	if !w.signed {
+		w.signed, err = w.mover.Signed(operation, w.plan)
+		if err != nil {
+			return err
+		}
+	}
+	if !w.signed {
 		round, err := w.mover.Current(operation)
 		if err != nil {
 			return err
 		}
 		n.setState("signing")
-		if _, err = w.mover.Sign(operation, w.plan, round.Number); err != nil {
+		result, signErr := w.mover.Sign(operation, w.plan, round.Number)
+		if signErr != nil {
 			if done, reconcileErr := n.reconcileIncoming(operation, w); reconcileErr == nil && done {
 				return nil
 			}
-			return err
+			return signErr
 		}
 		w.signed = true
-		if err = n.boundary(operation, w.record.Descriptor.Epoch, "after-incoming-sign"); err != nil {
+		witness := sha256.Sum256(result.Transaction.Serialize(bitcoin.Witness))
+		if err = n.boundary(operation, w.record.Descriptor.Epoch, "after-incoming-sign", witness); err != nil {
 			return err
 		}
 	}
@@ -635,8 +726,9 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 		return err
 	}
 	if status == movement.StatusSettled {
-		w.plan = nil
-		w.signed = false
+		if err = w.finishIncoming(operation); err != nil {
+			return err
+		}
 		n.setState("settled")
 	}
 	return nil
@@ -678,7 +770,9 @@ func (n *Node) reconcileIncoming(ctx context.Context, w *wallet) (bool, error) {
 	if status != movement.StatusSettled {
 		return false, errors.New("proven incoming plan did not reconcile")
 	}
-	w.plan, w.signed = nil, false
+	if err = w.finishIncoming(ctx); err != nil {
+		return false, err
+	}
 	n.setState("settled")
 	return true, nil
 }

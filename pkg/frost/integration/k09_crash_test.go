@@ -71,8 +71,9 @@ type k09CrashConfig struct {
 
 var k09CrashClaim = [32]byte{0x09, 0x23}
 
-// k09CrashReopen kills a separate host while an acknowledged signing claim is
-// active (before any Done/release), then resumes the SAME lifecycle journal.
+// k09CrashReopen kills a separate helper holding a fabricated store claim,
+// then resumes the SAME lifecycle journal. It is a store control, not a crash
+// during an actual signing or worker operation.
 // Existing worker key/defense records are only loaded through the opaque API.
 func k09CrashReopen(t *testing.T, f *fixture, operator int, domain frost.Domain) *store.Scoped {
 	t.Helper()

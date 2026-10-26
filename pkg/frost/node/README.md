@@ -26,3 +26,18 @@ Other lifecycle duties retain the joined component witnesses. This is not a
 production all-duty scheduler, production stake/beacon, durable fence service,
 production-scale qualification or activation of `start`. Those boundaries are
 unchanged. The local fence HTTP adapter exchanges public fence points only.
+
+Per-epoch lost-seat reporting and per-wallet bounded retries isolate recovery
+failures. DKG and incoming duties run independently, sharing one Ethereum
+transaction mutex per operator so nonce selection cannot race. The local-only
+VerificationPause configuration is a test adapter over actual executor
+boundaries; it writes only an epoch/boundary marker before waiting for process
+interruption. Retained node logs use FROST_K09_NODE_LOG_ROOT, created privately
+and scanned/hashed by the acceptance runner; standalone tests use automatically
+cleaned test directories.
+
+Incoming plans are retained under the complete wallet-domain identifier before
+signing. Restart validates the retained public recipe and reuses a durable
+accepted signature. The node also performs public DKG/readiness expiry even
+when no local executor can resume the abandoned epoch. FailureStages exposes
+fixed stage names only; worker error text never enters public status.

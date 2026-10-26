@@ -2,6 +2,7 @@ package signing
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -147,6 +148,36 @@ func TestIncomingSweepPlan(t *testing.T) {
 		mutate(&p)
 		if _, err := NewIncomingSweepPlan(p); err == nil {
 			t.Errorf("%s: accepted", name)
+		}
+	}
+}
+
+func TestRestoreIncomingSweepPlan(t *testing.T) {
+	for _, withMain := range []bool{false, true} {
+		proposal := incomingFixture(t, withMain)
+		plan, err := NewIncomingSweepPlan(proposal)
+		if err != nil {
+			t.Fatal(err)
+		}
+		restored, err := RestoreIncomingSweepPlan(proposal.Wallet, plan.IntentBytes())
+		if err != nil || restored.Commitment() != plan.Commitment() || restored.BitcoinTransactionHash() != plan.BitcoinTransactionHash() {
+			t.Fatal("exact incoming intent did not recover", err)
+		}
+		var changed map[string]any
+		if err := json.Unmarshal(plan.IntentBytes(), &changed); err != nil {
+			t.Fatal(err)
+		}
+		changed["Fee"] = float64(123)
+		bad, _ := json.Marshal(changed)
+		for _, raw := range [][]byte{bad, append(plan.IntentBytes(), []byte(" {}")...), []byte(`{"Version":1}`)} {
+			if _, err := RestoreIncomingSweepPlan(proposal.Wallet, raw); err == nil {
+				t.Fatal("inconsistent or malformed recovery intent accepted")
+			}
+		}
+		other := proposal.Wallet
+		other.Epoch++
+		if _, err := RestoreIncomingSweepPlan(other, plan.IntentBytes()); err == nil {
+			t.Fatal("intent accepted for a different descriptor")
 		}
 	}
 }

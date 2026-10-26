@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -190,6 +191,16 @@ func startRemoteNodes(f *fixture, url, root string) {
 		id := [32]byte{byte(operatorIndex)}
 		fenceURL, revoke := localNodeFence(f, id)
 		config := frostnode.Config{LocalRegtest: true, EthereumURL: url, BitcoinURL: f.core.url, CookieFile: f.core.cookiePath, Registry: f.deployment.Registry, Bridge: f.deployment.Bridge, OperatorKeyFile: keyFile, StoreKeyFile: storeFile, Keystore: filepath.Join(dir, "keys"), FenceURL: fenceURL, StorageID: id, Worker: snowfallengine.WorkerConfig{Path: worker, SHA256: workerHash}, Peers: bootstrap, FinalityBlocks: k06Finality, RoundBlocks: k06RoundBlocks, FeeRate: k06FeeRate, MaximumSatPerVByte: k06MaxRate, ProtocolSeconds: 120}
+		// Peers retain this advertised loopback endpoint across process death.
+		// Port zero would silently give a restarted bootstrap node a new address.
+		_, networkPort, err := net.SplitHostPort(localPort(f))
+		if err != nil {
+			f.t.Fatal(err)
+		}
+		config.NetworkPort, err = strconv.Atoi(networkPort)
+		if err != nil {
+			f.t.Fatal(err)
+		}
 		if point := os.Getenv("FROST_K09_PAUSE_BOUNDARY"); point != "" && operatorIndex == 2 {
 			config.VerificationPause = &frostnode.VerificationPause{Epoch: f.deployment.Epoch, Boundary: point, Marker: filepath.Join(dir, "public-boundary.txt")}
 		}
@@ -316,6 +327,9 @@ func waitRemoteIncoming(w *k07World, target *walletHost, inputValue uint64) uint
 		w.t.Fatal(err)
 	}
 	for deadline := time.Now().Add(90 * time.Second); time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
+		if w.observeIncoming != nil {
+			w.observeIncoming()
+		}
 		for _, node := range w.f.remotes {
 			select {
 			case <-node.done:
@@ -509,5 +523,6 @@ func restartRemoteNode(f *fixture, index int, killed ...bool) {
 			return
 		}
 	}
-	f.t.Fatal("restarted node did not rediscover and reload its earlier wallet epoch")
+	last, _ := node.status(f.ctx)
+	f.t.Fatalf("restarted node did not reload earlier wallets: ready=%d lost=%v stages=%v", len(last.Wallets), last.LostEpochs, last.FailureStages)
 }

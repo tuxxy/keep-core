@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
@@ -185,6 +186,33 @@ func NewIncomingSweepPlan(p IncomingSweepProposal) (*Plan, error) {
 	}
 	mi.Incoming = append([]bitcoin.PreviousOutput(nil), all...)
 	return movementPlan(p.Wallet, p.BitcoinGenesis, p.Generation, p.StateVersion, snapshot, mi, fee, p.MaximumFee, p.MaximumSatPerVByte, snapshot.PreviousOutputs()[0].Outpoint)
+}
+
+// RestoreIncomingSweepPlan validates a retained public intent with the same
+// constructor used before signing. It never treats decoded bytes as authority;
+// the caller must still check the current chain before signing or broadcasting.
+func RestoreIncomingSweepPlan(wallet dkg.Descriptor, raw []byte) (*Plan, error) {
+	if len(raw) > 1<<20 {
+		return nil, errors.New("incoming intent too large")
+	}
+	var intent movementIntent
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&intent); err != nil {
+		return nil, err
+	}
+	var extra any
+	if decoder.Decode(&extra) != io.EOF || intent.Version != 1 || intent.Kind != IncomingSweep {
+		return nil, errors.New("invalid retained incoming intent")
+	}
+	plan, err := NewIncomingSweepPlan(IncomingSweepProposal{Wallet: wallet, BitcoinGenesis: intent.BitcoinGenesis, Generation: intent.Generation, StateVersion: intent.StateVersion, Main: intent.Main, Incoming: intent.Incoming, MaximumFee: intent.MaximumFee, MaximumSatPerVByte: intent.MaximumSatPerVByte, Transaction: intent.Transaction})
+	if err != nil {
+		return nil, err
+	}
+	if !bytes.Equal(plan.IntentBytes(), raw) {
+		return nil, errors.New("retained incoming intent does not match validated plan")
+	}
+	return plan, nil
 }
 
 func movementPlan(wallet dkg.Descriptor, genesis [32]byte, generation, stateVersion uint64, snapshot *bitcoin.TaprootTransaction, mi *movementIntent, fee, maxFee, maxRate int64, conflict bitcoin.TransactionOutpoint) (*Plan, error) {

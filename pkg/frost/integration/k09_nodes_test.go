@@ -280,11 +280,11 @@ func TestFrostNodeProcessesDKGAndDispatch(t *testing.T) {
 
 // The parent observes/mines public chains only. Planning, signing, broadcast and
 // proof submission are discovered and dispatched inside the two executables.
-func waitRemoteIncoming(w *k07World, inputValue uint64) uint64 {
+func waitRemoteIncoming(w *k07World, target *walletHost, inputValue uint64) uint64 {
 	w.t.Helper()
 	ctx := w.f.ctx
 	var candidate *bitcoin.Transaction
-	script, err := bitcoin.PayToTaproot(w.a.desc.OutputKey)
+	script, err := bitcoin.PayToTaproot(target.desc.OutputKey)
 	if err != nil {
 		w.t.Fatal(err)
 	}
@@ -313,7 +313,7 @@ func waitRemoteIncoming(w *k07World, inputValue uint64) uint64 {
 		if candidate != nil && len(mempool) > 0 {
 			w.coreMine(1)
 		}
-		custody := w.custody(w.a.id)
+		custody := w.custody(target.id)
 		if custody.Value > 0 {
 			if candidate == nil || len(candidate.Inputs) != 1 || uint64(candidate.Outputs[0].Value) != custody.Value || custody.Value >= inputValue {
 				w.t.Fatal("autonomous node sweep lost the actual incoming/custody transaction link")

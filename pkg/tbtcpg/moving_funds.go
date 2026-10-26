@@ -166,13 +166,11 @@ func (mft *MovingFundsTask) Run(request *tbtc.CoordinationProposalRequest) (
 		)
 	}
 
-	if liveWalletsCount == 0 {
-		taskLogger.Infof("there are no Live wallets available")
-		return nil, false, nil
-	}
-
 	targetWalletsCommitmentHash :=
 		walletChainData.MovingFundsTargetWalletsCommitmentHash
+	// Existing commitments remain executable after cutover or a count change.
+	// New FROST commitments use their own eligibility counter, so zero legacy
+	// Live wallets is not a reason to stop the drain producer.
 
 	targetWallets, commitmentExists, err := mft.FindTargetWallets(
 		taskLogger,
@@ -280,6 +278,45 @@ func (mft *MovingFundsTask) findNewTargetWallets(
 
 	if walletMaxBtcTransfer == 0 {
 		return nil, ErrMaxBtcTransferZero
+	}
+	if resolver, ok := mft.chain.(tbtc.FrostDrainResolver); ok {
+		policy, err := resolver.FrostDrainPolicy()
+		if err != nil {
+			return nil, fmt.Errorf("cannot read FROST drain policy: %w", err)
+		}
+		if policy.CreationMode > 2 {
+			return nil, fmt.Errorf("unknown FROST creation mode")
+		}
+		if policy.Enabled || policy.CreationMode == 2 {
+			if !policy.Enabled {
+				return nil, fmt.Errorf("FROST drain disabled after cutover")
+			}
+			needed := uint64(0)
+			if walletBalance > 0 {
+				needed = 1 + (walletBalance-1)/walletMaxBtcTransfer
+			}
+			if policy.EligibleCount < needed {
+				needed = policy.EligibleCount
+			}
+			seen := make(map[[20]byte]bool)
+			var targets [][20]byte
+			for _, label := range policy.Targets {
+				if label != sourceWalletPublicKeyHash && !seen[label] {
+					targets = append(targets, label)
+					seen[label] = true
+				}
+			}
+			if needed == 0 || uint64(len(targets)) < needed {
+				return nil, ErrNotEnoughTargetWallets
+			}
+			sort.Slice(targets, func(i, j int) bool {
+				return new(big.Int).SetBytes(targets[i][:]).Cmp(new(big.Int).SetBytes(targets[j][:])) < 0
+			})
+			return targets[:needed], nil
+		}
+	}
+	if liveWalletsCount == 0 {
+		return nil, ErrNotEnoughTargetWallets
 	}
 
 	ceilingDivide := func(x, y uint64) uint64 {
@@ -589,11 +626,11 @@ func (mft *MovingFundsTask) ProposeMovingFunds(
 		}
 		txMaxTotalFee := movingFundsParameters.TxMaxTotalFee
 
-		estimatedFee, err := EstimateMovingFundsFee(
-			mft.btcChain,
-			len(targetWallets),
-			txMaxTotalFee,
-		)
+		keys, err := tbtc.FrostTargetKeys(mft.chain, targetWallets)
+		if err != nil {
+			return nil, fmt.Errorf("cannot resolve committed target scripts: %w", err)
+		}
+		estimatedFee, err := estimateMovingFundsFee(mft.btcChain, len(targetWallets), txMaxTotalFee, len(keys) > 0)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"cannot estimate moving funds transaction fee: [%w]",
@@ -640,9 +677,17 @@ func EstimateMovingFundsFee(
 	targetWalletsCount int,
 	txMaxTotalFee uint64,
 ) (int64, error) {
-	sizeEstimator := bitcoin.NewTransactionSizeEstimator().
-		AddPublicKeyHashInputs(1, true).
-		AddPublicKeyHashOutputs(targetWalletsCount, true)
+	return estimateMovingFundsFee(btcChain, targetWalletsCount, txMaxTotalFee, false)
+}
+
+func estimateMovingFundsFee(btcChain bitcoin.Chain, targetWalletsCount int, txMaxTotalFee uint64, frost bool) (int64, error) {
+	sizeEstimator := bitcoin.NewTransactionSizeEstimator().AddPublicKeyHashInputs(1, true)
+	if frost {
+		// OP_1 PUSH32 Q has the same serialized output size as P2WSH.
+		sizeEstimator.AddScriptHashOutputs(targetWalletsCount, true)
+	} else {
+		sizeEstimator.AddPublicKeyHashOutputs(targetWalletsCount, true)
+	}
 
 	transactionSize, err := sizeEstimator.VirtualSize()
 	if err != nil {

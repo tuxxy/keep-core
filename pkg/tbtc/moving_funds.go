@@ -436,7 +436,15 @@ func ValidateMovingFundsSafetyMargin(
 
 	safetyMarginExpiresAt := walletChainData.MovingFundsRequestedAt.Add(safetyMargin)
 
-	if time.Now().Before(safetyMarginExpiresAt) {
+	now := time.Now()
+	if clock, ok := chain.(interface{ MovingFundsNow() (time.Time, error) }); ok {
+		var err error
+		now, err = clock.MovingFundsNow()
+		if err != nil {
+			return fmt.Errorf("cannot read moving funds clock: %w", err)
+		}
+	}
+	if now.Before(safetyMarginExpiresAt) {
 		return fmt.Errorf("safety margin in force")
 	}
 
@@ -534,6 +542,21 @@ func isWalletPendingMovingFundsTarget(
 // its output key Q from the immutable descriptor (KC-SF-V3 K-07 drain).
 type FrostTargetResolver interface {
 	FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error)
+}
+
+// FrostDrainPolicy is one block's public routing state. EligibleCount is the
+// contract's counter, not the number of logs found by an off-chain indexer.
+type FrostDrainPolicy struct {
+	CreationMode  uint8
+	Enabled       bool
+	EligibleCount uint64
+	Targets       [][20]byte
+}
+
+// FrostDrainResolver is optional for pre-FROST Chain implementations. A chain
+// implementing it must fail closed when its public routing state cannot be read.
+type FrostDrainResolver interface {
+	FrostDrainPolicy() (FrostDrainPolicy, error)
 }
 
 // FrostTargetKeys resolves which committed targets are FROST wallets. A chain

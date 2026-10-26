@@ -404,7 +404,11 @@ func (w *k07World) commitDrain(lw legacyWallet, targets []*walletHost) [][20]byt
 
 // drain signs the committed drain to targets with tss-lib, broadcasts and
 // mines it, and proves it through the legacy moving funds proof.
-func (w *k07World) drain(lw legacyWallet, targets []*walletHost) *bitcoin.Transaction {
+func (w *k07World) drain(lw legacyWallet, targets []*walletHost, feeOverride ...int64) *bitcoin.Transaction {
+	fee := int64(k07DrainFee)
+	if len(feeOverride) > 0 {
+		fee = feeOverride[0]
+	}
 	t, ctx := w.t, w.f.ctx
 	t.Helper()
 	var keys []string
@@ -414,7 +418,7 @@ func (w *k07World) drain(lw legacyWallet, targets []*walletHost) *bitcoin.Transa
 		hexLabels = append(hexLabels, hex.EncodeToString(label[:]))
 		keys = append(keys, hex.EncodeToString(h.desc.OutputKey[:]))
 	}
-	result := w.drainSigner(map[string]any{"Funding": hex.EncodeToString(lw.funding.Serialize()), "OutputIndex": lw.index, "Targets": hexLabels, "Keys": keys, "Fee": k07DrainFee})
+	result := w.drainSigner(map[string]any{"Funding": hex.EncodeToString(lw.funding.Serialize()), "OutputIndex": lw.index, "Targets": hexLabels, "Keys": keys, "Fee": fee})
 	raw, err := hex.DecodeString(result.Transaction)
 	if err != nil {
 		t.Fatal(err)

@@ -86,7 +86,8 @@ type TbtcChain struct {
 	sweptDepositsCache *cache.GenericTimeCache[*tbtc.DepositChainRequest]
 
 	// frostBridge reads the FROST extension at the Bridge address (K-07 drain).
-	frostBridge *frostbridgeabi.FrostBridgeCaller
+	frostBridge        *frostbridgeabi.FrostBridgeCaller
+	frostBridgeAddress common.Address
 }
 
 // NewTbtcChain construct a new instance of the TBTC-specific Ethereum
@@ -292,6 +293,7 @@ func newTbtcChain(
 
 	return &TbtcChain{
 		frostBridge:              frostBridge,
+		frostBridgeAddress:       bridgeAddress,
 		baseChain:                baseChain,
 		bridge:                   bridge,
 		maintainerProxy:          maintainerProxy,

@@ -33,11 +33,12 @@ import (
 )
 
 type k09LegacyOrigin struct {
-	wallet     legacyWallet
-	script     []byte
-	requestKey *big.Int
-	request    legacyabi.RedemptionRedemptionRequest
-	timeout    uint32
+	wallet       legacyWallet
+	legacyTarget [20]byte
+	script       []byte
+	requestKey   *big.Int
+	request      legacyabi.RedemptionRedemptionRequest
+	timeout      uint32
 }
 
 // bootstrapPublicLegacy runs BEFORE any FROST Bridge state or DKG exists.
@@ -85,10 +86,32 @@ func bootstrapPublicLegacy(t *testing.T, origin *k09LegacyOrigin) func(*fixture,
 			t.Fatal(err)
 		}
 		copy(origin.wallet.pkh[:], pkh)
+		// A second publicly registered, unfunded legacy wallet is a valid
+		// legacy target for the post-cutover refusal. Local creation timings
+		// are governance-set test values, not injected wallet storage.
+		walletParameters, err := w.legacy.WalletParameters(&bind.CallOpts{Context: ctx})
+		if err != nil {
+			t.Fatal(err)
+		}
+		w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+			return w.legacy.UpdateWalletParameters(o, 0, 0, walletParameters.WalletCreationMaxBtcBalance, walletParameters.WalletClosureMinBtcBalance, walletParameters.WalletMaxAge, walletParameters.WalletMaxBtcTransfer, walletParameters.WalletClosingPeriod)
+		})
+		targetKey, err := crypto.ToECDSA(common.LeftPadBytes([]byte{5}, 32))
+		if err != nil {
+			t.Fatal(err)
+		}
+		targetPub := crypto.FromECDSAPub(&targetKey.PublicKey)
+		origin.legacyTarget = bitcoin.PublicKeyHash(&targetKey.PublicKey)
+		registry := bind.NewBoundContract(f.deployment.Legacy.Registry, mustABI(t, `[{"type":"function","name":"publish","inputs":[{"type":"bytes32"},{"type":"bytes32"},{"type":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"}]`), f.client, f.client, f.client)
 		w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
 			return w.legacy.RequestNewWallet(o, legacyabi.BitcoinTxUTXO{})
 		})
-		registry := bind.NewBoundContract(f.deployment.Legacy.Registry, mustABI(t, `[{"type":"function","name":"publish","inputs":[{"type":"bytes32"},{"type":"bytes32"},{"type":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"}]`), f.client, f.client, f.client)
+		w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+			return registry.Transact(o, "publish", crypto.Keccak256Hash([]byte("K09 live legacy target")), common.BytesToHash(targetPub[1:33]), common.BytesToHash(targetPub[33:]))
+		})
+		w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+			return w.legacy.RequestNewWallet(o, legacyabi.BitcoinTxUTXO{})
+		})
 		w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
 			return registry.Transact(o, "publish", crypto.Keccak256Hash([]byte("K09 public legacy origin")), common.BytesToHash(x), common.BytesToHash(y))
 		})
@@ -259,29 +282,52 @@ func runPublicLegacyFlow(t *testing.T, remote bool) *k07World {
 	if w.balance(w.adminAddr) != credit+escrow || w.balance(w.f.deployment.Bridge) != 0 || w.balance(w.f.deployment.Treasury) != treasury {
 		t.Fatal("legacy original timeout lost escrow")
 	}
-	w.commitDrain(origin.wallet, []*walletHost{w.a})
+	sourceBefore, err := w.legacy.Wallets(opts, origin.wallet.pkh)
+	if err != nil {
+		t.Fatal(err)
+	}
+	targetBefore, err := w.legacy.Wallets(opts, origin.legacyTarget)
+	if err != nil || targetBefore.State != uint8(tbtc.StateLive) {
+		t.Fatal("public legacy target is not Live", err)
+	}
+	if _, err = w.trySend(func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return w.legacy.SubmitMovingFundsCommitment(o, origin.wallet.pkh, origin.wallet.utxo, []uint32{1}, big.NewInt(0), [][20]byte{origin.legacyTarget})
+	}); err == nil || !strings.Contains(err.Error(), "FROST drain disabled") {
+		t.Fatal("post-cutover legacy routing accepted", err)
+	}
+	sourceAfter, e1 := w.legacy.Wallets(opts, origin.wallet.pkh)
+	targetAfter, e2 := w.legacy.Wallets(opts, origin.legacyTarget)
+	if e1 != nil || e2 != nil || !reflect.DeepEqual(sourceBefore, sourceAfter) || !reflect.DeepEqual(targetBefore, targetAfter) || w.balance(w.adminAddr) != credit+escrow || w.balance(w.f.deployment.Bridge) != 0 || w.balance(w.f.deployment.Treasury) != treasury {
+		t.Fatal("cutover refusal changed legacy financial/custody frame")
+	}
+	// Retire the empty target publicly. The honest drain must now work with
+	// no legacy Live wallets, the failing state from K09-15.
+	w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return w.legacy.NotifyWalletCloseable(o, origin.legacyTarget, legacyabi.BitcoinTxUTXO{})
+	})
+	target, drainFee := w.produceLegacyDrain(origin.wallet)
 	controller := bind.NewBoundContract(w.f.deployment.Exposure, c10ABI, w.f.client, w.f.client, w.f.client)
 	w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
 		return controller.Transact(o, "contain", crypto.Keccak256Hash([]byte("K09 public legacy containment; OPEN")))
 	})
 	t.Log("K09-PUBLIC:legacy-cutover-contained")
-	drain := w.drain(origin.wallet, []*walletHost{w.a})
+	drain := w.drain(origin.wallet, []*walletHost{target}, drainFee)
 	key := movement.OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: drain.Hash()})
 	incoming, err := w.chain.Incoming(ctx, w.head(), key)
-	if err != nil || incoming.State != movement.IncomingPending || incoming.Target != w.a.id {
+	if err != nil || incoming.State != movement.IncomingPending || incoming.Target != target.id {
 		t.Fatal("public legacy drain did not create exact FROST incoming obligation", err)
 	}
 	w.mine(int(k06Finality))
 	var fee uint64
 	if remote {
-		fee = waitRemoteIncoming(w, origin.wallet.utxo.TxOutputValue-k07DrainFee)
+		fee = waitRemoteIncoming(w, target, origin.wallet.utxo.TxOutputValue-uint64(drainFee))
 	} else {
-		sweep := w.incomingSweep(w.a)
-		w.settle(w.a, sweep, w.proofs.ProveIncomingSweep)
+		sweep := w.incomingSweep(target)
+		w.settle(target, sweep, w.proofs.ProveIncomingSweep)
 		fee = uint64(sweep.Snapshot().Fee())
 	}
-	custody := w.custody(w.a.id)
-	if custody.Value != origin.wallet.utxo.TxOutputValue-k07DrainFee-fee {
+	custody := w.custody(target.id)
+	if custody.Value != origin.wallet.utxo.TxOutputValue-uint64(drainFee)-fee {
 		t.Fatal("public cross-scheme custody/value conservation")
 	}
 	incoming, err = w.chain.Incoming(ctx, w.head(), key)

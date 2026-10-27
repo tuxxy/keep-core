@@ -207,7 +207,7 @@ func startRemoteNodes(f *fixture, url, root string) {
 		if err != nil {
 			f.t.Fatal(err)
 		}
-		if point := os.Getenv("FROST_K09_PAUSE_BOUNDARY"); point != "" && operatorIndex == 2 {
+		if point := os.Getenv("FROST_K09_PAUSE_BOUNDARY"); point != "" && (operatorIndex == 2 || os.Getenv("FROST_K09_PAUSE_ALL") == "1") {
 			config.VerificationPause = &frostnode.VerificationPause{Epoch: f.deployment.Epoch, Boundary: point, Marker: filepath.Join(dir, "public-boundary.txt")}
 		}
 		raw, err := json.Marshal(config)

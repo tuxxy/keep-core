@@ -443,43 +443,59 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) (err error) {
 		if (record.State != "ReadyUnfunded" && record.State != "RegisteredPendingReady") || record.Quarantined {
 			return &lostEpochError{epoch, seats}
 		}
+		stage = "key-record"
+		key, err := journal.LoadKey(ctx)
+		if errors.Is(err, store.ErrMissing) {
+			return &lostEpochError{epoch, seats}
+		}
+		if err != nil {
+			return err
+		}
 		stage = "approval-view"
 		view, err := adapter.View(ctx, epoch)
 		if err != nil {
 			return err
 		}
-		if view.ApprovedID != record.ID || view.Approved.State != 2 {
+		if view.ApprovedID != record.ID || (view.Approved.State != 1 && view.Approved.State != 2) {
 			return &lostEpochError{epoch, seats}
 		}
-		stage = "key-record"
-		key, err := journal.LoadKey(ctx)
-		if err != nil {
-			return err
-		}
-		var reloadSession [32]byte
-		if _, err = rand.Read(reloadSession[:]); err != nil {
-			return err
-		}
-		reload, err := domain.NewAttempt("sign", reloadSession, view.Head)
-		if err != nil {
-			return err
-		}
-		stage = "reload-transport"
-		tr, stop, err := n.transport(ctx, w, reload)
-		if err != nil {
-			return err
-		}
-		defer stop()
-		acceptance := readyAcceptance{chain: adapter, parameters: parameters, selection: selection, record: record}
-		if _, err = acceptance.WaitCandidateAcceptance(ctx, key.Candidate); err != nil {
-			return &stageError{"approval-recheck", err}
-		}
-		if err = engine.ReloadKey(ctx, frost.SigningRequest{Group: w.request.Group, LocalSeats: seats, Selected: selection.Roster(), Attempt: reload, Key: key}, frost.Providers{Transport: tr, Store: journal, Acceptance: acceptance}); err != nil {
-			return &stageError{"worker-reload", err}
-		}
-		record.State = "ReadyUnfunded"
-		if err = journal.SaveWallet(ctx, record); err != nil {
-			return &stageError{"ready-record-recovery", err}
+		if view.Approved.State == 1 {
+			bus, err := dkg.NewNetworkBus(ctx, n.network, w.membership, domain.ID(), epoch)
+			if err != nil {
+				return err
+			}
+			execution := &dkg.Executor{Chain: adapter, Engine: engine, Journal: journal, Bus: bus, Signer: n.key, Request: w.request, Providers: frost.Providers{Store: journal}, FinalityBlocks: n.cfg.FinalityBlocks, PollInterval: 50 * time.Millisecond}
+			execution.Boundary = func(name string) error { return n.boundary(ctx, epoch, name) }
+			record, err = execution.ResumeReadiness(ctx)
+			if err != nil {
+				return err
+			}
+		} else {
+			var reloadSession [32]byte
+			if _, err = rand.Read(reloadSession[:]); err != nil {
+				return err
+			}
+			reload, err := domain.NewAttempt("sign", reloadSession, view.Head)
+			if err != nil {
+				return err
+			}
+			stage = "reload-transport"
+			tr, stop, err := n.transport(ctx, w, reload)
+			if err != nil {
+				return err
+			}
+			defer stop()
+			acceptance := readyAcceptance{chain: adapter, parameters: parameters, selection: selection, record: record}
+			if _, err = acceptance.WaitCandidateAcceptance(ctx, key.Candidate); err != nil {
+				return &stageError{"approval-recheck", err}
+			}
+			if err = engine.ReloadKey(ctx, frost.SigningRequest{Group: w.request.Group, LocalSeats: seats, Selected: selection.Roster(), Attempt: reload, Key: key}, frost.Providers{Transport: tr, Store: journal, Acceptance: acceptance}); err != nil {
+				return &stageError{"worker-reload", err}
+			}
+			record.State = "ReadyUnfunded"
+			if err = journal.SaveWallet(ctx, record); err != nil {
+				return &stageError{"ready-record-recovery", err}
+			}
 		}
 	}
 	w.record = record
@@ -487,6 +503,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) (err error) {
 	base := signing.Config{Journal: journal, Bitcoin: n.btc, Worker: n.cfg.Worker, MinimumConfirmations: 1, LocalRegtest: true, Transport: func(ctx context.Context, a frost.Attempt) (frost.Transport, func(), error) {
 		return n.transport(ctx, w, a)
 	}}
+	base.AfterGrant = func(ctx context.Context) error { return n.boundary(ctx, epoch, "after-incoming-grant") }
 	w.mover = &movement.Mover{Chain: n.chain, Authority: &movement.Authority{View: view}, Lock: &deposit.MainLock{Journal: journal}, Ledger: redemption.Ledger{Journal: journal}, Schedule: redemption.Schedule{FinalityBlocks: n.cfg.FinalityBlocks, RoundBlocks: n.cfg.RoundBlocks}, Wallet: record.Descriptor, Base: base}
 	if err = w.restoreIncoming(ctx); err != nil {
 		return &stageError{"incoming-intent-restore", err}
@@ -668,6 +685,25 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 	if err != nil {
 		return err
 	}
+	roundCtx, stopRound := context.WithCancel(operation)
+	defer stopRound()
+	operation = roundCtx
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-roundCtx.Done():
+				return
+			case <-ticker.C:
+				head, err := n.chain.Head(roundCtx)
+				if err == nil && head.Number >= round.Anchor+n.cfg.RoundBlocks+n.cfg.FinalityBlocks {
+					stopRound()
+					return
+				}
+			}
+		}
+	}()
 	// Every operator reads the same canonical anchor, rather than its own
 	// polling head. Keep the ordinary authority on a fresh, unpinned view.
 	planning := *w.mover.Authority.View
@@ -678,43 +714,50 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 		if err != nil || settled {
 			return err
 		}
-		// Never discard a signed or possibly released intent. With no release,
-		// a changed canonical recipe (including a changed main) can be retired
-		// durably and all operators can converge on the current round's recipe.
-		if !w.signed {
-			safe, err := w.mover.CanAbandon(operation, w.plan)
-			if err != nil {
-				return err
-			}
-			if safe {
-				fresh, planErr := planner.IncomingSweep(operation)
-				if planErr == nil && fresh.Commitment() != w.plan.Commitment() || errors.Is(planErr, movement.ErrNothingIncoming) || errors.Is(planErr, movement.ErrMainReserved) {
-					if _, err := w.abandonIncoming(operation); err != nil {
-						return err
-					}
-				}
-			}
-		}
 	}
-	if w.plan == nil {
-		plan, err := planner.IncomingSweep(operation)
-		if errors.Is(err, movement.ErrNothingIncoming) {
-			return nil
-		}
-		if errors.Is(err, movement.ErrMainReserved) {
-			return &stageError{"incoming-reservation", err}
-		}
+	safe := w.plan == nil
+	if w.plan != nil && !w.signed {
+		safe, err = w.mover.CanAbandon(operation, w.plan)
 		if err != nil {
 			return err
 		}
-		w.plan = plan
-		if err = w.retainIncoming(operation); err != nil {
-			w.plan = nil
-			return err
+	}
+	if safe {
+		plan, planErr := n.agreedIncoming(operation, w, planner, round.Anchor, nil)
+		if planErr != nil && !errors.Is(planErr, movement.ErrNothingIncoming) {
+			return &stageError{"incoming-recipe", planErr}
 		}
-		if err = n.boundary(operation, w.record.Descriptor.Epoch, "after-incoming-retain"); err != nil {
-			return err
+		if w.plan != nil && (plan == nil || plan.Commitment() != w.plan.Commitment()) {
+			abandoned, err := w.abandonIncoming(operation)
+			if err != nil {
+				return err
+			}
+			if !abandoned {
+				return errors.New("incoming release appeared before abandonment")
+			}
 		}
+		if plan == nil {
+			return nil
+		}
+		if w.plan == nil {
+			w.plan = plan
+			if err = w.retainIncoming(operation); err != nil {
+				w.plan = nil
+				return err
+			}
+		}
+	}
+	if !safe && w.request.LocalSeats[0] == 1 {
+		if _, err = n.agreedIncoming(operation, w, planner, round.Anchor, w.plan); err != nil {
+			return &stageError{"incoming-recipe", err}
+		}
+	}
+	if w.plan == nil {
+		return nil
+	}
+
+	if err = n.boundary(operation, w.record.Descriptor.Epoch, "after-incoming-retain"); err != nil {
+		return err
 	}
 	if !w.signed {
 		w.signed, err = w.mover.Signed(operation, w.plan)

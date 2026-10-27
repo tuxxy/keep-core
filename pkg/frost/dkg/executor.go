@@ -23,6 +23,7 @@ type Executor struct {
 	// Boundary is a verification-only pause/fault callback. Normal callers leave it nil.
 	Boundary             func(string) error
 	keyReady             bool
+	resume               bool
 	approvalSeen         bool
 	approvalGeneration   uint64
 	observedApprovalID   [32]byte
@@ -49,6 +50,15 @@ type Executor struct {
 	pending              []Attestation
 	record               WalletRecord
 }
+
+// ResumeReadiness reloads an already durable KeyReady. It never reruns DKG or
+// admits a new candidate; Run rechecks the saved identity and canonical approval.
+func (e *Executor) ResumeReadiness(ctx context.Context) (WalletRecord, error) {
+	e.resume = true
+	return e.Run(ctx)
+}
+
+var errAlreadyCertified = errors.New("wallet already certified")
 
 func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 	if ctx == nil || e.Chain == nil || e.Engine == nil || e.Journal == nil || e.Bus == nil || e.Signer == nil || e.FinalityBlocks == 0 {
@@ -94,6 +104,37 @@ func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 	if e.PollInterval <= 0 {
 		e.PollInterval = 250 * time.Millisecond
 	}
+	var key frost.KeyReady
+	if e.resume {
+		e.record, err = e.Journal.LoadWallet(ctx)
+		if err != nil {
+			return WalletRecord{}, err
+		}
+		if e.record.Quarantined || (e.record.State != "RegisteredPendingReady" && e.record.State != "ReadyUnfunded") {
+			return WalletRecord{}, ErrQuarantined
+		}
+		key, err = e.Journal.LoadKey(ctx)
+		if err != nil {
+			return WalletRecord{}, err
+		}
+		descriptor, err := NewDescriptor(e.params, e.selection, key.Candidate)
+		if err != nil {
+			return WalletRecord{}, err
+		}
+		hash, err := DescriptorHash(descriptor)
+		if err != nil {
+			return WalletRecord{}, err
+		}
+		if !reflect.DeepEqual(descriptor, e.record.Descriptor) || hash != e.record.DescriptorHash || WalletID(key.Candidate.OutputKey) != e.record.ID {
+			return WalletRecord{}, ErrQuarantined
+		}
+		e.descriptor = &descriptor
+		e.keyReady = true
+		e.approvalSeen, e.observedApprovalID, e.observedApprovalHash = true, e.record.ID, e.record.ApprovalHash
+		if _, err = e.checkedApproval(ctx); err != nil {
+			return e.finishFailure(ctx, err)
+		}
+	}
 	e.incoming = make(chan Attestation, 400)
 	e.failure = make(chan error, 2)
 	e.background.Add(2)
@@ -102,7 +143,9 @@ func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 	defer func() { cancel(); e.background.Wait() }()
 	e.Providers.Acceptance = e
 	workerContext, stopWorker := context.WithCancel(ctx)
-	key, err := e.Engine.DKG(workerContext, e.Request, e.Providers)
+	if !e.resume {
+		key, err = e.Engine.DKG(workerContext, e.Request, e.Providers)
+	}
 	stopWorker()
 	if err != nil {
 		return e.finishFailure(ctx, err)
@@ -160,9 +203,10 @@ func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 		digest, x := e.Chain.ReadinessDigest(ctx, view.Approved, a.Seat, a.Reference)
 		return x == nil && a.Digest == digest
 	})
-	if err != nil {
+	if err != nil && !errors.Is(err, errAlreadyCertified) {
 		return e.finishFailure(ctx, err)
 	}
+	alreadyCertified := errors.Is(err, errAlreadyCertified)
 	var seats []uint16
 	var references [][32]byte
 	var signatures []byte
@@ -174,9 +218,11 @@ func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 	if err = e.atBoundary("before-certificate-submit"); err != nil {
 		return e.finishFailure(ctx, err)
 	}
-	if err = e.Chain.Ready(ctx, e.record.ID, seats, references, signatures); err != nil {
-		if _, x := e.reconcileWallet(ctx, view, err); x != nil {
-			return e.finishFailure(ctx, x)
+	if !alreadyCertified {
+		if err = e.Chain.Ready(ctx, e.record.ID, seats, references, signatures); err != nil {
+			if _, x := e.reconcileWallet(ctx, view, err); x != nil {
+				return e.finishFailure(ctx, x)
+			}
 		}
 	}
 	if err = e.atBoundary("after-certificate-submit"); err != nil {
@@ -468,6 +514,9 @@ func (e *Executor) WaitCandidateAcceptance(ctx context.Context, c frost.Candidat
 				if x = e.Journal.SaveWallet(ctx, e.record); x != nil {
 					return frost.Receipt{}, x
 				}
+				if x = e.atBoundary("after-pending-wallet-save"); x != nil {
+					return frost.Receipt{}, x
+				}
 				return frost.Receipt{Epoch: d.Epoch, Descriptor: d.SnowfallDescriptor}, nil
 			}
 		} else if observedApproval != ([32]byte{}) {
@@ -607,8 +656,10 @@ func (e *Executor) collect(ctx context.Context, stage string, count int, local [
 			return nil, ctx.Err()
 		case <-ticker.C:
 			if stage == "ready" {
-				if _, err := e.checkedApproval(ctx); err != nil {
+				if view, err := e.checkedApproval(ctx); err != nil {
 					return nil, err
+				} else if view.Approved.State == 2 {
+					return nil, errAlreadyCertified
 				}
 			}
 		}

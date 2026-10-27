@@ -25,6 +25,13 @@ import (
 func TestFrostNodeCertifiedEpochInterruption(t *testing.T) {
 	testCertifiedRecovery(t, "after-readiness-postcondition")
 }
+func TestFrostNodePrecertificationRecovery(t *testing.T) {
+	t.Setenv("FROST_K09_PAUSE_ALL", "1")
+	testCertifiedRecovery(t, "after-key-reload")
+}
+func TestFrostNodeMissingPreKeyIsLost(t *testing.T) {
+	testFrostNodeEpochInterruption(t, "after-pending-wallet-save")
+}
 func TestFrostNodeCertificateSubmitInterruption(t *testing.T) {
 	testCertifiedRecovery(t, "after-certificate-submit")
 }
@@ -49,7 +56,41 @@ func testCertifiedRecovery(t *testing.T, boundary string) {
 				if !paused {
 					t.Fatal("real certified recovery boundary not reached")
 				}
+				if boundary == "after-key-reload" {
+					for _, other := range f.remotes {
+						for until := time.Now().Add(20 * time.Second); ; time.Sleep(50 * time.Millisecond) {
+							if _, err := os.Stat(other.config.VerificationPause.Marker); err == nil {
+								break
+							}
+							if time.Now().After(until) {
+								t.Fatal("not all durable keys paused")
+							}
+						}
+					}
+					id, err := f.registry.ApprovedWallet(&bind.CallOpts{Context: f.ctx}, f.deployment.Epoch)
+					if err != nil {
+						t.Fatal(err)
+					}
+					public, err := f.registry.Wallet(&bind.CallOpts{Context: f.ctx}, id)
+					if err != nil || public.State != 1 {
+						t.Fatal("recovery must restart BEFORE certification", err)
+					}
+					for _, other := range f.remotes {
+						other.config.VerificationPause = nil
+						raw, err := json.Marshal(other.config)
+						if err != nil {
+							t.Fatal(err)
+						}
+						if err = os.WriteFile(other.command.Args[2], raw, 0600); err != nil {
+							t.Fatal(err)
+						}
+					}
+				}
 				restartRemoteNode(f, 1, killed)
+				if boundary == "after-key-reload" {
+					restartRemoteNode(f, 0, killed)
+				}
+
 			}})
 			status, err := k6.f.remotes[1].status(k6.f.ctx)
 			if err != nil || len(status.Wallets) != 1 || len(status.LostEpochs) != 0 {
@@ -301,11 +342,23 @@ func testFrostNodeEpochInterruption(t *testing.T, boundary string) {
 // released a signature at this boundary. Both must abandon the old durable
 // recipe after SIGKILL, agree the new one and consume the incoming output once.
 func TestFrostNodeUnsignedIncomingReplansAfterRestart(t *testing.T) {
+	testIncomingRecipeRestart(t, false)
+}
+func TestFrostNodeGrantedIncomingStaysPinned(t *testing.T) { testIncomingRecipeRestart(t, true) }
+func testIncomingRecipeRestart(t *testing.T, granted bool) {
 	var restarted bool
 	var expected, walletID [32]byte
 	w := runPublicLegacyFlow(t, true, func(w *k07World) {
 		for i, node := range w.f.remotes {
-			node.config.VerificationPause = &frostnode.VerificationPause{Boundary: "after-incoming-retain", Marker: filepath.Join(t.TempDir(), "public-retained-boundary")}
+			if granted && i != 0 {
+				continue
+			}
+			node.config.VerificationPause = &frostnode.VerificationPause{Boundary: func() string {
+				if granted {
+					return "after-incoming-grant"
+				}
+				return "after-incoming-retain"
+			}(), Marker: filepath.Join(t.TempDir(), "public-retained-boundary")}
 			raw, err := json.Marshal(node.config)
 			if err != nil {
 				t.Fatal(err)
@@ -319,13 +372,21 @@ func TestFrostNodeUnsignedIncomingReplansAfterRestart(t *testing.T) {
 			if restarted {
 				return
 			}
-			for _, node := range w.f.remotes {
+			for i, node := range w.f.remotes {
+				if granted && i != 0 {
+					continue
+				}
 				if _, err := os.Stat(node.config.VerificationPause.Marker); err != nil {
 					return
 				}
 			}
 			for _, target := range []*walletHost{w.a, w.b} {
-				p := movement.Planner{View: w.view, Bitcoin: w.btc, Wallet: target.desc, Genesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash), FeeRate: 3, MaximumSatPerVByte: k06MaxRate}
+				p := movement.Planner{View: w.view, Bitcoin: w.btc, Wallet: target.desc, Genesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash), FeeRate: func() int64 {
+					if granted {
+						return k06FeeRate
+					}
+					return 3
+				}(), MaximumSatPerVByte: k06MaxRate}
 				plan, err := p.IncomingSweep(w.f.ctx)
 				if err == nil {
 					expected, walletID = plan.BitcoinTransactionHash(), target.id
@@ -353,4 +414,21 @@ func TestFrostNodeUnsignedIncomingReplansAfterRestart(t *testing.T) {
 		t.Fatal("unsigned stale plan did not converge after SIGKILL")
 	}
 	t.Log("K09-RECOVERY: unsigned stale intent abandoned durably; replacement settled once")
+}
+
+func TestFrostNodeDifferentFeesAgree(t *testing.T) {
+	runPublicLegacyFlow(t, true, func(w *k07World) {
+		node := w.f.remotes[1]
+		node.config.FeeRate = 3
+		node.config.MaximumSatPerVByte = k06MaxRate + 1
+		raw, err := json.Marshal(node.config)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = os.WriteFile(node.command.Args[2], raw, 0600); err != nil {
+			t.Fatal(err)
+		}
+		restartRemoteNode(w.f, 1)
+	})
+	t.Log("K09-RECOVERY: differing preferred fees and ceilings agreed a validated incoming recipe")
 }

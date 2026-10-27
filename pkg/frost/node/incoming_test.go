@@ -111,3 +111,19 @@ func TestIncomingAbandonmentSurvivesReopen(t *testing.T) {
 		t.Fatal("refused abandonment changed recipe")
 	}
 }
+
+func TestIncomingRecipeEnforcesLocalCeiling(t *testing.T) {
+	_, plan := incomingRecipe(t, 300)
+	if err := validateIncomingCeiling(plan, 50); err != nil {
+		t.Fatal("valid shared recipe refused", err)
+	}
+	if err := validateIncomingCeiling(plan, 1); err == nil {
+		t.Fatal("control IncomingCeiling assertion: leader overrode local ceiling")
+	}
+	for _, raw := range [][]byte{[]byte("not-json"), make([]byte, (1<<20)+1)} {
+		var proposal incomingProposal
+		if proposal.Unmarshal(raw) == nil {
+			t.Fatal("invalid public recipe accepted")
+		}
+	}
+}

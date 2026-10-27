@@ -227,21 +227,21 @@
       "id": "K09-27",
       "owner": "keep-core",
       "witness": "TestUnconfiguredHostRefusesUnknownCommittedTarget: actual TbtcChain and generated legacy binding refuse unknown committed labels, including caller-specified proposal fees; no FROST selector is sent.",
-      "resolution": "fixed; awaiting independent review and bound acceptance",
-      "status": "implemented; verification pending"
+      "resolution": "fixed; reviewed",
+      "status": "confirmed prior round-five and unchanged round-six review"
     },
     {
       "id": "K09-28",
       "owner": "tbtc-v2",
-      "witness": "Six cutover-recovery cases: contained/drain-off/no-target x legacy Live present/absent; repeated reset, unchanged obligation/exposure/counters, reopen and drain proof. Controlled prior main/state are explicit.",
-      "resolution": "author remediation; awaiting focused acceptance and independent review",
-      "status": "implemented; verification in progress",
+      "witness": "Contract after-cutover no-route matrix confirmed round six; expanded all-mode capacity and dust cases authored this round. Honest host pre-cutover recovery tracked by K09-39.",
+      "resolution": "contract fixed; reviewed",
+      "status": "contract confirmed round six; broader host recovery tracked separately",
       "change": "Budget availability includes exhausted and partially insufficient custody; additive reset validates the current main UTXO preimage. Reset remains reachable while no legal drain exists."
     },
     {
       "id": "K09-29",
       "owner": "keep-core",
-      "witness": "TestIncomingPlansUseCommonRoundAnchor; TestIncomingPlanRebuildsAfterFinalizedMainChange (controlled custody); TestIncomingAbandonmentSurvivesReopen; TestFrostNodeUnsignedIncomingReplansAfterRestart (actual nodes, unsigned fee-change recipe, SIGKILL, exact replacement settlement). The required real-node reserve/pay/prove stale-main witness remains OPEN under K09-6; no such run is claimed.",
+      "witness": "TestIncomingPlansUseCommonRoundAnchor; controlled main replacement and durable abandonment controls; TestFrostNodeAdvertisedIncomingStaysPinnedAfterRestart; TestFrostNodeGrantedIncomingStaysPinned; TestFrostNodeFollowerGrantKeepsLeaderRecipe. Combined real-node reserve/pay/prove stale-main remains OPEN under K09-6.",
       "resolution": "author remediation; awaiting focused acceptance and independent review",
       "status": "implemented; verification in progress",
       "change": "Leader proposes a public incoming recipe; followers authenticate the selected seat and independently check canonical inputs/outputs and their local fee ceiling. Empty rounds do not wait for proposals; work ends when its round expires. Old possibly released intents remain pinned. Round six: leader retains its durable advertised recipe even without a local grant; follower-only-grant recovery added. Combined redemption/stale-main remains OPEN."
@@ -274,8 +274,8 @@
       "id": "K09-33",
       "owner": "keep-core",
       "witness": "Unconfigured production MovingFundsNow uses wall time without RPC; normal no-route producer returns no result at info level; existing commitments still executable.",
-      "resolution": "fixed; awaiting independent review and bound acceptance",
-      "status": "implemented; verification pending"
+      "resolution": "fixed; reviewed",
+      "status": "confirmed prior round-five and unchanged round-six review"
     },
     {
       "id": "K09-34",

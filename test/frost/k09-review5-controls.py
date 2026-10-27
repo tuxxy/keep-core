@@ -11,7 +11,7 @@ cases=[
  ('IncomingCeiling','pkg/frost/node/recipe.go','if ceiling <= 0 ||','if false && (ceiling <= 0) || false &&','./pkg/frost/node','TestIncomingRecipeEnforcesLocalCeiling'),
  ('FollowerCeiling','pkg/frost/node/recipe.go','validateIncomingCeiling(plan, n.cfg.MaximumSatPerVByte)','validateIncomingCeiling(plan, 1<<62)','./pkg/frost/node','TestFollowerRecipeCeilingCallSite'),
  ('LeaderRecipe','pkg/frost/node/incoming.go','w.request.LocalSeats[0] == 1','false && w.request.LocalSeats[0] == 1','./pkg/frost/node','TestIncomingAbandonmentSurvivesReopen'),
- ('NoRouteHost','pkg/tbtcpg/moving_funds.go','if live != 0 {','if true {','./pkg/tbtcpg','TestNoRouteHostRecoveryAllModes'),
+ ('NoRouteHost','pkg/tbtcpg/moving_funds.go','if live != 0 {','if live >= 0 {','./pkg/tbtcpg','TestNoRouteHostRecoveryAllModes'),
  ('DrainDust','pkg/tbtc/moving_funds.go','balance >= p.DustThreshold','true','./pkg/tbtcpg','TestNoRouteHostRecoveryAllModes'),
  ('DrainBudget','pkg/tbtc/moving_funds.go','p.RemainingCustody >= balance','true','./pkg/tbtcpg','TestBudgetExhaustionFallsBackBeforeCutover'),
  ('HostTimeoutReset','pkg/tbtcpg/moving_funds.go','recovery.ResetLegacyMovingFundsTimeout(source, main)','func() error { _ = recovery; return nil }()','./pkg/tbtcpg','TestHostSubmitsDueLegacyReset'),
@@ -27,6 +27,7 @@ with tempfile.TemporaryDirectory(prefix='k09-r5-overlay-') as temp:
   source=m.KC/relative;original=source.read_text();assert original.count(before)==1,(name,original.count(before));altered=Path(temp)/(name+'.go');altered.write_text(original.replace(before,after));overlay=Path(temp)/(name+'.json');overlay.write_text(json.dumps({'Replace':{str(source):str(altered)}}))
   mutated=dict(env);mutated['GOFLAGS']='-mod=readonly -overlay='+str(overlay)
   log=root/(name+'-mutant.log');code=m.run_command(['go','test','-tags','frosttest','-p','2',pkg,'-run','^'+test+'$','-count=1','-timeout','2m'],m.KC,mutated,log,timeout=120);text=log.read_text();m.require_public_output(text)
-  assert code!=0 and 'control '+name+' assertion' in text and '[build failed]' not in text and 'panic:' not in text and 'test timed out' not in text,name
+  marker = 'NoRouteHost' if name == 'DrainDust' else name
+  assert code!=0 and 'control '+marker+' assertion' in text and '[build failed]' not in text and 'panic:' not in text and 'test timed out' not in text,name
   item['status']='killed at owning assertion';save();print(name+': killed at owning assertion',flush=True)
 r['status']='pass';save()

@@ -11,7 +11,6 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -228,13 +227,13 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 			if err := controller.Call(&bind.CallOpts{Context: w.f.ctx}, &out, "custodyReserved"); err != nil {
 				w.t.Fatal(err)
 			}
-			reserved := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+			reserved := out[0].(uint64)
 			out = nil
 			if err := controller.Call(&bind.CallOpts{Context: w.f.ctx}, &out, "issuanceReserved"); err != nil {
 				w.t.Fatal(err)
 			}
-			issuance := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-			ceiling := new(big.Int).Add(reserved, new(big.Int).SetUint64(lw.utxo.TxOutputValue-1))
+			issuance := out[0].(uint64)
+			ceiling := reserved + lw.utxo.TxOutputValue - 1
 			w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
 				return controller.Transact(o, "openBudgetPeriod", ceiling, issuance, crypto.Keccak256Hash([]byte("host partial budget")))
 			})
@@ -271,13 +270,13 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 			if err := controller.Call(&bind.CallOpts{Context: w.f.ctx}, &out, "custodyReserved"); err != nil {
 				w.t.Fatal(err)
 			}
-			reserved := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+			reserved := out[0].(uint64)
 			out = nil
 			if err := controller.Call(&bind.CallOpts{Context: w.f.ctx}, &out, "issuanceReserved"); err != nil {
 				w.t.Fatal(err)
 			}
-			issuance := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-			ceiling := new(big.Int).Add(reserved, new(big.Int).SetUint64(lw.utxo.TxOutputValue))
+			issuance := out[0].(uint64)
+			ceiling := reserved + lw.utxo.TxOutputValue
 			w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
 				return controller.Transact(o, "openBudgetPeriod", ceiling, issuance, crypto.Keccak256Hash([]byte("host budget reopened")))
 			})

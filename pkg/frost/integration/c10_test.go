@@ -12,6 +12,8 @@ import (
 
 // c10ABI is the governance and reporting surface of the C-10 controller.
 var c10ABI, _ = abi.JSON(strings.NewReader(`[
+{"type":"function","name":"custodyReserved","stateMutability":"view","inputs":[],"outputs":[{"type":"uint64"}]},
+{"type":"function","name":"issuanceReserved","stateMutability":"view","inputs":[],"outputs":[{"type":"uint64"}]},
 {"type":"function","name":"openBudgetPeriod","stateMutability":"nonpayable","inputs":[{"type":"uint64"},{"type":"uint64"},{"type":"bytes32"}],"outputs":[]},
 {"type":"function","name":"contain","stateMutability":"nonpayable","inputs":[{"type":"bytes32"}],"outputs":[]},
 {"type":"function","name":"lift","stateMutability":"nonpayable","inputs":[{"type":"bytes32"}],"outputs":[]},

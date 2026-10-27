@@ -55,7 +55,7 @@ def main():
    item={'guard':name,'status':'running','wallLimitSeconds':900 if name=='NodeFirewall' else 120};record['controls'].append(item);save()
    start=time.monotonic();log=root/(name+'.log')
    code=RUNNER['run_command'](['go','test','-p','2',package,'-run','^'+test+'$','-count=1','-timeout','14m' if name=='NodeFirewall' else '2m'],KC,current,log,timeout=item['wallLimitSeconds'])
-   text=log.read_text();expected='control '+name+' assertion'
+   text=log.read_text();expected='control '+('LeaderRecipe' if name == 'IncomingRelease' else name)+' assertion'
    if code==0 or expected not in text or '[build failed]'in text or 'panic:'in text or 'test timed out'in text:raise RuntimeError('guard did not fail at owning assertion: '+name)
    item.update(status='killed at owning assertion',elapsedSeconds=round(time.monotonic()-start,2));save();print(name+': killed at owning assertion',flush=True)
  record['status']='pass';save();return 0

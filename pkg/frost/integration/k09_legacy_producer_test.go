@@ -325,10 +325,11 @@ func TestLegacyHostPrecutoverBudgetRecovery(t *testing.T) {
 		t.Run(fmt.Sprintf("mode%d", mode), func(t *testing.T) {
 			t.Setenv("FROST_K09_CHECK_RESET", "partial-budget")
 			w := newK07World(t)
+			// The legacy wallet must predate closure of legacy creation.
+			lw := w.legacyWallet(k07DrainValue)
 			if mode == 1 {
 				w.send(func(o *bind.TransactOpts) (*types.Transaction, error) { return w.bridge.BeginLegacyDkgDrain(o) })
 			}
-			lw := w.legacyWallet(k07DrainValue)
 			target, fee := w.produceLegacyDrain(lw)
 			w.drain(lw, []*walletHost{target}, fee)
 			w.mine(int(k06Finality))

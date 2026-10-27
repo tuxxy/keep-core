@@ -254,7 +254,7 @@ def source_snapshot(tb, env):
     sources = {}
     for label, repo, patterns in [
         ("keep-core", KC, ["."]),
-        ("tbtc-v2", tb, ["solidity/contracts", "solidity/test", "solidity/hardhat.config.ts", "solidity/hardhat.k09.config.ts", "solidity/hardhat.k09.legacy.config.ts", "solidity/package.json", "solidity/yarn.lock"]),
+        ("tbtc-v2", tb, ["solidity/contracts", "solidity/test", "solidity/deploy", "solidity/hardhat.config.ts", "solidity/hardhat.k09.config.ts", "solidity/hardhat.k09.legacy.config.ts", "solidity/package.json", "solidity/yarn.lock"]),
     ]:
         sources[label] = {"root": str(repo.resolve()),
                           "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True, timeout=15).strip(),

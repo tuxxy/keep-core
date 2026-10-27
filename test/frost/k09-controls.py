@@ -157,7 +157,7 @@ def probe(source, selected=None):
                 root = Path(tmp)
                 ledger = root / "pkg/frost/integration/verification/K09-COVERAGE.json"
                 ledger.parent.mkdir(parents=True)
-                data = {"feedback": [{"id": "K09-" + str(i), "resolution": "open"} for i in range(1, 34)],
+                data = {"feedback": [{"id": "K09-" + str(i), "resolution": "open"} for i in range(1, 39)],
                         "reviewAliases": [{"id": name} for name in ("K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03")]}
                 ledger.write_text(json.dumps(data))
                 with patch.dict(runner["review_coverage"].__globals__, {"KC": root}):

@@ -254,7 +254,7 @@ def source_snapshot(tb, env):
     sources = {}
     for label, repo, patterns in [
         ("keep-core", KC, ["."]),
-        ("tbtc-v2", tb, ["solidity/contracts", "solidity/test", "solidity/hardhat.config.ts", "solidity/hardhat.k09.config.ts", "solidity/package.json", "solidity/yarn.lock"]),
+        ("tbtc-v2", tb, ["solidity/contracts", "solidity/test", "solidity/hardhat.config.ts", "solidity/hardhat.k09.config.ts", "solidity/hardhat.k09.legacy.config.ts", "solidity/package.json", "solidity/yarn.lock"]),
     ]:
         sources[label] = {"root": str(repo.resolve()),
                           "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True, timeout=15).strip(),
@@ -432,6 +432,10 @@ def main():
             else:
                 log_path = private / (label + ".log")
                 stage_env = stage_environment(label, env)
+                if label == "legacy-bridge":
+                    current["environmentOverrides"] = {name: stage_env[name] for name in ("USE_EXTERNAL_DEPLOY", "TEST_USE_STUBS_TBTC")}
+                    current["evidenceClass"] = "upstream legacy suites; BridgeStub uses the ordinary legacy size setting, production runtime sizes bound separately"
+
                 if label in ("compile", "compile-registry"):
                     stage_env["NODE_OPTIONS"] = "--max-old-space-size=16384"
                 code = run_command(command, cwd, stage_env, log_path)

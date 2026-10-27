@@ -289,13 +289,15 @@ func TestIncomingRetirementRequiresFinalizedSpentInput(t *testing.T) {
 	}{
 		{name: "policy-only"}, {name: "Bitcoin-still-unspent", spent: true, unspent: true}, {name: "RPC-failure", spent: true, err: errors.New("RPC unavailable")}, {name: "reorg", spent: true, reorg: true},
 	} {
-		t.Run(test.name, func(t *testing.T) {
+		if !t.Run(test.name, func(t *testing.T) {
 			view.spent, view.reorg, view.hashes = test.spent, test.reorg, 0
 			w.mover.Base.Bitcoin = retirementBitcoin{unspent: test.unspent, err: test.err}
 			if retired, _ := n.retireSpentIncoming(ctx, w); retired || w.plan != plan {
 				t.Fatal("control SpentRecipe assertion: recipe retired without finalized incompatible input")
 			}
-		})
+		}) {
+			return
+		}
 	}
 	view.spent, view.reorg, view.hashes = true, false, 0
 	w.mover.Base.Bitcoin = retirementBitcoin{}

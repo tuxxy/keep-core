@@ -276,7 +276,7 @@
   "checkpointReferenceFormat": "TestName#checkpoint names assertion markers, not Go subtests; k09-local.py requires all ten markers exactly once in order",
   "coverageLedger": "K09-COVERAGE.json",
   "completionEvidenceRoot": "implementation/K-09/review4-fixes-2026-10-26",
-  "currentEvidenceRoot": "implementation/K-09/review4-fixes-2026-10-26/final-2/run; consult actual status and source binding",
+  "currentEvidenceRoot": "implementation/K-09/review5-fixes-2026-10-27/; scoped results only, consult actual records",
   "realisticProofBoundary": {
     "producer": "Actual FrostMovementMaintainer, FrostSweepMaintainer and FrostRedemptionMaintainer with DifficultyProofDepth and default Bitcoin assembler",
     "consumer": "Full Bridge movement, sweep and redemption entrypoints",
@@ -289,5 +289,6 @@
     ],
     "evidenceClass": "concrete testing; no formal composition result or V-05 closure"
   },
-  "round4Boundary": "Production legacy resolver has a generated-binding RPC witness and refuses unknown labels without the optional alias. Public producer retains explicit membership/key/clock adapters. Unsigned recipe convergence has a real-node SIGKILL witness; combined redemption/stale-main and all-duty automation remain open. No V-05 closure."
+  "round4Boundary": "Production legacy resolver has a generated-binding RPC witness and refuses unknown labels without the optional alias. Public producer retains explicit membership/key/clock adapters. Unsigned recipe convergence has a real-node SIGKILL witness; combined redemption/stale-main and all-duty automation remain open. No V-05 closure.",
+  "round5Boundary": "K09-REVIEW5.md. Historical row source pins/witnesses are preserved; do not promote them to a current complete lifecycle witness. Current remediation uses focused grant, fee, readiness, timeout and legacy regression checks. Formal correspondence and V-05 remain open."
 }

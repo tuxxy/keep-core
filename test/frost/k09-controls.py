@@ -181,7 +181,8 @@ def probe(source, selected=None):
             self.assertEqual(set(env), set(keys))
 
         def test_cutover_control_record(self):
-            good = {"status": "pass", "positiveCases": 6, "guard": "LegacyTimeoutRecovery", "outcome": "killed at owning assertion"}
+            good = {"status": "pass", "positiveCases": 10, "guard": "LegacyTimeoutRecovery", "outcome": "killed at owning assertion"}
+            good["controls"] = [{"guard": name, "status": "killed at owning assertion"} for name in ("LegacyBudgetRecovery", "LegacyRouteAvailable")]
             runner["require_cutover_controls"](good)
             for field in good:
                 bad = dict(good)
@@ -377,7 +378,7 @@ def main():
         ("ReviewCoverage", "test_review_coverage", '    if not expected <= rows.keys() or aliases != {"K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03"}:', '    if False:'),
         ("SecretOutput", "test_forbidden_output", '    if SECRET_OUTPUT.search(text):', '    if False:'),
         ("ProofHandoffScope", "test_proof_handoff_scope", '    if label not in ("realistic-proof", "realistic-spv"):', '    if False:'),
-        ("CutoverControlBinding", "test_cutover_control_record", '    if controls.get("status") != "pass" or controls.get("positiveCases") != 6 or controls.get("guard") != "LegacyTimeoutRecovery" or controls.get("outcome") != "killed at owning assertion":', '    if False:'),
+        ("CutoverControlBinding", "test_cutover_control_record", '    if controls.get("status") != "pass" or controls.get("positiveCases") != 10 or controls.get("guard") != "LegacyTimeoutRecovery" or controls.get("outcome") != "killed at owning assertion":', '    if False:'),
         ("NodeEvidenceBoundary", "test_node_log_boundary", '                if label in ("nodes", "node-recovery", "node-guards"):', '                if False:'),
         ("LocalReplacement", "test_local_replacement", '    if before != after:', '    if False:'),
         ("ProcessCleanup", "test_process_cleanup", '            terminate_group(process, grace)', '            process.poll()'),

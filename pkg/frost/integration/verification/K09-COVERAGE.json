@@ -173,10 +173,10 @@
       "id": "K09-21",
       "priority": 2,
       "owner": "node integration owner",
-      "resolution": "fixed; awaiting review and final bound acceptance",
+      "resolution": "partial; open",
       "change": "Per-epoch recovery and per-wallet duty isolation",
       "witness": "Separate-node candidate/approval/certification restart and stalled-DKG incoming cases passed individually. signed-witness-final/result.json passed both kill modes with identical complete Bitcoin transaction, including witness. Node admission/DKG reservation isolation also passed. Final source-bound run pending.",
-      "status": "implemented: epoch/operation isolation, independent public expiry, exact incoming recovery"
+      "status": "per-wallet isolation implemented; round-five key recovery and lost-seat changes awaiting validation"
     },
     {
       "id": "K09-22",
@@ -234,36 +234,41 @@
       "id": "K09-28",
       "owner": "tbtc-v2",
       "witness": "Six cutover-recovery cases: contained/drain-off/no-target x legacy Live present/absent; repeated reset, unchanged obligation/exposure/counters, reopen and drain proof. Controlled prior main/state are explicit.",
-      "resolution": "fixed; awaiting independent review and bound acceptance",
-      "status": "implemented; verification pending"
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress",
+      "change": "Budget availability includes exhausted and partially insufficient custody; additive reset validates the current main UTXO preimage. Reset remains reachable while no legal drain exists."
     },
     {
       "id": "K09-29",
       "owner": "keep-core",
       "witness": "TestIncomingPlansUseCommonRoundAnchor; TestIncomingPlanRebuildsAfterFinalizedMainChange (controlled custody); TestIncomingAbandonmentSurvivesReopen; TestFrostNodeUnsignedIncomingReplansAfterRestart (actual nodes, unsigned fee-change recipe, SIGKILL, exact replacement settlement). The required real-node reserve/pay/prove stale-main witness remains OPEN under K09-6; no such run is claimed.",
-      "resolution": "partial; open: combined real-node redemption/stale-main criterion pending",
-      "status": "implemented unsigned replanning and possible-release protection; combined criterion open"
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress",
+      "change": "Leader proposes a public incoming recipe; followers authenticate the selected seat and independently check canonical inputs/outputs and their local fee ceiling. Empty rounds do not wait for proposals; work ends when its round expires. Old possibly released intents remain pinned."
     },
     {
       "id": "K09-30",
       "owner": "keep-core",
       "witness": "TestDurableKeyCancellationDoesNotQuarantine and TestDurableKeySurvivesLostReplyAndRPCFailure; actual node certificate-submit/readiness-postcondition SIGINT/SIGKILL followed by incoming settlement. Final exact-source run is authoritative; old failed runs remain retained.",
-      "resolution": "fixed; awaiting independent review and bound acceptance",
-      "status": "implemented; verification pending"
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress",
+      "change": "Durable KeyReady resumes the original readiness protocol before certification without rerunning DKG; already-certified seats retain the guarded reload path."
     },
     {
       "id": "K09-31",
       "owner": "keep-core",
       "witness": "TestPreCutoverDrainFallback: modes 0/1 use legacy targets when contained/no eligible FROST target; mode 2 defers without fallback. Preference for an admissible FROST drain unchanged.",
-      "resolution": "fixed; awaiting independent review and bound acceptance",
-      "status": "implemented; verification pending"
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress",
+      "change": "The pinned-block routing snapshot includes remainingCustody; insufficient capacity uses legal pre-cutover legacy fallback and FrostOnly defers."
     },
     {
       "id": "K09-32",
       "owner": "keep-core",
       "witness": "Required bound runner includes config/cmd/tbtcpg/tbtc/chain ethereum/libp2p/spv. Legacy Bridge MovingFunds/Wallets explicitly excluded due missing ReimbursementPool deployment record (attempt retained). Reservation oracle names incoming/<epoch> failure stage with negative control. IPv6 claim removed.",
-      "resolution": "fixed; awaiting independent review and bound acceptance",
-      "status": "implemented; verification pending"
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress",
+      "change": "The earlier shared-install exclusion explanation was inaccurate. Bind original legacy suites using the upstream external-deployment/stub settings with default legacy network settings. Preserve historical failed attempts and qualified two-run evidence."
     },
     {
       "id": "K09-33",
@@ -271,6 +276,46 @@
       "witness": "Unconfigured production MovingFundsNow uses wall time without RPC; normal no-route producer returns no result at info level; existing commitments still executable.",
       "resolution": "fixed; awaiting independent review and bound acceptance",
       "status": "implemented; verification pending"
+    },
+    {
+      "id": "K09-34",
+      "owner": "keep-core",
+      "priority": 2,
+      "change": "PossibleRelease checks durable grants, done records and existing worker attempt claims; a missing completion never authorizes abandonment.",
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress"
+    },
+    {
+      "id": "K09-35",
+      "owner": "keep-core",
+      "priority": 2,
+      "change": "Legacy proposal dispatch invokes due timeout recovery before its proposal safety margin, using a current-main-aware extension transaction.",
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress"
+    },
+    {
+      "id": "K09-36",
+      "owner": "tbtc-v2",
+      "priority": 3,
+      "change": "Implementer reading: reset is refused whenever either a legacy route or an admissible FROST drain exists. Owner answered idk; reading awaits independent review.",
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress"
+    },
+    {
+      "id": "K09-37",
+      "owner": "keep-core",
+      "priority": 3,
+      "change": "Missing durable key on RegisteredPendingReady/ReadyUnfunded is classified lost; transient store/chain errors remain retryable.",
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress"
+    },
+    {
+      "id": "K09-38",
+      "owner": "keep-core",
+      "priority": 3,
+      "change": "Runtime deadline is failure even when cancellation or HTTP shutdown races it; explicit operator stop remains distinct.",
+      "resolution": "author remediation; awaiting focused acceptance and independent review",
+      "status": "implemented; verification in progress"
     }
   ],
   "verificationNotRun": [
@@ -421,8 +466,8 @@
     }
   ],
   "currentAcceptance": {
-    "record": "implementation/K-09/review4-fixes-2026-10-26/final-2/run/result.json",
-    "status": "pending; previous round-three result applies only to its exact heads"
+    "record": "implementation/K-09/review5-fixes-2026-10-27/",
+    "status": "scoped verification in progress; consult actual result records"
   },
   "reviewAliases": [
     {
@@ -465,10 +510,7 @@
     ],
     "status": "Review corrections implemented with explicit partial findings; final bound acceptance and independent review pending."
   },
-  "legacyBridgeExclusions": [
-    "Bridge.MovingFunds",
-    "Bridge.Wallets"
-  ],
+  "legacyBridgeExclusions": [],
   "round4": {
     "reviewedHeads": {
       "keep-core": "afc90fb32a35a3015c09b5c9f18ea73e15d38174",
@@ -489,6 +531,21 @@
       "K09-6 all-duty automation",
       "K09-5/7/21/22 residuals",
       "models/replays and authoritative V-05"
+    ]
+  },
+  "round5": {
+    "reviews": [
+      5667802743,
+      5667803422
+    ],
+    "status": "implementation in progress; not a final acceptance claim",
+    "boundary": "K09-REVIEW5.md",
+    "remaining": [
+      "K09-6 all-duty automation",
+      "combined real-node redemption/stale-main criterion",
+      "K09-5/7/21/22 residuals",
+      "models/replays and authoritative V-05",
+      "independent disposition of current author fixes"
     ]
   }
 }

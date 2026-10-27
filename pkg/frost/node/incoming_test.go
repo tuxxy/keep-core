@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/common"
@@ -96,6 +97,8 @@ func TestIncomingAbandonmentSurvivesReopen(t *testing.T) {
 		t.Fatal("retained recipe changed", err)
 	}
 	w.request.LocalSeats = []uint16{1}
+	// Simulate enabling cohorts on a journal without publication markers.
+	w.mover.Cohort = func(uint64) []uint16 { return []uint16{1, 2} }
 	if safe, err := w.canAbandonIncoming(ctx); err != nil || safe {
 		t.Fatal("control LeaderRecipe assertion: advertised leader recipe became replaceable", err)
 	}
@@ -186,7 +189,8 @@ func (c recipeChannel) Send(_ context.Context, m keepnet.TaggedMarshaler, _ ...k
 func TestIncomingRecipePersistedBeforeSend(t *testing.T) {
 	ctx := context.Background()
 	record, plan := incomingRecipe(t, 300)
-	root, err := store.Open(ctx, store.Config{Keystore: filepath.Join(t.TempDir(), "store"), StorageID: [32]byte{3}, Key: [32]byte{4}, Fence: &incomingFence{}})
+	cfg := store.Config{Keystore: filepath.Join(t.TempDir(), "store"), StorageID: [32]byte{3}, Key: [32]byte{4}, Fence: &incomingFence{}}
+	root, err := store.Open(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,6 +220,29 @@ func TestIncomingRecipePersistedBeforeSend(t *testing.T) {
 	n := &Node{network: recipeNetwork{channel: ch}}
 	if _, err = n.agreedIncoming(ctx, w, movement.Planner{}, 10, plan); !errors.Is(err, interrupted) || !sent {
 		t.Fatal("publication boundary not reached", err)
+	}
+	if err = w.finishIncoming(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err = root.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	journal, err = reopened.Scope(journal.Domain())
+	if err != nil {
+		t.Fatal(err)
+	}
+	restored := &wallet{record: record, journal: journal}
+	if err = restored.restoreIncoming(ctx); err != nil {
+		t.Fatal(err)
+	}
+	observed := restored.lastIncoming.Load()
+	if observed == nil || *observed != plan.BitcoinTransactionHash() {
+		t.Fatal("durable settlement observation lost on reopen")
 	}
 }
 
@@ -389,5 +416,55 @@ func TestCohortRecoversFollowerRecipeBeforeLeaderChoice(t *testing.T) {
 	}
 	if w.plan != nil {
 		t.Fatal("choice bypassed persist-before-send")
+	}
+}
+
+// The final proof must unblock an unfinished signer without requiring another
+// Ethereum block. A policy refusal, wrong target or reorg is not settlement.
+type settlementReader struct {
+	movement.Reader
+	target [32]byte
+	state  movement.IncomingState
+	reorg  bool
+}
+
+func (c settlementReader) Head(context.Context) (redemption.Head, error) {
+	return redemption.Head{Number: 100, Hash: [32]byte{1}}, nil
+}
+func (c settlementReader) HeaderHash(context.Context, uint64) ([32]byte, error) {
+	if c.reorg {
+		return [32]byte{2}, nil
+	}
+	return [32]byte{1}, nil
+}
+func (c settlementReader) Incoming(context.Context, uint64, [32]byte) (movement.Incoming, error) {
+	return movement.Incoming{Target: c.target, State: c.state}, nil
+}
+func TestFinalizedIncomingStopsWaitingSigner(t *testing.T) {
+	record, plan := incomingRecipe(t, 300)
+	n := &Node{cfg: Config{FinalityBlocks: 2}}
+	for _, c := range []settlementReader{{target: record.ID, state: movement.IncomingPending}, {target: [32]byte{99}, state: movement.IncomingSwept}, {target: record.ID, state: movement.IncomingSwept, reorg: true}} {
+		ctx, cancel := context.WithTimeout(context.Background(), 350*time.Millisecond)
+		stopped := false
+		n.cancelSettledSigning(ctx, func() { stopped = true }, c, plan)
+		cancel()
+		if stopped {
+			t.Fatal("signer stopped without canonical finalized settlement")
+		}
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		n.cancelSettledSigning(ctx, cancel, settlementReader{target: record.ID, state: movement.IncomingSwept}, plan)
+		close(done)
+	}()
+	select {
+	case <-done:
+		if ctx.Err() == nil {
+			t.Fatal("settlement did not cancel signer")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("control SettledSigner assertion: finalized proof left signer waiting for another block")
 	}
 }

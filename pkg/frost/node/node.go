@@ -71,13 +71,14 @@ type Config struct {
 // Status contains public observations only. It never exports keys, nonces,
 // worker record bytes or application signing records.
 type Status struct {
-	RejectedPeers    uint64
-	State            string
-	Addresses, Peers []string
-	Wallets          []dkg.WalletRecord
-	LostEpochs       []LostEpoch
-	Retries          uint64
-	FailureStages    map[string]string
+	IncomingSettlements map[uint64][32]byte
+	RejectedPeers       uint64
+	State               string
+	Addresses, Peers    []string
+	Wallets             []dkg.WalletRecord
+	LostEpochs          []LostEpoch
+	Retries             uint64
+	FailureStages       map[string]string
 }
 
 // Only fixed stage identifiers enter public status, never worker error text.
@@ -131,6 +132,7 @@ type wallet struct {
 	plan         *signing.Plan
 	signed       bool
 	incomingSlot uint64
+	lastIncoming atomic.Pointer[[32]byte]
 }
 type eligibility struct {
 	ctx      context.Context
@@ -285,6 +287,12 @@ func (n *Node) Status() Status {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 	out := n.status
+	out.IncomingSettlements = make(map[uint64][32]byte)
+	for epoch, w := range n.wallets {
+		if transaction := w.lastIncoming.Load(); transaction != nil {
+			out.IncomingSettlements[epoch] = *transaction
+		}
+	}
 	if n.policy != nil {
 		out.RejectedPeers = n.policy.rejected.Load()
 	}
@@ -784,7 +792,10 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 	}
 	if !w.signed {
 		n.setState("signing")
-		result, signErr := w.mover.Sign(operation, w.plan, round.Number)
+		signContext, stopSigning := context.WithCancel(operation)
+		go n.cancelSettledSigning(signContext, stopSigning, w.mover.Chain, w.plan)
+		result, signErr := w.mover.Sign(signContext, w.plan, round.Number)
+		stopSigning()
 		if signErr != nil {
 			if done, reconcileErr := n.reconcileIncoming(operation, w); reconcileErr == nil && done {
 				return nil

@@ -57,6 +57,10 @@ func (w *wallet) restoreIncoming(ctx context.Context) error {
 		if !bytes.Equal(completion, commitment[:]) && !bytes.Equal(completion, append([]byte("abandoned/"), commitment[:]...)) && !retired {
 			return errors.New("incoming completion does not match retained intent")
 		}
+		if bytes.Equal(completion, commitment[:]) {
+			transaction := plan.BitcoinTransactionHash()
+			w.lastIncoming.Store(&transaction)
+		}
 		w.incomingSlot++
 	}
 	return errors.New("local incoming journal capacity reached")
@@ -74,6 +78,8 @@ func (w *wallet) finishIncoming(ctx context.Context) error {
 	if err := w.journal.RetainSigningRecord(ctx, incomingRecord(w.journal.Domain().ID(), w.incomingSlot, true), commitment[:]); err != nil {
 		return err
 	}
+	transaction := w.plan.BitcoinTransactionHash()
+	w.lastIncoming.Store(&transaction)
 	w.incomingSlot++
 	w.plan, w.signed = nil, false
 	return nil
@@ -104,7 +110,9 @@ func (w *wallet) canAbandonIncoming(ctx context.Context) (bool, error) {
 	} else if !errors.Is(err, store.ErrMissing) {
 		return false, err
 	}
-	if w.mover.Cohort == nil && len(w.request.LocalSeats) != 0 && w.request.LocalSeats[0] == 1 {
+	// Journals predating publication markers used an unconditional seat-1 pin.
+	// Preserve it when enabling cohorts; absence of a new marker is not evidence.
+	if len(w.request.LocalSeats) != 0 && w.request.LocalSeats[0] == 1 {
 		return false, nil
 	}
 	return w.mover.CanAbandon(ctx, w.plan)

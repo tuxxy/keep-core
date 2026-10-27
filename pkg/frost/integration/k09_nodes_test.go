@@ -381,7 +381,7 @@ func waitRemoteIncoming(w *k07World, target *walletHost, inputValue uint64) uint
 				settled := true
 				for _, node := range w.f.remotes {
 					status, err := node.status(ctx)
-					if err != nil || status.State != "settled" {
+					if err != nil || status.IncomingSettlements[target.desc.Epoch] != [32]byte(candidate.Hash()) {
 						settled = false
 					}
 				}

@@ -63,6 +63,9 @@ type Mover struct {
 	Wallet    dkg.Descriptor
 	// Base carries the operator's journal, Bitcoin view, worker, transport,
 	// confirmations and LocalRegtest; the rest is filled per attempt.
+	// Cohort is an optional deterministic local availability schedule. It must
+	// depend only on the agreed round and original descriptor, never local peers.
+	Cohort   func(uint64) []uint16
 	Base     signing.Config
 	boundary func(string) error
 }
@@ -121,6 +124,9 @@ func (m *Mover) executor(plan *signing.Plan, r Round) (*signing.Executor, error)
 	c.StartBlock = r.StartBlock
 	c.FinalityBlocks = m.Schedule.FinalityBlocks
 	c.Selected = seats(m.Wallet)
+	if m.Cohort != nil {
+		c.Selected = m.Cohort(r.Number)
+	}
 	c.Reservations = nil
 	c.Sweeps = m.Authority
 	c.Guard = deposit.Guard{Lock: m.Lock}

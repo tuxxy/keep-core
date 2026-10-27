@@ -108,7 +108,11 @@ func newK06WorldWith(t *testing.T, options k06Options) *k06World {
 	if options.prepare != nil {
 		setup.prepare = func(f *fixture, url, output string) { core = options.prepare(f, url, output) }
 	}
-	f := setupWith(t, "1,1,2", setup)
+	pattern := "1,1,2"
+	if os.Getenv("FROST_K09_DISTINCT_SEATS") == "1" {
+		pattern = "1,2,3"
+	}
+	f := setupWith(t, pattern, setup)
 	if options.beforeDKG != nil {
 		options.beforeDKG(f)
 	}

@@ -321,17 +321,17 @@
       "id": "K09-39",
       "change": "Host no-route reset in every mode with zero legacy Live, verified partial budget; original no-preimage selector remains conservative.",
       "witness": "TestNoRouteHostRecoveryAllModes; TestLegacyHostPrecutoverBudgetRecovery; expanded Movement cases",
-      "resolution": "author implemented; awaiting independent review",
+      "resolution": "fixed; reviewed",
       "owner": "integration verification owner",
-      "status": "implementation present; final bound checks pending"
+      "status": "confirmed by round-seven independent review"
     },
     {
       "id": "K09-40",
       "change": "Pinned policy includes dust; no inadmissible drain proposed; reset preserves recovery.",
       "witness": "TestNoRouteHostRecoveryAllModes; below-dust contract cases; DrainDust guard",
-      "resolution": "author implemented; awaiting independent review",
+      "resolution": "fixed; reviewed",
       "owner": "integration verification owner",
-      "status": "implementation present; final bound checks pending"
+      "status": "confirmed by round-seven independent review"
     },
     {
       "id": "K09-41",
@@ -345,33 +345,89 @@
       "id": "K09-42",
       "change": "Normal nonce/submission and asynchronous ForceMining; no receipt wait holds transaction mutex.",
       "witness": "source review plus chain package checks; gas bump delegated to existing mining waiter",
-      "resolution": "author implemented; awaiting independent review",
+      "resolution": "fixed; reviewed",
       "owner": "integration verification owner",
-      "status": "implementation present; final bound checks pending"
+      "status": "confirmed by round-seven independent review"
     },
     {
       "id": "K09-43",
       "change": "Fault config, grant pause and local CLI only in frosttest builds; test-side config serializer.",
       "witness": "ordinary build and production omission tests; tagged real-node process witnesses",
-      "resolution": "author implemented; awaiting independent review",
+      "resolution": "fixed; reviewed",
       "owner": "integration verification owner",
-      "status": "implementation present; final bound checks pending"
+      "status": "confirmed by round-seven independent review"
     },
     {
       "id": "K09-44",
       "change": "Exact contract/host timeout and budget refusal reasons; follower ceiling call-site control.",
       "witness": "Movement regression; TestFollowerRecipeCeilingCallSite; FollowerCeiling owning control; real follower refusal/recovery",
-      "resolution": "author implemented; awaiting independent review",
+      "resolution": "fixed; reviewed",
       "owner": "integration verification owner",
-      "status": "implementation present; final bound checks pending"
+      "status": "confirmed by round-seven independent review"
     },
     {
       "id": "K09-45",
       "change": "Every focused check captures sources, actual Go inputs, artifacts and heads before execution; unchanged-input check afterwards; private hash inventory.",
       "witness": "test/frost/k09-focused.py; actual final scoped records; historical unbound records unchanged",
-      "resolution": "author implemented; awaiting independent review",
+      "resolution": "fixed; reviewed",
       "owner": "integration verification owner",
-      "status": "implementation present; final bound checks pending"
+      "status": "confirmed by round-seven independent review"
+    },
+    {
+      "id": "K09-46",
+      "change": "Durable retirement requires the old custody main spent at a finalized canonical Ethereum block plus confirmed Bitcoin spent state; close the old purpose lock and append a tombstone without deleting grants or claims.",
+      "witness": "TestFrostNodeRetiresRecipeAfterProvenMainSpend; TestIncomingRetirementRequiresFinalizedSpentInput; SpentRecipe control. Mainless first funding and policy/fee-only invalidation remain outside this proof.",
+      "resolution": "partial; open",
+      "owner": "integration verification owner",
+      "status": "author repair; independent disposition pending"
+    },
+    {
+      "id": "K09-47",
+      "change": "Detect capability independently of optional alias. Proven upgraded default-config hosts refuse construction; unknown RPC/decode/revert errors fail closed. Legacy identification is explicit empty selector revert, deployed code and legacy getter. Recheck default-config routing after upgrades; old dispatch stays legacy-only.",
+      "witness": "TestDefaultConfigUpgradeRefusesProductionConstruction; TestBridgeCapabilityIndependentOfAlias; TestPreExtensionHostKeepsOriginalResetDispatch; production target resolver guard.",
+      "resolution": "author implemented; awaiting review",
+      "owner": "integration verification owner",
+      "status": "author repair; independent disposition pending"
+    },
+    {
+      "id": "K09-48",
+      "change": "Observe encrypted journal recipe at actual channel.Send, then interrupt Send so later duty retention cannot mask a missing prepublication write.",
+      "witness": "TestIncomingRecipePersistedBeforeSend; PersistBeforeSend owning control.",
+      "resolution": "author implemented; awaiting review",
+      "owner": "integration verification owner",
+      "status": "author repair; independent disposition pending"
+    },
+    {
+      "id": "K09-49",
+      "change": "Ordinary builds run grant-without-done and deadline classifiers. Private package test hook replaces exported grant hook in ordinary unit; fault config, auxiliary fixture endpoint and local CLI stay frosttest-only.",
+      "witness": "TestPossibleReleaseIncludesGrantWithoutDone and TestFrostLocalDeadlineIsFailure with no build tag; ordinary omission tests.",
+      "resolution": "author implemented; awaiting review",
+      "owner": "integration verification owner",
+      "status": "author repair; independent disposition pending"
+    },
+    {
+      "id": "K09-50",
+      "change": "Document original-selector conservatism for both partial capacity and below dust, and original-selector-only MaintainerProxy reimbursement. Fleet upgrade still precedes drain.",
+      "witness": "K09-REVIEW6.md addendum, K09-REVIEW7.md and test/frost/K09.md.",
+      "resolution": "author implemented; awaiting review",
+      "owner": "integration verification owner",
+      "status": "author repair; independent disposition pending"
+    },
+    {
+      "id": "K09-51",
+      "change": "Exercise shipped TbtcChain with real ABI signing, nonce manager, resolver, shared mutex and configured MiningWaiter at controlled RPC boundary; legacy and extension branches, failure nonce, concurrency, gas bump, chain clock.",
+      "witness": "TestTbtcChainResetSubmission/legacy and /extension; ResetNonce owning control. Not a full EVM delayed-mining simulation.",
+      "resolution": "author implemented; awaiting review",
+      "owner": "integration verification owner",
+      "status": "author repair; independent disposition pending"
+    },
+    {
+      "id": "K09-52",
+      "change": "Canonical local 2-of-3 distinct-operator cohorts rotate by round; authenticated retained-recipe exchange, cohort selection reaches worker, advertised pins persist, any exact signed-result holder broadcasts/proves. General D-02/D-11 remains OPEN.",
+      "witness": "TestFrostNodeThresholdCohortWithoutSeatOne: real seat-1 process killed, distinct seats 2/3 settle; explicit standby SPV authorization. FollowerPin control and original follower-grant witness.",
+      "resolution": "author implemented bounded criterion; awaiting review",
+      "owner": "integration verification owner",
+      "status": "author repair; independent disposition pending"
     }
   ],
   "verificationNotRun": [
@@ -621,6 +677,21 @@
       "residual K09-5/7/21/22",
       "formal models/replays and V-05",
       "independent disposition"
+    ]
+  },
+  "round7": {
+    "reviews": [
+      5674230284,
+      5674230730
+    ],
+    "boundary": "K09-REVIEW7.md",
+    "scope": "focused concrete repairs; no full acceptance or exit claim",
+    "open": [
+      "K09-46 mainless/policy-only retirement outside spent-input proof",
+      "K09-29 combined reserve/pay/prove",
+      "K09-6 all-duty; general D-02/D-11 availability",
+      "residual K09-5/7/21/22",
+      "independent disposition, models/replays and authoritative V-05"
     ]
   }
 }

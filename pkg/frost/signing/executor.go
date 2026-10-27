@@ -360,6 +360,9 @@ func (g finalAuthorization) BeforeSigning(ctx context.Context, r frost.SigningRe
 	if err := e.config.Journal.RetainSigningRecord(ctx, signingGrantID(snowfallengine.AttemptID(r.Attempt)), e.config.Plan.IntentBytes()); err != nil {
 		return err
 	}
+	if err := e.step("after-grant"); err != nil {
+		return err
+	}
 	return e.afterGrant(ctx)
 }
 

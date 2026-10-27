@@ -760,6 +760,9 @@ func (mft *MovingFundsTask) ResetMovingFundsTimeoutIfDue(source [20]byte, wallet
 			return false, errors.New("unknown FROST creation mode")
 		}
 	}
+	if policy.LegacyOnly {
+		return false, nil
+	}
 	// Match the contract: before cutover a live legacy target keeps its route.
 	// With no legacy Live wallets the host must preserve recovery in every mode.
 	if policy.CreationMode != 2 {

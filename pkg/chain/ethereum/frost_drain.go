@@ -24,7 +24,10 @@ import (
 func configuredFrostBridge(config commonEthereum.Config, bridge common.Address, backend bind.ContractCaller) (*frostbridgeabi.FrostBridgeCaller, common.Address, error) {
 	address, err := config.ContractAddress(FrostBridgeContractName)
 	if errors.Is(err, commonEthereum.ErrAddressNotConfigured) {
-		return nil, common.Address{}, nil
+		if err := requirePreExtensionBridge(context.Background(), bridge, backend); err != nil {
+			return nil, common.Address{}, err
+		}
+		return nil, bridge, nil
 	}
 	if err != nil {
 		return nil, common.Address{}, err
@@ -34,6 +37,48 @@ func configuredFrostBridge(config commonEthereum.Config, bridge common.Address, 
 	}
 	caller, err := frostbridgeabi.NewFrostBridgeCaller(address, backend)
 	return caller, address, err
+}
+
+// A missing alias is not a capability signal. Only an explicit empty EVM
+// revert for the absent selector, together with a successful legacy getter and
+// deployed code, identifies the supported pre-extension implementation. RPC,
+// decoding and nonempty revert failures refuse startup (and later policy reads).
+func requirePreExtensionBridge(ctx context.Context, address common.Address, backend bind.ContractCaller) error {
+	if backend == nil {
+		return errors.New("Bridge capability backend required")
+	}
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	contract, err := frostbridgeabi.NewFrostBridgeCaller(address, backend)
+	if err != nil {
+		return err
+	}
+	mode, err := contract.FrostCreationMode(&bind.CallOpts{Context: ctx})
+	if err == nil {
+		return fmt.Errorf("Bridge exposes FROST creation mode %d: configure FrostBridge with the Bridge proxy address before starting this host", mode)
+	}
+	var reverted interface {
+		ErrorCode() int
+		ErrorData() interface{}
+	}
+	if !errors.As(err, &reverted) || reverted.ErrorCode() != 3 || reverted.ErrorData() != "0x" {
+		return fmt.Errorf("cannot identify pre-extension Bridge: %w", err)
+	}
+	code, err := backend.CodeAt(ctx, address, nil)
+	if err != nil {
+		return err
+	}
+	if len(code) == 0 {
+		return errors.New("Bridge has no deployed code")
+	}
+	legacy, err := legacyabi.NewBridgeCaller(address, backend)
+	if err != nil {
+		return err
+	}
+	if _, err = legacy.LiveWalletsCount(&bind.CallOpts{Context: ctx}); err != nil {
+		return fmt.Errorf("cannot identify legacy Bridge: %w", err)
+	}
+	return nil
 }
 
 // ReadFrostDrainPolicy reads a single block's routing policy and eligible
@@ -125,7 +170,10 @@ func ReadFrostDrainPolicy(ctx context.Context, backend bind.ContractBackend, add
 
 func (tc *TbtcChain) FrostDrainPolicy() (tbtc.FrostDrainPolicy, error) {
 	if tc.frostBridge == nil {
-		return tbtc.FrostDrainPolicy{}, nil
+		if err := requirePreExtensionBridge(context.Background(), tc.frostBridgeAddress, tc.client); err != nil {
+			return tbtc.FrostDrainPolicy{}, err
+		}
+		return tbtc.FrostDrainPolicy{LegacyOnly: true}, nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -135,9 +183,6 @@ func (tc *TbtcChain) FrostDrainPolicy() (tbtc.FrostDrainPolicy, error) {
 var _ tbtc.FrostDrainResolver = (*TbtcChain)(nil)
 
 func (tc *TbtcChain) MovingFundsNow() (time.Time, error) {
-	if tc.frostBridge == nil {
-		return time.Now(), nil
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	header, err := tc.client.HeaderByNumber(ctx, nil)
@@ -152,6 +197,9 @@ func (tc *TbtcChain) MovingFundsNow() (time.Time, error) {
 // budget insufficiency; pre-extension hosts keep the original Bridge selector.
 func (tc *TbtcChain) ResetLegacyMovingFundsTimeout(source [20]byte, main *bitcoin.UnspentTransactionOutput) error {
 	if tc.frostBridge == nil {
+		if err := requirePreExtensionBridge(context.Background(), tc.frostBridgeAddress, tc.client); err != nil {
+			return err
+		}
 		_, err := tc.bridge.ResetMovingFundsTimeout(source)
 		return err
 	}

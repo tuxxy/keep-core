@@ -73,6 +73,9 @@ func (b *Backend) renderExpected(t *testing.T, entry ExpectedCall) string {
 			continue
 		}
 
+		if entry.Contract == BridgeContract && entry.Method == "frostCreationMode" {
+			return render(entry.Contract, address, []byte{0x1c, 0x60, 0x0c, 0x3f}, entry.Args)
+		}
 		method, known := registered.abi.Methods[entry.Method]
 		if !known {
 			t.Fatalf(

@@ -232,9 +232,14 @@ type rpcRequest struct {
 	Params []json.RawMessage `json:"params"`
 }
 
+type emptyEVMRevert struct{}
+
+func (*emptyEVMRevert) Error() string { return "execution reverted" }
+
 type rpcError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
 }
 
 type rpcResponse struct {
@@ -283,6 +288,11 @@ func (b *Backend) fail(
 	id json.RawMessage,
 	cause error,
 ) {
+	var reverted *emptyEVMRevert
+	if errors.As(cause, &reverted) {
+		b.reply(writer, rpcResponse{Version: "2.0", ID: id, Error: &rpcError{Code: 3, Message: cause.Error(), Data: "0x"}})
+		return
+	}
 	fault := &chainFault{}
 	if !errors.As(cause, &fault) {
 		b.mutex.Lock()
@@ -451,6 +461,18 @@ func (b *Backend) call(params []json.RawMessage) (interface{}, error) {
 		)
 	}
 
+	// Model the legacy Solidity dispatcher for the specific extension probe.
+	// Other unknown selectors remain fixture errors.
+	if target.name == BridgeContract && hexutil.Encode(arguments.Input) == "0x1c600c3f" {
+		b.record(Call{Contract: target.name, To: *arguments.To, Method: "frostCreationMode", Selector: append([]byte(nil), arguments.Input...)})
+		b.mutex.Lock()
+		mode := b.state.FrostCreationMode
+		b.mutex.Unlock()
+		if mode != nil {
+			return hexutil.Bytes(common.LeftPadBytes([]byte{*mode}, 32)), nil
+		}
+		return nil, &emptyEVMRevert{}
+	}
 	method, err := target.abi.MethodById(arguments.Input[:4])
 	if err != nil {
 		return nil, fmt.Errorf(

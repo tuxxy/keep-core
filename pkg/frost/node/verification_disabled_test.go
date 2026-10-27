@@ -9,6 +9,9 @@ import (
 )
 
 func TestProductionRejectsFaultConfiguration(t *testing.T) {
+	if _, ok := reflect.TypeOf(&Node{}).MethodByName("RegisterVerification"); ok {
+		t.Fatal("production exposes fixture component endpoint")
+	}
 	if _, ok := reflect.TypeOf(Config{}).FieldByName("VerificationPause"); ok {
 		t.Fatal("production exposes pause field")
 	}

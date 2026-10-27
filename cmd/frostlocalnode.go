@@ -62,6 +62,7 @@ func runFrostLocalNode(command *cobra.Command, args []string) error {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(runtime.Status())
 	})
+	runtime.RegisterVerification(mux)
 	server := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	served := make(chan error, 1)
 	go func() { served <- server.Serve(listener) }()
@@ -92,16 +93,4 @@ func runFrostLocalNode(command *cobra.Command, args []string) error {
 		return errors.New("local FROST node runtime stopped; inspect private diagnostics")
 	}
 	return nil
-}
-
-// Classify before canceling the runtime context so an expired bound cannot be
-// mistaken for a requested stop when shutdown races another completion.
-func localNodeOutcome(ctx context.Context, err error) error {
-	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		return context.DeadlineExceeded
-	}
-	if errors.Is(err, context.Canceled) || errors.Is(err, http.ErrServerClosed) {
-		return nil
-	}
-	return err
 }

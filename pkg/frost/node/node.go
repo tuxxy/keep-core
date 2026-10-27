@@ -474,6 +474,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) (err error) {
 	}}
 	n.configureVerification(&base, epoch)
 	w.mover = &movement.Mover{Chain: n.chain, Authority: &movement.Authority{View: view}, Lock: &deposit.MainLock{Journal: journal}, Ledger: redemption.Ledger{Journal: journal}, Schedule: redemption.Schedule{FinalityBlocks: n.cfg.FinalityBlocks, RoundBlocks: n.cfg.RoundBlocks}, Wallet: record.Descriptor, Base: base}
+	w.mover.Cohort = localIncomingCohort(record.Descriptor)
 	if err = w.restoreIncoming(ctx); err != nil {
 		return &stageError{"incoming-intent-restore", err}
 	}
@@ -683,42 +684,89 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 		if err != nil || settled {
 			return err
 		}
-	}
-	safe := w.plan == nil
-	if w.plan != nil && !w.signed {
-		safe, err = w.canAbandonIncoming(operation)
-		if err != nil {
-			return err
+		oldCommitment := w.plan.Commitment()
+		retired, retireErr := n.retireSpentIncoming(operation, w)
+		if retireErr != nil {
+			return retireErr
+		}
+		if retired {
+			if err = n.boundary(operation, w.record.Descriptor.Epoch, "after-incoming-retire", oldCommitment); err != nil {
+				return err
+			}
 		}
 	}
-	if safe {
-		plan, planErr := n.agreedIncoming(operation, w, planner, round.Anchor, nil)
-		if planErr != nil && !errors.Is(planErr, movement.ErrNothingIncoming) {
-			return &stageError{"incoming-recipe", planErr}
+	if w.mover.Cohort != nil {
+		selected := w.mover.Cohort(round.Number)
+		active := false
+		for _, seat := range selected {
+			if seat == w.request.LocalSeats[0] {
+				active = true
+			}
 		}
-		if w.plan != nil && (plan == nil || plan.Commitment() != w.plan.Commitment()) {
-			abandoned, err := w.abandonIncoming(operation)
+		if active && !w.signed {
+			plan, err := n.agreedIncoming(operation, w, planner, round.Anchor, w.plan)
+			if errors.Is(err, movement.ErrNothingIncoming) {
+				return nil
+			}
+			if err != nil {
+				return &stageError{"incoming-recipe", err}
+			}
+			if w.plan != nil && w.plan.Commitment() != plan.Commitment() {
+				abandoned, err := w.abandonIncoming(operation)
+				if err != nil {
+					return err
+				}
+				if !abandoned {
+					return errors.New("cohort conflicts with pinned recipe")
+				}
+			}
+			if w.plan == nil {
+				w.plan = plan
+				if err = w.retainIncoming(operation); err != nil {
+					w.plan = nil
+					return err
+				}
+			}
+		} else if !w.signed {
+			return nil
+		}
+	} else {
+		safe := w.plan == nil
+		if w.plan != nil && !w.signed {
+			safe, err = w.canAbandonIncoming(operation)
 			if err != nil {
 				return err
 			}
-			if !abandoned {
-				return errors.New("incoming release appeared before abandonment")
+		}
+		if safe {
+			plan, planErr := n.agreedIncoming(operation, w, planner, round.Anchor, nil)
+			if planErr != nil && !errors.Is(planErr, movement.ErrNothingIncoming) {
+				return &stageError{"incoming-recipe", planErr}
+			}
+			if w.plan != nil && (plan == nil || plan.Commitment() != w.plan.Commitment()) {
+				abandoned, err := w.abandonIncoming(operation)
+				if err != nil {
+					return err
+				}
+				if !abandoned {
+					return errors.New("incoming release appeared before abandonment")
+				}
+			}
+			if plan == nil {
+				return nil
+			}
+			if w.plan == nil {
+				w.plan = plan
+				if err = w.retainIncoming(operation); err != nil {
+					w.plan = nil
+					return err
+				}
 			}
 		}
-		if plan == nil {
-			return nil
-		}
-		if w.plan == nil {
-			w.plan = plan
-			if err = w.retainIncoming(operation); err != nil {
-				w.plan = nil
-				return err
+		if !safe && w.request.LocalSeats[0] == 1 {
+			if _, err = n.agreedIncoming(operation, w, planner, round.Anchor, w.plan); err != nil {
+				return &stageError{"incoming-recipe", err}
 			}
-		}
-	}
-	if !safe && w.request.LocalSeats[0] == 1 {
-		if _, err = n.agreedIncoming(operation, w, planner, round.Anchor, w.plan); err != nil {
-			return &stageError{"incoming-recipe", err}
 		}
 	}
 	if w.plan == nil {
@@ -749,9 +797,9 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 			return err
 		}
 	}
-	// The lowest selected seat owns public broadcast/proof submission. Every
-	// operator independently signs and reconciles its durable intent.
-	if w.request.LocalSeats[0] == 1 {
+	// Any holder of the exact durable result may broadcast/prove. Proof calls
+	// are idempotently reconciled after a peer wins the race.
+	if w.signed {
 		exists, err := n.btc.Transaction(operation, bitcoin.Hash(w.plan.BitcoinTransactionHash()))
 		if err != nil || len(exists) == 0 {
 			if err = w.mover.Broadcast(operation, w.plan); err != nil {

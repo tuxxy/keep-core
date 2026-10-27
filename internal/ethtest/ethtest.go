@@ -77,6 +77,8 @@ type Roles struct {
 // read as the zero value the corresponding contract would return, so a test
 // only has to seed what it wants to differ from an unknown address.
 type State struct {
+	// Nil models the legacy dispatcher; non-nil exposes the extension getter.
+	FrostCreationMode *uint8
 	// ChainID is reported by eth_chainId and must match the configured
 	// network for the chain handle constructors to accept the endpoint.
 	ChainID *big.Int

@@ -1,5 +1,3 @@
-//go:build frosttest
-
 package signing
 
 import (
@@ -12,7 +10,12 @@ import (
 func TestPossibleReleaseIncludesGrantWithoutDone(t *testing.T) {
 	e, _, _, _ := sweepExecutor(t)
 	journal := e.config.Journal
-	e.config.AfterGrant = func(context.Context) error { return errors.New("interrupted after durable grant") }
+	e.boundary = func(stage string) error {
+		if stage == "after-grant" {
+			return errors.New("interrupted after durable grant")
+		}
+		return nil
+	}
 	if released, err := e.PossibleRelease(context.Background()); err != nil || released {
 		t.Fatal("fresh plan already marked released", err)
 	}

@@ -25,6 +25,8 @@ func (b *Backend) read(
 	switch contractName {
 	case BridgeContract:
 		switch method {
+		case "liveWalletsCount":
+			return []interface{}{uint32(0)}, nil
 		case "contractReferences":
 			return []interface{}{
 				BankAddress,

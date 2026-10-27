@@ -6,6 +6,11 @@ sp=importlib.util.spec_from_file_location('k09',Path(__file__).with_name('k09-lo
 os.umask(0o077);root=Path(sys.argv[1]);root.mkdir(mode=0o700,parents=True,exist_ok=False)
 env=m.local_environment(os.environ);env['GOMAXPROCS']='8'
 cases=[
+ ('SpentRecipe','pkg/frost/node/incoming.go','if err != nil || unspent {','if err != nil || false && unspent {','./pkg/frost/node','TestIncomingRetirementRequiresFinalizedSpentInput'),
+ ('FollowerPin','pkg/frost/node/cohort.go','if len(states[seat]) != 0 {','if false {','./pkg/frost/node','TestCohortRecoversFollowerRecipeBeforeLeaderChoice'),
+ ('BridgeCapability','pkg/chain/ethereum/frost_drain.go','if err := requirePreExtensionBridge(context.Background(), bridge, backend); err != nil {','if err := requirePreExtensionBridge(context.Background(), bridge, backend); false && err != nil {','./pkg/chain/ethereum','TestBridgeCapabilityIndependentOfAlias'),
+ ('ResetNonce','pkg/chain/ethereum/frost_drain.go','tc.nonceManager.IncrementNonce()','_ = tc.nonceManager','./pkg/chain/ethereum','TestTbtcChainResetSubmission'),
+ ('PersistBeforeSend','pkg/frost/node/recipe.go','if w.plan == nil {','if false {','./pkg/frost/node','TestIncomingRecipePersistedBeforeSend'),
  ('IncompleteGrant','pkg/frost/signing/executor.go','{signingGrantID(id), signingDoneID(id)}','{signingDoneID(id)}','./pkg/frost/signing','TestPossibleReleaseIncludesGrantWithoutDone'),
  ('InterruptedClaim','pkg/frost/signing/executor.go','claimed, err := claims.HasClaim(ctx, id)','claimed, err := claims.HasClaim(ctx, id); claimed = false','./pkg/frost/signing','TestPossibleReleaseIncludesInterruptedClaim'),
  ('IncomingCeiling','pkg/frost/node/recipe.go','if ceiling <= 0 ||','if false && (ceiling <= 0) || false &&','./pkg/frost/node','TestIncomingRecipeEnforcesLocalCeiling'),
@@ -15,7 +20,7 @@ cases=[
  ('DrainDust','pkg/tbtc/moving_funds.go','balance >= p.DustThreshold','true','./pkg/tbtcpg','TestNoRouteHostRecoveryAllModes'),
  ('DrainBudget','pkg/tbtc/moving_funds.go','p.RemainingCustody >= balance','true','./pkg/tbtcpg','TestBudgetExhaustionFallsBackBeforeCutover'),
  ('HostTimeoutReset','pkg/tbtcpg/moving_funds.go','recovery.ResetLegacyMovingFundsTimeout(source, main)','func() error { _ = recovery; return nil }()','./pkg/tbtcpg','TestHostSubmitsDueLegacyReset'),
- ('NodeDeadline','cmd/frostlocalnode.go','if errors.Is(ctx.Err(), context.DeadlineExceeded) {','if false && errors.Is(ctx.Err(), context.DeadlineExceeded) {','./cmd','TestFrostLocalDeadlineIsFailure'),
+ ('NodeDeadline','cmd/frost_node_outcome.go','if errors.Is(ctx.Err(), context.DeadlineExceeded) {','if false && errors.Is(ctx.Err(), context.DeadlineExceeded) {','./cmd','TestFrostLocalDeadlineIsFailure'),
 ]
 r={'status':'running','kind':'focused owning controls','limits':{'cores':8,'wallSecondsPerCommand':120},'controls':[]}
 def save():(root/'result.json').write_text(json.dumps(r,indent=2))

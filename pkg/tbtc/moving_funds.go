@@ -547,6 +547,9 @@ type FrostTargetResolver interface {
 // FrostDrainPolicy is one block's public routing state. EligibleCount is the
 // contract's counter, not the number of logs found by an off-chain indexer.
 type FrostDrainPolicy struct {
+	// LegacyOnly positively identifies an implementation without the extension.
+	// Such hosts retain their existing proposal/maintainer reset dispatch.
+	LegacyOnly       bool
 	RemainingCustody uint64
 	DustThreshold    uint64
 	CreationMode     uint8

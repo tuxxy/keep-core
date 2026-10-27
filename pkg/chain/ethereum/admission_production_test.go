@@ -39,13 +39,15 @@ func connectAdmissionFixture(t *testing.T) (
 	}
 
 	// What connecting costs, before anything is forgotten. Construction
-	// resolves the addresses it needs and nothing else; in particular it reads
+	// resolves references and positively identifies legacy capability; it reads
 	// no admission state, so no later assertion is looking at a read that was
 	// already served.
 	backend.AssertTrace(
 		t,
 		"construction reads",
 		ethtest.Read(ethtest.RandomBeaconContract, "sortitionPool"),
+		ethtest.Read(ethtest.BridgeContract, "frostCreationMode"),
+		ethtest.Read(ethtest.BridgeContract, "liveWalletsCount"),
 		ethtest.Read(ethtest.BridgeContract, "contractReferences"),
 		ethtest.Read(ethtest.WalletRegistryContract, "sortitionPool"),
 		ethtest.Read(ethtest.BridgeContract, "getRedemptionWatchtower"),
@@ -392,4 +394,17 @@ func TestBaseChain_RolesOf_ProductionBinding(t *testing.T) {
 // chainAddress renders a chain address the way the roles lookup expects it.
 func chainAddress(address common.Address) chain.Address {
 	return chain.Address(address.Hex())
+}
+
+func TestDefaultConfigUpgradeRefusesProductionConstruction(t *testing.T) {
+	for _, mode := range []uint8{0, 1, 2} {
+		state := ethtest.AdmissionState(t)
+		state.FrostCreationMode = &mode
+		backend := ethtest.New(t, state)
+		_, host, _, _, _, err := Connect(context.Background(), backend.ChainConfig(t))
+		if err == nil || host != nil || !strings.Contains(err.Error(), "configure FrostBridge") {
+			t.Fatal("control ProductionCapability assertion: upgraded default-config host reached construction", mode, err)
+		}
+		backend.AssertNoUnexpectedCalls(t)
+	}
 }

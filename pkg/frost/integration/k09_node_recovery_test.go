@@ -567,3 +567,38 @@ func TestFrostNodeFollowerRefusesOverCeilingRecipe(t *testing.T) {
 		t.Fatal("control FollowerCeiling assertion: real follower never refused over-ceiling recipe")
 	}
 }
+
+// One seat per operator: after DKG/readiness, kill the entire seat-1 process.
+// The other two processes must sign, broadcast and prove without its return.
+func TestFrostNodeThresholdCohortWithoutSeatOne(t *testing.T) {
+	t.Setenv("FROST_K09_DISTINCT_SEATS", "1")
+	var stopped *remoteNode
+	w := runPublicLegacyFlow(t, true, func(w *k07World) {
+		if len(w.f.remotes) != 3 || len(w.a.desc.Operators) != 3 || w.a.desc.Operators[1] == w.a.desc.Operators[2] {
+			t.Fatal("distinct 2-of-3 topology required")
+		}
+		// Standby proof submitters need an explicit existing maintainer role.
+		for _, operator := range w.a.desc.Operators[1:] {
+			w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+				return w.legacy.SetSpvMaintainerStatus(o, operator, true)
+			})
+		}
+		stopped = w.f.remotes[0]
+		if err := stopped.command.Process.Kill(); err != nil {
+			t.Fatal(err)
+		}
+		<-stopped.done
+		// Only observation uses this live-node list; the killed process's cleanup
+		// remains registered and its private journal is never opened by the parent.
+		w.f.remotes = w.f.remotes[1:]
+	})
+	if stopped == nil || len(w.f.remotes) != 2 {
+		t.Fatal("leader was not actually offline")
+	}
+	select {
+	case <-stopped.done:
+	default:
+		t.Fatal("seat one returned")
+	}
+	t.Log("K09-RECOVERY: distinct seats 2 and 3 settled incoming with seat-1 process killed, including broadcast and proof")
+}

@@ -173,7 +173,11 @@ func startRemoteNodes(f *fixture, url, root string) {
 		f.t.Fatal(err)
 	}
 	var bootstrap []string
-	for operatorIndex := 1; operatorIndex <= 2; operatorIndex++ {
+	operators := 2
+	if os.Getenv("FROST_K09_DISTINCT_SEATS") == "1" {
+		operators = 3
+	}
+	for operatorIndex := 1; operatorIndex <= operators; operatorIndex++ {
 		dir := filepath.Join(directory, fmt.Sprint(operatorIndex))
 		if err = os.Mkdir(dir, 0700); err != nil {
 			f.t.Fatal(err)

@@ -260,6 +260,9 @@ var _ movement.Chain = (*FrostRedemptionChain)(nil)
 // its immutable descriptor.
 func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error) {
 	if tc.frostBridge == nil {
+		if err := requirePreExtensionBridge(context.Background(), tc.frostBridgeAddress, tc.client); err != nil {
+			return [32]byte{}, false, err
+		}
 		// Absence of the optional extension is not evidence that an arbitrary
 		// label is a legacy HASH160. A drain commitment can be submitted by
 		// another member; never sign its labels as P2WPKH without registry

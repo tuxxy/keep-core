@@ -27,6 +27,7 @@ GO_CASES = {
     "public-legacy": ["TestPublicLegacyUpgradeCutoverDrainAndSweep"],
     "nodes": ["TestFrostNodeProcessesDKGAndDispatch", "TestFrostNodeCandidateEpochInterruption", "TestFrostNodeApprovedEpochInterruption", "TestFrostNodeIncomingDuringStalledDKG", "TestFrostNodeSignedIncomingInterruption", "TestFrostNodeReservationDefersWithoutExit"],
     "node-recovery": ["TestFrostNodeCertifiedEpochInterruption", "TestFrostNodeCertificateSubmitInterruption", "TestFrostNodeAdvertisedIncomingStaysPinnedAfterRestart", "TestFrostNodePrecertificationRecovery", "TestFrostNodeMissingPreKeyIsLost", "TestFrostNodeGrantedIncomingStaysPinned", "TestFrostNodeDifferentFeesAgree", "TestLegacyHostResetsBlockedDrain"],
+    "review7-recovery": ["TestFrostNodeThresholdCohortWithoutSeatOne", "TestFrostNodeRetiresRecipeAfterProvenMainSpend"],
     "review6-recovery": ["TestLegacyHostPrecutoverBudgetRecovery", "TestFrostNodeFollowerGrantKeepsLeaderRecipe", "TestFrostNodeFollowerRefusesOverCeilingRecipe"],
     "proof-depth": ["TestFrostDifficultyProofDepth", "TestGetProofInfo"],
     "realistic-proof": ["TestFrostRetainedMainnetMovementProof", "TestFrostRetainedMainnetSweepProof", "TestFrostRetainedMainnetRedemptionProof"],
@@ -37,7 +38,7 @@ REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "node
 
 def review_coverage():
     ledger = json.loads((KC / "pkg/frost/integration/verification/K09-COVERAGE.json").read_text())
-    expected = {"K09-" + str(i) for i in range(1, 46)}
+    expected = {"K09-" + str(i) for i in range(1, 53)}
     rows = {r["id"]: r for r in ledger["feedback"]}
     aliases = {r["id"] for r in ledger.get("reviewAliases", [])}
     if not expected <= rows.keys() or aliases != {"K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03"}:

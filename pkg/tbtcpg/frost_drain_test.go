@@ -265,3 +265,11 @@ func TestIncompleteFrostIndexKeepsLegalLegacyFallback(t *testing.T) {
 		}
 	}
 }
+
+func TestPreExtensionHostKeepsOriginalResetDispatch(t *testing.T) {
+	c := &resetProducer{drainChain: &drainChain{LocalChain: tbtcpg.NewLocalChain(), policy: tbtc.FrostDrainPolicy{LegacyOnly: true}}}
+	task := tbtcpg.NewMovingFundsTask(c, nil)
+	if reset, err := task.ResetMovingFundsTimeoutIfDue([20]byte{1}, &tbtc.WalletChainData{State: tbtc.StateMovingFunds}); err != nil || reset || c.resets != 0 {
+		t.Fatal("pre-extension host acquired native FROST reset dispatch", reset, err)
+	}
+}

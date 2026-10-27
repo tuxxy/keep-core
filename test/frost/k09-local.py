@@ -453,7 +453,7 @@ def main():
                     current["sourcesSha256"] = result["sourcesSha256"]
                 if label == "review5-guards":
                     controls = json.loads((private / "review5-guards/result.json").read_text())
-                    expected_controls = [{"guard": name, "status": "killed at owning assertion"} for name in ("IncompleteGrant", "InterruptedClaim", "IncomingCeiling", "FollowerCeiling", "LeaderRecipe", "NoRouteHost", "DrainDust", "DrainBudget", "HostTimeoutReset", "NodeDeadline")]
+                    expected_controls = [{"guard": name, "status": "killed at owning assertion"} for name in ("SpentRecipe", "FollowerPin", "BridgeCapability", "ResetNonce", "PersistBeforeSend", "IncompleteGrant", "InterruptedClaim", "IncomingCeiling", "FollowerCeiling", "LeaderRecipe", "NoRouteHost", "DrainDust", "DrainBudget", "HostTimeoutReset", "NodeDeadline")]
                     if controls.get("status") != "pass" or controls.get("controls") != expected_controls:
                         raise ValueError("round-five owning controls missing")
                     current["controls"] = expected_controls

@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
+	"os"
+	"testing"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
@@ -88,7 +90,7 @@ func (c *publicLegacyProducer) GetWallet(pkh [20]byte) (*tbtc.WalletChainData, e
 }
 func (c *publicLegacyProducer) GetMovingFundsParameters() (tbtc.MovingFundsParameters, error) {
 	v, err := c.w.legacy.MovingFundsParameters(&bind.CallOpts{Context: c.w.f.ctx})
-	return tbtc.MovingFundsParameters{TxMaxTotalFee: v.MovingFundsTxMaxTotalFee, Timeout: v.MovingFundsTimeout}, err
+	return tbtc.MovingFundsParameters{TxMaxTotalFee: v.MovingFundsTxMaxTotalFee, Timeout: v.MovingFundsTimeout, TimeoutResetDelay: v.MovingFundsTimeoutResetDelay}, err
 }
 func (c *publicLegacyProducer) GetWalletParameters() (tbtc.WalletParameters, error) {
 	v, err := c.w.legacy.WalletParameters(&bind.CallOpts{Context: c.w.f.ctx})
@@ -217,6 +219,39 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 	}
 	w.warp(margin + 1)
 	task := tbtcpg.NewMovingFundsTask(c, publicLegacyBitcoin{w.btc})
+	if os.Getenv("FROST_K09_CHECK_RESET") == "1" {
+		controller := bind.NewBoundContract(w.f.deployment.Exposure, c10ABI, w.f.client, w.f.client, w.f.client)
+		w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+			return controller.Transact(o, "contain", crypto.Keccak256Hash([]byte("host no-route recovery")))
+		})
+		for i := 0; i < 3; i++ {
+			delta := uint64(parameters.Timeout) - 1
+			if i == 0 {
+				delta = uint64(parameters.TimeoutResetDelay) + 1
+			}
+			w.warp(delta)
+			before, err := c.GetWallet(lw.pkh)
+			if err != nil {
+				w.t.Fatal(err)
+			}
+			if proposal, valid, err := task.Run(&tbtc.CoordinationProposalRequest{WalletPublicKeyHash: lw.pkh}); err != nil || valid || proposal != nil {
+				w.t.Fatal("host did not reset blocked drain", err)
+			}
+			after, err := c.GetWallet(lw.pkh)
+			if err != nil || !after.MovingFundsRequestedAt.After(before.MovingFundsRequestedAt) || after.MainUtxoHash != before.MainUtxoHash {
+				w.t.Fatal("host reset lost custody or did not advance", err)
+			}
+			if _, err := w.trySend(func(o *bind.TransactOpts) (*types.Transaction, error) {
+				return w.legacy.NotifyMovingFundsTimeout(o, lw.pkh, []uint32{1})
+			}); err == nil {
+				w.t.Fatal("wallet terminated after host reset")
+			}
+		}
+		w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+			return controller.Transact(o, "lift", crypto.Keccak256Hash([]byte("host recovery reopen")))
+		})
+		w.warp(margin + 1)
+	}
 	operator := chain.Address(w.adminAddr.Hex())
 	result, valid, err := task.Run(&tbtc.CoordinationProposalRequest{WalletPublicKeyHash: lw.pkh, WalletOperators: []chain.Address{operator}, ExecutingOperator: operator})
 	if err != nil || !valid {
@@ -234,4 +269,12 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 	}
 	w.t.Fatal("producer chose a non-FROST target")
 	return nil, 0
+}
+
+func (c *publicLegacyProducer) ResetLegacyMovingFundsTimeout(source [20]byte, main *bitcoin.UnspentTransactionOutput) error {
+	return c.w.chain.ResetLegacyMovingFundsTimeout(source, main)
+}
+func TestLegacyHostResetsBlockedDrain(t *testing.T) {
+	t.Setenv("FROST_K09_CHECK_RESET", "1")
+	runPublicLegacyFlow(t, true)
 }

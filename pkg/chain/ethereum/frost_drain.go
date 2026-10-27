@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"math/big"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	commonEthereum "github.com/keep-network/keep-common/pkg/chain/ethereum"
+	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/tbtc"
@@ -62,13 +65,19 @@ func ReadFrostDrainPolicy(ctx context.Context, backend bind.ContractBackend, add
 			return out, errors.New("FROST exposure controller missing")
 		}
 		// The controller is immutable and read at the same block as policy.
-		method, _ := abi.JSON(strings.NewReader(`[{"name":"contained","type":"function","inputs":[],"outputs":[{"type":"bool"}]}]`))
+		method, _ := abi.JSON(strings.NewReader(`[{"name":"contained","type":"function","inputs":[],"outputs":[{"type":"bool"}]},{"name":"remainingCustody","type":"function","inputs":[],"outputs":[{"type":"uint64"}]}]`))
 		var result []interface{}
 		bound := bind.NewBoundContract(controller, method, backend, nil, nil)
 		if err := bound.Call(opts, &result, "contained"); err != nil {
 			return out, err
 		}
 		out.Contained = *abi.ConvertType(result[0], new(bool)).(*bool)
+		result = nil
+		if err := bound.Call(opts, &result, "remainingCustody"); err != nil {
+			return out, err
+		}
+		out.RemainingCustody = *abi.ConvertType(result[0], new(uint64)).(*uint64)
+
 	}
 	if !out.Enabled || out.Contained {
 		return out, nil
@@ -125,4 +134,48 @@ func (tc *TbtcChain) MovingFundsNow() (time.Time, error) {
 		return time.Time{}, err
 	}
 	return time.Unix(int64(header.Time), 0), nil
+}
+
+// ResetLegacyMovingFundsTimeout submits the actual recovery transition. The
+// additive extension selector verifies the current main, including partial
+// budget insufficiency; pre-extension hosts keep the original Bridge selector.
+func (tc *TbtcChain) ResetLegacyMovingFundsTimeout(source [20]byte, main *bitcoin.UnspentTransactionOutput) error {
+	if tc.frostBridge == nil {
+		_, err := tc.bridge.ResetMovingFundsTimeout(source)
+		return err
+	}
+	if main == nil || main.Outpoint == nil || main.Value <= 0 {
+		return errors.New("legacy recovery needs current main UTXO")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	tc.transactionMutex.Lock()
+	defer tc.transactionMutex.Unlock()
+	opts, err := bind.NewKeyedTransactorWithChainID(tc.key.PrivateKey, tc.chainID)
+	if err != nil {
+		return err
+	}
+	opts.Context = ctx
+	nonce, err := tc.nonceManager.CurrentNonce()
+	if err != nil {
+		return err
+	}
+	opts.Nonce = new(big.Int).SetUint64(nonce)
+	contract, err := frostbridgeabi.NewFrostBridgeTransactor(tc.frostBridgeAddress, tc.client)
+	if err != nil {
+		return err
+	}
+	tx, err := contract.ResetLegacyMovingFundsTimeout(opts, source, frostbridgeabi.BitcoinTxUTXO{TxHash: [32]byte(main.Outpoint.TransactionHash), TxOutputIndex: main.Outpoint.OutputIndex, TxOutputValue: uint64(main.Value)})
+	if err != nil {
+		return err
+	}
+	tc.nonceManager.IncrementNonce()
+	receipt, err := bind.WaitMined(ctx, tc.client, tx)
+	if err != nil {
+		return err
+	}
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return errors.New("legacy timeout reset reverted")
+	}
+	return nil
 }

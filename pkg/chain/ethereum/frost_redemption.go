@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum"
+	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
 	legacy "github.com/keep-network/keep-core/pkg/chain/ethereum/tbtc/gen/abi"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
@@ -375,4 +377,15 @@ func ConnectFrostRedemption(ctx context.Context, config ethereum.Config) (*Frost
 		return nil, err
 	}
 	return NewFrostRedemptionChain(ctx, client, key.PrivateKey, bridge)
+}
+
+func (c *FrostRedemptionChain) ResetLegacyMovingFundsTimeout(source [20]byte, main *bitcoin.UnspentTransactionOutput) error {
+	if main == nil || main.Outpoint == nil || main.Value <= 0 {
+		return errors.New("legacy recovery needs current main")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	return c.send(ctx, func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return c.bridge.ResetLegacyMovingFundsTimeout(o, source, frostbridgeabi.BitcoinTxUTXO{TxHash: main.Outpoint.TransactionHash, TxOutputIndex: main.Outpoint.OutputIndex, TxOutputValue: uint64(main.Value)})
+	})
 }

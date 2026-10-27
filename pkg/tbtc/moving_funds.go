@@ -547,11 +547,23 @@ type FrostTargetResolver interface {
 // FrostDrainPolicy is one block's public routing state. EligibleCount is the
 // contract's counter, not the number of logs found by an off-chain indexer.
 type FrostDrainPolicy struct {
-	CreationMode  uint8
-	Enabled       bool
-	Contained     bool
-	EligibleCount uint64
-	Targets       [][20]byte
+	RemainingCustody uint64
+	CreationMode     uint8
+	Enabled          bool
+	Contained        bool
+	EligibleCount    uint64
+	Targets          [][20]byte
+}
+
+// CanDrain reflects the C-10 admission budget, not just target eligibility.
+func (p FrostDrainPolicy) CanDrain(balance uint64) bool {
+	return p.Enabled && !p.Contained && p.EligibleCount > 0 && balance > 0 && p.RemainingCustody >= balance
+}
+
+// LegacyMovingFundsRecovery is implemented by hosts that submit the public
+// reset themselves; observers are not relied on to keep custody recoverable.
+type LegacyMovingFundsRecovery interface {
+	ResetLegacyMovingFundsTimeout([20]byte, *bitcoin.UnspentTransactionOutput) error
 }
 
 // FrostDrainResolver is optional for pre-FROST Chain implementations. A chain

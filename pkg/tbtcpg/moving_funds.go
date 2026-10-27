@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"time"
 
 	"github.com/ipfs/go-log/v2"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
@@ -91,6 +92,12 @@ func (mft *MovingFundsTask) Run(request *tbtc.CoordinationProposalRequest) (
 
 	if walletChainData.State != tbtc.StateMovingFunds {
 		taskLogger.Infof("source wallet not in MoveFunds state")
+		return nil, false, nil
+	}
+
+	if reset, err := mft.ResetMovingFundsTimeoutIfDue(walletPublicKeyHash, walletChainData); err != nil {
+		return nil, false, err
+	} else if reset {
 		return nil, false, nil
 	}
 
@@ -286,7 +293,7 @@ func (mft *MovingFundsTask) findNewTargetWallets(
 			return nil, fmt.Errorf("unknown FROST creation mode")
 		}
 	}
-	drain := policy.Enabled && !policy.Contained && policy.EligibleCount > 0
+	drain := policy.CanDrain(walletBalance)
 	if !drain && (policy.CreationMode == 2 || liveWalletsCount == 0) {
 		// Preserve the legacy no-result path without reading transfer policy
 		// when no route exists; a known commitment uses the separate replay path.
@@ -730,3 +737,57 @@ func estimateMovingFundsFee(btcChain bitcoin.Chain, targetWalletsCount int, txMa
 
 // ErrMovingFundsRouteUnavailable is normal deferral, not a proposal failure.
 var ErrMovingFundsRouteUnavailable = errors.New("no admissible moving funds route")
+
+// ResetMovingFundsTimeoutIfDue runs before the proposal safety margin: a
+// blocked drain must keep resetting its public timeout while it waits.
+func (mft *MovingFundsTask) ResetMovingFundsTimeoutIfDue(source [20]byte, wallet *tbtc.WalletChainData) (bool, error) {
+	recovery, ok := mft.chain.(tbtc.LegacyMovingFundsRecovery)
+	if !ok || wallet.State != tbtc.StateMovingFunds || wallet.MovingFundsTargetWalletsCommitmentHash != ([32]byte{}) {
+		return false, nil
+	}
+	var policy tbtc.FrostDrainPolicy
+	if resolver, ok := mft.chain.(tbtc.FrostDrainResolver); ok {
+		var err error
+		policy, err = resolver.FrostDrainPolicy()
+		if err != nil {
+			return false, err
+		}
+		if policy.CreationMode > 2 {
+			return false, errors.New("unknown FROST creation mode")
+		}
+	}
+	// Preserve ordinary pre-extension proposal behavior. This recovery duty
+	// addresses the post-cutover loss of every legacy route.
+	if policy.CreationMode != 2 {
+		return false, nil
+	}
+
+	main, err := tbtc.DetermineWalletMainUtxo(source, mft.chain, mft.btcChain)
+	if err != nil {
+		return false, err
+	}
+	if main == nil || main.Value <= 0 {
+		return false, nil
+	}
+	if policy.CanDrain(uint64(main.Value)) {
+		return false, nil
+	}
+	parameters, err := mft.chain.GetMovingFundsParameters()
+	if err != nil {
+		return false, err
+	}
+	now := time.Now()
+	if clock, ok := mft.chain.(interface{ MovingFundsNow() (time.Time, error) }); ok {
+		now, err = clock.MovingFundsNow()
+		if err != nil {
+			return false, err
+		}
+	}
+	if !now.After(wallet.MovingFundsRequestedAt.Add(time.Duration(parameters.TimeoutResetDelay) * time.Second)) {
+		return false, nil
+	}
+	if err = recovery.ResetLegacyMovingFundsTimeout(source, main); err != nil {
+		return false, err
+	}
+	return true, nil
+}

@@ -1,8 +1,12 @@
 package tbtcpg_test
 
 import (
+	"encoding/binary"
 	"errors"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"testing"
+	"time"
 
 	"github.com/keep-network/keep-core/internal/testutils"
 	"github.com/keep-network/keep-core/pkg/tbtc"
@@ -19,7 +23,7 @@ func (c *drainChain) FrostDrainPolicy() (tbtc.FrostDrainPolicy, error) { return 
 
 func TestFrostDrainTargetsWithoutLegacyLiveWallets(t *testing.T) {
 	for _, mode := range []uint8{0, 1, 2} {
-		c := &drainChain{LocalChain: tbtcpg.NewLocalChain(), policy: tbtc.FrostDrainPolicy{CreationMode: mode, Enabled: true, EligibleCount: 2, Targets: [][20]byte{{3}, {2}, {3}}}}
+		c := &drainChain{LocalChain: tbtcpg.NewLocalChain(), policy: tbtc.FrostDrainPolicy{CreationMode: mode, Enabled: true, RemainingCustody: 1000000, EligibleCount: 2, Targets: [][20]byte{{3}, {2}, {3}}}}
 		c.SetWalletParameters(0, 0, 0, 0, 0, 100, 0)
 		task := tbtcpg.NewMovingFundsTask(c, nil)
 		targets, existing, err := task.FindTargetWallets(&testutils.MockLogger{}, [20]byte{9}, [32]byte{}, 250, 0)
@@ -53,7 +57,7 @@ func TestFrostOnlyDoesNotFallBackToLegacyTargets(t *testing.T) {
 func TestPreCutoverDrainFallback(t *testing.T) {
 	for _, mode := range []uint8{0, 1, 2} {
 		for _, contained := range []bool{false, true} {
-			c := &drainChain{LocalChain: tbtcpg.NewLocalChain(), policy: tbtc.FrostDrainPolicy{CreationMode: mode, Enabled: true, Contained: contained}}
+			c := &drainChain{LocalChain: tbtcpg.NewLocalChain(), policy: tbtc.FrostDrainPolicy{CreationMode: mode, Enabled: true, RemainingCustody: 1000000, Contained: contained}}
 			if contained {
 				c.policy.EligibleCount = 1
 				c.policy.Targets = [][20]byte{{8}}
@@ -85,5 +89,91 @@ func TestLegacyNoTargetDoesNotReadTransferPolicy(t *testing.T) {
 	task := tbtcpg.NewMovingFundsTask(chain, nil)
 	if _, _, err := task.FindTargetWallets(&testutils.MockLogger{}, [20]byte{9}, [32]byte{}, 100, 0); !errors.Is(err, tbtcpg.ErrMovingFundsRouteUnavailable) {
 		t.Fatal("legacy no-target path acquired an extra RPC", err)
+	}
+}
+
+func TestBudgetExhaustionFallsBackBeforeCutover(t *testing.T) {
+	for _, mode := range []uint8{0, 1, 2} {
+		for _, remaining := range []uint64{0, 49} {
+			c := &drainChain{LocalChain: tbtcpg.NewLocalChain(), policy: tbtc.FrostDrainPolicy{CreationMode: mode, Enabled: true, EligibleCount: 1, Targets: [][20]byte{{8}}, RemainingCustody: remaining}}
+			c.SetWalletParameters(0, 0, 0, 0, 0, 100, 0)
+			label := [20]byte{4}
+			c.SetWallet(label, &tbtc.WalletChainData{State: tbtc.StateLive})
+			c.AddPastNewWalletRegisteredEvent(nil, &tbtc.NewWalletRegisteredEvent{WalletPublicKeyHash: label})
+			targets, _, err := tbtcpg.NewMovingFundsTask(c, nil).FindTargetWallets(&testutils.MockLogger{}, [20]byte{9}, [32]byte{}, 50, 1)
+			if mode == 2 {
+				if !errors.Is(err, tbtcpg.ErrMovingFundsRouteUnavailable) {
+					t.Fatal("control DrainBudget assertion: FrostOnly proposed an inadmissible drain", err)
+				}
+			} else if err != nil || len(targets) != 1 || targets[0] != label {
+				t.Fatal("control DrainBudget assertion: legal legacy fallback lost", err, targets)
+			}
+		}
+	}
+}
+
+type resetProducer struct {
+	*drainChain
+	now    time.Time
+	resets int
+}
+
+func (c *resetProducer) ComputeMainUtxoHash(u *bitcoin.UnspentTransactionOutput) [32]byte {
+	raw := append([]byte(nil), u.Outpoint.TransactionHash[:]...)
+	raw = binary.BigEndian.AppendUint32(raw, u.Outpoint.OutputIndex)
+	raw = binary.BigEndian.AppendUint64(raw, uint64(u.Value))
+	return crypto.Keccak256Hash(raw)
+}
+func (c *resetProducer) MovingFundsNow() (time.Time, error) { return c.now, nil }
+func (c *resetProducer) ResetLegacyMovingFundsTimeout(source [20]byte, main *bitcoin.UnspentTransactionOutput) error {
+	c.resets++
+	wallet, err := c.GetWallet(source)
+	if err != nil {
+		return err
+	}
+	wallet.MovingFundsRequestedAt = c.now
+	c.SetWallet(source, wallet)
+	return nil
+}
+
+type resetBitcoin struct {
+	*tbtcpg.LocalBitcoinChain
+	hash bitcoin.Hash
+}
+
+func (c resetBitcoin) GetTxHashesForPublicKeyHash([20]byte) ([]bitcoin.Hash, error) {
+	return []bitcoin.Hash{c.hash}, nil
+}
+func TestHostSubmitsDueLegacyReset(t *testing.T) {
+	source := [20]byte{9}
+	script, err := bitcoin.PayToWitnessPublicKeyHash(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	funding := &bitcoin.Transaction{Version: 2, Inputs: []*bitcoin.TransactionInput{{Outpoint: &bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash{1}}, Sequence: 0xffffffff}}, Outputs: []*bitcoin.TransactionOutput{{Value: 100000, PublicKeyScript: script}}}
+	hash := funding.Hash()
+	main := &bitcoin.UnspentTransactionOutput{Outpoint: &bitcoin.TransactionOutpoint{TransactionHash: hash}, Value: 100000}
+	c := &resetProducer{drainChain: &drainChain{LocalChain: tbtcpg.NewLocalChain(), policy: tbtc.FrostDrainPolicy{CreationMode: 2, Enabled: true, Contained: true, EligibleCount: 1, RemainingCustody: 1000000}}, now: time.Unix(2000000, 0)}
+	wallet := &tbtc.WalletChainData{State: tbtc.StateMovingFunds, MovingFundsRequestedAt: c.now, MainUtxoHash: c.ComputeMainUtxoHash(main)}
+	c.SetWallet(source, wallet)
+	c.SetMovingFundsParameters(1000, 0, 10, 100, nil, 0, 0, 1000, 100, nil, 0)
+	btc := resetBitcoin{LocalBitcoinChain: tbtcpg.NewLocalBitcoinChain(), hash: hash}
+	btc.SetTransaction(hash, funding)
+	task := tbtcpg.NewMovingFundsTask(c, btc)
+	c.now = c.now.Add(10 * time.Second)
+	if reset, err := task.ResetMovingFundsTimeoutIfDue(source, wallet); err != nil || reset {
+		t.Fatal("early reset sent", err)
+	}
+	for i := 1; i <= 3; i++ {
+		c.now = c.now.Add(99 * time.Second)
+		if proposal, valid, err := task.Run(&tbtc.CoordinationProposalRequest{WalletPublicKeyHash: source}); err != nil || valid || proposal != nil || c.resets != i {
+			t.Fatal("control HostTimeoutReset assertion: due host reset absent", err, c.resets)
+		}
+	}
+	c.policy.Contained = false
+	c.policy.Targets = [][20]byte{{8}}
+	c.now = c.now.Add(99 * time.Second)
+	if reset, err := task.ResetMovingFundsTimeoutIfDue(source, wallet); err != nil || reset {
+		t.Fatal("reset with open route", err)
 	}
 }

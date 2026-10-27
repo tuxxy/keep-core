@@ -45,6 +45,9 @@ type v04RecoveryJournal struct {
 func (j *v04RecoveryJournal) RetainSigningRecord(c context.Context, id [32]byte, p []byte) error {
 	return j.durable.RetainSigningRecord(c, id, p)
 }
+func (j *v04RecoveryJournal) HasClaim(ctx context.Context, id [32]byte) (bool, error) {
+	return j.durable.HasClaim(ctx, id)
+}
 func (j *v04RecoveryJournal) ReadSigningRecord(c context.Context, id [32]byte) ([]byte, error) {
 	return j.durable.ReadSigningRecord(c, id)
 }
@@ -200,5 +203,34 @@ func TestV04DoneOnlyRecovery(t *testing.T) {
 	fresh.config.Reservations.(*reservationStub).view.State = "TimeoutPending"
 	if err = fresh.Broadcast(context.Background(), result); !errors.Is(err, ErrUnauthorized) {
 		t.Fatal("recovered late signature broadcast", err)
+	}
+}
+
+func TestPossibleReleaseIncludesInterruptedClaim(t *testing.T) {
+	e, _, root, config, journal := v04RecoveryFixture(t)
+	ctx := context.Background()
+	attempt, err := e.attempt(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	release, err := journal.durable.Claim(ctx, snowfallengine.AttemptID(attempt), "sign", []byte("public interrupted signing attempt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	release()
+	if err = root.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := store.Open(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	journal.durable, err = reopened.Scope(journal.Domain())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if released, err := e.PossibleRelease(ctx); err != nil || !released {
+		t.Fatal("control InterruptedClaim assertion: durable claim without done was forgotten", err)
 	}
 }

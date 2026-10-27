@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/keep-network/keep-core/pkg/frost/snowfallengine"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -219,6 +220,15 @@ func TestV04ProcessReplayChild(t *testing.T) {
 			return hook("done-durable")
 		case e.resultID():
 			return hook("aggregate-durable")
+		}
+		for index := range e.Plan().Snapshot().Digests() {
+			attempt, err := e.attempt(index)
+			if err != nil {
+				return err
+			}
+			if id == signingGrantID(snowfallengine.AttemptID(attempt)) {
+				return hook("grant-durable")
+			}
 		}
 		for _, digest := range e.Plan().Snapshot().Digests() {
 			if id == DefenseID(e.Plan().WalletID(), digest) {

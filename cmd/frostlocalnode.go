@@ -71,6 +71,7 @@ func runFrostLocalNode(command *cobra.Command, args []string) error {
 	case <-ctx.Done():
 		err = ctx.Err()
 	}
+	err = localNodeOutcome(ctx, err)
 	cancel()
 	select {
 	case <-finished:
@@ -80,7 +81,7 @@ func runFrostLocalNode(command *cobra.Command, args []string) error {
 	stop, finish := context.WithTimeout(context.Background(), 5*time.Second)
 	defer finish()
 	_ = server.Shutdown(stop)
-	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, http.ErrServerClosed) {
+	if errors.Is(err, context.Canceled) || errors.Is(err, http.ErrServerClosed) {
 		return nil
 	}
 	if err != nil {
@@ -88,4 +89,16 @@ func runFrostLocalNode(command *cobra.Command, args []string) error {
 		return errors.New("local FROST node runtime stopped; inspect private diagnostics")
 	}
 	return nil
+}
+
+// Classify before canceling the runtime context so an expired bound cannot be
+// mistaken for a requested stop when shutdown races another completion.
+func localNodeOutcome(ctx context.Context, err error) error {
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		return context.DeadlineExceeded
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+	return err
 }

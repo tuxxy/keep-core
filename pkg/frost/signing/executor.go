@@ -85,6 +85,9 @@ type Config struct {
 	Transport                  TransportFactory
 	// LocalRegtest is explicit. K-04 has no production C-04 adapter or dispatch.
 	LocalRegtest bool
+	// AfterGrant is a local verification boundary after the durable release
+	// marker and before control returns to the worker.
+	AfterGrant func(context.Context) error
 }
 type Executor struct {
 	config   Config
@@ -356,6 +359,12 @@ func (g finalAuthorization) BeforeSigning(ctx context.Context, r frost.SigningRe
 			return fmt.Errorf("%w: main purpose lock: %v", ErrUnauthorized, err)
 		}
 	}
+	if err := e.config.Journal.RetainSigningRecord(ctx, signingGrantID(snowfallengine.AttemptID(r.Attempt)), e.config.Plan.IntentBytes()); err != nil {
+		return err
+	}
+	if e.config.AfterGrant != nil {
+		return e.config.AfterGrant(ctx)
+	}
 	return nil
 }
 
@@ -531,6 +540,10 @@ func signingDoneID(attempt [32]byte) [32]byte {
 	return sha256.Sum256(append([]byte("keep-core/frost/signing-done/v1/"), attempt[:]...))
 }
 
+func signingGrantID(attempt [32]byte) [32]byte {
+	return sha256.Sum256(append([]byte("keep-core/frost/signing-grant/v1/"), attempt[:]...))
+}
+
 // recoverCompletedResult joins already durable completions. It never starts a
 // worker or retries a claimed attempt. Incomplete or late data stays retained
 // for K-05 resolution; it is not a grant to finish missing inputs.
@@ -674,20 +687,32 @@ func (e *Executor) Result(ctx context.Context) (*Result, error) {
 	return result, e.checkResultReceipt(ctx, result)
 }
 
-// PossibleRelease reports whether any input's signature completion is durable
-// for this plan and session, i.e. a share may have been released.
+// PossibleRelease includes incomplete durable attempts and grants: a completion
+// record is not required for a share to have escaped. Claimed attempts also
+// cover journals written before the explicit grant marker was introduced.
 func (e *Executor) PossibleRelease(ctx context.Context) (bool, error) {
 	for index := range e.config.Plan.snapshot.Digests() {
 		attempt, err := e.attempt(index)
 		if err != nil {
 			return false, err
 		}
-		_, err = e.config.Journal.ReadSigningRecord(ctx, signingDoneID(snowfallengine.AttemptID(attempt)))
-		if err == nil {
-			return true, nil
+		id := snowfallengine.AttemptID(attempt)
+		for _, marker := range [][32]byte{signingGrantID(id), signingDoneID(id)} {
+			_, err = e.config.Journal.ReadSigningRecord(ctx, marker)
+			if err == nil {
+				return true, nil
+			}
+			if !errors.Is(err, store.ErrMissing) {
+				return true, err
+			}
 		}
-		if !errors.Is(err, store.ErrMissing) {
-			return true, err
+		if claims, ok := e.config.Journal.(interface {
+			HasClaim(context.Context, [32]byte) (bool, error)
+		}); ok {
+			claimed, err := claims.HasClaim(ctx, id)
+			if err != nil || claimed {
+				return true, err
+			}
 		}
 	}
 	return false, nil

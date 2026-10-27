@@ -8,6 +8,19 @@ import (
 	"errors"
 )
 
+// HasClaim reports durable attempt existence without decoding or exporting
+// opaque worker records. A claimed signing attempt may have released shares.
+func (v *Scoped) HasClaim(ctx context.Context, id [32]byte) (bool, error) {
+	s := v.store
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.check(ctx); err != nil {
+		return false, err
+	}
+	_, ok := s.state.Claims[hex.EncodeToString(id[:])]
+	return ok, nil
+}
+
 // Signing application records use a separate claim-ID domain. Reusing the
 // fenced immutable claim path preserves its durability and terminal history.
 // These records contain public intents/results, never decoded worker records.

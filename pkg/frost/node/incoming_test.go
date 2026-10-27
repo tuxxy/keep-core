@@ -6,6 +6,7 @@ import (
 	"errors"
 	"math/big"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -85,6 +86,14 @@ func TestIncomingAbandonmentSurvivesReopen(t *testing.T) {
 	if err := w.restoreIncoming(ctx); err != nil || w.plan == nil || !bytes.Equal(w.plan.IntentBytes(), plan.IntentBytes()) {
 		t.Fatal("retained recipe changed", err)
 	}
+	w.request.LocalSeats = []uint16{1}
+	if safe, err := w.canAbandonIncoming(ctx); err != nil || safe {
+		t.Fatal("control LeaderRecipe assertion: advertised leader recipe became replaceable", err)
+	}
+	if abandoned, err := w.abandonIncoming(ctx); err != nil || abandoned {
+		t.Fatal("control LeaderRecipe assertion: advertised leader recipe abandoned", err)
+	}
+	w.request.LocalSeats = []uint16{2}
 	if abandoned, err := w.abandonIncoming(ctx); err != nil || !abandoned {
 		t.Fatal("unsigned stale recipe not abandoned", err)
 	}
@@ -125,5 +134,19 @@ func TestIncomingRecipeEnforcesLocalCeiling(t *testing.T) {
 		if proposal.Unmarshal(raw) == nil {
 			t.Fatal("invalid public recipe accepted")
 		}
+	}
+}
+
+func TestFollowerRecipeCeilingCallSite(t *testing.T) {
+	record, plan := incomingRecipe(t, 300)
+	n := &Node{cfg: Config{MaximumSatPerVByte: 1}}
+	authorized := false
+	authorize := func(*signing.Plan) error { authorized = true; return nil }
+	if accepted, err := n.acceptIncomingRecipe(record.Descriptor, plan.IntentBytes(), authorize); err == nil || !strings.Contains(err.Error(), "local fee ceiling") || accepted != nil || authorized {
+		t.Fatal("control FollowerCeiling assertion: over-ceiling recipe reached authorization", err)
+	}
+	n.cfg.MaximumSatPerVByte = 50
+	if accepted, err := n.acceptIncomingRecipe(record.Descriptor, plan.IntentBytes(), authorize); err != nil || accepted == nil || !authorized {
+		t.Fatal("valid follower recipe refused", err)
 	}
 }

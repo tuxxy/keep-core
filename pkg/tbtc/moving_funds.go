@@ -548,6 +548,7 @@ type FrostTargetResolver interface {
 // contract's counter, not the number of logs found by an off-chain indexer.
 type FrostDrainPolicy struct {
 	RemainingCustody uint64
+	DustThreshold    uint64
 	CreationMode     uint8
 	Enabled          bool
 	Contained        bool
@@ -557,7 +558,7 @@ type FrostDrainPolicy struct {
 
 // CanDrain reflects the C-10 admission budget, not just target eligibility.
 func (p FrostDrainPolicy) CanDrain(balance uint64) bool {
-	return p.Enabled && !p.Contained && p.EligibleCount > 0 && balance > 0 && p.RemainingCustody >= balance
+	return p.Enabled && !p.Contained && p.EligibleCount > 0 && balance > 0 && balance >= p.DustThreshold && p.RemainingCustody >= balance
 }
 
 // LegacyMovingFundsRecovery is implemented by hosts that submit the public

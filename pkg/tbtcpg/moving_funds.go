@@ -324,12 +324,16 @@ func (mft *MovingFundsTask) findNewTargetWallets(
 			}
 		}
 		if needed == 0 || uint64(len(targets)) < needed {
-			return nil, ErrNotEnoughTargetWallets
+			if policy.CreationMode == 2 || liveWalletsCount == 0 {
+				return nil, ErrNotEnoughTargetWallets
+			}
+			// A partial local FROST index cannot remove a legal legacy route.
+		} else {
+			sort.Slice(targets, func(i, j int) bool {
+				return new(big.Int).SetBytes(targets[i][:]).Cmp(new(big.Int).SetBytes(targets[j][:])) < 0
+			})
+			return targets[:needed], nil
 		}
-		sort.Slice(targets, func(i, j int) bool {
-			return new(big.Int).SetBytes(targets[i][:]).Cmp(new(big.Int).SetBytes(targets[j][:])) < 0
-		})
-		return targets[:needed], nil
 	}
 
 	ceilingDivide := func(x, y uint64) uint64 {
@@ -756,10 +760,16 @@ func (mft *MovingFundsTask) ResetMovingFundsTimeoutIfDue(source [20]byte, wallet
 			return false, errors.New("unknown FROST creation mode")
 		}
 	}
-	// Preserve ordinary pre-extension proposal behavior. This recovery duty
-	// addresses the post-cutover loss of every legacy route.
+	// Match the contract: before cutover a live legacy target keeps its route.
+	// With no legacy Live wallets the host must preserve recovery in every mode.
 	if policy.CreationMode != 2 {
-		return false, nil
+		live, err := mft.chain.GetLiveWalletsCount()
+		if err != nil {
+			return false, err
+		}
+		if live != 0 {
+			return false, nil
+		}
 	}
 
 	main, err := tbtc.DetermineWalletMainUtxo(source, mft.chain, mft.btcChain)

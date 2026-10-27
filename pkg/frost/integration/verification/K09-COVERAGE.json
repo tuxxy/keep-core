@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-26",
+  "date": "2026-10-27",
   "scope": "K-09a concrete review corrections; not K-09 exit or V-05 closure",
   "governingSpecCommit": "51b9a168e6b6c73d4d471f7d302267a065407fb5",
   "feedback": [
@@ -244,14 +244,14 @@
       "witness": "TestIncomingPlansUseCommonRoundAnchor; TestIncomingPlanRebuildsAfterFinalizedMainChange (controlled custody); TestIncomingAbandonmentSurvivesReopen; TestFrostNodeUnsignedIncomingReplansAfterRestart (actual nodes, unsigned fee-change recipe, SIGKILL, exact replacement settlement). The required real-node reserve/pay/prove stale-main witness remains OPEN under K09-6; no such run is claimed.",
       "resolution": "author remediation; awaiting focused acceptance and independent review",
       "status": "implemented; verification in progress",
-      "change": "Leader proposes a public incoming recipe; followers authenticate the selected seat and independently check canonical inputs/outputs and their local fee ceiling. Empty rounds do not wait for proposals; work ends when its round expires. Old possibly released intents remain pinned."
+      "change": "Leader proposes a public incoming recipe; followers authenticate the selected seat and independently check canonical inputs/outputs and their local fee ceiling. Empty rounds do not wait for proposals; work ends when its round expires. Old possibly released intents remain pinned. Round six: leader retains its durable advertised recipe even without a local grant; follower-only-grant recovery added. Combined redemption/stale-main remains OPEN."
     },
     {
       "id": "K09-30",
       "owner": "keep-core",
       "witness": "TestDurableKeyCancellationDoesNotQuarantine and TestDurableKeySurvivesLostReplyAndRPCFailure; actual node certificate-submit/readiness-postcondition SIGINT/SIGKILL followed by incoming settlement. Final exact-source run is authoritative; old failed runs remain retained.",
-      "resolution": "author remediation; awaiting focused acceptance and independent review",
-      "status": "implemented; verification in progress",
+      "resolution": "fixed; reviewed",
+      "status": "confirmed round-six review",
       "change": "Durable KeyReady resumes the original readiness protocol before certification without rerunning DKG; already-certified seats retain the guarded reload path."
     },
     {
@@ -260,14 +260,14 @@
       "witness": "TestPreCutoverDrainFallback: modes 0/1 use legacy targets when contained/no eligible FROST target; mode 2 defers without fallback. Preference for an admissible FROST drain unchanged.",
       "resolution": "author remediation; awaiting focused acceptance and independent review",
       "status": "implemented; verification in progress",
-      "change": "The pinned-block routing snapshot includes remainingCustody; insufficient capacity uses legal pre-cutover legacy fallback and FrostOnly defers."
+      "change": "The pinned-block routing snapshot includes remainingCustody; insufficient capacity uses legal pre-cutover legacy fallback and FrostOnly defers. Round six: dust in canonical pinned policy and legal legacy fallback when local FROST target index is incomplete."
     },
     {
       "id": "K09-32",
       "owner": "keep-core",
       "witness": "Required bound runner includes config/cmd/tbtcpg/tbtc/chain ethereum/libp2p/spv. Legacy Bridge MovingFunds/Wallets explicitly excluded due missing ReimbursementPool deployment record (attempt retained). Reservation oracle names incoming/<epoch> failure stage with negative control. IPv6 claim removed.",
-      "resolution": "author remediation; awaiting focused acceptance and independent review",
-      "status": "implemented; verification in progress",
+      "resolution": "fixed; reviewed",
+      "status": "confirmed round-six review",
       "change": "The earlier shared-install exclusion explanation was inaccurate. Bind original legacy suites using the upstream external-deployment/stub settings with default legacy network settings. Preserve historical failed attempts and qualified two-run evidence."
     },
     {
@@ -282,14 +282,14 @@
       "owner": "keep-core",
       "priority": 2,
       "change": "PossibleRelease checks durable grants, done records and existing worker attempt claims; a missing completion never authorizes abandonment.",
-      "resolution": "author remediation; awaiting focused acceptance and independent review",
-      "status": "implemented; verification in progress"
+      "resolution": "fixed; reviewed",
+      "status": "confirmed round six; K09-34 signing safety only; distributed liveness separately K09-41"
     },
     {
       "id": "K09-35",
       "owner": "keep-core",
       "priority": 2,
-      "change": "Legacy proposal dispatch invokes due timeout recovery before its proposal safety margin, using a current-main-aware extension transaction.",
+      "change": "Legacy proposal dispatch invokes due timeout recovery before its proposal safety margin, using a current-main-aware extension transaction. Round six: zero-legacy-Live recovery across modes 0/1 as well as FrostOnly; normal asynchronous transaction submission.",
       "resolution": "author remediation; awaiting focused acceptance and independent review",
       "status": "implemented; verification in progress"
     },
@@ -306,16 +306,72 @@
       "owner": "keep-core",
       "priority": 3,
       "change": "Missing durable key on RegisteredPendingReady/ReadyUnfunded is classified lost; transient store/chain errors remain retryable.",
-      "resolution": "author remediation; awaiting focused acceptance and independent review",
-      "status": "implemented; verification in progress"
+      "resolution": "fixed; reviewed",
+      "status": "confirmed round-six review"
     },
     {
       "id": "K09-38",
       "owner": "keep-core",
       "priority": 3,
       "change": "Runtime deadline is failure even when cancellation or HTTP shutdown races it; explicit operator stop remains distinct.",
-      "resolution": "author remediation; awaiting focused acceptance and independent review",
-      "status": "implemented; verification in progress"
+      "resolution": "fixed; reviewed",
+      "status": "confirmed round-six review"
+    },
+    {
+      "id": "K09-39",
+      "change": "Host no-route reset in every mode with zero legacy Live, verified partial budget; original no-preimage selector remains conservative.",
+      "witness": "TestNoRouteHostRecoveryAllModes; TestLegacyHostPrecutoverBudgetRecovery; expanded Movement cases",
+      "resolution": "author implemented; awaiting independent review",
+      "owner": "integration verification owner",
+      "status": "implementation present; final bound checks pending"
+    },
+    {
+      "id": "K09-40",
+      "change": "Pinned policy includes dust; no inadmissible drain proposed; reset preserves recovery.",
+      "witness": "TestNoRouteHostRecoveryAllModes; below-dust contract cases; DrainDust guard",
+      "resolution": "author implemented; awaiting independent review",
+      "owner": "integration verification owner",
+      "status": "implementation present; final bound checks pending"
+    },
+    {
+      "id": "K09-41",
+      "change": "Leader persists before publishing and retains advertised recipe independently of local grant; follower-only grant cannot split it.",
+      "witness": "TestFrostNodeFollowerGrantKeepsLeaderRecipe; LeaderRecipe guard; original advertised/granted restart cases",
+      "resolution": "author implemented; awaiting independent review",
+      "owner": "integration verification owner",
+      "status": "implementation present; final bound checks pending"
+    },
+    {
+      "id": "K09-42",
+      "change": "Normal nonce/submission and asynchronous ForceMining; no receipt wait holds transaction mutex.",
+      "witness": "source review plus chain package checks; gas bump delegated to existing mining waiter",
+      "resolution": "author implemented; awaiting independent review",
+      "owner": "integration verification owner",
+      "status": "implementation present; final bound checks pending"
+    },
+    {
+      "id": "K09-43",
+      "change": "Fault config, grant pause and local CLI only in frosttest builds; test-side config serializer.",
+      "witness": "ordinary build and production omission tests; tagged real-node process witnesses",
+      "resolution": "author implemented; awaiting independent review",
+      "owner": "integration verification owner",
+      "status": "implementation present; final bound checks pending"
+    },
+    {
+      "id": "K09-44",
+      "change": "Exact contract/host timeout and budget refusal reasons; follower ceiling call-site control.",
+      "witness": "Movement regression; TestFollowerRecipeCeilingCallSite; FollowerCeiling owning control; real follower refusal/recovery",
+      "resolution": "author implemented; awaiting independent review",
+      "owner": "integration verification owner",
+      "status": "implementation present; final bound checks pending"
+    },
+    {
+      "id": "K09-45",
+      "change": "Every focused check captures sources, actual Go inputs, artifacts and heads before execution; unchanged-input check afterwards; private hash inventory.",
+      "witness": "test/frost/k09-focused.py; actual final scoped records; historical unbound records unchanged",
+      "resolution": "author implemented; awaiting independent review",
+      "owner": "integration verification owner",
+      "status": "implementation present; final bound checks pending"
     }
   ],
   "verificationNotRun": [
@@ -466,8 +522,8 @@
     }
   ],
   "currentAcceptance": {
-    "record": "implementation/K-09/review5-fixes-2026-10-27/",
-    "status": "scoped verification in progress; consult actual result records"
+    "record": "implementation/K-09/review6-fixes-2026-10-27/",
+    "status": "scoped final-head checks required; consult actual records, no full acceptance claim"
   },
   "reviewAliases": [
     {
@@ -546,6 +602,25 @@
       "K09-5/7/21/22 residuals",
       "models/replays and authoritative V-05",
       "independent disposition of current author fixes"
+    ]
+  },
+  "round6": {
+    "reviews": [
+      5671041158,
+      5671041953
+    ],
+    "reviewedHeads": {
+      "keep-core": "f29d2bcc91e27752b2601a92279cd5b3442660af",
+      "tbtc-v2": "653b44393c960dc209d2e55bad8384df55d415d0"
+    },
+    "scope": "author fixes awaiting review; original no-preimage selector remains conservative; upgraded hosts use verified-main selector in all modes",
+    "policies": "implementer readings, owner decisions not asserted",
+    "open": [
+      "K09-6 all-duty",
+      "combined redemption/stale-main",
+      "residual K09-5/7/21/22",
+      "formal models/replays and V-05",
+      "independent disposition"
     ]
   }
 }

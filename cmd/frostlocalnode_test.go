@@ -1,3 +1,5 @@
+//go:build frosttest
+
 package cmd
 
 import (

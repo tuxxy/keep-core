@@ -41,7 +41,7 @@ type remoteNode struct {
 	done        chan struct{}
 	command     *exec.Cmd
 	endpoint    string
-	config      frostnode.Config
+	config      verificationNodeConfig
 	log         *os.File
 	revokeFence func()
 }
@@ -143,7 +143,7 @@ func startRemoteNodes(f *fixture, url, root string) {
 	}
 	directory := f.t.TempDir()
 	binary := filepath.Join(directory, "keep-core")
-	build := exec.CommandContext(f.ctx, "go", "build", "-p", "2", "-o", binary, ".")
+	build := exec.CommandContext(f.ctx, "go", "build", "-tags", "frosttest", "-p", "2", "-o", binary, ".")
 	build.Dir = root
 	if out, err := build.CombinedOutput(); err != nil {
 		f.t.Fatalf("node executable build: %v\n%s", err, out)
@@ -196,7 +196,7 @@ func startRemoteNodes(f *fixture, url, root string) {
 		}
 		id := [32]byte{byte(operatorIndex)}
 		fenceURL, revoke := localNodeFence(f, id)
-		config := frostnode.Config{LocalRegtest: true, EthereumURL: url, BitcoinURL: f.core.url, CookieFile: f.core.cookiePath, Registry: f.deployment.Registry, Bridge: f.deployment.Bridge, OperatorKeyFile: keyFile, StoreKeyFile: storeFile, Keystore: filepath.Join(dir, "keys"), FenceURL: fenceURL, StorageID: id, Worker: snowfallengine.WorkerConfig{Path: worker, SHA256: workerHash}, Peers: bootstrap, FinalityBlocks: k06Finality, RoundBlocks: k09NodeRoundBlocks, FeeRate: k06FeeRate, MaximumSatPerVByte: k06MaxRate, ProtocolSeconds: 120}
+		config := verificationNodeConfig{Config: frostnode.Config{LocalRegtest: true, EthereumURL: url, BitcoinURL: f.core.url, CookieFile: f.core.cookiePath, Registry: f.deployment.Registry, Bridge: f.deployment.Bridge, OperatorKeyFile: keyFile, StoreKeyFile: storeFile, Keystore: filepath.Join(dir, "keys"), FenceURL: fenceURL, StorageID: id, Worker: snowfallengine.WorkerConfig{Path: worker, SHA256: workerHash}, Peers: bootstrap, FinalityBlocks: k06Finality, RoundBlocks: k09NodeRoundBlocks, FeeRate: k06FeeRate, MaximumSatPerVByte: k06MaxRate, ProtocolSeconds: 120}}
 		// Peers retain this advertised loopback endpoint across process death.
 		// Port zero would silently give a restarted bootstrap node a new address.
 		_, networkPort, err := net.SplitHostPort(localPort(f))
@@ -208,7 +208,7 @@ func startRemoteNodes(f *fixture, url, root string) {
 			f.t.Fatal(err)
 		}
 		if point := os.Getenv("FROST_K09_PAUSE_BOUNDARY"); point != "" && (operatorIndex == 2 || os.Getenv("FROST_K09_PAUSE_ALL") == "1") {
-			config.VerificationPause = &frostnode.VerificationPause{Epoch: f.deployment.Epoch, Boundary: point, Marker: filepath.Join(dir, "public-boundary.txt")}
+			config.VerificationPause = &verificationPause{Epoch: f.deployment.Epoch, Boundary: point, Marker: filepath.Join(dir, "public-boundary.txt")}
 		}
 		raw, err := json.Marshal(config)
 		if err != nil {
@@ -495,6 +495,13 @@ func restartRemoteNode(f *fixture, index int, killed ...bool) {
 	case <-time.After(10 * time.Second):
 		f.t.Fatal("node did not close its store on cancellation")
 	}
+	restartStoppedRemoteNode(f, index, before)
+}
+
+func restartStoppedRemoteNode(f *fixture, index int, before frostnode.Status) {
+	f.t.Helper()
+	node := f.remotes[index]
+	var err error
 	// The test authority revokes ownership only after confirmed process death.
 	// Its monotone fence point is retained across both SIGINT and SIGKILL.
 	node.revokeFence()
@@ -540,4 +547,14 @@ func restartRemoteNode(f *fixture, index int, killed ...bool) {
 	}
 	last, _ := node.status(f.ctx)
 	f.t.Fatalf("restarted node did not reload earlier wallets: ready=%d lost=%v stages=%v", len(last.Wallets), last.LostEpochs, last.FailureStages)
+}
+
+// Fault configuration exists only in this test adapter and frosttest binaries.
+type verificationPause struct {
+	Epoch            uint64
+	Boundary, Marker string
+}
+type verificationNodeConfig struct {
+	frostnode.Config
+	VerificationPause *verificationPause
 }

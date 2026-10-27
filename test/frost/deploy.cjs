@@ -141,7 +141,7 @@ function legacyLayout(tbRoot) {
   const wallet=layout.types[layout.types[wallets.type].value].members;
   const member=(name)=>{const m=wallet.find(x=>x.label===name);return {slot:Number(m.slot),offset:m.offset,bytes:Number(layout.types[m.type].numberOfBytes)};};
   const live=field('liveWalletsCount');
-  return {registeredWallets:Number(self.slot)+Number(wallets.slot),mainUtxoHash:member('mainUtxoHash'),state:member('state'),movingFundsRequestedAt:member('movingFundsRequestedAt'),liveWalletsCount:{slot:Number(self.slot)+Number(live.slot),offset:live.offset,bytes:Number(layout.types[live.type].numberOfBytes)}};
+  return {registeredWallets:Number(self.slot)+Number(wallets.slot),mainUtxoHash:member('mainUtxoHash'),state:member('state'),movingFundsRequestedAt:member('movingFundsRequestedAt'),movingFundsTargetWalletsCommitmentHash:member('movingFundsTargetWalletsCommitmentHash'),liveWalletsCount:{slot:Number(self.slot)+Number(live.slot),offset:live.offset,bytes:Number(layout.types[live.type].numberOfBytes)}};
  }
  throw Error('no Bridge storage layout in build-info');
 }

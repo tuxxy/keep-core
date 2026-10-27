@@ -26,7 +26,8 @@ GO_CASES = {
     "legacy-drain": ["TestCrossSchemeDrainAndSweep"],
     "public-legacy": ["TestPublicLegacyUpgradeCutoverDrainAndSweep"],
     "nodes": ["TestFrostNodeProcessesDKGAndDispatch", "TestFrostNodeCandidateEpochInterruption", "TestFrostNodeApprovedEpochInterruption", "TestFrostNodeIncomingDuringStalledDKG", "TestFrostNodeSignedIncomingInterruption", "TestFrostNodeReservationDefersWithoutExit"],
-    "node-recovery": ["TestFrostNodeCertifiedEpochInterruption", "TestFrostNodeCertificateSubmitInterruption", "TestFrostNodeUnsignedIncomingReplansAfterRestart", "TestFrostNodePrecertificationRecovery", "TestFrostNodeMissingPreKeyIsLost", "TestFrostNodeGrantedIncomingStaysPinned", "TestFrostNodeDifferentFeesAgree", "TestLegacyHostResetsBlockedDrain"],
+    "node-recovery": ["TestFrostNodeCertifiedEpochInterruption", "TestFrostNodeCertificateSubmitInterruption", "TestFrostNodeAdvertisedIncomingStaysPinnedAfterRestart", "TestFrostNodePrecertificationRecovery", "TestFrostNodeMissingPreKeyIsLost", "TestFrostNodeGrantedIncomingStaysPinned", "TestFrostNodeDifferentFeesAgree", "TestLegacyHostResetsBlockedDrain"],
+    "review6-recovery": ["TestLegacyHostPrecutoverBudgetRecovery", "TestFrostNodeFollowerGrantKeepsLeaderRecipe", "TestFrostNodeFollowerRefusesOverCeilingRecipe"],
     "proof-depth": ["TestFrostDifficultyProofDepth", "TestGetProofInfo"],
     "realistic-proof": ["TestFrostRetainedMainnetMovementProof", "TestFrostRetainedMainnetSweepProof", "TestFrostRetainedMainnetRedemptionProof"],
 }
@@ -36,7 +37,7 @@ REQUIRED = ["compile", "compile-registry", "artifact-binding", "controls", "node
 
 def review_coverage():
     ledger = json.loads((KC / "pkg/frost/integration/verification/K09-COVERAGE.json").read_text())
-    expected = {"K09-" + str(i) for i in range(1, 39)}
+    expected = {"K09-" + str(i) for i in range(1, 46)}
     rows = {r["id"]: r for r in ledger["feedback"]}
     aliases = {r["id"] for r in ledger.get("reviewAliases", [])}
     if not expected <= rows.keys() or aliases != {"K09A-B01", "K09A-B02", "K09A-C01", "K09A-C02", "K09A-C03"}:
@@ -411,7 +412,7 @@ def main():
         stages += [("spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleSpv.test.ts"), tb / "solidity", 6),
                    ("realistic-spv", hardhat_test(hardhat, "test/bridge/Frost.LifecycleRealisticSpv.test.ts", "test/bridge/Frost.LifecycleRealisticObligations.test.ts"), tb / "solidity", 7),
                    ("upgrade", hardhat_test(hardhat, "test/bridge/Frost.LifecycleUpgrade.test.ts", "test/bridge/Frost.LegacyReconciliation.test.ts"), tb / "solidity", 14),
-                   ("movement-regression", hardhat_test(hardhat, "test/bridge/Frost.Movement.test.ts"), tb / "solidity", 33),
+                   ("movement-regression", hardhat_test(hardhat, "test/bridge/Frost.Movement.test.ts"), tb / "solidity", 46),
                    ("legacy-bridge", [hardhat, "--config", "hardhat.k09.legacy.config.ts", "--network", "hardhat", "test", "--no-compile", "test/bridge/Bridge.Wallets.test.ts", "test/bridge/Bridge.MovingFunds.test.ts"], tb / "solidity", 269)]
         for label, command, cwd, expected in stages:
             if args.only and label not in args.only:
@@ -451,7 +452,7 @@ def main():
                     current["sourcesSha256"] = result["sourcesSha256"]
                 if label == "review5-guards":
                     controls = json.loads((private / "review5-guards/result.json").read_text())
-                    expected_controls = [{"guard": name, "status": "killed at owning assertion"} for name in ("IncompleteGrant", "InterruptedClaim", "IncomingCeiling", "DrainBudget", "HostTimeoutReset", "NodeDeadline")]
+                    expected_controls = [{"guard": name, "status": "killed at owning assertion"} for name in ("IncompleteGrant", "InterruptedClaim", "IncomingCeiling", "FollowerCeiling", "LeaderRecipe", "NoRouteHost", "DrainDust", "DrainBudget", "HostTimeoutReset", "NodeDeadline")]
                     if controls.get("status") != "pass" or controls.get("controls") != expected_controls:
                         raise ValueError("round-five owning controls missing")
                     current["controls"] = expected_controls

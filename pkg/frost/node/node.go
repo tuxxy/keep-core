@@ -65,38 +65,7 @@ type Config struct {
 	FinalityBlocks, RoundBlocks                       uint64
 	FeeRate, MaximumSatPerVByte                       int64
 	ProtocolSeconds                                   int
-	VerificationPause                                 *VerificationPause
-}
-
-// VerificationPause is an explicit local-only fault adapter. It pauses a real
-// component boundary after writing public progress, without reading worker data.
-type VerificationPause struct {
-	Epoch            uint64
-	Boundary, Marker string
-}
-
-func (n *Node) boundary(ctx context.Context, epoch uint64, name string, witness ...[32]byte) error {
-	p := n.cfg.VerificationPause
-	if p == nil || (p.Epoch != 0 && p.Epoch != epoch) || p.Boundary != name {
-		return nil
-	}
-	file, err := os.OpenFile(p.Marker, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Fprintf(file, "epoch=%d boundary=%s\n", epoch, name)
-	if err == nil && len(witness) == 1 {
-		_, err = fmt.Fprintf(file, "witness=%x\n", witness[0])
-	}
-	closeErr := file.Close()
-	if err != nil {
-		return err
-	}
-	if closeErr != nil {
-		return closeErr
-	}
-	<-ctx.Done()
-	return ctx.Err()
+	verificationConfig
 }
 
 // Status contains public observations only. It never exports keys, nonces,
@@ -503,7 +472,7 @@ func (n *Node) loadEpoch(ctx context.Context, epoch uint64) (err error) {
 	base := signing.Config{Journal: journal, Bitcoin: n.btc, Worker: n.cfg.Worker, MinimumConfirmations: 1, LocalRegtest: true, Transport: func(ctx context.Context, a frost.Attempt) (frost.Transport, func(), error) {
 		return n.transport(ctx, w, a)
 	}}
-	base.AfterGrant = func(ctx context.Context) error { return n.boundary(ctx, epoch, "after-incoming-grant") }
+	n.configureVerification(&base, epoch)
 	w.mover = &movement.Mover{Chain: n.chain, Authority: &movement.Authority{View: view}, Lock: &deposit.MainLock{Journal: journal}, Ledger: redemption.Ledger{Journal: journal}, Schedule: redemption.Schedule{FinalityBlocks: n.cfg.FinalityBlocks, RoundBlocks: n.cfg.RoundBlocks}, Wallet: record.Descriptor, Base: base}
 	if err = w.restoreIncoming(ctx); err != nil {
 		return &stageError{"incoming-intent-restore", err}
@@ -717,7 +686,7 @@ func (n *Node) incoming(ctx context.Context, w *wallet) error {
 	}
 	safe := w.plan == nil
 	if w.plan != nil && !w.signed {
-		safe, err = w.mover.CanAbandon(operation, w.plan)
+		safe, err = w.canAbandonIncoming(operation)
 		if err != nil {
 			return err
 		}

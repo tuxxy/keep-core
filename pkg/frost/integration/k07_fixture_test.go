@@ -334,7 +334,7 @@ func (w *k07World) writeField(base *big.Int, f storageField, value *big.Int) {
 // main UTXO hash and MovingFunds as controlled markers (its legacy deposit
 // and sweep history is out of scope).
 func (w *k07World) legacyWallet(value int64) legacyWallet {
-	t, ctx := w.t, w.f.ctx
+	t := w.t
 	t.Helper()
 	layout := w.f.deployment.Legacy
 	if layout == nil {
@@ -351,6 +351,22 @@ func (w *k07World) legacyWallet(value int64) legacyWallet {
 	w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
 		return registry.Transact(o, "publish", crypto.Keccak256Hash([]byte("K-07 legacy wallet")), common.BytesToHash(x), common.BytesToHash(y))
 	})
+	lw = w.controlledLegacyMain(lw.pkh, value)
+
+	live := big.NewInt(int64(layout.LiveWalletsCount.Slot))
+	count := new(big.Int).Rsh(w.storage(live), uint(layout.LiveWalletsCount.Offset*8))
+	count.And(count, big.NewInt(0xffffffff))
+	w.writeField(big.NewInt(0), layout.LiveWalletsCount, count.Sub(count, big.NewInt(1)))
+	return lw
+}
+
+// controlledLegacyMain funds a real Core output and sets only the legacy source
+// main/MovingFunds markers. Prior funding/lifecycle is explicitly outside this
+// component fixture. The subsequent drain still signs, mines and proves normally.
+func (w *k07World) controlledLegacyMain(pkh [20]byte, value int64) legacyWallet {
+	t, ctx := w.t, w.f.ctx
+	layout := w.f.deployment.Legacy
+	lw := legacyWallet{pkh: pkh}
 	address, err := btcutil.NewAddressWitnessPubKeyHash(lw.pkh[:], &chaincfg.RegressionNetParams)
 	if err != nil {
 		t.Fatal(err)
@@ -375,10 +391,7 @@ func (w *k07World) legacyWallet(value int64) legacyWallet {
 	head, _ := w.chain.Timestamp(ctx, w.head())
 	w.writeField(base, layout.MovingFundsRequestedAt, new(big.Int).SetUint64(head))
 	w.writeField(base, layout.State, big.NewInt(2)) // legacy MovingFunds
-	live := big.NewInt(int64(layout.LiveWalletsCount.Slot))
-	count := new(big.Int).Rsh(w.storage(live), uint(layout.LiveWalletsCount.Offset*8))
-	count.And(count, big.NewInt(0xffffffff))
-	w.writeField(big.NewInt(0), layout.LiveWalletsCount, count.Sub(count, big.NewInt(1)))
+	w.writeField(base, layout.MovingFundsTargetWalletsCommitmentHash, big.NewInt(0))
 	return lw
 }
 

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -219,11 +221,28 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 	}
 	w.warp(margin + 1)
 	task := tbtcpg.NewMovingFundsTask(c, publicLegacyBitcoin{w.btc})
-	if os.Getenv("FROST_K09_CHECK_RESET") == "1" {
+	if resetMode := os.Getenv("FROST_K09_CHECK_RESET"); resetMode != "" {
 		controller := bind.NewBoundContract(w.f.deployment.Exposure, c10ABI, w.f.client, w.f.client, w.f.client)
-		w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
-			return controller.Transact(o, "contain", crypto.Keccak256Hash([]byte("host no-route recovery")))
-		})
+		if resetMode == "partial-budget" {
+			var out []interface{}
+			if err := controller.Call(&bind.CallOpts{Context: w.f.ctx}, &out, "custodyReserved"); err != nil {
+				w.t.Fatal(err)
+			}
+			reserved := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+			out = nil
+			if err := controller.Call(&bind.CallOpts{Context: w.f.ctx}, &out, "issuanceReserved"); err != nil {
+				w.t.Fatal(err)
+			}
+			issuance := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+			ceiling := new(big.Int).Add(reserved, new(big.Int).SetUint64(lw.utxo.TxOutputValue-1))
+			w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+				return controller.Transact(o, "openBudgetPeriod", ceiling, issuance, crypto.Keccak256Hash([]byte("host partial budget")))
+			})
+		} else {
+			w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+				return controller.Transact(o, "contain", crypto.Keccak256Hash([]byte("host no-route recovery")))
+			})
+		}
 		for i := 0; i < 3; i++ {
 			delta := uint64(parameters.Timeout) - 1
 			if i == 0 {
@@ -243,13 +262,30 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 			}
 			if _, err := w.trySend(func(o *bind.TransactOpts) (*types.Transaction, error) {
 				return w.legacy.NotifyMovingFundsTimeout(o, lw.pkh, []uint32{1})
-			}); err == nil {
-				w.t.Fatal("wallet terminated after host reset")
+			}); err == nil || !strings.Contains(err.Error(), "Moving funds has not timed out yet") {
+				w.t.Fatal("control HostTimeoutReason assertion: wrong timeout refusal after reset", err)
 			}
 		}
-		w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
-			return controller.Transact(o, "lift", crypto.Keccak256Hash([]byte("host recovery reopen")))
-		})
+		if resetMode == "partial-budget" {
+			var out []interface{}
+			if err := controller.Call(&bind.CallOpts{Context: w.f.ctx}, &out, "custodyReserved"); err != nil {
+				w.t.Fatal(err)
+			}
+			reserved := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+			out = nil
+			if err := controller.Call(&bind.CallOpts{Context: w.f.ctx}, &out, "issuanceReserved"); err != nil {
+				w.t.Fatal(err)
+			}
+			issuance := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+			ceiling := new(big.Int).Add(reserved, new(big.Int).SetUint64(lw.utxo.TxOutputValue))
+			w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+				return controller.Transact(o, "openBudgetPeriod", ceiling, issuance, crypto.Keccak256Hash([]byte("host budget reopened")))
+			})
+		} else {
+			w.send(func(o *bind.TransactOpts) (*types.Transaction, error) {
+				return controller.Transact(o, "lift", crypto.Keccak256Hash([]byte("host recovery reopen")))
+			})
+		}
 		w.warp(margin + 1)
 	}
 	operator := chain.Address(w.adminAddr.Hex())
@@ -277,4 +313,27 @@ func (c *publicLegacyProducer) ResetLegacyMovingFundsTimeout(source [20]byte, ma
 func TestLegacyHostResetsBlockedDrain(t *testing.T) {
 	t.Setenv("FROST_K09_CHECK_RESET", "1")
 	runPublicLegacyFlow(t, true)
+}
+
+func TestLegacyHostPrecutoverBudgetRecovery(t *testing.T) {
+	for _, mode := range []uint8{0, 1} {
+		t.Run(fmt.Sprintf("mode%d", mode), func(t *testing.T) {
+			t.Setenv("FROST_K09_CHECK_RESET", "partial-budget")
+			w := newK07World(t)
+			if mode == 1 {
+				w.send(func(o *bind.TransactOpts) (*types.Transaction, error) { return w.bridge.BeginLegacyDkgDrain(o) })
+			}
+			lw := w.legacyWallet(k07DrainValue)
+			target, fee := w.produceLegacyDrain(lw)
+			w.drain(lw, []*walletHost{target}, fee)
+			w.mine(int(k06Finality))
+			plan := w.incomingSweep(target)
+			w.settle(target, plan, w.proofs.ProveIncomingSweep)
+			record, err := w.legacy.Wallets(&bind.CallOpts{Context: w.f.ctx}, lw.pkh)
+			if err != nil || record.MainUtxoHash != ([32]byte{}) {
+				t.Fatal("pre-cutover reset/reopen drain did not clear source", err)
+			}
+			t.Log("K09-RECOVERY: pre-cutover host repeated verified-main resets, reopened budget and drained", mode)
+		})
+	}
 }

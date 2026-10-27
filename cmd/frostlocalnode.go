@@ -1,3 +1,5 @@
+//go:build frosttest
+
 package cmd
 
 import (
@@ -21,6 +23,7 @@ var FrostLocalNodeCommand = &cobra.Command{Use: "frost-local-node <private-confi
 var frostLocalListen string
 
 func init() {
+	RootCmd.AddCommand(FrostLocalNodeCommand)
 	FrostLocalNodeCommand.Flags().StringVar(&frostLocalListen, "listen", "127.0.0.1:0", "Loopback address serving public node status")
 }
 func runFrostLocalNode(command *cobra.Command, args []string) error {

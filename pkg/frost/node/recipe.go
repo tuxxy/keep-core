@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keep-network/keep-core/pkg/frost/dkg"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
 	keepnet "github.com/keep-network/keep-core/pkg/net"
@@ -68,6 +69,15 @@ func (n *Node) agreedIncoming(ctx context.Context, w *wallet, planner movement.P
 		}
 	})
 	if w.request.LocalSeats[0] == 1 {
+		// A peer may durably grant as soon as this packet is sent. Persist first,
+		// and never replace an advertised recipe using only our local grant state.
+		if w.plan == nil {
+			w.plan = plan
+			if err := w.retainIncoming(ctx); err != nil {
+				w.plan = nil
+				return nil, err
+			}
+		}
 
 		recipe := &incomingProposal{Epoch: w.record.Descriptor.Epoch, Anchor: anchor, Intent: plan.IntentBytes()}
 		if err = ch.Send(ctx, recipe); err != nil {
@@ -91,16 +101,23 @@ func (n *Node) agreedIncoming(ctx context.Context, w *wallet, planner movement.P
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case recipe := <-received:
-		plan, err := signing.RestoreIncomingSweepPlan(w.record.Descriptor, recipe.Intent)
-		if err != nil {
-			return nil, err
-		}
-		if err = validateIncomingCeiling(plan, n.cfg.MaximumSatPerVByte); err != nil {
-			return nil, err
-		}
-		if _, err = w.mover.Authority.AuthorizeSweep(ctx, plan); err != nil {
-			return nil, err
-		}
-		return plan, nil
+		return n.acceptIncomingRecipe(w.record.Descriptor, recipe.Intent, func(plan *signing.Plan) error {
+			_, err := w.mover.Authority.AuthorizeSweep(ctx, plan)
+			return err
+		})
 	}
+}
+
+func (n *Node) acceptIncomingRecipe(descriptor dkg.Descriptor, intent []byte, authorize func(*signing.Plan) error) (*signing.Plan, error) {
+	plan, err := signing.RestoreIncomingSweepPlan(descriptor, intent)
+	if err != nil {
+		return nil, err
+	}
+	if err = validateIncomingCeiling(plan, n.cfg.MaximumSatPerVByte); err != nil {
+		return nil, err
+	}
+	if err = authorize(plan); err != nil {
+		return nil, err
+	}
+	return plan, nil
 }

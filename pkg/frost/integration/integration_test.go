@@ -96,10 +96,10 @@ type deployment struct {
 type storageField struct{ Slot, Offset, Bytes int }
 
 type legacyLayout struct {
-	Registry, Validator                         common.Address
-	RegisteredWallets                           int
-	MainUtxoHash, State, MovingFundsRequestedAt storageField
-	LiveWalletsCount                            storageField
+	Registry, Validator                                                                 common.Address
+	RegisteredWallets                                                                   int
+	MainUtxoHash, State, MovingFundsRequestedAt, MovingFundsTargetWalletsCommitmentHash storageField
+	LiveWalletsCount                                                                    storageField
 }
 type nodeConfig struct {
 	root       *store.Store

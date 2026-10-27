@@ -13,8 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	commonEthereum "github.com/keep-network/keep-common/pkg/chain/ethereum"
+	chainutil "github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
+	legacyabi "github.com/keep-network/keep-core/pkg/chain/ethereum/tbtc/gen/abi"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/tbtc"
 )
@@ -56,6 +58,15 @@ func ReadFrostDrainPolicy(ctx context.Context, backend bind.ContractBackend, add
 		return out, err
 	}
 	out.Enabled, out.EligibleCount = counters.DrainEnabled, counters.EligibleTargets
+	legacy, err := legacyabi.NewBridgeCaller(address, backend)
+	if err != nil {
+		return out, err
+	}
+	parameters, err := legacy.MovingFundsParameters(opts)
+	if err != nil {
+		return out, err
+	}
+	out.DustThreshold = parameters.MovingFundsDustThreshold
 	if out.Enabled {
 		controller, err := bridge.FrostExposureController(opts)
 		if err != nil {
@@ -147,15 +158,14 @@ func (tc *TbtcChain) ResetLegacyMovingFundsTimeout(source [20]byte, main *bitcoi
 	if main == nil || main.Outpoint == nil || main.Value <= 0 {
 		return errors.New("legacy recovery needs current main UTXO")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	// Same submission/nonce/mining pattern as the generated legacy wrappers.
+	// No receipt wait runs while holding the shared transaction mutex.
 	tc.transactionMutex.Lock()
 	defer tc.transactionMutex.Unlock()
 	opts, err := bind.NewKeyedTransactorWithChainID(tc.key.PrivateKey, tc.chainID)
 	if err != nil {
 		return err
 	}
-	opts.Context = ctx
 	nonce, err := tc.nonceManager.CurrentNonce()
 	if err != nil {
 		return err
@@ -165,17 +175,24 @@ func (tc *TbtcChain) ResetLegacyMovingFundsTimeout(source [20]byte, main *bitcoi
 	if err != nil {
 		return err
 	}
-	tx, err := contract.ResetLegacyMovingFundsTimeout(opts, source, frostbridgeabi.BitcoinTxUTXO{TxHash: [32]byte(main.Outpoint.TransactionHash), TxOutputIndex: main.Outpoint.OutputIndex, TxOutputValue: uint64(main.Value)})
+	metadata, err := frostbridgeabi.FrostBridgeMetaData.GetAbi()
+	if err != nil {
+		return err
+	}
+	resolver := chainutil.NewErrorResolver(tc.client, metadata, &tc.frostBridgeAddress)
+	utxo := frostbridgeabi.BitcoinTxUTXO{TxHash: [32]byte(main.Outpoint.TransactionHash), TxOutputIndex: main.Outpoint.OutputIndex, TxOutputValue: uint64(main.Value)}
+	submit := func(options *bind.TransactOpts) (*types.Transaction, error) {
+		tx, err := contract.ResetLegacyMovingFundsTimeout(options, source, utxo)
+		if err != nil {
+			return nil, resolver.ResolveError(err, opts.From, nil, "resetLegacyMovingFundsTimeout", source, utxo)
+		}
+		return tx, nil
+	}
+	tx, err := submit(opts)
 	if err != nil {
 		return err
 	}
 	tc.nonceManager.IncrementNonce()
-	receipt, err := bind.WaitMined(ctx, tc.client, tx)
-	if err != nil {
-		return err
-	}
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		return errors.New("legacy timeout reset reverted")
-	}
+	go tc.miningWaiter.ForceMining(tx, opts, submit)
 	return nil
 }

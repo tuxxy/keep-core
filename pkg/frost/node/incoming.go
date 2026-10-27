@@ -77,7 +77,7 @@ func (w *wallet) finishIncoming(ctx context.Context) error {
 // Abandonment is distinct from settlement and cannot erase a possibly signed
 // intent. The caller has serialized this wallet's duty; no signing job races it.
 func (w *wallet) abandonIncoming(ctx context.Context) (bool, error) {
-	safe, err := w.mover.CanAbandon(ctx, w.plan)
+	safe, err := w.canAbandonIncoming(ctx)
 	if err != nil || !safe {
 		return false, err
 	}
@@ -88,4 +88,14 @@ func (w *wallet) abandonIncoming(ctx context.Context) (bool, error) {
 	w.incomingSlot++
 	w.plan, w.signed = nil, false
 	return true, nil
+}
+
+// A leader's durable recipe may already have produced a remote grant, even if
+// no local worker started. Until canonical settlement, only followers can use
+// their own absent-release evidence to replace a recipe with the leader's.
+func (w *wallet) canAbandonIncoming(ctx context.Context) (bool, error) {
+	if len(w.request.LocalSeats) != 0 && w.request.LocalSeats[0] == 1 {
+		return false, nil
+	}
+	return w.mover.CanAbandon(ctx, w.plan)
 }

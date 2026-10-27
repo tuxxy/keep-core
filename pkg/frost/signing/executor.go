@@ -85,9 +85,7 @@ type Config struct {
 	Transport                  TransportFactory
 	// LocalRegtest is explicit. K-04 has no production C-04 adapter or dispatch.
 	LocalRegtest bool
-	// AfterGrant is a local verification boundary after the durable release
-	// marker and before control returns to the worker.
-	AfterGrant func(context.Context) error
+	verificationConfig
 }
 type Executor struct {
 	config   Config
@@ -362,10 +360,7 @@ func (g finalAuthorization) BeforeSigning(ctx context.Context, r frost.SigningRe
 	if err := e.config.Journal.RetainSigningRecord(ctx, signingGrantID(snowfallengine.AttemptID(r.Attempt)), e.config.Plan.IntentBytes()); err != nil {
 		return err
 	}
-	if e.config.AfterGrant != nil {
-		return e.config.AfterGrant(ctx)
-	}
-	return nil
+	return e.afterGrant(ctx)
 }
 
 type signingAcceptance struct{}

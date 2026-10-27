@@ -218,7 +218,9 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 	if uint64(parameters.Timeout)/2 < margin {
 		margin = uint64(parameters.Timeout) / 2
 	}
-	w.warp(margin + 1)
+	if os.Getenv("FROST_K09_CHECK_RESET") == "" {
+		w.warp(margin + 1)
+	}
 	task := tbtcpg.NewMovingFundsTask(c, publicLegacyBitcoin{w.btc})
 	if resetMode := os.Getenv("FROST_K09_CHECK_RESET"); resetMode != "" {
 		controller := bind.NewBoundContract(w.f.deployment.Exposure, c10ABI, w.f.client, w.f.client, w.f.client)
@@ -243,7 +245,7 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 			})
 		}
 		for i := 0; i < 3; i++ {
-			delta := uint64(parameters.Timeout) - 1
+			delta := uint64(parameters.Timeout) - 3
 			if i == 0 {
 				delta = uint64(parameters.TimeoutResetDelay) + 1
 			}
@@ -251,6 +253,10 @@ func (w *k07World) produceLegacyDrain(lw legacyWallet) (*walletHost, int64) {
 			before, err := c.GetWallet(lw.pkh)
 			if err != nil {
 				w.t.Fatal(err)
+			}
+			now, err := c.MovingFundsNow()
+			if err != nil || !now.Before(before.MovingFundsRequestedAt.Add(time.Duration(parameters.Timeout)*time.Second)) {
+				w.t.Fatal("control HostResetDeadline assertion: reset submission missed original timeout", err)
 			}
 			if proposal, valid, err := task.Run(&tbtc.CoordinationProposalRequest{WalletPublicKeyHash: lw.pkh}); err != nil || valid || proposal != nil {
 				w.t.Fatal("host did not reset blocked drain", err)

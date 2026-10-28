@@ -50,10 +50,14 @@ cases=(
 )
 for encoding in code3-0x geth-32000-nodata; do
 	cases+=("^TestLegacyUnchanged_UpgradedBridgeDrain$/^${encoding}$")
+	cases+=("^TestLegacyUnchanged_UpgradedBridgeDrainTransient$/^${encoding}\\+transient-then-success$")
 	for variant in "" "+transient-then-success"; do
 		cases+=("^TestLegacyUnchanged_Startup$/^${encoding}${variant//+/\\+}$")
 		cases+=("^TestLegacyUnchanged_MovingFunds$/^${encoding}${variant//+/\\+}$")
 	done
+done
+for state in MovingFunds Closing Closed Terminated; do
+	cases+=("^TestLegacyUnchanged_NonLiveTargets$/^${state}$")
 done
 
 results="$evidence/cases.tsv"
@@ -110,7 +114,7 @@ if passed != len(cases):
 tests = sorted(f for f in os.listdir(os.path.join(root, "pkg/tbtc")) if f.startswith("legacy_") and f.endswith("_test.go"))
 anvil_version = subprocess.run([env["LEGACY_ANVIL"], "--version"], capture_output=True, text=True).stdout.splitlines()[0]
 manifest = {
-    "suite": "keep-core legacy-unchanged (remediation batch 1)",
+    "suite": "keep-core legacy-unchanged (remediation batches 1 and 1b)",
     "candidate": {"keepCoreHead": head, "clean": not dirty},
     "testFiles": {f: sha(os.path.join(root, "pkg/tbtc", f)) for f in tests},
     "runner": {"runSh": sha(os.path.join(root, "test/legacy/run.sh")),

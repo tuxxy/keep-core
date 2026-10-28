@@ -1,0 +1,137 @@
+{
+  "bounds": "EXIT-SCOPE.md",
+  "checks_pass": true,
+  "runs": [
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "W-CANDIDATE-LOSS-FRESH-READY",
+        "W-DELAYED-PREAPPROVAL-RECONCILED",
+        "W-READY-UNFUNDED",
+        "W-LOST-AFTER-STATEMENT",
+        "W-QUARANTINE-FRESH-READY",
+        "W-EXPIRY-FRESH-READY",
+        "W-FOREIGN-SUBMITTED-ACCEPTANCE",
+        "W-KEY-AFTER-REMOVAL-QUARANTINED",
+        "W-LOST-BEFORE-READINESS-EXPIRED",
+        "W-CERTIFICATE-BEFORE-DURABLE-READY"
+      ],
+      "generated": 20994202,
+      "seconds": 7.898546584,
+      "target": "all",
+      "unique": 5409590,
+      "weakening": 0
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-ONE-DESCRIPTOR"
+      ],
+      "generated": 9610,
+      "seconds": 0.002852791,
+      "target": "P-K03-ONE-DESCRIPTOR",
+      "unique": 3545,
+      "weakening": 1
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-NO-EARLY-FUNDING"
+      ],
+      "generated": 9925,
+      "seconds": 0.002617958,
+      "target": "P-K03-NO-EARLY-FUNDING",
+      "unique": 3390,
+      "weakening": 2
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-READY-ONLY-RELOADED"
+      ],
+      "generated": 466370,
+      "seconds": 0.113917375,
+      "target": "P-K03-READY-ONLY-RELOADED",
+      "unique": 130508,
+      "weakening": 3
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-READY-ONLY-RELOADED"
+      ],
+      "generated": 1160357,
+      "seconds": 0.289582291,
+      "target": "P-K03-READY-ONLY-RELOADED",
+      "unique": 320665,
+      "weakening": 4
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-INCONSISTENCY-QUARANTINE"
+      ],
+      "generated": 8783,
+      "seconds": 0.002514542,
+      "target": "P-K03-INCONSISTENCY-QUARANTINE",
+      "unique": 3093,
+      "weakening": 5
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-EXPIRY-TOMBSTONE"
+      ],
+      "generated": 8781,
+      "seconds": 0.002711875,
+      "target": "P-K03-EXPIRY-TOMBSTONE",
+      "unique": 3057,
+      "weakening": 6
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-FRESH-EPOCH-DISJOINT"
+      ],
+      "generated": 8784,
+      "seconds": 0.002501958,
+      "target": "P-K03-FRESH-EPOCH-DISJOINT",
+      "unique": 3064,
+      "weakening": 7
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-ONE-DESCRIPTOR"
+      ],
+      "generated": 26280,
+      "seconds": 0.007042875,
+      "target": "P-K03-ONE-DESCRIPTOR",
+      "unique": 8265,
+      "weakening": 8
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-SUBMITTED-NOT-TERMINAL"
+      ],
+      "generated": 8929,
+      "seconds": 0.002734625,
+      "target": "P-K03-SUBMITTED-NOT-TERMINAL",
+      "unique": 3043,
+      "weakening": 9
+    }
+  ],
+  "timeout_seconds_per_run": 120,
+  "tool": "Stateright 0.31.0"
+}

@@ -1,0 +1,76 @@
+{
+  "independent_review": "review/independent-fourth.md",
+  "reviewed_hashes": {
+    "pkg/frost/dkg/executor.go": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a",
+    "pkg/frost/dkg/outcome_test.go": "ef1cef4e4b9a6d2271a49a51a13a3531deb57b53bf0a80cd427c169668de19db",
+    "pkg/frost/dkg/verification/model/src/main.rs": "81a2d0e16b54bd5e10bc7f412332f5ede4d88499b52ae17cb99082e070fcc809",
+    "pkg/frost/dkg/verification/replay/replay_test.go": "dcd1ff0099c97d3116eef1b33fc06a34dd7c26937ca1d93de079977abe264719",
+    "pkg/frost/dkg/verification/run.py": "73cd793214941f3afbda7d9c967ceae79159a61269afaf6539c4c73180075ff6"
+  },
+  "conditions_met": true,
+  "checks": {
+    "model": {
+      "exit_code": 0,
+      "seconds": 8.660022917000001,
+      "source_hashes": {
+        "pkg/frost/dkg/executor.go": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a",
+        "pkg/frost/dkg/outcome_test.go": "ef1cef4e4b9a6d2271a49a51a13a3531deb57b53bf0a80cd427c169668de19db",
+        "pkg/frost/dkg/verification/model/src/main.rs": "81a2d0e16b54bd5e10bc7f412332f5ede4d88499b52ae17cb99082e070fcc809",
+        "pkg/frost/dkg/verification/replay/replay_test.go": "dcd1ff0099c97d3116eef1b33fc06a34dd7c26937ca1d93de079977abe264719",
+        "pkg/frost/dkg/verification/run.py": "73cd793214941f3afbda7d9c967ceae79159a61269afaf6539c4c73180075ff6"
+      }
+    },
+    "replay": {
+      "exit_code": 0,
+      "seconds": 19.55309025,
+      "source_hashes": {
+        "pkg/frost/dkg/executor.go": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a",
+        "pkg/frost/dkg/outcome_test.go": "ef1cef4e4b9a6d2271a49a51a13a3531deb57b53bf0a80cd427c169668de19db",
+        "pkg/frost/dkg/verification/model/src/main.rs": "81a2d0e16b54bd5e10bc7f412332f5ede4d88499b52ae17cb99082e070fcc809",
+        "pkg/frost/dkg/verification/replay/replay_test.go": "dcd1ff0099c97d3116eef1b33fc06a34dd7c26937ca1d93de079977abe264719",
+        "pkg/frost/dkg/verification/run.py": "73cd793214941f3afbda7d9c967ceae79159a61269afaf6539c4c73180075ff6"
+      }
+    },
+    "replay-race": {
+      "exit_code": 0,
+      "seconds": 79.550133042,
+      "source_hashes": {
+        "pkg/frost/dkg/executor.go": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a",
+        "pkg/frost/dkg/outcome_test.go": "ef1cef4e4b9a6d2271a49a51a13a3531deb57b53bf0a80cd427c169668de19db",
+        "pkg/frost/dkg/verification/model/src/main.rs": "81a2d0e16b54bd5e10bc7f412332f5ede4d88499b52ae17cb99082e070fcc809",
+        "pkg/frost/dkg/verification/replay/replay_test.go": "dcd1ff0099c97d3116eef1b33fc06a34dd7c26937ca1d93de079977abe264719",
+        "pkg/frost/dkg/verification/run.py": "73cd793214941f3afbda7d9c967ceae79159a61269afaf6539c4c73180075ff6"
+      }
+    },
+    "integration": {
+      "exit_code": 0,
+      "seconds": 20.2619015,
+      "source_hashes": {
+        "pkg/frost/dkg/executor.go": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a",
+        "pkg/frost/dkg/outcome_test.go": "ef1cef4e4b9a6d2271a49a51a13a3531deb57b53bf0a80cd427c169668de19db",
+        "pkg/frost/dkg/verification/model/src/main.rs": "81a2d0e16b54bd5e10bc7f412332f5ede4d88499b52ae17cb99082e070fcc809",
+        "pkg/frost/dkg/verification/replay/replay_test.go": "980047b7001b72624f8233e0ce3d8308f0e2b3e44ca82bbeaa745d662e41a70a",
+        "pkg/frost/dkg/verification/run.py": "73cd793214941f3afbda7d9c967ceae79159a61269afaf6539c4c73180075ff6"
+      }
+    },
+    "integration-race": {
+      "exit_code": 0,
+      "seconds": 22.511809500000002,
+      "source_hashes": {
+        "pkg/frost/dkg/executor.go": "50569057642a5350cc3e1fed53ef45e02afed808043ccce50fdb0949b04e346a",
+        "pkg/frost/dkg/outcome_test.go": "ef1cef4e4b9a6d2271a49a51a13a3531deb57b53bf0a80cd427c169668de19db",
+        "pkg/frost/dkg/verification/model/src/main.rs": "81a2d0e16b54bd5e10bc7f412332f5ede4d88499b52ae17cb99082e070fcc809",
+        "pkg/frost/dkg/verification/replay/replay_test.go": "dcd1ff0099c97d3116eef1b33fc06a34dd7c26937ca1d93de079977abe264719",
+        "pkg/frost/dkg/verification/run.py": "73cd793214941f3afbda7d9c967ceae79159a61269afaf6539c4c73180075ff6"
+      }
+    }
+  },
+  "matching_traces_normal": 77,
+  "matching_traces_race": 77,
+  "steps_each": 1822,
+  "full": 49,
+  "partial_host_loss": 28,
+  "model_witnesses": 10,
+  "negative_controls": 9,
+  "scope": "Only exact bounded and conditional inactive K03 subject; positive funding witness remains blocked"
+}

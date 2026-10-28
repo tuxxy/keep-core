@@ -1,0 +1,8 @@
+{
+  "classification": "documentary source refresh",
+  "live_reference_is_not_verified_source": true,
+  "model_transition_changes": false,
+  "reservation_ledger_absent": true,
+  "current_subject": "05032bb6b51371d88b1e4a07823ed6e61283dfff",
+  "snapshot": "pkg/frost/signing/verification/evidence/V-04-2026-10-13/C04-BOUNDARIES-observed-2026-10-13.md"
+}

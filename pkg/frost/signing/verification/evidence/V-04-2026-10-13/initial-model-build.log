@@ -1,0 +1,14 @@
+   Compiling v04-signing-model v0.1.0 (/Users/tux/threshold/integration-worktrees/V-04-verification/pkg/frost/signing/verification/model)
+error[E0282]: type annotations needed for `&_`
+   --> src/main.rs:126:34
+    |
+126 |         Property::always(AUTH,|_,s|!s.bad_auth),
+    |                                  ^  ---------- type must be known at this point
+    |
+help: consider giving this closure parameter an explicit type, where the placeholder `_` is specified
+    |
+126 |         Property::always(AUTH,|_,s: &_|!s.bad_auth),
+    |                                   ++++
+
+For more information about this error, try `rustc --explain E0282`.
+error: could not compile `v04-signing-model` (bin "v04-signing-model") due to 1 previous error

@@ -1,0 +1,170 @@
+{
+  "id": "S-K04-SIGNING-CHECKPOINT-1",
+  "classification": [
+    "bounded model checking",
+    "concrete tests",
+    "local checkpoint"
+  ],
+  "not_proof_of_Go": true,
+  "subject": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
+  "production_executor_subject": "05032bb6b51371d88b1e4a07823ed6e61283dfff",
+  "source_manifest": "source-manifest.json",
+  "model_run": "model-actual.json",
+  "model_results": "model-results.json",
+  "admission_results": "admission-results.json",
+  "replay_ledger": "replay-ledger.json",
+  "bounds": {
+    "wall_seconds_per_command": 1800,
+    "rss_ceiling_bytes": 17179869184,
+    "model_threads": 4,
+    "GOMAXPROCS": 4,
+    "go_package_parallelism": 2,
+    "wallets": 1,
+    "requests": 2,
+    "attempts": 2,
+    "timeout_ticks": 3,
+    "commit_stages": 6,
+    "max_acknowledged_commits": 10
+  },
+  "status": "bounded abstract models pass; concrete checkpoint passes within stated seams; full storage-kernel and C04/K05 replay remain open",
+  "predicates": {
+    "P-C04-ONE-ACTIVE-CUSTODY-RESERVATION": {
+      "bounded_model": "pass",
+      "profiles": [
+        "signing",
+        "admission"
+      ],
+      "concrete": "none; abstract consumer/attestation only; K05 gate open"
+    },
+    "P-K04-AUTHORIZED-ONLY": {
+      "bounded_model": "pass",
+      "profiles": [
+        "signing"
+      ],
+      "concrete": "passing application/provider seams; generated replay partial/none"
+    },
+    "P-K04-DURABLE-SIGNATURE-RECOVERY": {
+      "bounded_model": "pass",
+      "profiles": [
+        "signing"
+      ],
+      "concrete": "passing application/provider seams; generated replay partial/none"
+    },
+    "P-K05-LATE-SIGNATURE-QUARANTINE": {
+      "bounded_model": "pass",
+      "profiles": [
+        "signing"
+      ],
+      "concrete": "passing application/provider seams; generated replay partial/none"
+    },
+    "P-K05-NO-DOUBLE-OUTCOME": {
+      "bounded_model": "pass",
+      "profiles": [
+        "signing"
+      ],
+      "concrete": "none; abstract consumer/attestation only; K05 gate open"
+    },
+    "P-K05-TERMINAL-ATTEMPT": {
+      "bounded_model": "pass",
+      "profiles": [
+        "signing"
+      ],
+      "concrete": "passing application/provider seams; generated replay partial/none"
+    },
+    "P-C04-CURRENT-STATE-VERSION": {
+      "bounded_model": "pass",
+      "profiles": [
+        "admission"
+      ],
+      "concrete": "none; abstract consumer/attestation only; K05 gate open"
+    },
+    "P-C04-NEXT-INTENT-GENERATION": {
+      "bounded_model": "pass",
+      "profiles": [
+        "admission"
+      ],
+      "concrete": "none; abstract consumer/attestation only; K05 gate open"
+    },
+    "P-C04-NO-EXPIRED-ADMISSION": {
+      "bounded_model": "pass",
+      "profiles": [
+        "admission"
+      ],
+      "concrete": "none; abstract consumer/attestation only; K05 gate open"
+    },
+    "P-C04-RESERVATION-ID-CONTEXT": {
+      "bounded_model": "pass",
+      "profiles": [
+        "admission"
+      ],
+      "concrete": "none; abstract consumer/attestation only; K05 gate open"
+    },
+    "P-HOST-ONE-INTENT-ATTESTATION": {
+      "bounded_model": "pass",
+      "profiles": [
+        "admission"
+      ],
+      "concrete": "none; abstract consumer/attestation only; K05 gate open"
+    },
+    "P-HOST-REPLACEMENT-FINALIZED-ABSENCE": {
+      "bounded_model": "pass",
+      "profiles": [
+        "admission"
+      ],
+      "concrete": "none; abstract consumer/attestation only; K05 gate open"
+    }
+  },
+  "witnesses": 21,
+  "negative_controls": 24,
+  "model_trace_count": 45,
+  "full_declared_application_boundary_traces": 12,
+  "generated_signing_trace_replay": {
+    "full": 0,
+    "partial": 13,
+    "none": 10
+  },
+  "generated_admission_trace_replay": {
+    "full": 0,
+    "partial": 0,
+    "none": 22
+  },
+  "assumption_records": "../../SCOPE.md",
+  "correspondence": "../../V04-CORRESPONDENCE.json",
+  "invalidated_by": "Any change to pinned production inputs, encoding/vectors, model/harness, dependency/toolchain or fixture inputs invalidates affected evidence. New reports do not retroactively change historical run pins.",
+  "owner": "V-04 verification owner; C04/K05 producer and storage/integration owners listed in SCOPE.md and correspondence",
+  "no_production_mutation_campaign": true,
+  "no_production_activation": true,
+  "no_push_or_PR": true,
+  "model_runs": {
+    "signing": "model-actual.json",
+    "admission": "admission-model-actual.json"
+  },
+  "n1": {
+    "witness": "W-expired-unadmitted-replaced-and-admitted",
+    "status": "found within frozen bound with originally admissible live issuance",
+    "admitted_expiry_refusal_witness": "found",
+    "concrete_replay": "none; consumer/attestation missing",
+    "history_retained": true,
+    "deadline_inclusive": true,
+    "replacement_requires": "Expired unadmitted certificate plus authenticated canonical finalized absence at/before finalized deadline"
+  },
+  "n2": {
+    "assumption": "A-HOST-READINESS-NOT-LOST",
+    "owner": "honest-host/K05 readiness/coordination implementers",
+    "certificate_validator_predicate": false
+  },
+  "renewals": {
+    "bound": 1,
+    "certificate_variants": 3,
+    "deadlines": [
+      1,
+      2,
+      3
+    ],
+    "witnesses": "both found",
+    "control": "IgnoreOutstandingRenewal found named counterexample",
+    "limitations": "Fully tracked one-renewal abstraction only; no arbitrary/unobserved histories or real consumer claim",
+    "run": "admission-model-actual.json"
+  },
+  "v05_nit_review": "v05-nit-independent-review/REVIEW.md"
+}

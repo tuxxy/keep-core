@@ -1,0 +1,71 @@
+{
+  "id": "B-CRASH-BEFORE-WRITE",
+  "kind": "boundary",
+  "property": "declared representative set",
+  "weakening": "None",
+  "max_commits": 3,
+  "replay": "full",
+  "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
+  "steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "claim",
+      "proc": 0,
+      "attempt": 0,
+      "purpose": "sign",
+      "domain": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 3,
+      "action": "process_crash",
+      "proc": 0,
+      "expect": "crashed"
+    },
+    {
+      "n": 4,
+      "action": "open",
+      "proc": 0,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 5,
+      "action": "claim",
+      "proc": 0,
+      "attempt": 0,
+      "purpose": "sign",
+      "domain": 0,
+      "pause": "before-write"
+    }
+  ]
+}

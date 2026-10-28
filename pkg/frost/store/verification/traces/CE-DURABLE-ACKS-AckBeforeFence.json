@@ -1,0 +1,191 @@
+{
+  "id": "CE-DURABLE-ACKS-AckBeforeFence",
+  "kind": "counterexample",
+  "property": "durable_acks",
+  "weakening": "AckBeforeFence",
+  "max_commits": 3,
+  "replay": "full",
+  "replay_note": "every step maps to a store call, a boundary pause or a test-only environment action",
+  "steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 1,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "put",
+      "proc": 1,
+      "slot": 0,
+      "value": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 3,
+      "action": "step",
+      "proc": 1,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 4,
+      "action": "step",
+      "proc": 1,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 5,
+      "action": "step",
+      "proc": 1,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 6,
+      "action": "fence_reset"
+    },
+    {
+      "n": 7,
+      "action": "clone"
+    },
+    {
+      "n": 8,
+      "action": "step",
+      "proc": 1,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 9,
+      "action": "step",
+      "proc": 1,
+      "step": "ack",
+      "expect": "durable",
+      "pause": "before-fence"
+    },
+    {
+      "n": 10,
+      "action": "process_crash",
+      "proc": 1,
+      "expect": "crashed"
+    },
+    {
+      "n": 11,
+      "action": "open",
+      "proc": 0,
+      "image": 1,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 12,
+      "action": "put",
+      "proc": 0,
+      "slot": 0,
+      "value": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 13,
+      "action": "step",
+      "proc": 0,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 14,
+      "action": "step",
+      "proc": 0,
+      "step": "file_sync",
+      "pause": "before-install"
+    }
+  ],
+  "claim_model_steps": [
+    {
+      "n": 1,
+      "action": "open",
+      "proc": 1,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 0,
+        "dkg": [
+          false,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "action": "put",
+      "proc": 1,
+      "slot": 0,
+      "value": 0,
+      "pause": "before-write"
+    },
+    {
+      "n": 3,
+      "action": "step",
+      "proc": 1,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 4,
+      "action": "step",
+      "proc": 1,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 5,
+      "action": "step",
+      "proc": 1,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 6,
+      "action": "fence_reset"
+    },
+    {
+      "n": 7,
+      "action": "clone"
+    },
+    {
+      "n": 8,
+      "action": "step",
+      "proc": 1,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    }
+  ]
+}

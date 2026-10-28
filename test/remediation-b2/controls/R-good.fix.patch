@@ -1,0 +1,36 @@
+diff --git a/pkg/chain/ethereum/tbtc.go b/pkg/chain/ethereum/tbtc.go
+index 7ed6348d3..3f0025773 100644
+--- a/pkg/chain/ethereum/tbtc.go
++++ b/pkg/chain/ethereum/tbtc.go
+@@ -2470,3 +2470,12 @@ func (tc *TbtcChain) GetRedemptionDelay(
+ func (tc *TbtcChain) GetDepositMinAge() (uint32, error) {
+ 	return tc.walletProposalValidator.DEPOSITMINAGE()
+ }
++
++// ResetMovingFundsTimeoutForControl is a CONTROL
++// (test/remediation-b2/controls), never production code.
++func (tc *TbtcChain) ResetMovingFundsTimeoutForControl(walletPublicKeyHash [20]byte) error {
++	// CONTROL R-good: the generated wrapper (shared mutex released after
++	// submission, configured options, gas bumps).
++	_, err := tc.bridge.ResetMovingFundsTimeout(walletPublicKeyHash)
++	return err
++}
+diff --git a/pkg/tbtcpg/moving_funds.go b/pkg/tbtcpg/moving_funds.go
+index dc860aa83..e11382d24 100644
+--- a/pkg/tbtcpg/moving_funds.go
++++ b/pkg/tbtcpg/moving_funds.go
+@@ -167,6 +167,14 @@ func (mft *MovingFundsTask) Run(request *tbtc.CoordinationProposalRequest) (
+ 	}
+ 
+ 	if liveWalletsCount == 0 {
++		// CONTROL: reset on every Bridge when no Live wallet exists.
++		if r, ok := mft.chain.(interface {
++			ResetMovingFundsTimeoutForControl([20]byte) error
++		}); ok {
++			if err := r.ResetMovingFundsTimeoutForControl(walletPublicKeyHash); err != nil {
++				taskLogger.Infof("control reset: [%v]", err)
++			}
++		}
+ 		taskLogger.Infof("there are no Live wallets available")
+ 		return nil, false, nil
+ 	}

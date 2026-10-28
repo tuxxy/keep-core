@@ -2,9 +2,11 @@ package tbtc_test
 
 // The legacy-unchanged world: a real Anvil chain running the real pre-FROST
 // tbtc-v2 contracts built from git at 40a11d1d (owner decision D1), a JSON-RPC
-// recorder between the client and Anvil, and a synthetic regtest Bitcoin
-// chain. Everything that is not a production contract or production client
-// code is labelled FIXTURE or ADAPTER below.
+// recorder between the client and Anvil, and a real Bitcoin Core 29.0
+// regtest node. Core builds the deposit funding, validates and mines every
+// transaction, and its blocks supply the headers and merkle proofs the Bridge
+// verifies. Everything that is not a production contract, production client
+// code or Core is labelled FIXTURE or ADAPTER below.
 //
 // The world is driven only through public calls: wallets reach the Bridge
 // through its registry callbacks, the source wallet is funded by a revealed
@@ -38,6 +40,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -76,9 +81,11 @@ const legacyDepositValue = int64(10_000_000)
 const legacySweepFee = int64(2_000)
 
 type legacyEnvironment struct {
-	baseline string
-	repo     string
-	anvil    string
+	baseline       string
+	repo           string
+	anvil          string
+	bitcoind       string
+	bitcoindSHA256 string
 }
 
 // upgradedBuild returns the upgraded (FROST) tbtc-v2 build directory and the
@@ -99,13 +106,17 @@ func upgradedBuild(t *testing.T) (string, string) {
 func legacyEnv(t *testing.T) legacyEnvironment {
 	t.Helper()
 	env := legacyEnvironment{
-		baseline: os.Getenv("LEGACY_BASELINE_DIR"),
-		repo:     os.Getenv("LEGACY_TBTC_REPO"),
-		anvil:    os.Getenv("LEGACY_ANVIL"),
+		baseline:       os.Getenv("LEGACY_BASELINE_DIR"),
+		repo:           os.Getenv("LEGACY_TBTC_REPO"),
+		anvil:          os.Getenv("LEGACY_ANVIL"),
+		bitcoind:       os.Getenv("LEGACY_BITCOIND"),
+		bitcoindSHA256: os.Getenv("LEGACY_BITCOIND_SHA256"),
 	}
-	if env.baseline == "" || env.repo == "" || env.anvil == "" {
+	if env.baseline == "" || env.repo == "" || env.anvil == "" ||
+		env.bitcoind == "" || env.bitcoindSHA256 == "" {
 		t.Skip("legacy-unchanged suite: run through test/legacy/run.sh " +
-			"(LEGACY_BASELINE_DIR, LEGACY_TBTC_REPO, LEGACY_ANVIL)")
+			"(LEGACY_BASELINE_DIR, LEGACY_TBTC_REPO, LEGACY_ANVIL, " +
+			"LEGACY_BITCOIND, LEGACY_BITCOIND_SHA256)")
 	}
 	return env
 }
@@ -680,31 +691,298 @@ func (r *legacyRecorder) reencode(out []byte, batch bool) []byte {
 	return encoded
 }
 
-// --- FIXTURE: synthetic regtest Bitcoin chain --------------------------------
+// --- Bitcoin Core regtest ----------------------------------------------------
+
+// legacyCore is a real Bitcoin Core regtest node (LEGACY_BITCOIND, pinned by
+// LEGACY_BITCOIND_SHA256). Every Bitcoin transaction in the suite is
+// submitted to it and mined by it, so Core checks every script and signature.
+type legacyCore struct {
+	url  string
+	user string
+	pass string
+}
+
+func (c *legacyCore) call(method string, params []interface{}, out interface{}) error {
+	if params == nil {
+		params = []interface{}{}
+	}
+	body, err := json.Marshal(map[string]interface{}{"jsonrpc": "1.0", "id": 1, "method": method, "params": params})
+	if err != nil {
+		return err
+	}
+	request, err := http.NewRequest(http.MethodPost, c.url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	request.SetBasicAuth(c.user, c.pass)
+	client := &http.Client{Timeout: 30 * time.Second}
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	var reply struct {
+		Result json.RawMessage `json:"result"`
+		Error  *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&reply); err != nil {
+		return fmt.Errorf("%s: HTTP %d: %v", method, response.StatusCode, err)
+	}
+	if reply.Error != nil {
+		return fmt.Errorf("%s: Core error %d: %s", method, reply.Error.Code, reply.Error.Message)
+	}
+	if out == nil {
+		return nil
+	}
+	return json.Unmarshal(reply.Result, out)
+}
+
+func legacyFreePort(t *testing.T) int {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	return listener.Addr().(*net.TCPAddr).Port
+}
+
+func startLegacyCore(t *testing.T, env legacyEnvironment) *legacyCore {
+	t.Helper()
+	executable, err := os.ReadFile(env.bitcoind)
+	if err != nil {
+		t.Fatalf("bitcoind: %v", err)
+	}
+	if digest := sha256.Sum256(executable); hex.EncodeToString(digest[:]) != env.bitcoindSHA256 {
+		t.Fatalf("bitcoind %s does not match its pinned SHA-256", env.bitcoind)
+	}
+	rpcPort, p2pPort := legacyFreePort(t), legacyFreePort(t)
+	core := &legacyCore{url: fmt.Sprintf("http://127.0.0.1:%d", rpcPort), user: "legacy", pass: "legacy-unchanged"}
+	ctx, cancel := context.WithCancel(context.Background())
+	cmd := exec.CommandContext(ctx, env.bitcoind,
+		"-regtest", "-datadir="+t.TempDir(), "-server", "-listen=0", "-txindex=1",
+		fmt.Sprintf("-rpcport=%d", rpcPort), fmt.Sprintf("-port=%d", p2pPort),
+		"-rpcuser="+core.user, "-rpcpassword="+core.pass,
+		"-fallbackfee=0.0002", "-printtoconsole=0",
+	)
+	if err := cmd.Start(); err != nil {
+		cancel()
+		t.Fatalf("bitcoind: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = core.call("stop", nil, nil)
+		done := make(chan struct{})
+		go func() { _ = cmd.Wait(); close(done) }()
+		select {
+		case <-done:
+		case <-time.After(15 * time.Second):
+			cancel()
+			<-done
+		}
+		cancel()
+	})
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		if err = core.call("getblockchaininfo", nil, nil); err == nil {
+			return core
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("bitcoind did not start: %v", err)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
 
 type legacyBlock struct {
 	header bitcoin.BlockHeader
 	txs    []*bitcoin.Transaction
 }
 
-// legacyRegtest is a FIXTURE Bitcoin chain. Blocks carry a coinbase, a real
-// merkle root and a header that meets the regtest target (bits 0x207fffff),
-// so the Bridge's own SPV checks run on them. Scripts and signatures are not
-// validated by any Bitcoin node. It serves the client through bitcoin.Chain.
+// legacyRegtest serves the client through bitcoin.Chain from the real Core
+// node: blocks, headers and transactions are read back from Core, and a
+// broadcast is Core's sendrawtransaction. The ADAPTER part is only the
+// address-history queries, which Core has no index for: they are answered by
+// scanning the blocks read from Core and the transactions broadcast here.
 type legacyRegtest struct {
+	t          *testing.T
+	core       *legacyCore
+	miner      string
 	mutex      sync.Mutex
 	blocks     []*legacyBlock
 	mempool    []*bitcoin.Transaction
 	broadcasts []*bitcoin.Transaction
-	baseTime   uint32
+	rejected   []string
 }
 
 var _ bitcoin.Chain = (*legacyRegtest)(nil)
 
-func newLegacyRegtest(t *testing.T) *legacyRegtest {
-	c := &legacyRegtest{baseTime: uint32(time.Now().Add(-legacyChainLag).Unix())}
-	c.mine(t)
+func newLegacyRegtest(t *testing.T, env legacyEnvironment) *legacyRegtest {
+	t.Helper()
+	c := &legacyRegtest{t: t, core: startLegacyCore(t, env)}
+	if err := c.core.call("createwallet", []interface{}{"legacy-unchanged"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.core.call("getnewaddress", nil, &c.miner); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.core.call("generatetoaddress", []interface{}{101, c.miner}, nil); err != nil {
+		t.Fatal(err)
+	}
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.syncLocked(t)
 	return c
+}
+
+// syncLocked reads every block Core has that is not read yet.
+func (c *legacyRegtest) syncLocked(t *testing.T) {
+	t.Helper()
+	var count int
+	if err := c.core.call("getblockcount", nil, &count); err != nil {
+		t.Fatal(err)
+	}
+	for height := len(c.blocks); height <= count; height++ {
+		var hash, rawHex string
+		if err := c.core.call("getblockhash", []interface{}{height}, &hash); err != nil {
+			t.Fatal(err)
+		}
+		if err := c.core.call("getblock", []interface{}{hash, 0}, &rawHex); err != nil {
+			t.Fatal(err)
+		}
+		raw, err := hex.DecodeString(rawHex)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var message wire.MsgBlock
+		if err := message.Deserialize(bytes.NewReader(raw)); err != nil {
+			t.Fatal(err)
+		}
+		h := message.Header
+		block := &legacyBlock{header: bitcoin.BlockHeader{
+			Version:                 h.Version,
+			PreviousBlockHeaderHash: bitcoin.Hash(h.PrevBlock),
+			MerkleRootHash:          bitcoin.Hash(h.MerkleRoot),
+			Time:                    uint32(h.Timestamp.Unix()),
+			Bits:                    h.Bits,
+			Nonce:                   h.Nonce,
+		}}
+		if legacyHeaderHash(block.header) != bitcoin.Hash(h.BlockHash()) {
+			t.Fatalf("block %d header does not round-trip", height)
+		}
+		for _, wireTx := range message.Transactions {
+			var buffer bytes.Buffer
+			if err := wireTx.Serialize(&buffer); err != nil {
+				t.Fatal(err)
+			}
+			tx := new(bitcoin.Transaction)
+			if err := tx.Deserialize(buffer.Bytes()); err != nil {
+				t.Fatal(err)
+			}
+			if tx.Hash() != bitcoin.Hash(wireTx.TxHash()) {
+				t.Fatalf("block %d transaction does not round-trip", height)
+			}
+			block.txs = append(block.txs, tx)
+		}
+		c.blocks = append(c.blocks, block)
+	}
+	confirmed := map[bitcoin.Hash]bool{}
+	for _, tx := range c.allLocked() {
+		confirmed[tx.Hash()] = true
+	}
+	kept := c.mempool[:0]
+	for _, tx := range c.mempool {
+		if !confirmed[tx.Hash()] {
+			kept = append(kept, tx)
+		}
+	}
+	c.mempool = kept
+}
+
+func (c *legacyRegtest) sendLocked(tx *bitcoin.Transaction) error {
+	var txid string
+	err := c.core.call("sendrawtransaction", []interface{}{hex.EncodeToString(tx.Serialize(bitcoin.Witness))}, &txid)
+	if err != nil {
+		c.rejected = append(c.rejected, fmt.Sprintf("%s: %v", tx.Hash().Hex(bitcoin.ReversedByteOrder), err))
+		return err
+	}
+	c.mempool = append(c.mempool, tx)
+	return nil
+}
+
+// mine submits the given transactions to Core unless they are already in its
+// mempool, mines one block and requires Core to have included each of them.
+func (c *legacyRegtest) mine(t *testing.T, txs ...*bitcoin.Transaction) *legacyBlock {
+	t.Helper()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	for _, tx := range txs {
+		pending := false
+		for _, m := range c.mempool {
+			pending = pending || m.Hash() == tx.Hash()
+		}
+		if !pending {
+			if err := c.sendLocked(tx); err != nil {
+				t.Fatalf("Bitcoin Core refused %s: %v", tx.Hash().Hex(bitcoin.ReversedByteOrder), err)
+			}
+		}
+	}
+	if err := c.core.call("generatetoaddress", []interface{}{1, c.miner}, nil); err != nil {
+		t.Fatal(err)
+	}
+	c.syncLocked(t)
+	block := c.blocks[len(c.blocks)-1]
+	for _, tx := range txs {
+		if !legacyBlockHas(block, tx.Hash()) {
+			t.Fatalf("Bitcoin Core did not mine %s", tx.Hash().Hex(bitcoin.ReversedByteOrder))
+		}
+	}
+	return block
+}
+
+func legacyBlockHas(block *legacyBlock, hash bitcoin.Hash) bool {
+	for _, tx := range block.txs {
+		if tx.Hash() == hash {
+			return true
+		}
+	}
+	return false
+}
+
+// pay has Core's wallet pay value to script and mines it; returns the
+// funding transaction as Core built it.
+func (c *legacyRegtest) pay(t *testing.T, address string, value int64) *bitcoin.Transaction {
+	t.Helper()
+	var txid string
+	amount := json.Number(fmt.Sprintf("%d.%08d", value/100_000_000, value%100_000_000))
+	if err := c.core.call("sendtoaddress", []interface{}{address, amount}, &txid); err != nil {
+		t.Fatal(err)
+	}
+	var rawHex string
+	if err := c.core.call("getrawtransaction", []interface{}{txid}, &rawHex); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := hex.DecodeString(rawHex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := new(bitcoin.Transaction)
+	if err := tx.Deserialize(raw); err != nil {
+		t.Fatal(err)
+	}
+	c.mutex.Lock()
+	c.mempool = append(c.mempool, tx)
+	c.mutex.Unlock()
+	c.mine(t, tx)
+	return tx
+}
+
+func (c *legacyRegtest) Rejected() []string {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return append([]string(nil), c.rejected...)
 }
 
 func legacyDoubleSHA(data []byte) bitcoin.Hash {
@@ -743,66 +1021,6 @@ func legacyMerkleBranch(leaves []bitcoin.Hash, index int) (bitcoin.Hash, []bitco
 		index /= 2
 	}
 	return level[0], branch
-}
-
-func (c *legacyRegtest) mine(t *testing.T, txs ...*bitcoin.Transaction) *legacyBlock {
-	t.Helper()
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	height := uint32(len(c.blocks))
-	coinbaseScript := make([]byte, 5)
-	coinbaseScript[0] = 4
-	binary.LittleEndian.PutUint32(coinbaseScript[1:], height)
-	coinbase := &bitcoin.Transaction{
-		Version: 1,
-		Inputs: []*bitcoin.TransactionInput{{
-			Outpoint:        &bitcoin.TransactionOutpoint{OutputIndex: 0xffffffff},
-			SignatureScript: coinbaseScript,
-			Sequence:        0xffffffff,
-		}},
-		Outputs: []*bitcoin.TransactionOutput{{Value: 50_0000_0000, PublicKeyScript: []byte{0x51}}},
-	}
-	block := &legacyBlock{txs: append([]*bitcoin.Transaction{coinbase}, txs...)}
-	leaves := make([]bitcoin.Hash, len(block.txs))
-	for i, tx := range block.txs {
-		leaves[i] = tx.Hash()
-	}
-	root, _ := legacyMerkleBranch(leaves, 0)
-	header := bitcoin.BlockHeader{
-		Version:        0x20000000,
-		MerkleRootHash: root,
-		Time:           c.baseTime + height*600,
-		Bits:           0x207fffff,
-	}
-	if height > 0 {
-		header.PreviousBlockHeaderHash = legacyHeaderHash(c.blocks[height-1].header)
-	}
-	for ; ; header.Nonce++ {
-		hash := legacyHeaderHash(header)
-		reversed := make([]byte, len(hash))
-		for i := range hash {
-			reversed[i] = hash[len(hash)-1-i]
-		}
-		if new(big.Int).SetBytes(reversed).Cmp(header.Target()) <= 0 {
-			break
-		}
-	}
-	block.header = header
-	c.blocks = append(c.blocks, block)
-
-	confirmed := map[bitcoin.Hash]bool{}
-	for _, tx := range txs {
-		confirmed[tx.Hash()] = true
-	}
-	kept := c.mempool[:0]
-	for _, tx := range c.mempool {
-		if !confirmed[tx.Hash()] {
-			kept = append(kept, tx)
-		}
-	}
-	c.mempool = kept
-	return block
 }
 
 // proof is the SPV proof the Bridge expects with txProofDifficultyFactor 1.
@@ -943,14 +1161,16 @@ func (c *legacyRegtest) GetTransactionConfirmations(_ context.Context, hash bitc
 	return 0, fmt.Errorf("transaction %s not found", hash.Hex(bitcoin.ReversedByteOrder))
 }
 
+// BroadcastTransaction is Core's sendrawtransaction: Core validates every
+// script and signature before the transaction enters its mempool.
 func (c *legacyRegtest) BroadcastTransaction(tx *bitcoin.Transaction) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.broadcasts = append(c.broadcasts, tx)
-	if c.findLocked(tx.Hash()) == nil {
-		c.mempool = append(c.mempool, tx)
+	if c.findLocked(tx.Hash()) != nil {
+		return nil
 	}
-	return nil
+	return c.sendLocked(tx)
 }
 
 func (c *legacyRegtest) GetLatestBlockHeight() (uint, error) {
@@ -1290,7 +1510,7 @@ func newLegacyWorldOn(t *testing.T, env legacyEnvironment, build *legacyBaseline
 	if beforeWallets != nil {
 		beforeWallets(w)
 	}
-	w.btc = newLegacyRegtest(t)
+	w.btc = newLegacyRegtest(t, env)
 	w.source = newLegacyWallet(t, 11)
 	w.target = newLegacyWallet(t, 12)
 	w.registerWallet(w.source)
@@ -1357,19 +1577,24 @@ func (w *legacyWorld) fundSource() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	coinbase, _ := w.btc.GetCoinbaseTxHash(0)
-	funding := &bitcoin.Transaction{
-		Version: 1,
-		Inputs: []*bitcoin.TransactionInput{{
-			Outpoint: &bitcoin.TransactionOutpoint{TransactionHash: coinbase},
-			Sequence: 0xffffffff,
-		}},
-		Outputs: []*bitcoin.TransactionOutput{{Value: legacyDepositValue, PublicKeyScript: locking}},
+	scriptHash := sha256.Sum256(script)
+	address, err := btcutil.NewAddressWitnessScriptHash(scriptHash[:], &chaincfg.RegressionNetParams)
+	if err != nil {
+		t.Fatal(err)
 	}
-	w.btc.mine(t, funding)
+	funding := w.btc.pay(t, address.EncodeAddress(), legacyDepositValue)
+	fundingIndex := -1
+	for i, output := range funding.Outputs {
+		if bytes.Equal(output.PublicKeyScript, locking) && output.Value == legacyDepositValue {
+			fundingIndex = i
+		}
+	}
+	if fundingIndex < 0 {
+		t.Fatal("Core did not create the deposit output")
+	}
 	w.send("reveal deposit", func(o *bind.TransactOpts) (*types.Transaction, error) {
 		return w.legacy.RevealDeposit(o, legacyTxInfo(funding), tbtcabi.DepositDepositRevealInfo{
-			FundingOutputIndex: 0,
+			FundingOutputIndex: uint32(fundingIndex),
 			BlindingFactor:     deposit.BlindingFactor,
 			WalletPubKeyHash:   deposit.WalletPublicKeyHash,
 			RefundPubKeyHash:   deposit.RefundPublicKeyHash,
@@ -1379,7 +1604,7 @@ func (w *legacyWorld) fundSource() {
 
 	builder := bitcoin.NewTransactionBuilder(w.btc)
 	if err := builder.AddScriptHashInput(&bitcoin.UnspentTransactionOutput{
-		Outpoint: &bitcoin.TransactionOutpoint{TransactionHash: funding.Hash()},
+		Outpoint: &bitcoin.TransactionOutpoint{TransactionHash: funding.Hash(), OutputIndex: uint32(fundingIndex)},
 		Value:    legacyDepositValue,
 	}, script); err != nil {
 		t.Fatal(err)

@@ -114,7 +114,8 @@ func TestLegacyUnchanged_Startup(t *testing.T) {
 // end through production code: the coordinator's proposal task (it submits
 // the commitment itself, waits for it and builds the proposal), then the
 // wallet's moving-funds action (validation, commitment confirmation,
-// assembly, signing, broadcast). Each case is a fresh chain.
+// assembly, signing, broadcast). The broadcast goes to a real Bitcoin Core
+// regtest node, which must accept and mine it. Each case is a fresh chain.
 func TestLegacyUnchanged_MovingFunds(t *testing.T) {
 	for _, encoding := range legacyEncodings {
 		for _, transient := range []bool{false, true} {
@@ -220,6 +221,9 @@ func legacyMovingFundsRound(t *testing.T, encoding legacyRevertEncoding, transie
 	}
 
 	w.assertBaselineSurface(t, "moving funds", recorder.Calls())
+	if rejected := w.btc.Rejected(); len(rejected) > 0 {
+		t.Errorf("legacy moving-funds transaction: Bitcoin Core refused a broadcast: %v", rejected)
+	}
 	if encoding == revertGeth && recorder.Rewritten() > 0 {
 		t.Logf("geth encoding: %d empty reverts were served as -32000 without data", recorder.Rewritten())
 	}
@@ -244,6 +248,17 @@ func legacyMovingFundsRound(t *testing.T, encoding legacyRevertEncoding, transie
 	if len(tx.Outputs) != 1 || !bytes.Equal(tx.Outputs[0].PublicKeyScript, script) || tx.Outputs[0].Value != want {
 		t.Errorf("legacy moving-funds transaction: outputs %v, want one P2WPKH output of %d to %x",
 			legacyOutputs(tx), want, w.target.pkh)
+	}
+
+	// Bitcoin Core regtest checked its scripts and signatures at broadcast;
+	// it must mine it.
+	block := w.btc.mine(t)
+	if !legacyBlockHas(block, tx.Hash()) {
+		t.Errorf("legacy moving-funds transaction: Bitcoin Core regtest did not mine %s",
+			tx.Hash().Hex(bitcoin.ReversedByteOrder))
+	} else {
+		t.Logf("legacy moving-funds transaction %s mined by Bitcoin Core regtest",
+			tx.Hash().Hex(bitcoin.ReversedByteOrder))
 	}
 }
 

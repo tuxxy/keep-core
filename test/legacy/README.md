@@ -12,8 +12,14 @@ transaction the Bridge refuses.
    `git archive` with the repository's Hardhat configuration, and compiles the
    labelled fixtures in `fixtures/`. Pass a third argument (a commit) to build
    the upgraded Bridge the same way.
-2. `run.sh <evidence dir>` runs every case in its own process and fails on any
-   skip.
+2. `run.sh <evidence dir>` runs every case in its own process, under the
+   shared heavy lock (`LEGACY_HEAVY_LOCK`), and fails on any skip.
+
+Every case starts a Bitcoin Core 29.0 regtest node (`LEGACY_BITCOIND`, checked
+against `LEGACY_BITCOIND_SHA256`). Core funds the deposit, checks the scripts
+and signatures of the sweep and of the moving-funds transaction the client
+broadcasts, and mines them; the SPV proofs the Bridge verifies are built from
+Core's own blocks.
 
 The tests are `pkg/tbtc/legacy_*_test.go`. They use only APIs that exist at
 keep-core base, so the same files run unchanged on the base client.

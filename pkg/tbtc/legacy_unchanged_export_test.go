@@ -31,8 +31,9 @@ func (fn LegacySignBatchFn) signBatch(
 // ExecuteMovingFundsActionForTest runs one moving-funds action exactly as a
 // wallet member runs it after accepting a coordination proposal: proposal
 // validation, commitment confirmation, assembly, signing and broadcast. Only
-// the broadcast check delay is shortened. Exposed for the external
-// legacy-unchanged suite (legacy_unchanged_test.go); test-only.
+// the broadcast check delay and the broadcast timeout are shortened. Exposed
+// for the external legacy-unchanged suite (legacy_unchanged_test.go);
+// test-only.
 func ExecuteMovingFundsActionForTest(
 	hostChain Chain,
 	btcChain bitcoin.Chain,
@@ -59,6 +60,9 @@ func ExecuteMovingFundsActionForTest(
 		newTransactionMonitor(btcChain),
 	)
 	action.broadcastCheckDelay = 10 * time.Millisecond
+	// Bounded so that a transaction Bitcoin Core refuses ends the action with
+	// an error instead of retrying for the production 15 minutes.
+	action.broadcastTimeout = 30 * time.Second
 
 	return action.execute()
 }

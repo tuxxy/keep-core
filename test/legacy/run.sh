@@ -9,6 +9,9 @@
 #   LEGACY_ANVIL         Anvil executable
 #   LEGACY_UPGRADED_DIR  build-baseline.sh output for the upgraded Bridge
 #   LEGACY_UPGRADED_COMMIT  the tbtc-v2 commit that build was made from
+#   LEGACY_BITCOIND      Bitcoin Core 29.0 bitcoind
+#   LEGACY_BITCOIND_SHA256  its reviewed SHA-256
+#   LEGACY_HEAVY_LOCK    lock file serializing Core-backed runs (SHARED-RULES)
 #
 # Every case runs in its own process, so state a client keeps in package
 # variables (a cached probe, say) cannot leak from one case into another.
@@ -20,6 +23,13 @@ umask 077
 : "${LEGACY_ANVIL:?Anvil required}"
 : "${LEGACY_UPGRADED_DIR:?upgraded Bridge build required}"
 : "${LEGACY_UPGRADED_COMMIT:?upgraded Bridge commit required}"
+: "${LEGACY_BITCOIND:?Bitcoin Core bitcoind required}"
+: "${LEGACY_BITCOIND_SHA256:?its SHA-256 required}"
+: "${LEGACY_HEAVY_LOCK:?heavy lock file required}"
+# Every case runs a Bitcoin Core node: hold the shared heavy lock throughout.
+if [ -z "${LEGACY_HOLDS_LOCK:-}" ]; then
+	LEGACY_HOLDS_LOCK=1 exec /usr/bin/lockf -k "$LEGACY_HEAVY_LOCK" bash "$0" "$@"
+fi
 evidence=${1:?evidence directory required}
 mkdir -p "$evidence"
 evidence=$(cd "$evidence" && pwd)

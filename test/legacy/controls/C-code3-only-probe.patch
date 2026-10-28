@@ -1,0 +1,17 @@
+diff --git a/pkg/chain/ethereum/frost_movement.go b/pkg/chain/ethereum/frost_movement.go
+index 89770d624..4b9443f07 100644
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -264,6 +264,12 @@ func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error
+ 	}
+ 	scheme, err := tc.frostBridge.WalletScheme(nil, label)
+ 	if err != nil {
++		// CONTROL C: a probe that knows only Anvil's empty revert (code 3,
++		// data "0x") as "pre-FROST Bridge".
++		var dataError interface{ ErrorData() interface{} }
++		if errors.As(err, &dataError) && fmt.Sprint(dataError.ErrorData()) == "0x" {
++			return [32]byte{}, false, nil
++		}
+ 		return [32]byte{}, false, err
+ 	}
+ 	if scheme != 2 {

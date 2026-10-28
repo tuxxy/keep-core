@@ -1,0 +1,24 @@
+# Controls
+
+Each patch is applied to a scratch checkout, the named cases are run, and the
+patch is reverted. None is ever committed to production code.
+
+| Patch | Applied to | Must fail | Result recorded 2026-10-28 |
+| --- | --- | --- | --- |
+| `A-no-frost-resolution.patch` | integration `ec1084dd` | `UpgradedBridgeDrain` (both encodings); `MovingFunds` must pass | `MovingFunds` 4/4 pass; `UpgradedBridgeDrain` fails: "output 0 pays a legacy script to FROST target", "the Bridge refuses ...: FROST drain mixes schemes" (rechecked with Bitcoin Core: Core mines both, only the Bridge refuses the drain) |
+| `B-chain-clock-margin.base.patch` | base `4c9b65ec4` | `MovingFunds` | fails at "legacy moving-funds proposal": the task made no proposal (safety margin measured on chain time) |
+| `C-code3-only-probe.patch` | integration `ec1084dd` | `MovingFunds/geth-*` at the execution assertion; all cases at the RPC surface assertion | as expected: geth cases "error while resolving FROST target wallets: [execution reverted]"; code-3 cases surface only |
+| `D-cached-probe.patch` | integration `ec1084dd` | `MovingFunds/*+transient-then-success` at the execution assertion (one process per case) | as expected: "error while resolving FROST target wallets: [transient: upstream unavailable]" |
+| `E-startup-probe.patch` | integration `ec1084dd` | `Startup` at the RPC surface assertion | all 4 fail: "eth_call to Bridge@40a11d1d selector 0xb9d91db7 is not in its ABI" |
+| `F-overspend.base.patch` | base `4c9b65ec4` | `MovingFunds` at the Bitcoin Core assertion | fails: "Bitcoin Core refused a broadcast: ... sendrawtransaction: Core error -26: bad-txns-in-belowout" (the outputs exceed the main; nothing but Core checks this) |
+| oracle: registry roles also permit the fixture's own ABI (test-code mutation of `newLegacySurface`) | integration `ec1084dd` | `SurfaceOracle` fixture-getter cases | both fail: "surface oracle: accepted a call outside the 40a11d1d production surface" (`bridge()`, `member()`) |
+
+## Batch 1b (fix review of tuxxy/keep-core#96)
+
+`*.fix.patch` controls apply to the fix head `668d72edd` with the batch-1b
+tests on top (a local scratch commit, never pushed; the accepted manifest names it).
+
+| Patch | Applied to | Must fail | Result recorded 2026-10-28 |
+| --- | --- | --- | --- |
+| `W1-wallets-error-as-legacy.fix.patch` (a failed `wallets()` read taken for a legacy target) | fix + batch-1b tests | `UpgradedBridgeDrainTransient` (both encodings) | both fail: "upgraded Bridge drain after a transient error: output 0 pays a legacy script to FROST target ...", "the Bridge refuses the moving-funds transaction the client broadcast: execution reverted: FROST drain mixes schemes"; the frozen `UpgradedBridgeDrain/code3-0x` still passes under W1 |
+| `W2-live-only-legacy.fix.patch` (only a Live target counts as legacy) | fix + batch-1b tests | `NonLiveTargets` (all four states) | all four fail: "legacy moving-funds execution to a target in state N: error while resolving FROST target wallets: [execution reverted]" and the RPC surface assertion; the frozen `MovingFunds/code3-0x` (Live target) still passes under W2 |

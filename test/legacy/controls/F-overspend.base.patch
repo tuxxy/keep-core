@@ -1,0 +1,14 @@
+diff --git a/pkg/tbtc/moving_funds.go b/pkg/tbtc/moving_funds.go
+index ef246d29a..381c25b29 100644
+--- a/pkg/tbtc/moving_funds.go
++++ b/pkg/tbtc/moving_funds.go
+@@ -550,7 +550,8 @@ func assembleMovingFundsTransaction(
+ 	targetWalletsCount := int64(len(targetWallets))
+ 
+ 	// The sum of all the outputs equal to the input value minus fee.
+-	totalOutputValue := walletMainUtxo.Value - fee
++	// CONTROL F: pay out more than the main holds; only Bitcoin Core notices.
++	totalOutputValue := walletMainUtxo.Value + fee
+ 
+ 	// The remainder left from distributing the total output value evenly
+ 	// among the outputs. It should be added to the value of the last output.

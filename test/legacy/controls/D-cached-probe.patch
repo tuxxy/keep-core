@@ -1,0 +1,48 @@
+diff --git a/pkg/chain/ethereum/frost_movement.go b/pkg/chain/ethereum/frost_movement.go
+index 89770d624..d73ca9e95 100644
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -4,6 +4,7 @@ import (
+ 	"context"
+ 	"errors"
+ 	"fmt"
++	"sync"
+ 
+ 	"github.com/ethereum/go-ethereum/accounts/abi"
+ 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+@@ -255,6 +256,12 @@ func (c *FrostRedemptionChain) ResetMovingFundsTimeout(ctx context.Context, wall
+ 
+ var _ movement.Chain = (*FrostRedemptionChain)(nil)
+ 
++var (
++	controlDProbe  sync.Once
++	controlDErr    error
++	controlDLegacy bool
++)
++
+ // FrostTargetOutputKey implements tbtc.FrostTargetResolver: a label the
+ // Bridge reports as scheme 2 is a FROST wallet, and its output key comes from
+ // its immutable descriptor.
+@@ -262,6 +269,22 @@ func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error
+ 	if tc.frostBridge == nil {
+ 		return [32]byte{}, false, nil
+ 	}
++	// CONTROL D: probe once, recognise both empty-revert encodings, but keep
++	// the first probe's outcome forever, including a transient error.
++	controlDProbe.Do(func() {
++		_, controlDErr = tc.frostBridge.WalletScheme(nil, label)
++		var rpcError interface{ ErrorCode() int }
++		if controlDErr != nil && errors.As(controlDErr, &rpcError) &&
++			(rpcError.ErrorCode() == 3 || rpcError.ErrorCode() == -32000) {
++			controlDLegacy, controlDErr = true, nil
++		}
++	})
++	if controlDErr != nil {
++		return [32]byte{}, false, controlDErr
++	}
++	if controlDLegacy {
++		return [32]byte{}, false, nil
++	}
+ 	scheme, err := tc.frostBridge.WalletScheme(nil, label)
+ 	if err != nil {
+ 		return [32]byte{}, false, err

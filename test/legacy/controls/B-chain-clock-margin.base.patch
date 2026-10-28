@@ -1,0 +1,15 @@
+diff --git a/pkg/tbtc/moving_funds.go b/pkg/tbtc/moving_funds.go
+index ef246d29a..015605a23 100644
+--- a/pkg/tbtc/moving_funds.go
++++ b/pkg/tbtc/moving_funds.go
+@@ -430,7 +430,9 @@ func ValidateMovingFundsSafetyMargin(
+ 
+ 	safetyMarginExpiresAt := walletChainData.MovingFundsRequestedAt.Add(safetyMargin)
+ 
+-	if time.Now().Before(safetyMarginExpiresAt) {
++	// CONTROL B: measure the margin on chain time (here: the chain clock an
++	// hour after MovingFunds was requested) instead of the client's clock.
++	if walletChainData.MovingFundsRequestedAt.Add(time.Hour).Before(safetyMarginExpiresAt) {
+ 		return fmt.Errorf("safety margin in force")
+ 	}
+ 

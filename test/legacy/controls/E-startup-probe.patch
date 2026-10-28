@@ -1,0 +1,13 @@
+diff --git a/pkg/chain/ethereum/tbtc.go b/pkg/chain/ethereum/tbtc.go
+index 7ed6348d3..00a4ab18f 100644
+--- a/pkg/chain/ethereum/tbtc.go
++++ b/pkg/chain/ethereum/tbtc.go
+@@ -126,6 +126,8 @@ func newTbtcChain(
+ 	if err != nil {
+ 		return nil, fmt.Errorf("failed to attach to the FROST Bridge extension: [%v]", err)
+ 	}
++	// CONTROL E: a capability probe at construction whose error is ignored.
++	_, _ = frostBridge.WalletScheme(nil, [20]byte{})
+ 
+ 	maintainerProxyAddress, err := config.ContractAddress(MaintainerProxyContractName)
+ 	if err != nil {

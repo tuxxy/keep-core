@@ -241,6 +241,9 @@ func (p Planner) IncomingSweep(ctx context.Context) (*signing.Plan, error) {
 		return nil, err
 	}
 	var incoming []bitcoin.PreviousOutput
+	// The fee stays within the live proof cap and every included output's
+	// recorded cap, so the sweep is provable now and defensible later.
+	capFee := t.Parameters.MovedFundsSweepTxMaxTotalFee
 	sort.Slice(t.Incoming, func(i, j int) bool {
 		return bytes.Compare(t.Incoming[i].Log.Outpoint[:], t.Incoming[j].Log.Outpoint[:]) < 0
 	})
@@ -249,6 +252,9 @@ func (p Planner) IncomingSweep(ctx context.Context) (*signing.Plan, error) {
 			continue
 		}
 		incoming = append(incoming, bitcoin.PreviousOutput{Outpoint: bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(in.Log.TransactionHash), OutputIndex: in.Log.OutputIndex}, Value: int64(in.Record.Value), PublicKeyScript: script})
+		if in.Record.SweepFeeCap < capFee {
+			capFee = in.Record.SweepFeeCap
+		}
 	}
 	if len(incoming) == 0 {
 		return nil, ErrNothingIncoming
@@ -281,9 +287,9 @@ func (p Planner) IncomingSweep(ctx context.Context) (*signing.Plan, error) {
 		return nil, err
 	}
 	fee := p.FeeRate * sizing.VirtualSize()
-	if uint64(fee) > t.Parameters.MovedFundsSweepTxMaxTotalFee {
-		fee = int64(t.Parameters.MovedFundsSweepTxMaxTotalFee)
+	if uint64(fee) > capFee {
+		fee = int64(capFee)
 	}
 	tx.Outputs[0].Value = total - fee
-	return signing.NewIncomingSweepPlan(signing.IncomingSweepProposal{Wallet: p.Wallet, BitcoinGenesis: p.Genesis, Generation: t.Custody.Generation, StateVersion: t.Custody.StateVersion, Main: main, Incoming: incoming, MaximumFee: int64(t.Parameters.MovedFundsSweepTxMaxTotalFee), MaximumSatPerVByte: p.MaximumSatPerVByte, Transaction: tx})
+	return signing.NewIncomingSweepPlan(signing.IncomingSweepProposal{Wallet: p.Wallet, BitcoinGenesis: p.Genesis, Generation: t.Custody.Generation, StateVersion: t.Custody.StateVersion, Main: main, Incoming: incoming, MaximumFee: int64(capFee), MaximumSatPerVByte: p.MaximumSatPerVByte, Transaction: tx})
 }

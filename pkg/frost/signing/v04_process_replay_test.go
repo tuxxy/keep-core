@@ -220,6 +220,11 @@ func TestV04ProcessReplayChild(t *testing.T) {
 		case e.resultID():
 			return hook("aggregate-durable")
 		}
+		for _, digest := range e.Plan().Snapshot().Digests() {
+			if id == DefenseID(e.Plan().WalletID(), digest) {
+				return hook("defense-durable")
+			}
+		}
 		return fmt.Errorf("unknown public signing record")
 	}
 	engine.afterClaim = func() {

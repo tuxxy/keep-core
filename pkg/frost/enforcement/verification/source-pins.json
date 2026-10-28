@@ -1,0 +1,98 @@
+{
+  "recorded": "2026-10-19",
+  "purpose": "V-09 boundary contract pins; any change re-pins BOUNDARIES.md before the model freeze",
+  "spec": {
+    "repository": "tlabs-xyz/FROST-migration-spec",
+    "files": [
+      {
+        "path": "keep-core-integration-spec.md",
+        "commit": "51b9a168e6b6c73d4d471f7d302267a065407fb5",
+        "blob": "98f8589a48ab95d065d5b95307734d66b93618f1"
+      },
+      {
+        "path": "keep-core-verification-spec.md",
+        "commit": "51b9a168e6b6c73d4d471f7d302267a065407fb5",
+        "blob": "ab1815f31cf311ca5b3b7d04e7a70dd37dfa1d3d",
+        "note": "rev 02, spec PR #4, unmerged"
+      }
+    ]
+  },
+  "keep-core": {
+    "commit": "aac237a73",
+    "files": [
+      {
+        "path": "pkg/frost/signing/executor.go",
+        "blob": "63369d142237465f2074589b17d74b325fb5506b"
+      },
+      {
+        "path": "pkg/frost/signing/done.go",
+        "blob": "c5442d47eecbd14fa40338cf355b7bdba0d2fe9b"
+      },
+      {
+        "path": "pkg/frost/signing/plan.go",
+        "blob": "a8e27b8c86bd59bfe5736385f192f2bf835c96e9"
+      },
+      {
+        "path": "pkg/frost/snowfallengine/engine.go",
+        "blob": "06bf6b7ee887dba2096ae353a12707b947c82ae5"
+      },
+      {
+        "path": "pkg/frost/engine.go",
+        "blob": "2275eb6a4d604d9340d083187b2c556a448796a7"
+      },
+      {
+        "path": "pkg/frost/transport/transport.go",
+        "blob": "4cbf4a308ee9b4df9d9944b09ea99cde3b38b309"
+      },
+      {
+        "path": "pkg/frost/store/signing.go",
+        "blob": "40a00d3ddf5168a55aff09ee12d092a71e5dac5b"
+      },
+      {
+        "path": "pkg/tbtc/heartbeat.go",
+        "blob": "c86afd88db60c9c5e8fe131b054a2bd38dfb5ea8"
+      },
+      {
+        "path": "pkg/tbtc/inactivity.go",
+        "blob": "f65c43d99523cc9bbf78c01bdaaffe41d7c6a4e5"
+      },
+      {
+        "path": "pkg/chain/ethereum/frostbridgeabi/bridge.go",
+        "blob": "16462e796ce059f0ec25865ee1b60d7f0ef92923"
+      }
+    ]
+  },
+  "tbtc-v2": {
+    "commit": "677da343",
+    "files": [
+      {
+        "path": "solidity/contracts/frost/FrostFraud.sol",
+        "blob": "ba54eaaee56e61d2367014ec1cc3b08b4e8c5a60"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostFraudState.sol",
+        "blob": "bbc38cc6d7db7a07256cf6c04672019fcfe996d0"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostLifecycle.sol",
+        "blob": "ed1587e4e78904a912a1681dccb3798794f77cc9"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostMovementState.sol",
+        "blob": "c4ec30b7d98c69b7be45ad5a47de6ff164a6be58"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostFundingState.sol",
+        "blob": "20e4d52adef77cf8dd571dc1038c54e9fbb6cdb0"
+      },
+      {
+        "path": "solidity/contracts/bridge/Fraud.sol",
+        "blob": "66b2e96e25f666ad3bb543df751f935e26709ba6"
+      },
+      {
+        "path": "solidity/contracts/bridge/Heartbeat.sol",
+        "blob": "8e8c7dfb646b0ecc6dbc9f968511e60c6f9ece2d"
+      }
+    ]
+  }
+}

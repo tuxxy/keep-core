@@ -39,6 +39,7 @@ cd "$kc_root"
 go test -c -o "$evidence/tbtc.test" ./pkg/tbtc
 
 cases=(
+	'^TestLegacyUnchanged_SurfaceOracle$'
 	'^TestLegacyUnchanged_EmptyRevertEncodings$'
 )
 for encoding in code3-0x geth-32000-nodata; do

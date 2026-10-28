@@ -221,27 +221,41 @@ func (b *legacyBaseline) verifySources(artifactPath string) {
 	}
 	checked := 0
 	for source, input := range info.Input.Sources {
-		// hardhat-dependency-compiler writes one-line import shims under
-		// contracts/hardhat-dependency-compiler; they are generated, not
-		// tracked, and pull in node_modules sources fixed by the lock.
-		if !strings.HasPrefix(source, "contracts/") ||
-			strings.HasPrefix(source, "contracts/hardhat-dependency-compiler/") {
-			continue
-		}
-		out, err := exec.Command(
-			"git", "-C", b.repo, "show",
-			b.commit+":solidity/"+source,
-		).Output()
-		if err != nil {
-			b.t.Fatalf("build source %s not at %s: %v", source, b.commit, err)
-		}
-		if string(out) != input.Content {
-			b.t.Fatalf("build source %s differs from %s", source, b.commit)
+		switch {
+		case strings.HasPrefix(source, "contracts/hardhat-dependency-compiler/"):
+			// hardhat-dependency-compiler writes generated import shims:
+			// they may hold nothing but a pragma, a licence and imports.
+			for _, line := range strings.Split(input.Content, "\n") {
+				line = strings.TrimSpace(line)
+				if line != "" && !strings.HasPrefix(line, "//") &&
+					!strings.HasPrefix(line, "pragma ") && !strings.HasPrefix(line, "import ") {
+					b.t.Fatalf("build shim %s holds code", source)
+				}
+			}
+		case strings.HasPrefix(source, "contracts/"):
+			out, err := exec.Command(
+				"git", "-C", b.repo, "show",
+				b.commit+":solidity/"+source,
+			).Output()
+			if err != nil {
+				b.t.Fatalf("build source %s not at %s: %v", source, b.commit, err)
+			}
+			if string(out) != input.Content {
+				b.t.Fatalf("build source %s differs from %s", source, b.commit)
+			}
+		default:
+			// A dependency: it must equal the node_modules file installed
+			// from the build commit's yarn.lock (build-baseline.sh checks
+			// the lock).
+			out, err := os.ReadFile(filepath.Join(b.dir, "solidity", "node_modules", source))
+			if err != nil || string(out) != input.Content {
+				b.t.Fatalf("build dependency source %s differs from node_modules", source)
+			}
 		}
 		checked++
 	}
 	if checked == 0 {
-		b.t.Fatalf("baseline build info %s holds no repository sources", infoPath)
+		b.t.Fatalf("build info %s holds no sources", infoPath)
 	}
 	b.verified[infoPath] = true
 }
@@ -1321,13 +1335,16 @@ type legacyWorld struct {
 	registryABI  abi.ABI
 	relayABI     abi.ABI
 
-	bridge    common.Address
-	bank      common.Address
-	validator common.Address
-	registry  common.Address
-	relay     common.Address
-	legacy    *tbtcabi.Bridge
-	fixture   *bind.BoundContract
+	bridge common.Address
+	bank   common.Address
+	// reimbursementPool and maintainerProxy are real 40a11d1d contracts.
+	reimbursementPool common.Address
+	maintainerProxy   common.Address
+	validator         common.Address
+	registry          common.Address
+	relay             common.Address
+	legacy            *tbtcabi.Bridge
+	fixture           *bind.BoundContract
 
 	btc     *legacyRegtest
 	source  legacyWallet
@@ -1473,6 +1490,9 @@ func newLegacyWorldOn(t *testing.T, env legacyEnvironment, build *legacyBaseline
 		implementation, proxyAdmin, initializer,
 	)
 	w.validator, w.validatorABI = w.deployBaseline(libraries, "contracts/bridge/WalletProposalValidator.sol", "WalletProposalValidator", w.bridge)
+	w.reimbursementPool = reimbursementPool
+	// The real MaintainerProxy: the client attaches to it at startup.
+	w.maintainerProxy, _ = w.deployBaseline(libraries, "contracts/maintainer/MaintainerProxy.sol", "MaintainerProxy", w.bridge, reimbursementPool)
 
 	pool := bind.NewBoundContract(reimbursementPool, reimbursementABI, w.admin, w.admin, w.admin)
 	w.send("reimbursement authorization", func(o *bind.TransactOpts) (*types.Transaction, error) {
@@ -1679,10 +1699,10 @@ func (w *legacyWorld) clientConfig(url string) commonethereum.Config {
 		MiningCheckInterval: time.Second,
 	}
 	// FIXTURE: the registry fixture also answers the RandomBeacon and
-	// TokenStaking startup reads; no MaintainerProxy is called on this path.
+	// TokenStaking startup reads (legacySurface models those roles).
 	config.SetContractAddress(chainethereum.RandomBeaconContractName, w.registry.Hex())
 	config.SetContractAddress(chainethereum.TokenStakingContractName, w.registry.Hex())
-	config.SetContractAddress(chainethereum.MaintainerProxyContractName, w.registry.Hex())
+	config.SetContractAddress(chainethereum.MaintainerProxyContractName, w.maintainerProxy.Hex())
 	config.SetContractAddress(chainethereum.BridgeContractName, w.bridge.Hex())
 	config.SetContractAddress(chainethereum.WalletProposalValidatorContractName, w.validator.Hex())
 	return config
@@ -1751,33 +1771,111 @@ func legacySelectors(parsed abi.ABI) map[string]string {
 	return selectors
 }
 
-// assertBaselineSurface is the RPC half of the invariant: every contract call
-// the client made went to a deployed pre-FROST contract and used a function
-// that contract's 40a11d1d ABI (or the labelled fixture's ABI) defines.
-func (w *legacyWorld) assertBaselineSurface(t *testing.T, what string, calls []legacyRPCCall) {
-	t.Helper()
-	surfaces := map[common.Address]struct {
-		name      string
-		selectors map[string]string
-	}{
-		w.bridge:    {"Bridge@40a11d1d", legacySelectors(w.bridgeABI)},
-		w.validator: {"WalletProposalValidator@40a11d1d", legacySelectors(w.validatorABI)},
-		w.registry:  {"registry FIXTURE", legacySelectors(w.registryABI)},
+// legacyRole is one client-visible production role and its pinned ABI.
+type legacyRole struct {
+	name string
+	abi  abi.ABI
+}
+
+// legacySurface maps each deployed address to the production roles it plays.
+// It is the D14 oracle (provisional reading: base functions only, any count
+// and order). Permitted selectors come only from production ABIs pinned by
+// the build (40a11d1d sources, or node_modules fixed by its yarn.lock), bound
+// to the address that plays the role. A fixture's own ABI never counts: the
+// registry FIXTURE address is permitted exactly the union of the production
+// roles it stands in for. Fixture setup and admin calls go straight to Anvil
+// and never appear in a client trace.
+type legacySurface map[common.Address][]legacyRole
+
+type legacyAddresses struct {
+	bridge, validator, bank, reimbursementPool, relay, maintainerProxy, registry common.Address
+}
+
+// nodeModulesABI reads a dependency artifact pinned by the build's yarn.lock.
+func (b *legacyBaseline) nodeModulesABI(path string) abi.ABI {
+	b.t.Helper()
+	raw, err := os.ReadFile(filepath.Join(b.dir, "solidity", "node_modules", path))
+	if err != nil {
+		b.t.Fatalf("dependency artifact %s: %v", path, err)
 	}
+	var artifact struct {
+		ABI json.RawMessage `json:"abi"`
+	}
+	if err := json.Unmarshal(raw, &artifact); err != nil {
+		b.t.Fatal(err)
+	}
+	parsed, err := abi.JSON(bytes.NewReader(artifact.ABI))
+	if err != nil {
+		b.t.Fatal(err)
+	}
+	return parsed
+}
+
+func (b *legacyBaseline) buildABI(source, name string) abi.ABI {
+	b.t.Helper()
+	parsed, err := abi.JSON(bytes.NewReader(b.artifact(source, name).ABI))
+	if err != nil {
+		b.t.Fatal(err)
+	}
+	return parsed
+}
+
+// newLegacySurface binds each production role to its address.
+func newLegacySurface(b *legacyBaseline, a legacyAddresses) legacySurface {
+	role := func(name string, parsed abi.ABI) legacyRole { return legacyRole{name: name, abi: parsed} }
+	surface := legacySurface{
+		a.bridge:            {role("Bridge", b.buildABI("contracts/bridge/Bridge.sol", "Bridge"))},
+		a.validator:         {role("WalletProposalValidator", b.buildABI("contracts/bridge/WalletProposalValidator.sol", "WalletProposalValidator"))},
+		a.bank:              {role("Bank", b.buildABI("contracts/bank/Bank.sol", "Bank"))},
+		a.reimbursementPool: {role("ReimbursementPool", b.buildABI("@keep-network/random-beacon/contracts/ReimbursementPool.sol", "ReimbursementPool"))},
+		a.relay:             {role("LightRelay", b.buildABI("contracts/relay/LightRelay.sol", "LightRelay"))},
+		a.maintainerProxy:   {role("MaintainerProxy", b.buildABI("contracts/maintainer/MaintainerProxy.sol", "MaintainerProxy"))},
+		// The registry FIXTURE stands in for four production roles: the
+		// ECDSA WalletRegistry, the RandomBeacon, TokenStaking (both name it
+		// as staking()) and the sortition pool both name (sortitionPool()).
+		a.registry: {
+			role("WalletRegistry", b.buildABI("@keep-network/ecdsa/contracts/WalletRegistry.sol", "WalletRegistry")),
+			role("SortitionPool", b.buildABI("@keep-network/sortition-pools/contracts/SortitionPool.sol", "SortitionPool")),
+			role("RandomBeacon", b.nodeModulesABI("@keep-network/random-beacon/artifacts/RandomBeacon.json")),
+			role("TokenStaking", b.nodeModulesABI("@threshold-network/solidity-contracts/artifacts/TokenStaking.json")),
+		},
+	}
+	return surface
+}
+
+func (w *legacyWorld) surface() legacySurface {
+	return newLegacySurface(w.baseline, legacyAddresses{
+		bridge: w.bridge, validator: w.validator, bank: w.bank,
+		reimbursementPool: w.reimbursementPool, relay: w.relay,
+		maintainerProxy: w.maintainerProxy, registry: w.registry,
+	})
+}
+
+// violations lists every distinct call outside the surface, with its count.
+func (s legacySurface) violations(calls []legacyRPCCall) []string {
 	var violations []string
 	counts := map[string]int{}
 	for _, call := range calls {
 		if call.Selector == "" {
 			continue
 		}
+		roles, ok := s[call.To]
 		var violation string
-		surface, ok := surfaces[call.To]
 		if !ok {
 			violation = fmt.Sprintf("%s to unknown %s selector 0x%s", call.Method, call.To.Hex(), call.Selector)
-		} else if _, ok := surface.selectors[call.Selector]; !ok {
-			violation = fmt.Sprintf("%s to %s selector 0x%s is not in its ABI", call.Method, surface.name, call.Selector)
 		} else {
-			continue
+			permitted := false
+			var names []string
+			for _, r := range roles {
+				names = append(names, r.name)
+				_, found := legacySelectors(r.abi)[call.Selector]
+				permitted = permitted || found
+			}
+			if permitted {
+				continue
+			}
+			violation = fmt.Sprintf("%s to %s@40a11d1d selector 0x%s is not in its ABI",
+				call.Method, strings.Join(names, "+"), call.Selector)
 		}
 		if counts[violation] == 0 {
 			violations = append(violations, violation)
@@ -1787,6 +1885,15 @@ func (w *legacyWorld) assertBaselineSurface(t *testing.T, what string, calls []l
 	for i, violation := range violations {
 		violations[i] = fmt.Sprintf("%s (x%d)", violation, counts[violation])
 	}
+	return violations
+}
+
+// assertBaselineSurface is the RPC half of the invariant: every contract call
+// the client made used a function of a production role played at that
+// address (legacySurface).
+func (w *legacyWorld) assertBaselineSurface(t *testing.T, what string, calls []legacyRPCCall) {
+	t.Helper()
+	violations := w.surface().violations(calls)
 	if len(violations) > 0 {
 		t.Errorf("%s: legacy RPC surface: the client called functions the pre-FROST system does not have:\n  %s",
 			what, strings.Join(violations, "\n  "))

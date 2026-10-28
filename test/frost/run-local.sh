@@ -21,6 +21,8 @@ cmp pkg/chain/ethereum/frostabi/contracts.go "$evidence_dir/contracts.go"
 go test -json ./pkg/frost/... -count=1 > "$evidence_dir/host-normal.jsonl" 2>&1
 go test -race -json ./pkg/frost/... -count=1 > "$evidence_dir/host-race.jsonl" 2>&1
 go test -json ./pkg/tecdsa/... ./pkg/tbtc/... ./pkg/bitcoin/... ./pkg/chain/ethereum -count=1 > "$evidence_dir/legacy-go.jsonl" 2>&1
+# Legacy regression for ./config and ./cmd; fails the run unless accepted (tuxxy/keep-core#42).
+test/remediation/check-config-cmd.sh "$evidence_dir/config-cmd" > "$evidence_dir/config-cmd.log" 2>&1
 go vet ./pkg/frost/... ./pkg/chain/ethereum ./pkg/tbtc > "$evidence_dir/host-vet.log" 2>&1
 cd "$sf_root/clients/go"
 go test -json ./... -count=1 > "$evidence_dir/client-normal.jsonl" 2>&1

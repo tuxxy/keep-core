@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/txscript"
 )
@@ -188,4 +189,13 @@ func ExtractPublicKeyHash(script Script) ([20]byte, error) {
 	copy(publicKeyHash[:], publicKeyHashBytes)
 
 	return publicKeyHash, nil
+}
+
+// PayToTaproot uses the already-tweaked x-only output key Q without a second
+// tweak. It does not expand the allowed legacy redemption recipient set.
+func PayToTaproot(outputKey [32]byte) (Script, error) {
+	if _, err := schnorr.ParsePubKey(outputKey[:]); err != nil {
+		return nil, fmt.Errorf("invalid Taproot output key: %w", err)
+	}
+	return txscript.NewScriptBuilder().AddOp(txscript.OP_1).AddData(outputKey[:]).Script()
 }

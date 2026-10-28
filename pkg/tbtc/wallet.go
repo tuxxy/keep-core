@@ -313,10 +313,10 @@ func (wte *walletTransactionExecutor) setTransactionMonitor(
 // same transaction.
 func (wte *walletTransactionExecutor) trackTransaction(txHash bitcoin.Hash) {
 	if wte.transactionMonitor != nil {
-		wte.transactionMonitor.track(
-			txHash,
-			bitcoin.PublicKeyHash(wte.executingWallet.publicKey),
-		)
+		identity, err := NewECDSAWalletIdentity(wte.executingWallet.publicKey)
+		if err == nil {
+			_ = wte.transactionMonitor.trackWallet(txHash, identity)
+		}
 	}
 }
 
@@ -343,59 +343,21 @@ func (wte *walletTransactionExecutor) signTransaction(
 	signingStartBlock uint64,
 	signingTimeoutBlock uint64,
 ) (*bitcoin.Transaction, error) {
-	signTxLogger.Infof("computing transaction's sig hashes")
-
-	sigHashes, err := unsignedTx.ComputeSignatureHashes()
+	identity, err := NewECDSAWalletIdentity(wte.executingWallet.publicKey)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"error while computing transaction's sig hashes: [%v]",
-			err,
-		)
+		return nil, err
 	}
-
-	signTxLogger.Infof("signing transaction's sig hashes")
-
-	signingCtx, cancelSigningCtx := withCancelOnBlock(
-		context.Background(),
-		signingTimeoutBlock,
-		wte.waitForBlockFn,
-	)
-	defer cancelSigningCtx()
-
-	signatures, err := wte.signingExecutor.signBatch(
-		signingCtx,
-		sigHashes,
-		signingStartBlock,
-	)
+	signingCtx, cancel := withCancelOnBlock(context.Background(), signingTimeoutBlock, wte.waitForBlockFn)
+	defer cancel()
+	signTxLogger.Infof("signing transaction for [%s]", identity)
+	result, err := SignWalletTransaction(signingCtx, WalletTransactionRequest{
+		Wallet: identity, LegacyBuilder: unsignedTx, LegacySigner: wte.signingExecutor.signBatch,
+		LegacyStartBlock: signingStartBlock,
+	})
 	if err != nil {
-		return nil, fmt.Errorf(
-			"error while signing transaction's sig hashes: [%v]",
-			err,
-		)
+		return nil, fmt.Errorf("error while signing transaction: [%v]", err)
 	}
-
-	signTxLogger.Infof("applying transaction's signatures")
-
-	containers := make([]*bitcoin.SignatureContainer, len(signatures))
-	for i, signature := range signatures {
-		containers[i] = &bitcoin.SignatureContainer{
-			R:         signature.R,
-			S:         signature.S,
-			PublicKey: wte.executingWallet.publicKey,
-		}
-	}
-
-	tx, err := unsignedTx.AddSignatures(containers)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error while applying transaction's signatures: [%v]",
-			err,
-		)
-	}
-
-	signTxLogger.Infof("transaction created successfully")
-
-	return tx, nil
+	return result.Transaction, nil
 }
 
 // broadcastTransaction broadcasts a signed Bitcoin transaction until
@@ -540,6 +502,9 @@ func (w *wallet) membersByOperator(operator chain.Address) []group.MemberIndex {
 }
 
 func (w *wallet) String() string {
+	if w == nil || w.publicKey == nil {
+		return "invalid ECDSA wallet"
+	}
 	publicKey := secp256k1.Marshal(w.publicKey)
 
 	return fmt.Sprintf("public key [0x%x]", publicKey)

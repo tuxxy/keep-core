@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -260,7 +261,7 @@ func TestRealWorkerDurableAuthenticatedReload(t *testing.T) {
 					t.Fatal("missing acceptance accepted")
 				}
 				r.Participants = []uint16{1, 1, 3}
-				if _, e := engines[i].DKG(ctx, r, frost.Providers{Transport: ts[i], Acceptance: testFinality{}}); e == nil {
+				if _, e := engines[i].DKG(ctx, r, frost.Providers{Transport: ts[i], Acceptance: testFinality{}, SigningAuthorization: testFinality{}}); e == nil {
 					t.Fatal("malformed participants accepted")
 				}
 			}
@@ -270,7 +271,7 @@ func TestRealWorkerDurableAuthenticatedReload(t *testing.T) {
 				go func(i int, seats []uint16) {
 					defer wg.Done()
 					a, _ := ts[i].Binding()
-					keys[i], errs[i] = engines[i].DKG(ctx, frost.DKGRequest{Group: frost.Group{Roster: []uint16{1, 2, 3}, Threshold: 2, Epoch: 77}, LocalSeats: seats, Attempt: a}, frost.Providers{Transport: ts[i], Acceptance: testFinality{}})
+					keys[i], errs[i] = engines[i].DKG(ctx, frost.DKGRequest{Group: frost.Group{Roster: []uint16{1, 2, 3}, Threshold: 2, Epoch: 77}, LocalSeats: seats, Attempt: a}, frost.Providers{Transport: ts[i], Acceptance: testFinality{}, SigningAuthorization: testFinality{}})
 				}(i, seats)
 			}
 			wg.Wait()
@@ -296,12 +297,12 @@ func TestRealWorkerDurableAuthenticatedReload(t *testing.T) {
 			// Kill the first signing operation after its worker releases a commitment.
 			// No peer runs a worker for this attempt, so it cannot complete normally.
 			a, _ := ts[0].Binding()
-			aborted := frost.SigningRequest{Group: frost.Group{Roster: []uint16{1, 2, 3}, Threshold: 2, Epoch: 77}, LocalSeats: nodes[0], Selected: []uint16{1, 2, 3}, Attempt: a, Key: keys[0], Message: sha256.Sum256([]byte("aborted intent"))}
+			aborted := frost.SigningRequest{Group: frost.Group{Roster: []uint16{1, 2, 3}, Threshold: 2, Epoch: 77}, LocalSeats: nodes[0], Selected: []uint16{1, 2, 3}, Attempt: a, Key: keys[0], Message: sha256.Sum256([]byte("aborted intent")), Authorization: testGrant(sha256.Sum256([]byte("aborted intent")))}
 			notified := &notifyTransport{Transport: ts[0], sent: make(chan struct{})}
 			abortCtx, abort := context.WithCancel(ctx)
 			abortResult := make(chan error, 1)
 			go func() {
-				_, e := engines[0].Sign(abortCtx, aborted, frost.Providers{Transport: notified, Acceptance: testFinality{}})
+				_, e := engines[0].Sign(abortCtx, aborted, frost.Providers{Transport: notified, Acceptance: testFinality{}, SigningAuthorization: testFinality{}})
 				abortResult <- e
 			}()
 			select {
@@ -326,7 +327,7 @@ func TestRealWorkerDurableAuthenticatedReload(t *testing.T) {
 				t.Fatal(e)
 			}
 			openStore(0)
-			if _, e := engines[0].Sign(ctx, aborted, frost.Providers{Transport: ts[0], Acceptance: testFinality{}}); e == nil {
+			if _, e := engines[0].Sign(ctx, aborted, frost.Providers{Transport: ts[0], Acceptance: testFinality{}, SigningAuthorization: testFinality{}}); e == nil {
 				t.Fatal("aborted signing attempt resumed after reopen")
 			}
 			for _, tr := range ts {
@@ -338,11 +339,11 @@ func TestRealWorkerDurableAuthenticatedReload(t *testing.T) {
 			requests := make([]frost.SigningRequest, len(nodes))
 			for i, seats := range nodes {
 				a, _ := ts[i].Binding()
-				requests[i] = frost.SigningRequest{Group: frost.Group{Roster: []uint16{1, 2, 3}, Threshold: 2, Epoch: 77}, LocalSeats: seats, Selected: []uint16{1, 2, 3}, Attempt: a, Key: keys[i], Message: message}
+				requests[i] = frost.SigningRequest{Group: frost.Group{Roster: []uint16{1, 2, 3}, Threshold: 2, Epoch: 77}, LocalSeats: seats, Selected: []uint16{1, 2, 3}, Attempt: a, Key: keys[i], Message: message, Authorization: testGrant(message)}
 				wg.Add(1)
 				go func(i int) {
 					defer wg.Done()
-					sigs[i], errs[i] = engines[i].Sign(ctx, requests[i], frost.Providers{Transport: ts[i], Acceptance: testFinality{}})
+					sigs[i], errs[i] = engines[i].Sign(ctx, requests[i], frost.Providers{Transport: ts[i], Acceptance: testFinality{}, SigningAuthorization: testFinality{}})
 				}(i)
 			}
 			wg.Wait()
@@ -370,7 +371,7 @@ func TestRealWorkerDurableAuthenticatedReload(t *testing.T) {
 			if sig.Verify(wrong[:], pub) {
 				t.Fatal("signature accepted changed message")
 			}
-			if _, e = engines[0].Sign(ctx, requests[0], frost.Providers{Transport: ts[0], Acceptance: testFinality{}}); e == nil {
+			if _, e = engines[0].Sign(ctx, requests[0], frost.Providers{Transport: ts[0], Acceptance: testFinality{}, SigningAuthorization: testFinality{}}); e == nil {
 				t.Fatal("finished signing claim reused")
 			}
 			for _, tr := range ts {
@@ -427,4 +428,16 @@ func killOwnedWorker(t *testing.T, path string) {
 	if e = p.Kill(); e != nil {
 		t.Fatal(e)
 	}
+}
+
+// This harness has no transaction proposal. Its exact raw-digest grant is an
+// explicit test fixture, not a substitute for K-04 purpose authorization.
+func testGrant(message [32]byte) []byte {
+	return append([]byte("K02/explicit-test-digest-grant/"), message[:]...)
+}
+func (testFinality) BeforeSigning(_ context.Context, r frost.SigningRequest) error {
+	if !bytes.Equal(r.Authorization, testGrant(r.Message)) {
+		return errors.New("test digest grant changed")
+	}
+	return nil
 }

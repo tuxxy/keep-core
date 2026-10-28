@@ -19,7 +19,7 @@ if [ "${1:-}" = "-run" ]; then
   shift 2
 fi
 # Tests known to dominate the package; each runs alone.
-long='^(TestV04C04ProjectionReplay|TestV04C04WeakenedExpectationsFail|TestReservationTimeoutRace)$'
+long='^(TestV04C04ProjectionReplay|TestV04C04WeakenedExpectationsFail|TestReservationTimeoutRace|TestCrossSchemeDrainAndSweep|TestMovementTargetStateRace|TestMovementCommittedFeeCap|TestNoTargetAndDustRecovery|TestCloseWithPendingObligations)$'
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT

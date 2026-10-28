@@ -66,6 +66,8 @@ type Plan struct {
 	cancellation *cancellationIntent
 	// sweep is set only for a K-06 deposit sweep.
 	sweep *sweepIntent
+	// movement is set only for a K-07 movement or incoming sweep.
+	movement *movementIntent
 }
 
 func NewPlan(p Proposal) (*Plan, error) {

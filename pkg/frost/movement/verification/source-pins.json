@@ -1,0 +1,110 @@
+{
+  "recorded": "2026-10-19",
+  "purpose": "V-08 boundary contract pins; any change re-pins BOUNDARIES.md before the model freeze",
+  "spec": {
+    "repository": "tlabs-xyz/FROST-migration-spec",
+    "files": [
+      {
+        "path": "keep-core-integration-spec.md",
+        "commit": "51b9a168e6b6c73d4d471f7d302267a065407fb5",
+        "blob": "98f8589a48ab95d065d5b95307734d66b93618f1"
+      },
+      {
+        "path": "keep-core-verification-spec.md",
+        "commit": "51b9a168e6b6c73d4d471f7d302267a065407fb5",
+        "blob": "ab1815f31cf311ca5b3b7d04e7a70dd37dfa1d3d",
+        "note": "rev 02, spec PR #4, unmerged"
+      }
+    ]
+  },
+  "keep-core": {
+    "commit": "cb7ae6a2c",
+    "files": [
+      {
+        "path": "pkg/frost/deposit/lock.go",
+        "blob": "62eaef2d42d9bbcebf71c000cfa7b5f40391633f"
+      },
+      {
+        "path": "pkg/frost/deposit/sweeper.go",
+        "blob": "2c8a8643127406cc5b2922b4814e456e55bd9cf5"
+      },
+      {
+        "path": "pkg/frost/deposit/planner.go",
+        "blob": "4970ea18438922a1a9b01a62cedb9b744372bbc9"
+      },
+      {
+        "path": "pkg/frost/deposit/authority.go",
+        "blob": "325e6355abad4909b0879116c684f850d747d538"
+      },
+      {
+        "path": "pkg/frost/signing/executor.go",
+        "blob": "833f84c0584d33f052dd6fc1a4cc22c37b3c9d20"
+      },
+      {
+        "path": "pkg/frost/signing/sweep.go",
+        "blob": "600941fede65b341a2c2a83cd43d4cce4f3748ed"
+      },
+      {
+        "path": "pkg/frost/redemption/ledger.go",
+        "blob": "3cbb8ee104cca188a93057d24cfccff5602da856"
+      },
+      {
+        "path": "pkg/frost/store/signing.go",
+        "blob": "40a00d3ddf5168a55aff09ee12d092a71e5dac5b"
+      },
+      {
+        "path": "pkg/maintainer/spv/frost_sweeps.go",
+        "blob": "1b2f9728fa52eb56169fe725a4b64628aa663229"
+      },
+      {
+        "path": "pkg/tbtc/moving_funds.go",
+        "blob": "ef246d29aab1e8fb98834062478519670afff85b"
+      },
+      {
+        "path": "pkg/tbtc/moved_funds_sweep.go",
+        "blob": "bed27173a4d91ab91e495e7af671fa04ed6cf123"
+      },
+      {
+        "path": "pkg/tbtc/node_wallet_closure.go",
+        "blob": "25b5f68c7114950f27fcb546d277148753c12970"
+      }
+    ]
+  },
+  "tbtc-v2": {
+    "commit": "2c4c3fb4",
+    "files": [
+      {
+        "path": "solidity/contracts/bridge/MovingFunds.sol",
+        "blob": "e7f22c6a18d1a207545ee812e12e90c260e3cd61"
+      },
+      {
+        "path": "solidity/contracts/bridge/Wallets.sol",
+        "blob": "7378f3e4ed11dbb84b3381c7b72a1bb4919cae52"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostWallets.sol",
+        "blob": "9f6092236839548c13f94bde539a79437906a1d8"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostCustody.sol",
+        "blob": "5fae71a81102819dd817cf8f1997380e83d73efd"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostDepositSweep.sol",
+        "blob": "512cc94a153c286e5ff377664b709b1e8db817ca"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostDepositAdmission.sol",
+        "blob": "b84241af4355b7bcabed1427b27d592c3a03237c"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostBridge.sol",
+        "blob": "fb4fa7ad0aab09ec02f88f46af1f2ab640ac92c4"
+      },
+      {
+        "path": "solidity/contracts/frost/FrostSigningIntent.sol",
+        "blob": "e5ccc4c18e3a5ef6b47adc1caaced47c2f2b5939"
+      }
+    ]
+  }
+}

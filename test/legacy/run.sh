@@ -7,6 +7,8 @@
 #   LEGACY_BASELINE_DIR  output of test/legacy/build-baseline.sh
 #   LEGACY_TBTC_REPO     tbtc-v2 git repository holding 40a11d1d
 #   LEGACY_ANVIL         Anvil executable
+#   LEGACY_UPGRADED_DIR  build-baseline.sh output for the upgraded Bridge
+#   LEGACY_UPGRADED_COMMIT  the tbtc-v2 commit that build was made from
 #
 # Every case runs in its own process, so state a client keeps in package
 # variables (a cached probe, say) cannot leak from one case into another.
@@ -16,6 +18,8 @@ umask 077
 : "${LEGACY_BASELINE_DIR:?run test/legacy/build-baseline.sh first}"
 : "${LEGACY_TBTC_REPO:?tbtc-v2 git repository required}"
 : "${LEGACY_ANVIL:?Anvil required}"
+: "${LEGACY_UPGRADED_DIR:?upgraded Bridge build required}"
+: "${LEGACY_UPGRADED_COMMIT:?upgraded Bridge commit required}"
 evidence=${1:?evidence directory required}
 mkdir -p "$evidence"
 evidence=$(cd "$evidence" && pwd)
@@ -28,6 +32,7 @@ cases=(
 	'^TestLegacyUnchanged_EmptyRevertEncodings$'
 )
 for encoding in code3-0x geth-32000-nodata; do
+	cases+=("^TestLegacyUnchanged_UpgradedBridgeDrain$/^${encoding}$")
 	for variant in "" "+transient-then-success"; do
 		cases+=("^TestLegacyUnchanged_Startup$/^${encoding}${variant//+/\\+}$")
 		cases+=("^TestLegacyUnchanged_MovingFunds$/^${encoding}${variant//+/\\+}$")

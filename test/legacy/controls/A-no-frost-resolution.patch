@@ -1,0 +1,13 @@
+diff --git a/pkg/chain/ethereum/frost_movement.go b/pkg/chain/ethereum/frost_movement.go
+index 89770d624..024df8b23 100644
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -259,7 +259,7 @@ var _ movement.Chain = (*FrostRedemptionChain)(nil)
+ // Bridge reports as scheme 2 is a FROST wallet, and its output key comes from
+ // its immutable descriptor.
+ func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error) {
+-	if tc.frostBridge == nil {
++	if tc.frostBridge == nil || true { // CONTROL fix-shaped: never resolve FROST targets
+ 		return [32]byte{}, false, nil
+ 	}
+ 	scheme, err := tc.frostBridge.WalletScheme(nil, label)

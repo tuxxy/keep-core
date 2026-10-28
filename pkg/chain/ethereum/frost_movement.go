@@ -258,8 +258,20 @@ var _ movement.Chain = (*FrostRedemptionChain)(nil)
 // FrostTargetOutputKey implements tbtc.FrostTargetResolver: a label the
 // Bridge reports as scheme 2 is a FROST wallet, and its output key comes from
 // its immutable descriptor.
+//
+// A target the Bridge registered as a legacy wallet is recognized through the
+// base wallets(bytes20) getter, which every Bridge has, so a pre-FROST Bridge
+// is never asked a FROST-only function (D14). Only a label unknown to the
+// legacy registry, which a FROST drain commitment names, reaches walletScheme.
 func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error) {
 	if tc.frostBridge == nil {
+		return [32]byte{}, false, nil
+	}
+	legacy, err := tc.bridge.Wallets(label)
+	if err != nil {
+		return [32]byte{}, false, err
+	}
+	if legacy.State != uint8(tbtc.StateUnknown) {
 		return [32]byte{}, false, nil
 	}
 	scheme, err := tc.frostBridge.WalletScheme(nil, label)

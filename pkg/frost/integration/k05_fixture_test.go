@@ -139,8 +139,19 @@ func (j *hookedJournal) lastDone() []byte {
 
 func newK05World(t *testing.T) *k05World {
 	t.Helper()
+	return newK05WorldWith(t, nil)
+}
+
+// newK05WorldWith runs beforeDKG after deployment and before the DKG starts,
+// so a test can wrap the executors (for example to choose the readiness
+// certificate). nil is newK05World.
+func newK05WorldWith(t *testing.T, beforeDKG func(*fixture)) *k05World {
+	t.Helper()
 	f := setupWith(t, "1,1,2", setupOptions{timeout: 15 * time.Minute, mode: "k05"})
 	core := startCore(t, f.ctx)
+	if beforeDKG != nil {
+		beforeDKG(f)
+	}
 	records, errs := f.run()
 	for i, err := range errs {
 		if err != nil {

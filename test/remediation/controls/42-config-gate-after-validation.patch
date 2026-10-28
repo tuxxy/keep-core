@@ -1,0 +1,26 @@
+diff --git a/config/config.go b/config/config.go
+index 2d3e9ebf1..73b3e4981 100644
+--- a/config/config.go
++++ b/config/config.go
+@@ -143,11 +143,6 @@ func (c *Config) ReadConfig(configFilePath string, flagSet *pflag.FlagSet, categ
+ 		return fmt.Errorf("unable to unmarshal config: %w", err)
+ 	}
+ 
+-	// Refuse the local-only FROST switch before chain configuration or
+-	// operator credentials are used.
+-	if err := c.Frost.ValidateNode(); err != nil {
+-		return err
+-	}
+ 
+ 	// Resolve contracts addresses.
+ 	c.resolveContractsAddresses()
+@@ -170,6 +165,9 @@ func (c *Config) ReadConfig(configFilePath string, flagSet *pflag.FlagSet, categ
+ 	if err := validateConfig(c, categories...); err != nil {
+ 		return fmt.Errorf("validation failed: %w", err)
+ 	}
++	if err := c.Frost.ValidateNode(); err != nil {
++		return err
++	}
+ 
+ 	// Don't use viper.BindEnv for password reading as it's too sensitive value
+ 	// to read it with an external library.

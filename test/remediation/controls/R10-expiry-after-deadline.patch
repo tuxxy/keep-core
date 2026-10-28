@@ -1,0 +1,13 @@
+diff --git a/solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol b/solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol
+index 3cd5ef8e5..c4eb84946 100644
+--- a/solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol
++++ b/solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol
+@@ -457,7 +457,7 @@ contract FrostWalletRegistry is
+     function expireWallet(bytes32 id) external nonReentrant {
+         Wallet storage w = wallets[id];
+         require(
+-            w.state == WalletState.PendingReady && block.number >= w.deadline,
++            w.state == WalletState.PendingReady && block.number > w.deadline,
+             "FROST expiry denied"
+         );
+         w.state = WalletState.Closed;

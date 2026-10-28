@@ -1,0 +1,14 @@
+diff --git a/pkg/frost/store/dkg_status.go b/pkg/frost/store/dkg_status.go
+index 57e6533e3..7722a1a53 100644
+--- a/pkg/frost/store/dkg_status.go
++++ b/pkg/frost/store/dkg_status.go
+@@ -30,8 +30,7 @@ func (v *Scoped) DKGStatus(ctx context.Context) (frost.DKGStatus, error) {
+ 	} else if s.liveDKGs[v.prefix()] == hex.EncodeToString(attempt[:]) {
+ 		status.State = frost.DKGInProgress
+ 	} else {
+-		status.State = frost.DKGSeatsLost
+-		status.LostSeats = slices.Clone(status.LocalSeats)
++		status.State = frost.DKGInProgress
+ 	}
+ 	return status, nil
+ }

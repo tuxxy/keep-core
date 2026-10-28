@@ -5,7 +5,7 @@ runner controls, in a test file) and must make the named test fail at its own
 assertion. Apply one patch at a time to a scratch checkout of this branch, run
 the listed command, and revert. Never apply these to a branch that is pushed.
 
-Refs tuxxy/keep-core#42, tuxxy/keep-core#52, tuxxy/keep-core#74.
+Refs tuxxy/keep-core#42, tuxxy/keep-core#52, tuxxy/keep-core#74, tuxxy/keep-core#86 (A-READY-SEAT-ELIGIBILITY).
 
 | Patch | Guard removed | Run | Expected failure |
 | --- | --- | --- | --- |
@@ -19,6 +19,7 @@ Refs tuxxy/keep-core#42, tuxxy/keep-core#52, tuxxy/keep-core#74.
 | `42-start-gate-after-connect.patch` | `start` checks the FROST gate only after `ethereum.Connect` | `go test ./cmd -run TestStartRefusesFrostAtTheNodeGate` | `#42: start did not refuse FROST at the node gate first` |
 | `42-drop-required-case.patch` | removes a required case from `./config` | `test/remediation/check-config-cmd.sh <dir>` (after the stale assertions are updated) | `NOT ACCEPTED: required case missing: ... TestFrostEnabledRefusedByTheNodeGate` |
 | `42-skip-case.patch` | skips a FROST-off case in `./config` | same | `NOT ACCEPTED: skip: ... TestInactiveFrostHasNoEffect` |
+| `86-refuse-every-seat.patch` | sensitivity: `Attest` refuses every attestation, so a blanket refusal cannot pass `TestUncertifiedSeatDoesNotAttest` | `TestUncertifiedSeatDoesNotAttest` (heavy, needs `FROST_K04_BITCOIND`) | `#86 positive control: the certified seats did not attest` |
 
 "Heavy" runs need the K-03 environment (`FROST_K03_TBTC`, `FROST_K03_ANVIL`,
 `SNOWFALL_WORKER`, `SNOWFALL_WORKER_SHA256`) and must hold

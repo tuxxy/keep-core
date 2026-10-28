@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -30,17 +31,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/keep-network/keep-core/pkg/frost"
+	"github.com/keep-network/keep-core/pkg/frost/dkg"
 )
 
 // ---------------------------------------------------------------------------
 // Trace format (mirrors verification/model/src/lib.rs TraceStep / Trace)
 // ---------------------------------------------------------------------------
 
+type replayWallet struct {
+	Rank        int  `json:"rank"`
+	Quarantined bool `json:"quarantined"`
+	Identity    int  `json:"identity"`
+	Approval    *int `json:"approval"`
+}
+
 type replaySnapshot struct {
-	Claims int     `json:"claims"`
-	Dkg    [2]bool `json:"dkg"`
-	Slots  [2]*int `json:"slots"`
+	Claims int              `json:"claims"`
+	Dkg    [2]bool          `json:"dkg"`
+	Slots  [2]*int          `json:"slots"`
+	Keys   [2]*int          `json:"keys"`
+	Wallet [2]*replayWallet `json:"wallet"`
 }
 
 type replayStep struct {
@@ -55,6 +67,9 @@ type replayStep struct {
 	Value       *int            `json:"value"`
 	Step        *string         `json:"step"`
 	FailSync    *bool           `json:"fail_sync"`
+	Kind        *string         `json:"kind"`
+	Key         *string         `json:"key"`
+	Wallet      *replayWallet   `json:"wallet"`
 	Expect      *string         `json:"expect"`
 	Pause       *string         `json:"pause"`
 	ExpectState *replaySnapshot `json:"expect_state"`
@@ -66,6 +81,7 @@ type replayTrace struct {
 	Kind            string       `json:"kind"`
 	Property        string       `json:"property"`
 	Weakening       string       `json:"weakening"`
+	Profile         string       `json:"profile"`
 	MaxCommits      int          `json:"max_commits"`
 	Replay          string       `json:"replay"`
 	ReplayNote      string       `json:"replay_note"`
@@ -98,6 +114,63 @@ func replayWrite(slot, v int) frost.Write {
 		return replayRecordWrite(v)
 	}
 	return replayLockWrite(v)
+}
+
+// Dkg profile values. A model key identity v maps to descriptor byte 0xD0+v and
+// a valid x-only output key; the wallet with identity v carries the same two,
+// so "ready requires the matching key" is exercised exactly.
+var replayXOnly = [2]string{
+	"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+	"c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+}
+
+func replayOutputKey(identity int) [32]byte {
+	var out [32]byte
+	b, _ := hex.DecodeString(replayXOnly[identity])
+	copy(out[:], b)
+	return out
+}
+
+func replayDKGRequest(d frost.Domain, attempt int) frost.DKGRequest {
+	a, err := d.NewAttempt("dkg", [32]byte{0xA0 + byte(attempt)}, d.Epoch+1)
+	if err != nil {
+		panic(err)
+	}
+	return frost.DKGRequest{Group: frost.Group{Roster: []uint16{1, 2, 3}, Threshold: 2, Epoch: d.Epoch}, LocalSeats: []uint16{1, 2}, Attempt: a}
+}
+
+// replayKey builds the completed key for model value "0", "1" or "bad". A bad
+// key passes the top-level validation and fails keyMatchesRequest (roster).
+func replayKey(d frost.Domain, value string) frost.KeyReady {
+	roster := []uint16{1, 2, 3}
+	identity := 0
+	if value == "bad" {
+		roster = []uint16{1, 2, 3, 4}
+	} else {
+		identity, _ = strconv.Atoi(value)
+	}
+	return frost.KeyReady{
+		Candidate:       frost.Candidate{Epoch: d.Epoch, Roster: roster, Threshold: 2, Profile: frost.ApprovedProfile, Descriptor: [32]byte{0xD0 + byte(identity)}, OutputKey: replayOutputKey(identity)},
+		LocalReferences: []frost.KeyReference{[]byte("opaque reference seat 1"), []byte("opaque reference seat 2")},
+	}
+}
+
+var replayRanks = []string{"", "Candidate", "RegisteredPendingReady", "ReadyUnfunded", "Closed"}
+
+func replayWalletRecord(d frost.Domain, w replayWallet) dkg.WalletRecord {
+	desc := dkg.Descriptor{Scheme: 2, Profile: 1, ChainId: new(big.Int).SetBytes(d.Chain[:]), Registry: common.Address(d.Registry), Epoch: d.Epoch, Members: []uint32{1, 2, 3}, Operators: []common.Address{{1}, {2}, {3}}, Threshold: 2, SnowfallDescriptor: [32]byte{0xD0 + byte(w.Identity)}, OutputKey: replayOutputKey(w.Identity)}
+	hash, err := dkg.DescriptorHash(desc)
+	if err != nil {
+		panic(err)
+	}
+	r := dkg.WalletRecord{Descriptor: desc, DescriptorHash: hash, ID: dkg.WalletID(desc.OutputKey), State: replayRanks[w.Rank], Quarantined: w.Quarantined}
+	if w.Approval != nil {
+		r.ApprovalBlock = 20
+		r.ApprovalHash = common.Hash{0xA0 + byte(*w.Approval)}
+		r.ResultHash = [32]byte{0xB0 + byte(*w.Approval)}
+		r.Deadline = 40
+	}
+	return r
 }
 
 // replayFence is diskFence plus a test knob: when the flag file exists at
@@ -176,6 +249,42 @@ func abstractState(s *Store) (replaySnapshot, error) {
 			}
 		}
 	}
+	for d := 0; d < 2; d++ {
+		v := &Scoped{s, replayDomain(d)}
+		if raw, ok := s.state.Keys[v.prefix()]; ok {
+			plain, e := s.open(raw, []byte("keep-core/snowfall/key/v1/"+v.prefix()))
+			if e != nil {
+				return out, e
+			}
+			var k frost.KeyReady
+			if e = decode(plain, &k); e != nil {
+				return out, e
+			}
+			id := int(k.Candidate.Descriptor[0]) - 0xD0
+			out.Keys[d] = &id
+		}
+		if raw, ok := s.state.Wallets[v.prefix()]; ok {
+			plain, e := s.open(raw, []byte("keep-core/snowfall/wallet/v1/"+v.prefix()))
+			if e != nil {
+				return out, e
+			}
+			var w dkg.WalletRecord
+			if e = decode(plain, &w); e != nil {
+				return out, e
+			}
+			rw := replayWallet{Quarantined: w.Quarantined, Identity: int(w.Descriptor.SnowfallDescriptor[0]) - 0xD0}
+			for i, name := range replayRanks {
+				if name == w.State {
+					rw.Rank = i
+				}
+			}
+			if w.ApprovalBlock != 0 {
+				a := int(w.ApprovalHash[0]) - 0xA0
+				rw.Approval = &a
+			}
+			out.Wallet[d] = &rw
+		}
+	}
 	return out, nil
 }
 
@@ -186,7 +295,13 @@ func formatSnapshot(s replaySnapshot) string {
 		}
 		return strconv.Itoa(*p)
 	}
-	return fmt.Sprintf("claims=%d dkg=%t,%t slots=%s,%s", s.Claims, s.Dkg[0], s.Dkg[1], slot(s.Slots[0]), slot(s.Slots[1]))
+	wallet := func(w *replayWallet) string {
+		if w == nil {
+			return "-"
+		}
+		return fmt.Sprintf("r%dq%ti%da%s", w.Rank, w.Quarantined, w.Identity, slot(w.Approval))
+	}
+	return fmt.Sprintf("claims=%d dkg=%t,%t slots=%s,%s keys=%s,%s wallet=%s,%s", s.Claims, s.Dkg[0], s.Dkg[1], slot(s.Slots[0]), slot(s.Slots[1]), slot(s.Keys[0]), slot(s.Keys[1]), wallet(s.Wallet[0]), wallet(s.Wallet[1]))
 }
 
 func classify(e error) string {
@@ -201,9 +316,45 @@ func classify(e error) string {
 		return "claimed"
 	case errors.Is(e, ErrDKGPending):
 		return "dkg_pending"
+	case errors.Is(e, ErrDKGLost):
+		return "dkg_lost"
+	case errors.Is(e, ErrMissing):
+		return "missing"
 	default:
 		return "error " + strings.ReplaceAll(e.Error(), "\n", " ")
 	}
+}
+
+// classifyKeyError maps SaveKey errors to the model's outcome tokens.
+func classifyKeyError(e error) string {
+	switch {
+	case e == nil:
+		return "key_ok"
+	case errors.Is(e, ErrDKGLost), errors.Is(e, ErrQuarantined):
+		return classify(e)
+	case e.Error() == "installed key conflict":
+		return "key_conflict"
+	case strings.Contains(e.Error(), "does not match the claimed DKG"):
+		return "key_mismatch"
+	case e.Error() == "invalid installed key":
+		return "key_invalid"
+	}
+	return classify(e)
+}
+
+// classifyWalletError maps SaveWallet errors to the model's outcome tokens.
+func classifyWalletError(e error) string {
+	switch {
+	case e == nil:
+		return "wallet_ok"
+	case errors.Is(e, ErrQuarantined):
+		return classify(e)
+	case e.Error() == "wallet identity or lifecycle conflict":
+		return "wallet_conflict"
+	case strings.HasPrefix(e.Error(), "invalid wallet"), strings.HasPrefix(e.Error(), "missing wallet"), strings.HasPrefix(e.Error(), "ready wallet"), e.Error() == "wallet chain mismatch":
+		return "wallet_invalid"
+	}
+	return classify(e)
 }
 
 // TestStoreReplayHelper is the subprocess body. It is inert unless
@@ -226,7 +377,7 @@ func TestStoreReplayHelper(t *testing.T) {
 		close(lines)
 	}()
 	var s *Store
-	var releases []func()
+	releases := map[string][]func(){}
 	control := make(chan string)
 	// runOp executes one store operation while relaying boundary pauses.
 	runOp := func(op func() string) {
@@ -291,12 +442,19 @@ func TestStoreReplayHelper(t *testing.T) {
 				say("result %s", classify(e))
 			}
 		case "release":
-			if len(releases) == 0 {
-				say("result error no live claim")
+			// release <kind> <domain>: sign releases form one stack; a DKG
+			// release names its domain.
+			key := "sign"
+			if len(f) >= 3 && f[1] == "dkg" {
+				key = "dkg:" + f[2]
+			}
+			stack := releases[key]
+			if len(stack) == 0 {
+				say("result error no live claim %s", key)
 				continue
 			}
-			releases[len(releases)-1]()
-			releases = releases[:len(releases)-1]
+			stack[len(stack)-1]()
+			releases[key] = stack[:len(stack)-1]
 			say("result released")
 		case "claim":
 			attempt, _ := strconv.Atoi(f[1])
@@ -307,14 +465,73 @@ func TestStoreReplayHelper(t *testing.T) {
 				say("result %s", classify(e))
 				continue
 			}
+			intent := []byte("replay intent")
+			key := "sign"
+			if purpose == "dkg" {
+				intent, _ = json.Marshal(replayDKGRequest(v.Domain(), attempt))
+				key = "dkg:" + strconv.Itoa(domain)
+			}
 			runOp(func() string {
-				release, e := v.Claim(ctx, replayAttemptID(attempt), purpose, []byte("replay intent"))
+				release, e := v.Claim(ctx, replayAttemptID(attempt), purpose, intent)
 				if e != nil {
 					return classify(e)
 				}
-				releases = append(releases, release)
+				releases[key] = append(releases[key], release)
 				return "claim_ok"
 			})
+		case "save_key":
+			domain, _ := strconv.Atoi(f[1])
+			v, e := s.Scope(replayDomain(domain))
+			if e != nil {
+				say("result %s", classify(e))
+				continue
+			}
+			k := replayKey(v.Domain(), f[2])
+			runOp(func() string { return classifyKeyError(v.SaveKey(ctx, k)) })
+		case "load_key":
+			domain, _ := strconv.Atoi(f[1])
+			v, e := s.Scope(replayDomain(domain))
+			if e != nil {
+				say("result %s", classify(e))
+				continue
+			}
+			k, e := v.LoadKey(ctx)
+			if e != nil {
+				say("result %s", classify(e))
+				continue
+			}
+			say("result key_loaded %d", int(k.Candidate.Descriptor[0])-0xD0)
+		case "dkg_status":
+			domain, _ := strconv.Atoi(f[1])
+			v, e := s.Scope(replayDomain(domain))
+			if e != nil {
+				say("result %s", classify(e))
+				continue
+			}
+			st, e := v.DKGStatus(ctx)
+			if e != nil {
+				say("result %s", classify(e))
+				continue
+			}
+			say("result status_%s", map[frost.DKGState]string{frost.DKGKeyStored: "key_stored", frost.DKGInProgress: "in_progress", frost.DKGSeatsLost: "seats_lost"}[st.State])
+		case "save_wallet":
+			// save_wallet <domain> <rank> <quarantined> <identity> <approval|->
+			domain, _ := strconv.Atoi(f[1])
+			v, e := s.Scope(replayDomain(domain))
+			if e != nil {
+				say("result %s", classify(e))
+				continue
+			}
+			var w replayWallet
+			w.Rank, _ = strconv.Atoi(f[2])
+			w.Quarantined = f[3] == "true"
+			w.Identity, _ = strconv.Atoi(f[4])
+			if f[5] != "-" {
+				a, _ := strconv.Atoi(f[5])
+				w.Approval = &a
+			}
+			record := replayWalletRecord(v.Domain(), w)
+			runOp(func() string { return classifyWalletError(v.SaveWallet(ctx, record)) })
 		case "put":
 			slot, _ := strconv.Atoi(f[1])
 			value, _ := strconv.Atoi(f[2])
@@ -522,9 +739,14 @@ func (h *replayHarness) expectOutcome(step replayStep, got string) {
 		return
 	}
 	want := *step.Expect
-	// Model-only distinctions that the store reports as one error.
-	if want == "lost_response" {
+	// Model-only distinctions that the store reports as one result.
+	switch want {
+	case "lost_response":
 		want = "quarantined"
+	case "key_saved", "key_identical":
+		want = "key_ok"
+	case "wallet_saved", "wallet_identical":
+		want = "wallet_ok"
 	}
 	gotHead := strings.Fields(got)[0]
 	if gotHead != want {
@@ -596,15 +818,36 @@ func (h *replayHarness) run(steps []replayStep) int {
 			_, r := h.advance(p, "", false)
 			h.expectOutcome(step, r)
 		case "release":
-			h.send(p, "release")
+			kind, domain := "sign", 0
+			if step.Kind != nil {
+				kind = *step.Kind
+			}
+			if step.Domain != nil {
+				domain = *step.Domain
+			}
+			h.send(p, fmt.Sprintf("release %s %d", kind, domain))
 			if _, r := h.advance(p, "", false); r != "released" {
 				h.failf("step %d release: %s", step.N, r)
 			}
-		case "claim", "put":
-			if step.Action == "claim" {
+		case "load_key", "dkg_status":
+			h.send(p, fmt.Sprintf("%s %d", step.Action, *step.Domain))
+			_, r := h.advance(p, "", false)
+			h.expectOutcome(step, r)
+		case "claim", "put", "save_key", "save_wallet":
+			switch step.Action {
+			case "claim":
 				h.send(p, fmt.Sprintf("claim %d %s %d", *step.Attempt, *step.Purpose, *step.Domain))
-			} else {
+			case "put":
 				h.send(p, fmt.Sprintf("put %d %d", *step.Slot, *step.Value))
+			case "save_key":
+				h.send(p, fmt.Sprintf("save_key %d %s", *step.Domain, *step.Key))
+			case "save_wallet":
+				w := step.Wallet
+				approval := "-"
+				if w.Approval != nil {
+					approval = strconv.Itoa(*w.Approval)
+				}
+				h.send(p, fmt.Sprintf("save_wallet %d %d %t %d %s", *step.Domain, w.Rank, w.Quarantined, w.Identity, approval))
 			}
 			want := ""
 			if step.Pause != nil {

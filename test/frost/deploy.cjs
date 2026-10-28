@@ -37,7 +37,7 @@ async function main() {
  const proxyAdmin=await deploy(tbRoot,'@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol','ProxyAdmin');
  // K-05 adds a real Bank, the zero-difficulty regtest relay test contract and the
  // prototype verifier; the treasury is a separate account so fees are observable.
- let bank, relay, verifier, treasury=admin;
+ let bank, relay, verifier, exposure, treasury=admin;
  if(k05){
   treasury=await provider.getSigner(1).getAddress();
   bank=await deploy(tbRoot,'contracts/bank/Bank.sol','Bank');
@@ -82,6 +82,12 @@ async function main() {
   // Local test values (D-09 OPEN): 2,000 sat caps and a 3,600 s timeout.
   await(await bridge.updateRedemptionParameters(3000,100,2000,2000,3600,0,0)).wait();
   await(await frostBridge.configureFrostFunding(verifier.address,ethers.utils.keccak256(await provider.getCode(verifier.address)),ethers.utils.id('UNQUALIFIED K-05 local verifier reference'),genesis)).wait();
+  // C-10: the exposure controller, before any gate opens. The ceilings are
+  // test values (D-10 OPEN): uint64 max, so no earlier K-05..K-08 path is
+  // refused by the budget; the C-10 tests lower them by a new period.
+  exposure=await deploy(tbRoot,'contracts/frost/FrostExposureController.sol','FrostExposureController',[bridge.address,admin]);
+  await(await exposure.openBudgetPeriod('0xffffffffffffffff','0xffffffffffffffff',ethers.utils.id('UNQUALIFIED C-10 local test budget; D-10 OPEN'))).wait();
+  await(await frostBridge.installFrostExposureController(exposure.address)).wait();
   await(await frostBridge.setFrostFundingGates(true,true)).wait();
   await(await frostBridge.configureFrostRedemptions(genesis,2,1000,ethers.constants.AddressZero,ethers.utils.id('UNQUALIFIED K-05 local D-08 reference'))).wait();
   await(await frostBridge.setFrostRedemptionsEnabled(true)).wait();
@@ -103,7 +109,7 @@ async function main() {
  let seed=1;for(;seed<10000;seed++) {const members=await pool.selectGroup(3,ethers.utils.hexZeroPad(ethers.utils.hexlify(seed),32));if(members.every((v,i)=>Number(v)===pattern[i]))break;}if(seed===10000)throw Error('selection seed not found');
  await(await beacon.fulfill(seed)).wait();
  const epoch=Number(await registry.epoch());
- fs.writeFileSync(output,JSON.stringify({legacy,bank:bank?bank.address:undefined,treasury,registry:registry.address,bridge:bridge.address,pool:pool.address,validator:validator.address,beacon:beacon.address,epoch,seed,operators,pattern,artifacts},null,2));
+ fs.writeFileSync(output,JSON.stringify({legacy,bank:bank?bank.address:undefined,exposure:exposure?exposure.address:undefined,treasury,registry:registry.address,bridge:bridge.address,pool:pool.address,validator:validator.address,beacon:beacon.address,epoch,seed,operators,pattern,artifacts},null,2));
 }
 // legacyLayout reads the compiler's Bridge storage layout, so the K-07 tests
 // can set the controlled legacy wallet markers (main UTXO hash, state) without

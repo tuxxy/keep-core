@@ -202,8 +202,10 @@ func TestMovingFundsAction_FindTargetWallets_CommitmentAlreadySubmitted(t *testi
 	var tests = map[string]struct {
 		targetWalletsCommitmentHash [32]byte
 		targetWallets               []walletInfo
-		expectedTargetWallets       [][20]byte
-		expectedError               error
+		// A commitment C-10 cleared before the current one was submitted.
+		releasedCommitment    [][20]byte
+		expectedTargetWallets [][20]byte
+		expectedError         error
 	}{
 		"success scenario": {
 			targetWalletsCommitmentHash: hexToByte32(
@@ -251,6 +253,58 @@ func TestMovingFundsAction_FindTargetWallets_CommitmentAlreadySubmitted(t *testi
 			expectedTargetWallets: nil,
 			expectedError:         tbtcpg.ErrWrongCommitmentHash,
 		},
+		"recommitted after a C-10 drain release": {
+			targetWalletsCommitmentHash: hexToByte32(
+				"7820cd666bf13bda0850e52cfacf64140716e578f7f6a0567cae9b002fc83775",
+			),
+			targetWallets: []walletInfo{
+				{
+					publicKeyHash: hexToByte20(
+						"92a6ec889a8fa34f731e639edede4c75e184307c",
+					),
+					state: tbtc.StateLive,
+				},
+				{
+					publicKeyHash: hexToByte20(
+						"c7302d75072d78be94eb8d36c4b77583c7abb06e",
+					),
+					state: tbtc.StateLive,
+				},
+				{
+					publicKeyHash: hexToByte20(
+						"fdfa28e238734271f5e0d4f53d3843ae6cc09b24",
+					),
+					state: tbtc.StateLive,
+				},
+			},
+			releasedCommitment: [][20]byte{
+				hexToByte20("3091d288521caec06ea912eacfd733edc5a36d6e"),
+			},
+			expectedTargetWallets: [][20]byte{
+				hexToByte20("92a6ec889a8fa34f731e639edede4c75e184307c"),
+				hexToByte20("c7302d75072d78be94eb8d36c4b77583c7abb06e"),
+				hexToByte20("fdfa28e238734271f5e0d4f53d3843ae6cc09b24"),
+			},
+			expectedError: nil,
+		},
+		"neither commitment matches the stored hash": {
+			targetWalletsCommitmentHash: hexToByte32(
+				"7820cd666bf13bda0850e52cfacf64140716e578f7f6a0567cae9b002fc83775",
+			),
+			targetWallets: []walletInfo{
+				{
+					publicKeyHash: hexToByte20(
+						"92a6ec889a8fa34f731e639edede4c75e184307c",
+					),
+					state: tbtc.StateLive,
+				},
+			},
+			releasedCommitment: [][20]byte{
+				hexToByte20("3091d288521caec06ea912eacfd733edc5a36d6e"),
+			},
+			expectedTargetWallets: nil,
+			expectedError:         tbtcpg.ErrWrongCommitmentHash,
+		},
 	}
 
 	for testName, test := range tests {
@@ -274,13 +328,28 @@ func TestMovingFundsAction_FindTargetWallets_CommitmentAlreadySubmitted(t *testi
 				)
 			}
 
+			filter := &tbtc.MovingFundsCommitmentSubmittedEventFilter{
+				StartBlock:          startBlock,
+				WalletPublicKeyHash: [][20]byte{walletPublicKeyHash},
+			}
+			if test.releasedCommitment != nil {
+				err := tbtcChain.AddPastMovingFundsCommitmentSubmittedEvent(
+					filter,
+					&tbtc.MovingFundsCommitmentSubmittedEvent{
+						TargetWallets: test.releasedCommitment,
+						BlockNumber:   startBlock + 1,
+					},
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
 			err := tbtcChain.AddPastMovingFundsCommitmentSubmittedEvent(
-				&tbtc.MovingFundsCommitmentSubmittedEventFilter{
-					StartBlock:          startBlock,
-					WalletPublicKeyHash: [][20]byte{walletPublicKeyHash},
-				},
+				filter,
 				&tbtc.MovingFundsCommitmentSubmittedEvent{
 					TargetWallets: targetWallets,
+					BlockNumber:   startBlock + 2,
 				},
 			)
 			if err != nil {

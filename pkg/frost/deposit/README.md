@@ -23,6 +23,7 @@ V-07 predicates and hook names are fixed in
 1. A sweep grant needs these, read after the durable claim:
    - every deposit is revealed at a finalized canonical block for this wallet;
    - every deposit is unswept;
+   - every deposit holds an open C-10 exposure reservation;
    - Bitcoin median-time-past plus the refund margin is before each refund locktime;
    - every input is exactly the C-05 record and the D-04 construction for Q;
    - the main follows the C-05 rule.
@@ -32,6 +33,17 @@ V-07 predicates and hook names are fixed in
    - **Resolution.** Taken before the certificate is signed. After that, no payment or cancellation grant for the reservation is issued.
 3. A sweep signature that completes after its authorization lapsed is quarantined and never broadcast.
 4. The maintainer proves a sweep at most once. It settles a lost reply by rereading C-05.
+5. C-10: the planner includes only deposits reserved against the exposure
+   budget at the anchor block, so a sweep proof is never refused by the
+   budget. The maintainer reserves a deposit once its funding transaction has
+   the required confirmations (`ReserveDeposit`, with its SPV proof), and only
+   while the planner could still sweep it: the funding output is unspent and
+   median-time-past plus the refund margin is before the refund locktime. A
+   deposit reservation is never released, so a spent or late deposit is
+   refused (`funding-spent`, `refund-margin`) without submitting. A deposit
+   already reserved or swept is not resubmitted, and a lost reply or a lost
+   race is settled by rereading the record and the reservation. A deposit the budget or containment
+   refuses stays unplanned until a later reservation succeeds.
 
 The fixed contract vectors are in `testdata/deposit-profile-v1.json`, a
 byte-for-byte copy from tbtc-v2 with its SHA-256 pinned in the test. The local

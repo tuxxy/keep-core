@@ -36,6 +36,9 @@ type Reader interface {
 	Deposit(ctx context.Context, at uint64, outpoint [32]byte) (Record, error)
 	Reveals(ctx context.Context, wallet [32]byte, from, to uint64) ([]Reveal, error)
 	Reveal(ctx context.Context, outpoint [32]byte) (Reveal, error)
+	// Reserved reports whether the C-10 exposure controller holds an open
+	// custody and issuance reservation for the deposit at block at.
+	Reserved(ctx context.Context, at uint64, outpoint [32]byte) (bool, error)
 }
 
 // SweepProof is the submitFrostDepositSweepProof calldata.
@@ -60,6 +63,9 @@ type ResolutionAuthorization struct {
 type Writer interface {
 	SubmitSweepProof(ctx context.Context, proof SweepProof) error
 	SubmitSweepResolutionProof(ctx context.Context, proof SweepProof, authorization ResolutionAuthorization, seats []uint16, signatures []byte) error
+	// ReserveDeposit reserves a revealed deposit against the C-10 budget
+	// with an SPV proof of its funding transaction (permissionless).
+	ReserveDeposit(ctx context.Context, outpoint [32]byte, funding redemption.BitcoinInfo, proof redemption.BitcoinProof) error
 }
 
 // Chain is the complete C-05 seam.

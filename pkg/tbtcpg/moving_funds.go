@@ -413,25 +413,30 @@ func (mft *MovingFundsTask) retrieveCommittedTargetWallets(
 		)
 	}
 
-	// Moving funds commitment can be submitted only once for a given wallet.
-	// Check just in case.
-	if len(events) != 1 {
+	// A commitment is submitted once per wallet unless C-10 cleared it: a
+	// legacy proof that replaces a drain-committed main releases the drain
+	// and clears the commitment, and the source then commits again. Use the
+	// most recent event whose targets match the stored commitment.
+	var latest *tbtc.MovingFundsCommitmentSubmittedEvent
+	for _, event := range events {
+		if mft.chain.ComputeMovingFundsCommitmentHash(event.TargetWallets) ==
+			targetWalletsCommitmentHash &&
+			(latest == nil || event.BlockNumber > latest.BlockNumber) {
+			latest = event
+		}
+	}
+	if latest != nil {
+		return latest.TargetWallets, nil
+	}
+
+	if len(events) == 0 {
 		return nil, fmt.Errorf(
 			"unexpected number of moving funds commitment submitted events: [%v]",
 			len(events),
 		)
 	}
 
-	targetWallets := events[0].TargetWallets
-
-	// Just in case check if the hash of the target wallets matches the moving
-	// funds target wallets commitment hash.
-	calculatedHash := mft.chain.ComputeMovingFundsCommitmentHash(targetWallets)
-	if calculatedHash != targetWalletsCommitmentHash {
-		return nil, ErrWrongCommitmentHash
-	}
-
-	return targetWallets, nil
+	return nil, ErrWrongCommitmentHash
 }
 
 // GetWalletMembersInfo returns the wallet member IDs based on the provided

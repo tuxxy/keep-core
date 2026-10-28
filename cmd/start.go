@@ -63,6 +63,11 @@ Environment variables:
 
 // start starts a node
 func start(cmd *cobra.Command) error {
+	// No FROST production dispatch exists in K-01. Refuse activation before
+	// chain connections, account access or worker startup.
+	if err := clientConfig.Frost.ValidateNode(); err != nil {
+		return err
+	}
 	ctx := context.Background()
 
 	beaconChain, tbtcChain, blockCounter, signing, operatorPrivateKey, err :=

@@ -10,6 +10,7 @@ import (
 
 	"github.com/keep-network/keep-core/config/network"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
+	"github.com/keep-network/keep-core/pkg/frost"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/ipfs/go-log"
@@ -45,6 +46,7 @@ const (
 
 // Config is the top level config structure.
 type Config struct {
+	Frost      frost.Config
 	Ethereum   commonEthereum.Config
 	Bitcoin    BitcoinConfig
 	LibP2P     libp2p.Config `mapstructure:"network"`
@@ -139,6 +141,12 @@ func (c *Config) ReadConfig(configFilePath string, flagSet *pflag.FlagSet, categ
 	// Unmarshal config based on loaded config file and command-line flags.
 	if err := unmarshalConfig(c); err != nil {
 		return fmt.Errorf("unable to unmarshal config: %w", err)
+	}
+
+	// Refuse the local-only FROST switch before chain configuration or
+	// operator credentials are used.
+	if err := c.Frost.ValidateNode(); err != nil {
+		return err
 	}
 
 	// Resolve contracts addresses.

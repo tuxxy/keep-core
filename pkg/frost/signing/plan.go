@@ -64,6 +64,8 @@ type Plan struct {
 	hash     [32]byte
 	// cancellation is set only for a K-05 cancellation alternative.
 	cancellation *cancellationIntent
+	// sweep is set only for a K-06 deposit sweep.
+	sweep *sweepIntent
 }
 
 func NewPlan(p Proposal) (*Plan, error) {

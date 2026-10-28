@@ -25,16 +25,21 @@ const MaxSatoshi int64 = 21_000_000 * 100_000_000
 const maxTaprootInputs = 256
 const maxTaprootOutputs = 256
 
-// TaprootTransaction is an immutable, single-wallet key-path snapshot. Q is
-// already the output key; this type never applies a TapTweak. SIGHASH_DEFAULT,
-// no annex, and exactly one 64-byte witness item per input are the only profile.
+// TaprootTransaction is an immutable, single-wallet snapshot. Q is already the
+// output key; this type never applies a TapTweak. Every input is signed under
+// Q with SIGHASH_DEFAULT and no annex: a key-path input has one 64-byte witness
+// item; a K-06 script-path input (see TapscriptSpend) has the signature, the
+// leaf and its control block.
 type TaprootTransaction struct {
 	transaction *Transaction
 	prevouts    []PreviousOutput
 	key         [32]byte
-	digests     [][32]byte
-	commitment  [32]byte
-	fee         int64
+	// spends is nil for a key-path snapshot, else one entry per input (nil
+	// for a key-path input).
+	spends     []*TapscriptSpend
+	digests    [][32]byte
+	commitment [32]byte
+	fee        int64
 }
 
 func cloneBitcoinTransaction(tx *Transaction) *Transaction {
@@ -121,6 +126,16 @@ func TaprootSignatureHash(tx *Transaction, prevouts []PreviousOutput, index int)
 }
 
 func NewTaprootTransaction(tx *Transaction, prevouts []PreviousOutput, key [32]byte) (*TaprootTransaction, error) {
+	return NewTaprootScriptTransaction(tx, prevouts, key, nil)
+}
+
+// NewTaprootScriptTransaction freezes a snapshot whose inputs may also spend a
+// Q leaf by script path. spends is nil (every input key-path) or has one entry
+// per input. A key-path prevout must be exactly OP_1 PUSH32 Q. A script-path
+// prevout must be P2TR whose output key commits to the leaf through the
+// control block; the leaf is checked by checkWalletLeaf. Both kinds are
+// signed under Q only. A key-path snapshot keeps its v1 commitment bytes.
+func NewTaprootScriptTransaction(tx *Transaction, prevouts []PreviousOutput, key [32]byte, spends []*TapscriptSpend) (*TaprootTransaction, error) {
 	script, err := PayToTaproot(key)
 	if err != nil {
 		return nil, err
@@ -132,22 +147,49 @@ func NewTaprootTransaction(tx *Transaction, prevouts []PreviousOutput, key [32]b
 	if tx.Version != 2 {
 		return nil, errors.New("unsupported Taproot transaction version")
 	}
+	if spends != nil && len(spends) != len(prevouts) {
+		return nil, errors.New("one script spend entry per input required")
+	}
 	result := &TaprootTransaction{transaction: cloneBitcoinTransaction(tx), key: key, fee: fee}
-	for _, p := range prevouts {
-		if !bytes.Equal(p.PublicKeyScript, script) {
-			return nil, errors.New("previous output does not match wallet output key")
+	scripted := false
+	for i, p := range prevouts {
+		var spend *TapscriptSpend
+		if spends != nil {
+			spend = spends[i]
+		}
+		if spend == nil {
+			if !bytes.Equal(p.PublicKeyScript, script) {
+				return nil, errors.New("previous output does not match wallet output key")
+			}
+		} else {
+			if err = spend.check(p.PublicKeyScript, key); err != nil {
+				return nil, fmt.Errorf("script-path input %d: %w", i, err)
+			}
+			scripted = true
 		}
 		p.PublicKeyScript = append(Script(nil), p.PublicKeyScript...)
 		result.prevouts = append(result.prevouts, p)
 	}
+	if scripted {
+		for _, spend := range spends {
+			if spend != nil {
+				spend = &TapscriptSpend{Leaf: append(Script(nil), spend.Leaf...), Control: append([]byte(nil), spend.Control...)}
+			}
+			result.spends = append(result.spends, spend)
+		}
+	}
 	for i := range tx.Inputs {
-		digest, err := TaprootSignatureHash(result.transaction, result.prevouts, i)
+		digest, err := result.signatureHash(i)
 		if err != nil {
 			return nil, err
 		}
 		result.digests = append(result.digests, digest)
 	}
-	data := append([]byte("keep-core/taproot-snapshot/v1"), key[:]...)
+	domain := "keep-core/taproot-snapshot/v1"
+	if scripted {
+		domain = "keep-core/taproot-snapshot/v2"
+	}
+	data := append([]byte(domain), key[:]...)
 	data = append(data, result.transaction.Serialize(Standard)...)
 	for _, p := range result.prevouts {
 		data = binary.LittleEndian.AppendUint64(data, uint64(p.Value))
@@ -155,8 +197,28 @@ func NewTaprootTransaction(tx *Transaction, prevouts []PreviousOutput, key [32]b
 		_ = wire.WriteVarBytes(&buf, 0, p.PublicKeyScript)
 		data = append(data, buf.Bytes()...)
 	}
+	for _, spend := range result.spends {
+		var buf bytes.Buffer
+		if spend == nil {
+			buf.WriteByte(0)
+		} else {
+			buf.WriteByte(1)
+			_ = wire.WriteVarBytes(&buf, 0, spend.Leaf)
+			_ = wire.WriteVarBytes(&buf, 0, spend.Control)
+		}
+		data = append(data, buf.Bytes()...)
+	}
 	result.commitment = sha256.Sum256(data)
 	return result, nil
+}
+
+// signatureHash is the key-path digest, or the BIP342 digest of the input's
+// exact leaf for a script-path input.
+func (t *TaprootTransaction) signatureHash(index int) ([32]byte, error) {
+	if t.spends == nil || t.spends[index] == nil {
+		return TaprootSignatureHash(t.transaction, t.prevouts, index)
+	}
+	return TapscriptSignatureHash(t.transaction, t.prevouts, index, t.spends[index].Leaf)
 }
 func (t *TaprootTransaction) Unsigned() *Transaction { return cloneBitcoinTransaction(t.transaction) }
 func (t *TaprootTransaction) PreviousOutputs() []PreviousOutput {
@@ -166,7 +228,30 @@ func (t *TaprootTransaction) PreviousOutputs() []PreviousOutput {
 	}
 	return out
 }
-func (t *TaprootTransaction) Digests() [][32]byte  { return append([][32]byte(nil), t.digests...) }
+func (t *TaprootTransaction) Digests() [][32]byte { return append([][32]byte(nil), t.digests...) }
+
+// Spends returns a copy of the script-path spends (nil for a key-path snapshot).
+func (t *TaprootTransaction) Spends() []*TapscriptSpend {
+	if t.spends == nil {
+		return nil
+	}
+	out := make([]*TapscriptSpend, len(t.spends))
+	for i, s := range t.spends {
+		if s != nil {
+			out[i] = &TapscriptSpend{Leaf: append(Script(nil), s.Leaf...), Control: append([]byte(nil), s.Control...)}
+		}
+	}
+	return out
+}
+
+// witness is the exact witness stack of input index for signature.
+func (t *TaprootTransaction) witness(index int, signature []byte) [][]byte {
+	if t.spends == nil || t.spends[index] == nil {
+		return [][]byte{append([]byte(nil), signature...)}
+	}
+	s := t.spends[index]
+	return [][]byte{append([]byte(nil), signature...), append([]byte(nil), s.Leaf...), append([]byte(nil), s.Control...)}
+}
 func (t *TaprootTransaction) Commitment() [32]byte { return t.commitment }
 func (t *TaprootTransaction) OutputKey() [32]byte  { return t.key }
 func (t *TaprootTransaction) Fee() int64           { return t.fee }
@@ -174,14 +259,14 @@ func (t *TaprootTransaction) Fee() int64           { return t.fee }
 // VirtualSize includes the exact single-signature witness shape, before signing.
 func (t *TaprootTransaction) VirtualSize() int64 {
 	tx := t.Unsigned()
-	for _, input := range tx.Inputs {
-		input.Witness = [][]byte{make([]byte, 64)}
+	for i, input := range tx.Inputs {
+		input.Witness = t.witness(i, make([]byte, 64))
 	}
 	weight := 3*len(tx.Serialize(Standard)) + len(tx.Serialize(Witness))
 	return int64((weight + 3) / 4)
 }
 func (t *TaprootTransaction) Matches(tx *Transaction, prevouts []PreviousOutput) error {
-	other, err := NewTaprootTransaction(tx, prevouts, t.key)
+	other, err := NewTaprootScriptTransaction(tx, prevouts, t.key, t.spends)
 	if err != nil {
 		return err
 	}
@@ -210,7 +295,7 @@ func (t *TaprootTransaction) AddSignatures(signatures []Signature) (*Transaction
 		if err != nil || !signature.Verify(t.digests[i][:], key) {
 			return nil, fmt.Errorf("invalid Taproot signature for input %d", i)
 		}
-		tx.Inputs[i].Witness = [][]byte{append([]byte(nil), raw[:]...)}
+		tx.Inputs[i].Witness = t.witness(i, raw[:])
 	}
 	if err = t.ValidateSigned(tx); err != nil {
 		return nil, err
@@ -224,9 +309,18 @@ func (t *TaprootTransaction) ValidateSigned(tx *Transaction) error {
 	if tx == nil || len(tx.Inputs) != len(t.transaction.Inputs) || len(tx.Outputs) != len(t.transaction.Outputs) {
 		return errors.New("signed transaction shape changed")
 	}
-	for _, input := range tx.Inputs {
-		if input == nil || input.Outpoint == nil || len(input.SignatureScript) != 0 || len(input.Witness) != 1 || len(input.Witness[0]) != 64 {
-			return errors.New("invalid default key-path witness")
+	for i, input := range tx.Inputs {
+		if input == nil || input.Outpoint == nil || len(input.SignatureScript) != 0 || len(input.Witness) == 0 || len(input.Witness[0]) != 64 {
+			return errors.New("invalid default Taproot witness")
+		}
+		expected := t.witness(i, input.Witness[0])
+		if len(input.Witness) != len(expected) {
+			return errors.New("invalid Taproot witness shape")
+		}
+		for j := 1; j < len(expected); j++ {
+			if !bytes.Equal(input.Witness[j], expected[j]) {
+				return errors.New("Taproot script-path witness changed")
+			}
 		}
 	}
 	for _, output := range tx.Outputs {

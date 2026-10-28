@@ -1,0 +1,12 @@
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -271,7 +271,8 @@
+ 	if err != nil {
+ 		return [32]byte{}, false, err
+ 	}
+-	if legacy.State != uint8(tbtc.StateUnknown) {
++	// WRONG-FIX W2: only a Live legacy target is recognized.
++	if legacy.State == uint8(tbtc.StateLive) {
+ 		return [32]byte{}, false, nil
+ 	}
+ 	scheme, err := tc.frostBridge.WalletScheme(nil, label)

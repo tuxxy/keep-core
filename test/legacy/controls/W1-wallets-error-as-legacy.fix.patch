@@ -1,0 +1,12 @@
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -269,7 +269,8 @@
+ 	}
+ 	legacy, err := tc.bridge.Wallets(label)
+ 	if err != nil {
+-		return [32]byte{}, false, err
++		// WRONG-FIX W1: a failed read is taken for a legacy target.
++		return [32]byte{}, false, nil
+ 	}
+ 	if legacy.State != uint8(tbtc.StateUnknown) {
+ 		return [32]byte{}, false, nil

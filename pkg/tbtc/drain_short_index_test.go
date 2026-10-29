@@ -3,20 +3,22 @@ package tbtc_test
 // D6 (tentative: wait when the target index is short), in every mode after
 // D16; review R6 on tuxxy/keep-core#98. Refs tuxxy/keep-core#34.
 //
-// Invariant: when the host's view of the FROST targets is readable but
-// short (fewer eligible targets visible than the drain needs), the host waits:
-// it makes no legacy commitment and no undersized drain attempt, although a
-// legacy Live target is available. Once its view is complete, it commits the
-// drain to every required target, ascending.
+// Invariant: the host never commits on a short view of the FROST targets
+// (fewer eligible targets visible than the drain needs). While its view is
+// short it waits: no legacy commitment, although a legacy Live target is
+// available, and no undersized drain attempt. Once its view is complete it
+// commits the drain to every required target, ascending.
 //
 // The short view is a lagging log index (drainFaults.SetLogHorizon): the
 // endpoint answers eth_getLogs successfully but omits the logs of blocks
-// above a height, while every call sees the head. Two FROST targets are
-// eligible on chain and the main needs two (walletMaxBtcTransfer below the
-// main); the second target became ready above the horizon. A host that
-// builds its index from logs sees one target; a host that does not sees both
-// and must simply drain to both (the log reports how many logs were
-// withheld).
+// above a height, while every other call (calls, blocks, receipts) sees the
+// head. Two FROST targets are eligible on chain and the main needs two
+// (walletMaxBtcTransfer below the main); the second target became ready above
+// the horizon. A host that builds its index from logs sees one target and
+// must wait. A host whose index is complete through another source (review
+// R14: for example one built from blocks and receipts) may commit at once,
+// but only the full drain: exactly both eligible targets, ascending, with no
+// legacy target. Either way the end state is the same single drain.
 //
 // The first frost-read-faults cases (drain_producer_test.go) cover the other
 // half of D6: an index that cannot be read at all.
@@ -48,11 +50,27 @@ func drainShortIndexRound(t *testing.T, setup drainSetup) {
 	late := dw.createFrostTarget()
 	dw.faults.SetLogHorizon(horizon)
 
+	want := [][20]byte{dw.targets[0].label, late.label}
+	sort.Slice(want, func(i, j int) bool { return bytes.Compare(want[i][:], want[j][:]) < 0 })
+	fullDrain := func(when string, committed [][20]byte) {
+		if len(committed) != 2 || committed[0] != want[0] || committed[1] != want[1] {
+			t.Fatalf("short index (%s): %s, the host committed %s, want both eligible targets %s",
+				setup, when, dw.labels(committed), dw.labels(want))
+		}
+	}
+
 	for window := 1; window <= 2; window++ {
-		_, err := dw.window("moving-funds window with a short index")
+		_, err := dw.window("moving-funds window with a short log index")
 		if legacy := dw.committedLegacy(); legacy != nil {
 			t.Fatalf("short index (%s): window %d: with its target index short, the host committed legacy targets %s",
 				setup, window, dw.labels(legacy))
+		}
+		if commitments := dw.commitments(); len(commitments) > 0 {
+			// A complete index through another source: the full drain only.
+			fullDrain("with the log index lagging", commitments[0])
+			t.Logf("short index (%s): window %d: the host's index was complete despite the lagging logs (%d withheld); it drained to %s",
+				setup, window, dw.faults.Hidden(), dw.labels(commitments[0]))
+			return
 		}
 		if n := dw.commitmentAttempts(); n > 0 {
 			t.Fatalf("short index (%s): window %d: with its target index short, the host attempted %d moving-funds "+
@@ -69,11 +87,5 @@ func drainShortIndexRound(t *testing.T, setup drainSetup) {
 		t.Fatalf("short index (%s): after the index completed, the host made no drain commitment (commitments %d, window error %v)",
 			setup, len(commitments), err)
 	}
-	committed := commitments[0]
-	want := [][20]byte{dw.targets[0].label, late.label}
-	sort.Slice(want, func(i, j int) bool { return bytes.Compare(want[i][:], want[j][:]) < 0 })
-	if len(committed) != 2 || committed[0] != want[0] || committed[1] != want[1] {
-		t.Fatalf("short index (%s): after the index completed, the host committed %s, want both eligible targets %s",
-			setup, dw.labels(committed), dw.labels(want))
-	}
+	fullDrain("after the index completed", commitments[0])
 }

@@ -1,0 +1,142 @@
+package movement
+
+// CONTROL, never production. test/remediation-b3/controls/run-control.sh
+// copies this file into pkg/frost/movement in a scratch worktree with
+// controlMode set, runs the batch-3 tests and records the result.
+//
+// Modes:
+//   stub            trivial entry point: seat 1 leads; the leader publishes a
+//                   placeholder recipe; nothing is signed.
+//   naive           the existing K-07 path: every operator plans at its own
+//                   head and Resolves with every live seat; seat 1 leads and
+//                   publishes a placeholder recipe.
+//   retain          naive, but each operator retains its first plan for good
+//                   (across restarts) and clears it only when it settles: the
+//                   K09-29 defect.
+//   record-first    naive, and an operator records the first plan it made for
+//                   the inputs as their settlement: the K09-58 defect.
+//   record-proven   naive, and an operator records its last plan as the
+//                   settlement only once the chain proves that transaction.
+//   rotate-seat     naive, leader = live seat (round mod seats): by seat.
+//   rotate-operator naive, leader = first seat of operator (round mod
+//                   operators): by operator.
+
+import (
+	"context"
+	"errors"
+	"sync"
+
+	"github.com/keep-network/keep-core/pkg/frost"
+	"github.com/keep-network/keep-core/pkg/frost/signing"
+)
+
+const controlMode = "MODE"
+
+type controlMemory struct {
+	mu                    sync.Mutex
+	first, last, retained map[string]*signing.Plan
+}
+
+// Keyed by wallet and local seats, so it outlives a restart like a durable
+// record would.
+var controlState = controlMemory{first: map[string]*signing.Plan{}, last: map[string]*signing.Plan{}, retained: map[string]*signing.Plan{}}
+
+func (m *Mover) controlKey(ctx context.Context) (string, []uint16) {
+	status, _ := m.Base.Journal.DKGStatus(ctx)
+	id := m.Wallet.OutputKey
+	key := string(id[:])
+	for _, s := range status.LocalSeats {
+		key += string(rune(s))
+	}
+	return key, status.LocalSeats
+}
+
+func (m *Mover) IncomingLeader(ctx context.Context, round uint64) (uint16, error) {
+	live := seats(m.Wallet)
+	switch controlMode {
+	case "rotate-seat":
+		return live[round%uint64(len(live))], nil
+	case "rotate-operator":
+		var firstSeat []uint16
+		seen := map[uint32]bool{}
+		for _, s := range live {
+			id := m.Wallet.Members[s-1]
+			if !seen[id] {
+				seen[id] = true
+				firstSeat = append(firstSeat, s)
+			}
+		}
+		return firstSeat[round%uint64(len(firstSeat))], nil
+	}
+	return 1, nil
+}
+
+func (m *Mover) IncomingStep(ctx context.Context, p Planner, recipes frost.Transport) (Status, [32]byte, error) {
+	key, local := m.controlKey(ctx)
+	if r, err := m.Current(ctx); err == nil {
+		if leader, err := m.IncomingLeader(ctx, r.Number); err == nil {
+			for _, s := range local {
+				if s == leader {
+					if err = recipes.Broadcast(ctx, s, []byte("CONTROL placeholder recipe")); err != nil {
+						return "", [32]byte{}, err
+					}
+				}
+			}
+		}
+	}
+	if ctx.Err() != nil {
+		return "", [32]byte{}, ctx.Err()
+	}
+	if controlMode == "stub" {
+		return StatusWaiting, [32]byte{}, nil
+	}
+	controlState.mu.Lock()
+	retained := controlState.retained[key]
+	controlState.mu.Unlock()
+	plan := retained
+	if plan == nil {
+		var err error
+		plan, err = p.IncomingSweep(ctx)
+		if errors.Is(err, ErrNothingIncoming) {
+			controlState.mu.Lock()
+			first, last := controlState.first[key], controlState.last[key]
+			controlState.mu.Unlock()
+			switch controlMode {
+			case "record-first":
+				if first != nil {
+					return StatusSettled, first.BitcoinTransactionHash(), nil
+				}
+			case "record-proven":
+				if last != nil {
+					head, err := m.Chain.Head(ctx)
+					if err != nil {
+						return "", [32]byte{}, err
+					}
+					if w, err := m.Chain.ProvenTransaction(ctx, head.Number, last.BitcoinTransactionHash()); err == nil && w != ([32]byte{}) {
+						return StatusSettled, last.BitcoinTransactionHash(), nil
+					}
+				}
+			}
+			return StatusWaiting, [32]byte{}, nil
+		}
+		if err != nil {
+			return "", [32]byte{}, err
+		}
+	}
+	controlState.mu.Lock()
+	if controlState.first[key] == nil {
+		controlState.first[key] = plan
+	}
+	controlState.last[key] = plan
+	if controlMode == "retain" {
+		controlState.retained[key] = plan
+	}
+	controlState.mu.Unlock()
+	status, err := m.Resolve(ctx, plan)
+	if status == StatusSettled {
+		controlState.mu.Lock()
+		delete(controlState.retained, key)
+		controlState.mu.Unlock()
+	}
+	return status, [32]byte{}, err
+}

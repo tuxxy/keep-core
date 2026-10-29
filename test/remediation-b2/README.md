@@ -18,7 +18,7 @@ process (own Anvil, Core node, ports and data directories; up to N at once,
 default 12, GOMAXPROCS=1 each; about 20 s for all cases with the fast
 legacy harness of tuxxy/keep-core#101) under the shared heavy lock and writes `<evidence dir>/manifest.json`. It needs
 the same `LEGACY_*` environment as `test/legacy/run.sh`. The manifest is
-`"accepted": true` only if all 50 cases ran and passed, unfiltered, at a clean
+`"accepted": true` only if all 49 cases ran and passed, unfiltered, at a clean
 head. **A plain `go test` skips every case and is not evidence.**
 
 `controls/` holds the removal and sensitivity controls: patches against

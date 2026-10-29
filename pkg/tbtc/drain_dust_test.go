@@ -19,20 +19,16 @@ package tbtc_test
 // D8: below dust, the call is permissionless and "we run a keeper as a
 // backstop".
 //
-// Not covered (pending, DECISIONS.md D17): whether the keep-core host itself
-// is that keeper, i.e. must send notifyMovingFundsBelowDust.
+// D17 (answered 2026-10-29): the keeper is a separate process, as in base, so
+// the host is not required to send notifyMovingFundsBelowDust; the test sends
+// it from a third-party account.
 
 import (
 	"context"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 )
-
-// A third party: Anvil's development account 3, neither member nor host.
-const drainStrangerKey = "5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
 
 // TestDrainProducer_BelowDust: see the file comment. Refs tuxxy/keep-core#55.
 func TestDrainProducer_BelowDust(t *testing.T) {
@@ -65,18 +61,7 @@ func drainDustRound(t *testing.T, setup drainSetup) {
 	}
 
 	// The specified recovery is reachable by anyone (D8).
-	strangerKey, err := crypto.HexToECDSA(drainStrangerKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := dw.admin.Client().Call(nil, "anvil_setBalance", crypto.PubkeyToAddress(strangerKey.PublicKey), "0x3635c9adc5dea00000"); err != nil {
-		t.Fatal(err)
-	}
-	opts, err := bind.NewKeyedTransactorWithChainID(strangerKey, dw.chainID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tx, err := dw.legacy.NotifyMovingFundsBelowDust(opts, dw.source.pkh, legacyUTXO(dw.main))
+	tx, err := dw.legacy.NotifyMovingFundsBelowDust(dw.stranger(), dw.source.pkh, legacyUTXO(dw.main))
 	if err != nil {
 		t.Fatalf("below dust (%s): a third party's notifyMovingFundsBelowDust is refused: %v", setup, err)
 	}

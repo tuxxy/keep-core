@@ -111,15 +111,15 @@ type drainWorld struct {
 	*legacyWorld
 	setup drainSetup
 
-	frost       *bind.BoundContract
-	exposure    *bind.BoundContract
-	frostReg    *bind.BoundContract
-	frostRegAt  common.Address
-	targets     []*frostTarget
-	nextKey     int64
-	recorder    *legacyRecorder
-	faults      *drainFaults
-	client      *chainethereum.TbtcChain
+	frost      *bind.BoundContract
+	exposure   *bind.BoundContract
+	frostReg   *bind.BoundContract
+	frostRegAt common.Address
+	targets    []*frostTarget
+	nextKey    int64
+	recorder   *legacyRecorder
+	faults     *drainFaults
+	client     *chainethereum.TbtcChain
 }
 
 // newDrainWorld builds the upgraded system, brings the legacy source into
@@ -485,6 +485,28 @@ func (dw *drainWorld) notifyTimeoutRefusal() string {
 		return ""
 	}
 	return err.Error()
+}
+
+// A third party: Anvil's development account 3, neither member nor host. It
+// plays the keeper (D17; the timeout reset, DECISIONS.md "Standing default").
+const drainStrangerKey = "5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
+
+// stranger returns a funded transactor for the third party.
+func (dw *drainWorld) stranger() *bind.TransactOpts {
+	t := dw.t
+	t.Helper()
+	key, err := crypto.HexToECDSA(drainStrangerKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := dw.admin.Client().Call(nil, "anvil_setBalance", crypto.PubkeyToAddress(key.PublicKey), "0x3635c9adc5dea00000"); err != nil {
+		t.Fatal(err)
+	}
+	opts, err := bind.NewKeyedTransactorWithChainID(key, dw.chainID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return opts
 }
 
 // labels formats target lists, marking FROST and legacy targets.

@@ -3,46 +3,50 @@ package tbtc_test
 // The no-route recovery and the post-cutover legacy fence, host side.
 //
 // tuxxy/keep-core#34 (K09-15, second half): after the cutover the honest
-// producer keeps creating legacy obligations. tuxxy/keep-core#51 (K09-35): no
-// host submits the reset the contract's no-route recovery relies on.
-// tuxxy/keep-core#54 (K09-39): before the cutover, with zero Live wallets and a
-// partial custody budget (or any other unusable drain), the source can neither
-// drain nor reset and is terminated. tuxxy/keep-core#62 (K09-47): a
+// producer keeps creating legacy obligations. tuxxy/keep-core#62 (K09-47): a
 // default-config host against FrostOnly with a Live legacy wallet and a
-// blocked drain must reset when due and never commit legacy targets.
-// tuxxy/tbtc-v2#18 (K09-16) and tuxxy/tbtc-v2#20 (K09-28) are the contract
-// halves; this test runs against the integration contracts, so a case can
-// also fail because the contract still refuses the reset (#20) or still
-// accepts the legacy commitment (#18).
+// blocked drain must never commit legacy targets. tuxxy/tbtc-v2#18 (K09-16)
+// and tuxxy/tbtc-v2#20 (K09-28) are the contract halves; this test runs
+// against the integration contracts, so a case can also fail because the
+// contract still refuses the keeper's reset (#20) or still accepts the legacy
+// commitment (#18).
+//
+// The timeout reset is a keeper job, as in base (DECISIONS.md "Standing
+// default", 2026-10-29): base keep-core never sends resetMovingFundsTimeout,
+// so the host has no reset duty here. tuxxy/keep-core#51 (K09-35), #54
+// (K09-39), #57 (K09-42) and #65 were closed as moot. The reset is sent by a
+// third-party keeper (drainWorld.stranger) through the base entrypoint.
 //
 // Invariant: a legacy MovingFunds source with no commitment and no admissible
 // route (FrostOnly with the drain contained, disabled, without an eligible
 // target or without budget, whatever the legacy Live count; or LegacyOpen and
 // LegacyDraining with zero Live wallets and the drain unusable) is never
-// terminated while the production client runs its moving-funds duty:
-//   - the host makes no commitment attempt (no new legacy obligation after the
-//     cutover, no doomed drain);
-//   - each time the reset delay has passed, the host resets the timeout, so a
-//     third party's notifyMovingFundsTimeout is refused past the deadline it
-//     would otherwise have had, for two consecutive periods;
+// terminated while the production client runs its moving-funds duty and a
+// keeper resets the timeout:
+//   - the host makes no commitment attempt in any window, before or after the
+//     reset is due (no new legacy obligation after the cutover, no doomed
+//     drain);
+//   - each time the reset delay has passed, a third party's
+//     resetMovingFundsTimeout on the real Bridge is accepted and moves the
+//     timeout, so a third party's notifyMovingFundsTimeout is refused past the
+//     deadline it would otherwise have had, for two consecutive periods;
 //   - once the route opens, the host commits the drain to FROST targets.
 //
 // Spec: KC-SF-V3 line 448, line 616, line 729 (SC-01: "Existing ECDSA
 // obligations retain reachable settlement, recovery and defense transitions";
 // "New routing cannot assign new legacy obligations that defeat drain");
-// KC-VER P-K11-CONTAINMENT-KEEPS-EXITS. Reviews 5667802743 (K09-35 criterion:
-// "under containment, a witness without harness calls shows the host issuing
-// the reset and no termination across two timeout periods"), 5671041158
-// (K09-39 criterion: modes 0 and 1 x {partial budget, exhausted, contained,
-// drain off, zero eligible} with zero Live), 5674230284 (K09-47 criterion),
-// 5655963449 and 5667803422 (K09-28 criterion).
+// KC-VER P-K11-CONTAINMENT-KEEPS-EXITS. Reviews 5674230284 (K09-47
+// criterion), 5655963449 and 5667803422 (K09-28 criterion).
 //
 // The host is driven only through tbtcpg.MovingFundsTask.Run, once per
-// coordination window. Which reset entrypoint it uses is its choice.
+// coordination window.
 
 import (
+	"context"
 	"strings"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type drainRecoveryCase struct {
@@ -77,8 +81,8 @@ func liveName(live bool) string {
 }
 
 // TestDrainProducer_NoRouteRecovery: see the file comment. Refs
-// tuxxy/keep-core#34, tuxxy/keep-core#51, tuxxy/keep-core#54,
-// tuxxy/keep-core#62, tuxxy/keep-core#67, tuxxy/tbtc-v2#18, tuxxy/tbtc-v2#20.
+// tuxxy/keep-core#34, tuxxy/keep-core#62, tuxxy/keep-core#67,
+// tuxxy/tbtc-v2#18, tuxxy/tbtc-v2#20.
 func TestDrainProducer_NoRouteRecovery(t *testing.T) {
 	for _, c := range drainRecoveryCases() {
 		c := c
@@ -108,10 +112,18 @@ func drainRecoveryRound(t *testing.T, setup drainSetup) {
 		if state != 2 {
 			t.Fatalf("no-route recovery (%s): source state %d in period %d, want MovingFunds", setup, state, period)
 		}
+		// The host may reset itself; it is not required to (base does not).
 		if next == requestedAt {
-			t.Fatalf("no-route recovery (%s): period %d: the host did not reset the moving-funds timeout when it was due "+
-				"(no admissible route; window error: %v)", setup, period, err)
+			dw.keeperReset(period)
+			_, next, _ = dw.sourceWallet()
 		}
+		if next == requestedAt {
+			t.Fatalf("no-route recovery (%s): period %d: the keeper's reset was mined but did not move the moving-funds timeout",
+				setup, period)
+		}
+		// The host's next window, with the timeout fresh: still nothing.
+		_, err = dw.window("moving-funds window after the keeper's reset")
+		dw.assertNoObligation("after the keeper's reset", err)
 		// The deadline the source had before this reset has now passed: a
 		// third party's timeout notification must be refused for the
 		// deadline, and for nothing else.
@@ -135,7 +147,7 @@ func drainRecoveryRound(t *testing.T, setup drainSetup) {
 		t.Fatalf("no-route recovery (%s): after the route opened, the host made no drain commitment (commitments %d, window error %v)",
 			setup, len(commitments), err)
 	}
-	t.Logf("no-route recovery (%s): two resets, no termination, then the drain to %s", setup, dw.labels(commitments[0]))
+	t.Logf("no-route recovery (%s): two keeper resets, no host commitment, no termination, then the drain to %s", setup, dw.labels(commitments[0]))
 }
 
 // assertNoObligation: while no route is admissible the host creates no
@@ -155,5 +167,21 @@ func (dw *drainWorld) assertNoObligation(when string, windowErr error) {
 	if n := dw.commitmentAttempts(); n > 0 {
 		t.Fatalf("no-route recovery (%s): %s: the host attempted %d moving-funds commitments while no route was admissible (window error: %v)",
 			dw.setup, when, n, windowErr)
+	}
+}
+
+// keeperReset: a third party resets the source's moving-funds timeout through
+// the base entrypoint, as a keeper does in base. A refusal is the contract
+// half (tuxxy/tbtc-v2#20 after the cutover).
+func (dw *drainWorld) keeperReset(period int) {
+	t := dw.t
+	t.Helper()
+	tx, err := dw.legacy.ResetMovingFundsTimeout(dw.stranger(), dw.source.pkh)
+	if err != nil {
+		t.Fatalf("no-route recovery (%s): period %d: a keeper's resetMovingFundsTimeout is refused with no admissible route: "+
+			"the source can be terminated (%v)", dw.setup, period, err)
+	}
+	if receipt, err := legacyWaitMined(context.Background(), dw.admin, tx); err != nil || receipt.Status != types.ReceiptStatusSuccessful {
+		t.Fatalf("no-route recovery (%s): period %d: a keeper's resetMovingFundsTimeout did not succeed: %v", dw.setup, period, err)
 	}
 }

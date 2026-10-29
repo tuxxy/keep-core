@@ -76,7 +76,6 @@ for encoding in code3-0x geth-32000-nodata; do
 	cases+=("^TestDrainProducer_PreFrostUnchanged$/^${encoding}$")
 done
 cases+=('^TestDrainProducer_BridgeUpgradedAfterStartup$')
-cases+=('^TestDrainProducer_ResetSubmission$')
 
 # One case: its own process, GOMAXPROCS=1; records its exit status.
 run_case() {

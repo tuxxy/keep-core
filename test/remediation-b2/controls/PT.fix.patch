@@ -10,8 +10,8 @@ index 7ed6348d3..3f0025773 100644
 +// ResetMovingFundsTimeoutForControl is a CONTROL
 +// (test/remediation-b2/controls), never production code.
 +func (tc *TbtcChain) ResetMovingFundsTimeoutForControl(walletPublicKeyHash [20]byte) error {
-+	// CONTROL R-good: the generated wrapper (shared mutex released after
-+	// submission, configured options, gas bumps).
++	// CONTROL PT: a host that sends the reset, through the generated wrapper
++	// (removal control for the pre-FROST no-transaction guard).
 +	_, err := tc.bridge.ResetMovingFundsTimeout(walletPublicKeyHash)
 +	return err
 +}

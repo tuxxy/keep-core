@@ -37,15 +37,15 @@ type drainFaults struct {
 	upstream string
 	server   *httptest.Server
 
-	mutex  sync.Mutex
-	armed  bool
-	where  func(legacyRPCRequest) bool
-	seen   map[string]bool
+	mutex sync.Mutex
+	armed bool
+	where func(legacyRPCRequest) bool
+	seen  map[string]bool
 	// horizon, if set, is the highest block whose logs eth_getLogs returns
 	// (SetLogHorizon).
 	horizon uint64
 	hidden  int
-	failed map[string]int
+	failed  map[string]int
 }
 
 func newDrainFaults(t *testing.T, upstream string) *drainFaults {

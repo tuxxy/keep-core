@@ -19,6 +19,10 @@ var batch3OwningFiles = map[string][]string{
 		"possible_release_b3_test.go",
 		"untagged_b3_test.go",
 	},
+	"github.com/keep-network/keep-core/pkg/frost/movement": {
+		"incoming_b3_test.go",
+		"incoming_world_b3_test.go",
+	},
 }
 
 func TestBatch3OwningTestsRunUntagged(t *testing.T) {

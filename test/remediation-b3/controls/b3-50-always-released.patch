@@ -1,0 +1,12 @@
+diff --git a/pkg/frost/signing/executor.go b/pkg/frost/signing/executor.go
+index 6c49c0075..44c1c6b70 100644
+--- a/pkg/frost/signing/executor.go
++++ b/pkg/frost/signing/executor.go
+@@ -677,6 +677,7 @@ func (e *Executor) Result(ctx context.Context) (*Result, error) {
+ // PossibleRelease reports whether any input's signature completion is durable
+ // for this plan and session, i.e. a share may have been released.
+ func (e *Executor) PossibleRelease(ctx context.Context) (bool, error) {
++	return true, nil // CONTROL b3-50-always-released
+ 	for index := range e.config.Plan.snapshot.Digests() {
+ 		attempt, err := e.attempt(index)
+ 		if err != nil {

@@ -22,10 +22,10 @@ package tbtc_test
 //
 //
 // D6 (tentative: wait when the target index is short) applies in every mode
-// after D16. The frost-read-faults cases test it black-box: while the FROST
-// state cannot be read, the host makes no legacy commitment, and it drains
-// once the reads succeed. An index that is readable but incomplete is not
-// constructed (see TESTS-BATCH2.md).
+// after D16. The frost-read-faults cases test the unreadable half: while the
+// FROST state cannot be read, the host makes no legacy commitment, and it
+// drains once the reads succeed. The readable but short half is
+// TestDrainProducer_ShortIndex (drain_short_index_test.go).
 
 import (
 	"bytes"

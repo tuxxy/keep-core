@@ -9,8 +9,9 @@ package tbtc_test
 // mined. Here the chain stops mining (Anvil automine off) once the reset is
 // pending; another transaction of the same production client, submitted
 // through the standard generated wrapper (which takes the shared transaction
-// mutex), must get its answer within drainMutexBound, and the reset must
-// then confirm and move the source's timeout.
+// mutex), must get its answer within drainMutexBound (3 s: an estimate that
+// fails takes milliseconds, and review R13 keeps the case under 10 s), and
+// the reset must then confirm and move the source's timeout.
 //
 // The state is FrostOnly, zero Live wallets, drain contained, reset due. The
 // integration contracts already accept the reset there (liveWalletsCount ==
@@ -33,7 +34,7 @@ import (
 	"github.com/keep-network/keep-core/pkg/tbtcpg"
 )
 
-const drainMutexBound = 10 * time.Second
+const drainMutexBound = 3 * time.Second
 
 // TestDrainProducer_ResetSubmission: see the file comment. Refs
 // tuxxy/keep-core#57, tuxxy/keep-core#51.

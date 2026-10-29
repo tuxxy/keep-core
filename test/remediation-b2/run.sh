@@ -69,6 +69,9 @@ done
 for c in FrostOnly-live1 FrostOnly-live0 LegacyOpen-live0 LegacyDraining-live0; do
 	cases+=("^TestDrainProducer_BelowDust$/^${c}$")
 done
+for mode in FrostOnly LegacyOpen LegacyDraining; do
+	cases+=("^TestDrainProducer_ShortIndex$/^${mode}-live1$")
+done
 for encoding in code3-0x geth-32000-nodata; do
 	cases+=("^TestDrainProducer_PreFrostUnchanged$/^${encoding}$")
 done

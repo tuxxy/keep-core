@@ -29,6 +29,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gorilla/websocket"
 )
 
@@ -40,6 +41,10 @@ type drainFaults struct {
 	armed  bool
 	where  func(legacyRPCRequest) bool
 	seen   map[string]bool
+	// horizon, if set, is the highest block whose logs eth_getLogs returns
+	// (SetLogHorizon).
+	horizon uint64
+	hidden  int
 	failed map[string]int
 }
 
@@ -124,6 +129,98 @@ func frostOnlyReads(bridge common.Address, base abi.ABI) func(legacyRPCRequest) 
 		}
 		return false
 	}
+}
+
+// SetLogHorizon makes the endpoint's log index lag: eth_getLogs succeeds but
+// omits every log from a block above height, while every other method sees
+// the head. 0 removes the lag. This is a readable but short index for a host
+// that learns targets from logs (review R6); a host that does not sees a
+// complete index.
+func (f *drainFaults) SetLogHorizon(height uint64) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+	f.horizon = height
+}
+
+// Hidden reports how many logs the horizon withheld.
+func (f *drainFaults) Hidden() int {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+	return f.hidden
+}
+
+// trimLogs removes the logs above the horizon from eth_getLogs responses in
+// message (a single response or a batch); logsIDs holds the request ids of
+// the eth_getLogs requests.
+func (f *drainFaults) trimLogs(message []byte, logsIDs map[string]bool) []byte {
+	f.mutex.Lock()
+	horizon := f.horizon
+	f.mutex.Unlock()
+	if horizon == 0 || len(logsIDs) == 0 {
+		return message
+	}
+	type response struct {
+		JSONRPC string          `json:"jsonrpc"`
+		ID      json.RawMessage `json:"id"`
+		Result  json.RawMessage `json:"result,omitempty"`
+		Error   json.RawMessage `json:"error,omitempty"`
+	}
+	// Only responses to eth_getLogs are rewritten; anything else
+	// (subscription notifications included) passes through byte for byte.
+	trim := func(r *response) bool {
+		if !logsIDs[string(r.ID)] || r.Result == nil {
+			return false
+		}
+		var logs []map[string]interface{}
+		if json.Unmarshal(r.Result, &logs) != nil {
+			return false
+		}
+		kept := make([]map[string]interface{}, 0, len(logs))
+		for _, l := range logs {
+			number, _ := l["blockNumber"].(string)
+			if n, err := hexutil.DecodeUint64(number); err == nil && n > horizon {
+				f.mutex.Lock()
+				f.hidden++
+				f.mutex.Unlock()
+				continue
+			}
+			kept = append(kept, l)
+		}
+		r.Result, _ = json.Marshal(kept)
+		return true
+	}
+	trimmed := bytes.TrimSpace(message)
+	if len(trimmed) > 0 && trimmed[0] == '[' {
+		var batch []response
+		if json.Unmarshal(message, &batch) != nil {
+			return message
+		}
+		changed := false
+		for i := range batch {
+			changed = trim(&batch[i]) || changed
+		}
+		if !changed {
+			return message
+		}
+		out, _ := json.Marshal(batch)
+		return out
+	}
+	var single response
+	if json.Unmarshal(message, &single) != nil || !trim(&single) {
+		return message
+	}
+	out, _ := json.Marshal(single)
+	return out
+}
+
+func drainLogsIDs(requests []legacyRPCRequest) map[string]bool {
+	ids := map[string]bool{}
+	for _, request := range requests {
+		if request.Method == "eth_getLogs" {
+			ids[string(request.ID)] = true
+		}
+	}
+	return ids
 }
 
 // Failed reports how many reads of each kind ("call", "logs") were failed.
@@ -214,7 +311,7 @@ func (f *drainFaults) serve(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
-	_, _ = w.Write(out)
+	_, _ = w.Write(f.trimLogs(out, drainLogsIDs(requests)))
 }
 
 func (f *drainFaults) serveWebsocket(w http.ResponseWriter, req *http.Request) {
@@ -235,6 +332,9 @@ func (f *drainFaults) serveWebsocket(w http.ResponseWriter, req *http.Request) {
 		defer clientWrite.Unlock()
 		return client.WriteMessage(websocket.TextMessage, message)
 	}
+	// The ids of eth_getLogs requests in flight on this connection.
+	var logsMutex sync.Mutex
+	logsIDs := map[string]bool{}
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -243,7 +343,14 @@ func (f *drainFaults) serveWebsocket(w http.ResponseWriter, req *http.Request) {
 			if err != nil {
 				return
 			}
-			if write(message) != nil {
+			logsMutex.Lock()
+			ids := logsIDs
+			logsIDs = map[string]bool{}
+			for id := range ids {
+				logsIDs[id] = true
+			}
+			logsMutex.Unlock()
+			if write(f.trimLogs(message, ids)) != nil {
 				return
 			}
 		}
@@ -270,6 +377,11 @@ func (f *drainFaults) serveWebsocket(w http.ResponseWriter, req *http.Request) {
 			}
 			continue
 		}
+		logsMutex.Lock()
+		for id := range drainLogsIDs(requests) {
+			logsIDs[id] = true
+		}
+		logsMutex.Unlock()
 		if upstream.WriteMessage(websocket.TextMessage, message) != nil {
 			return
 		}

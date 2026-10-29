@@ -12,9 +12,12 @@ package movement
 // miner plus SPV maintainer (btcFixture, world.mine), and the wallet record
 // written after the DKG (no registry approval ran).
 //
-// ADAPTER (labelled): recipeHub, the in-memory recipe channel between
-// operators. It authenticates the sending seat and lets a test crash an
-// operator the moment it publishes.
+// ADAPTER (labelled): signingTap, which passes the real signing transport
+// through and observes the worker's protocol messages.
+//
+// The incoming duty is driven as base keep-core drives a wallet action: once
+// per round, from chain state, with no state kept between rounds beyond what
+// the K-07 Mover itself stores.
 
 import (
 	"bytes"
@@ -266,102 +269,6 @@ func (s scriptUnspent) UnspentByScript(_ context.Context, script bitcoin.Script)
 	return out, nil
 }
 
-// ---------------------------------------------------------------- recipes
-
-// recipeHub is the ADAPTER recipe channel. Each operator's endpoint
-// implements frost.Transport: Broadcast and SendPrivate check that the
-// sending seat is one of the operator's own seats, and Receive yields
-// messages with the authenticated sending seat. An offline operator receives
-// nothing; what it missed is lost.
-type recipeHub struct {
-	mu      sync.Mutex
-	inboxes map[int]chan frost.Incoming
-	// onSend, when set for an operator, runs right after its message is
-	// delivered (used to crash it at publish).
-	onSend map[int]func()
-	sent   map[int]int
-}
-
-type recipeEndpoint struct {
-	hub      *recipeHub
-	operator int
-}
-
-func newHub() *recipeHub {
-	return &recipeHub{inboxes: map[int]chan frost.Incoming{}, onSend: map[int]func(){}, sent: map[int]int{}}
-}
-
-func (h *recipeHub) endpoint(op int) *recipeEndpoint {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.inboxes[op] = make(chan frost.Incoming, 1024)
-	return &recipeEndpoint{hub: h, operator: op}
-}
-
-func (h *recipeHub) offline(op int) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	delete(h.inboxes, op)
-}
-
-func operatorOf(seat uint16) int {
-	for op, seats := range b3Topology {
-		for _, s := range seats {
-			if s == seat {
-				return op
-			}
-		}
-	}
-	return -1
-}
-
-func (e *recipeEndpoint) deliver(from uint16, to int, b []byte) error {
-	if operatorOf(from) != e.operator {
-		return fmt.Errorf("ADAPTER: operator %d cannot send as seat %d", e.operator, from)
-	}
-	h := e.hub
-	h.mu.Lock()
-	var hook func()
-	for op, inbox := range h.inboxes {
-		if op == e.operator || (to >= 0 && op != to) {
-			continue
-		}
-		select {
-		case inbox <- frost.Incoming{AuthenticatedSender: from, Message: append([]byte(nil), b...)}:
-		default:
-		}
-	}
-	h.sent[e.operator]++
-	hook = h.onSend[e.operator]
-	h.mu.Unlock()
-	if hook != nil {
-		hook()
-	}
-	return nil
-}
-
-func (e *recipeEndpoint) Broadcast(_ context.Context, seat uint16, b []byte) error {
-	return e.deliver(seat, -1, b)
-}
-func (e *recipeEndpoint) SendPrivate(_ context.Context, from, to uint16, b []byte) error {
-	return e.deliver(from, operatorOf(to), b)
-}
-func (e *recipeEndpoint) Receive(ctx context.Context) (frost.Incoming, error) {
-	e.hub.mu.Lock()
-	inbox := e.hub.inboxes[e.operator]
-	e.hub.mu.Unlock()
-	if inbox == nil {
-		<-ctx.Done()
-		return frost.Incoming{}, ctx.Err()
-	}
-	select {
-	case m := <-inbox:
-		return m, nil
-	case <-ctx.Done():
-		return frost.Incoming{}, ctx.Err()
-	}
-}
-
 // ---------------------------------------------------------------- world
 
 // fenceFixture is a TEST ONLY fence that outlives reopened stores.
@@ -439,7 +346,6 @@ type b3Operator struct {
 	network       net.Provider
 	mover         *Mover
 	planner       Planner
-	recipes       *recipeEndpoint
 	online        bool
 	restarts      int
 }
@@ -454,7 +360,6 @@ type b3World struct {
 	script   bitcoin.Script
 	chain    *chainFixture
 	btc      *btcFixture
-	hub      *recipeHub
 	ops      []*b3Operator
 	member   *group.MembershipValidator
 	sequence byte
@@ -491,7 +396,7 @@ func newB3World(t *testing.T) *b3World {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	t.Cleanup(cancel)
-	w := &b3World{t: t, ctx: ctx, worker: b3WorkerConfig(t), btc: newBTC(), hub: newHub()}
+	w := &b3World{t: t, ctx: ctx, worker: b3WorkerConfig(t), btc: newBTC()}
 	w.domain = frost.Domain{Network: "b3/" + t.Name(), Chain: [32]byte{31: 1}, Registry: [20]byte{0xb3}, Epoch: 31}
 	signer := local_v1.Connect(5, 3).Signing()
 	addresses := make([]chain.Address, 5)
@@ -625,16 +530,6 @@ func (w *b3World) host(op *b3Operator) {
 	}}
 	op.mover = &Mover{Chain: w.chain, Authority: &Authority{View: view}, Lock: &deposit.MainLock{Journal: journal}, Ledger: redemption.Ledger{Journal: journal}, Schedule: redemption.Schedule{FinalityBlocks: b3Finality, RoundBlocks: b3Round}, Wallet: w.desc, Base: base}
 	op.planner = Planner{View: view, Bitcoin: scriptUnspent{w.btc}, Wallet: w.desc, Genesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash), FeeRate: 2, MaximumSatPerVByte: 20}
-	op.recipes = w.hub.endpoint(w.index(op))
-}
-
-func (w *b3World) index(op *b3Operator) int {
-	for i, o := range w.ops {
-		if o == op {
-			return i
-		}
-	}
-	return -1
 }
 
 // restart is a process restart of operator i: the store is closed and
@@ -649,19 +544,17 @@ func (w *b3World) restart(i int) {
 	op.restarts++
 }
 
-// setOnline takes operator i down (it receives nothing and runs no step) or
-// brings it back with a restart.
+// setOnline takes operator i down (it runs nothing) or brings it back with a
+// restart.
 func (w *b3World) setOnline(i int, online bool) {
 	op := w.ops[i]
 	if op.online == online {
 		return
 	}
 	op.online = online
-	if !online {
-		w.hub.offline(i)
-		return
+	if online {
+		w.restart(i)
 	}
-	w.restart(i)
 }
 
 // ---------------------------------------------------------------- chain events
@@ -692,7 +585,7 @@ func (w *b3World) setMain(value int64) bitcoin.PreviousOutput {
 }
 
 // spendMain is a FIXTURE redemption: a mined, proven transaction spends the
-// target's main and leaves a new main of value. Any recipe that spent the
+// target's main and leaves a new main of value. Any plan that spent the
 // old main can never confirm.
 func (w *b3World) spendMain(value int64) {
 	w.chain.mu.RLock()

@@ -16,7 +16,7 @@ production client (`chainethereum.Connect`, default configuration) through
 `run.sh <evidence dir> [filter]` runs every intended case in its own process
 under the shared heavy lock and writes `<evidence dir>/manifest.json`. It needs
 the same `LEGACY_*` environment as `test/legacy/run.sh`. The manifest is
-`"accepted": true` only if all 43 cases ran and passed, unfiltered, at a clean
+`"accepted": true` only if all 47 cases ran and passed, unfiltered, at a clean
 head. **A plain `go test` skips every case and is not evidence.**
 
 `controls/` holds the removal and sensitivity controls: patches against

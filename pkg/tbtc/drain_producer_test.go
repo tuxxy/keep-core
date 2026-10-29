@@ -7,9 +7,9 @@ package tbtc_test
 //
 // Invariant: when the upgraded Bridge admits a drain for a legacy MovingFunds
 // source (drain enabled, eligible ready FROST targets, custody budget, not
-// contained, main at or above dust) and no legacy Live target may or can be
-// used (after the cutover, or with no legacy Live wallet), the production
-// client commits the drain itself: exactly the C-06 number of FROST targets,
+// contained, main at or above dust), the production client commits the drain
+// itself, in every creation mode and whether or not a legacy Live wallet
+// exists (owner decision D16, 2026-10-29: "must go to FROST"): exactly the C-06 number of FROST targets,
 // min(eligible, ceil(main / walletMaxBtcTransfer)), in ascending order, and no
 // legacy target. It then signs and broadcasts the movement, paying each FROST
 // target OP_1 PUSH32 Q from its descriptor; Bitcoin Core mines it and the
@@ -20,8 +20,12 @@ package tbtc_test
 // line 729 (SC-01: "New routing cannot assign new legacy obligations that
 // defeat drain"). Review 5630879920 (K09-15), 5655962724 (K09-27).
 //
-// Not covered here (pending, DECISIONS.md D16): before the cutover with a
-// legacy Live wallet AND an admissible drain, which route the host prefers.
+//
+// D6 (tentative: wait when the target index is short) applies in every mode
+// after D16. The frost-read-faults cases test it black-box: while the FROST
+// state cannot be read, the host makes no legacy commitment, and it drains
+// once the reads succeed. An index that is readable but incomplete is not
+// constructed (see TESTS-BATCH2.md).
 
 import (
 	"bytes"
@@ -55,6 +59,12 @@ var drainProducerCases = []struct {
 	{"FrostOnly-live0", drainSetup{mode: modeFrostOnly, live: false, route: routeOpen, encoding: revertCode3}, ""},
 	{"LegacyOpen-live0", drainSetup{mode: modeLegacyOpen, live: false, route: routeOpen, encoding: revertCode3}, ""},
 	{"LegacyDraining-live0", drainSetup{mode: modeLegacyDraining, live: false, route: routeOpen, encoding: revertCode3}, ""},
+	// D16: before the cutover with a legacy Live wallet available, the
+	// drain is still required; D6 applies there too.
+	{"LegacyOpen-live1", drainSetup{mode: modeLegacyOpen, live: true, route: routeOpen, encoding: revertCode3}, ""},
+	{"LegacyDraining-live1", drainSetup{mode: modeLegacyDraining, live: true, route: routeOpen, encoding: revertCode3}, ""},
+	{"LegacyOpen-live1-frost-read-faults", drainSetup{mode: modeLegacyOpen, live: true, route: routeOpen, encoding: revertCode3, faults: true}, "frost"},
+	{"LegacyDraining-live1-frost-read-faults", drainSetup{mode: modeLegacyDraining, live: true, route: routeOpen, encoding: revertCode3, faults: true}, "frost"},
 	// C-06 target count: two eligible targets and a main above one
 	// walletMaxBtcTransfer, so both must be named, ascending.
 	{"FrostOnly-live1-two-targets", drainSetup{mode: modeFrostOnly, live: true, route: routeOpen, encoding: revertCode3,
@@ -88,8 +98,8 @@ func drainProducerRound(t *testing.T, setup drainSetup, transient string) {
 	for attempt := 1; attempt <= attempts && proposal == nil; attempt++ {
 		proposal, proposeErr = dw.window("moving-funds proposal")
 		if legacy := dw.committedLegacy(); legacy != nil {
-			t.Fatalf("drain producer (%s): the host committed legacy targets %s while an ECDSA-to-FROST drain was admissible%s",
-				setup, dw.labels(legacy), map[bool]string{true: " after the cutover", false: " and no legacy Live wallet existed"}[setup.mode == modeFrostOnly])
+			t.Fatalf("drain producer (%s): the host committed legacy targets %s while an ECDSA-to-FROST drain was admissible (%s)",
+				setup, dw.labels(legacy), map[bool]string{true: "after the cutover", false: "before the cutover; D16 requires the drain"}[setup.mode == modeFrostOnly])
 		}
 	}
 	if transient != "" {

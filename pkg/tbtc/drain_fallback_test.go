@@ -10,6 +10,8 @@ package tbtc_test
 // base movement: one P2WPKH output to it, mined by Bitcoin Core and accepted
 // by the upgraded Bridge. It never commits FROST targets the Bridge would
 // refuse. (In FrostOnly it never falls back: TestDrainProducer_NoRouteRecovery.)
+// When the drain is admissible, the host must drain instead, in every mode
+// (D16; TestDrainProducer_Drains).
 //
 // Spec: KC-SF-V3 line 448 ("ECDSA-to-ECDSA for pending legacy commitments";
 // legacy routes stay legal before the cutover). Review 5655962724 (K09-31

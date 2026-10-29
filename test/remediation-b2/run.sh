@@ -39,7 +39,8 @@ go test -c -o "$evidence/tbtc.test" ./pkg/tbtc
 # The intended cases. Subtest names are fixed in the test files.
 cases=()
 for c in FrostOnly-live1-code3-0x FrostOnly-live1-geth-32000-nodata FrostOnly-live1-transient-then-success FrostOnly-live1-frost-read-faults \
-	FrostOnly-live0 LegacyOpen-live0 LegacyDraining-live0 FrostOnly-live1-two-targets; do
+	FrostOnly-live0 LegacyOpen-live0 LegacyDraining-live0 FrostOnly-live1-two-targets \
+	LegacyOpen-live1 LegacyDraining-live1 LegacyOpen-live1-frost-read-faults LegacyDraining-live1-frost-read-faults; do
 	cases+=("^TestDrainProducer_Drains$/^${c}$")
 done
 for mode in LegacyOpen LegacyDraining; do

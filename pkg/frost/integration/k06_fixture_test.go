@@ -92,6 +92,8 @@ func newK06World(t *testing.T) *k06World {
 type k06Options struct {
 	mode     string
 	afterDKG func(f *fixture)
+	// beforeDKG runs after deployment and before the DKG starts.
+	beforeDKG func(f *fixture)
 }
 
 func newK06WorldWith(t *testing.T, options k06Options) *k06World {
@@ -102,6 +104,9 @@ func newK06WorldWith(t *testing.T, options k06Options) *k06World {
 	}
 	f := setupWith(t, "1,1,2", setupOptions{timeout: timeout, mode: options.mode})
 	core, miner := fundedCore(t, f.ctx)
+	if options.beforeDKG != nil {
+		options.beforeDKG(f)
+	}
 	records, errs := f.run()
 	for i, err := range errs {
 		if err != nil {

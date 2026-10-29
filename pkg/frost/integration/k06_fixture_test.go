@@ -101,7 +101,7 @@ func newK06WorldWith(t *testing.T, options k06Options) *k06World {
 		timeout = 30 * time.Minute
 	}
 	f := setupWith(t, "1,1,2", setupOptions{timeout: timeout, mode: options.mode})
-	core := startCore(t, f.ctx)
+	core, miner := fundedCore(t, f.ctx)
 	records, errs := f.run()
 	for i, err := range errs {
 		if err != nil {
@@ -123,11 +123,7 @@ func newK06WorldWith(t *testing.T, options k06Options) *k06World {
 	}
 	bankABI, _ := abi.JSON(strings.NewReader(`[{"type":"function","name":"approveBalance","inputs":[{"type":"address"},{"type":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"balanceOf","inputs":[{"type":"address"}],"outputs":[{"type":"uint256"}],"stateMutability":"view"}]`))
 	k5.bank = bind.NewBoundContract(f.deployment.Bank, bankABI, f.client, f.client, f.client)
-	if err = core.call(f.ctx, "getnewaddress", nil, &k5.miner); err != nil {
-		t.Fatal(err)
-	}
-	t.Log("K-06: DKG complete; mining Core coinbase maturity")
-	k5.coreMine(101)
+	k5.miner = miner
 	k5.fromBlock = k5.head()
 	k5.host()
 	refund := make([]byte, 32)

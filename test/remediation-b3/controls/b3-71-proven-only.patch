@@ -1,0 +1,16 @@
+diff --git a/pkg/frost/movement/mover.go b/pkg/frost/movement/mover.go
+index 2d4fc15cd..bc4ee0a62 100644
+--- a/pkg/frost/movement/mover.go
++++ b/pkg/frost/movement/mover.go
+@@ -277,6 +277,11 @@ func (m *Mover) settled(ctx context.Context, plan *signing.Plan, finalized uint6
+ 		}
+ 		return c.ProvenAt != 0, nil
+ 	}
++	// CONTROL b3-71-proven-only: only this plan's own proven transaction
++	// settles it.
++	if w, err := m.Chain.ProvenTransaction(ctx, finalized, plan.BitcoinTransactionHash()); err != nil || w == ([32]byte{}) {
++		return false, err
++	}
+ 	for _, in := range plan.IncomingOutputs() {
+ 		record, err := m.Chain.Incoming(ctx, finalized, OutpointKey(in.Outpoint))
+ 		if err != nil {

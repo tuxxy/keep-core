@@ -1,7 +1,9 @@
 # Remediation batch 2: drain producer tests
 
 Refs tuxxy/keep-core#34 and its constraint issues (keep-core #44, #47, #49,
-#51, #54, #55, #57, #62, #67, #68, #69; tbtc-v2 #18, #20, #21, #22). The
+#55, #62, #67, #68, #69; tbtc-v2 #18, #20, #22). keep-core #51, #54, #57, #65
+and tbtc-v2 #21 were closed on 2026-10-29: the timeout reset is a keeper job,
+as in base, so no test requires the host to send it. The
 contract side is in tbtc-v2 `test/bridge/Frost.Movement.LegacyAfterCutover.test.ts`.
 
 The tests are `pkg/tbtc/drain_*_test.go`. They extend the frozen batch-1

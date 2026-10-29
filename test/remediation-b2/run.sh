@@ -11,14 +11,6 @@
 # Usage: run.sh [-j N] <evidence directory> [case filter (extended regex)]
 # A filter runs a subset for diagnosis; such a manifest is never accepted.
 # -j N runs up to N cases at once (default 12), each with GOMAXPROCS=1.
-#
-# On macOS the cases' temporary directories (each Bitcoin Core node's data
-# directory among them) go on a RAM disk the runner creates and detaches on
-# exit (RB2_RAMDISK=0 turns this off). On the SSD, concurrent Core nodes
-# stall each other with full-drive syncs past the frozen harness's 30 s Core
-# RPC client timeout: measured 2026-10-29 on 16 cores, -j 12, -j 8 and -j 6
-# gave Core timeouts in 4-32 of 47 cases; on the RAM disk -j 12 gave none
-# (177 s for 47 cases).
 # Environment: the same variables as test/legacy/run.sh (no defaults).
 #
 # Every case runs in its own process, with its own Anvil, Bitcoin Core node,
@@ -95,16 +87,6 @@ run_case() {
 export -f run_case
 export evidence
 
-ramdisk=""
-if [ "$(uname)" = Darwin ] && [ "${RB2_RAMDISK:-1}" = 1 ]; then
-	ramdisk=$(hdiutil attach -nomount ram://16777216 | awk '{print $1}')
-	trap 'hdiutil detach "$ramdisk" >/dev/null 2>&1 || hdiutil detach -force "$ramdisk" >/dev/null 2>&1' EXIT
-	volume="rb2-$$"
-	diskutil erasevolume APFS "$volume" "$ramdisk" >/dev/null
-	export TMPDIR="/Volumes/$volume/"
-	echo "case temporary directories on RAM disk $ramdisk ($TMPDIR)"
-fi
-export RB2_RAMDISK_USED=${ramdisk:+1}
 
 selected=()
 for pattern in "${cases[@]}"; do
@@ -190,8 +172,7 @@ manifest = {
         "go": subprocess.run(["go", "version"], capture_output=True, text=True).stdout.strip(),
         "tbtcRepo": env["LEGACY_TBTC_REPO"],
     },
-    "run": {"jobs": int(env["RB2_JOBS"]), "wallSeconds": int(env["RB2_WALL"]), "gomaxprocsPerCase": 1,
-            "ramDisk": env.get("RB2_RAMDISK_USED") == "1"},
+    "run": {"jobs": int(env["RB2_JOBS"]), "wallSeconds": int(env["RB2_WALL"]), "gomaxprocsPerCase": 1},
     "intendedCases": intended, "invoked": len(cases), "passed": passed, "skipped": skips, "cases": cases,
     "problems": problems, "accepted": not problems,
 }

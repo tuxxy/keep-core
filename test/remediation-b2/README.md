@@ -15,10 +15,8 @@ production client (`chainethereum.Connect`, default configuration) through
 
 `run.sh [-j N] <evidence dir> [filter]` runs every intended case in its own
 process (own Anvil, Core node, ports and data directories; up to N at once,
-default 12, GOMAXPROCS=1 each; on macOS the case temp directories go on a
-RAM disk the runner creates and detaches, because concurrent Core nodes on
-the SSD stall past the frozen 30 s Core RPC timeout; about 3 minutes for all
-cases) under the shared heavy lock and writes `<evidence dir>/manifest.json`. It needs
+default 12, GOMAXPROCS=1 each; about 20 s for all cases with the fast
+legacy harness of tuxxy/keep-core#101) under the shared heavy lock and writes `<evidence dir>/manifest.json`. It needs
 the same `LEGACY_*` environment as `test/legacy/run.sh`. The manifest is
 `"accepted": true` only if all 47 cases ran and passed, unfiltered, at a clean
 head. **A plain `go test` skips every case and is not evidence.**

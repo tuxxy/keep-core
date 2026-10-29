@@ -1,0 +1,19 @@
+diff --git a/pkg/frost/integration/startup_stub_test.go b/pkg/frost/integration/startup_stub_test.go
+new file mode 100644
+index 000000000..8520c8a1e
+--- /dev/null
++++ b/pkg/frost/integration/startup_stub_test.go
+@@ -0,0 +1,13 @@
++package integration
++
++import "context"
++
++// CONTROL ONLY (52-startup-waits-deadline.patch): a node startup that never
++// reports and waits out its context, the K09-37 shape (retried, never
++// reported).
++func init() {
++	frostNodeStartup = func(ctx context.Context, _ startupHost) error {
++		<-ctx.Done()
++		return ctx.Err()
++	}
++}

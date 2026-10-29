@@ -1,0 +1,75 @@
+diff --git a/pkg/frost/integration/startup_stub_test.go b/pkg/frost/integration/startup_stub_test.go
+new file mode 100644
+index 000000000..e23ba6e9b
+--- /dev/null
++++ b/pkg/frost/integration/startup_stub_test.go
+@@ -0,0 +1,69 @@
++package integration
++
++// CONTROL ONLY (46-metadata-only-startup.patch): Astra's review control B1
++// (ASTRA-TEST-REVIEW-B4.md, evidence/startup_metadata_control_test.go). It
++// writes metadata and, if necessary, certifies from stored public references;
++// it never starts a worker or signs anything. A wrong fix: it must fail.
++
++import (
++	"context"
++	"time"
++
++	"github.com/ethereum/go-ethereum/crypto"
++	"github.com/keep-network/keep-core/pkg/frost"
++	"github.com/keep-network/keep-core/pkg/frost/dkg"
++)
++
++func init() {
++	frostNodeStartup = func(ctx context.Context, h startupHost) error {
++		status, err := h.Journal.DKGStatus(ctx)
++		if err != nil {
++			return err
++		}
++		if status.State == frost.DKGSeatsLost {
++			return nil
++		}
++		record, err := h.Journal.LoadWallet(ctx)
++		if err != nil {
++			return err
++		}
++		key, err := h.Journal.LoadKey(ctx)
++		if err != nil {
++			return err
++		}
++		for {
++			view, err := h.Chain.View(ctx, h.Domain.Epoch)
++			if err != nil {
++				return err
++			}
++			if view.Approved.State == 2 {
++				record.State = "ReadyUnfunded"
++				return h.Journal.SaveWallet(ctx, record)
++			}
++			if len(h.LocalSeats) >= 2 {
++				refs := make([][32]byte, len(h.LocalSeats))
++				var sigs []byte
++				for i, seat := range h.LocalSeats {
++					refs[i] = crypto.Keccak256Hash(key.LocalReferences[i])
++					digest, err := h.Chain.ReadinessDigest(ctx, view.Approved, seat, refs[i])
++					if err != nil {
++						return err
++					}
++					sig, err := dkg.Sign(h.Signer, digest)
++					if err != nil {
++						return err
++					}
++					sigs = append(sigs, sig...)
++				}
++				if err := h.Chain.Ready(ctx, record.ID, h.LocalSeats, refs, sigs); err != nil {
++					return err
++				}
++			}
++			select {
++			case <-ctx.Done():
++				return ctx.Err()
++			case <-time.After(10 * time.Millisecond):
++			}
++		}
++	}
++}

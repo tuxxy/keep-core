@@ -1,0 +1,29 @@
+diff --git a/pkg/frost/movement/mover.go b/pkg/frost/movement/mover.go
+index 2d4fc15cd..32f6d3746 100644
+--- a/pkg/frost/movement/mover.go
++++ b/pkg/frost/movement/mover.go
+@@ -6,6 +6,7 @@ import (
+ 	"encoding/binary"
+ 	"errors"
+ 	"fmt"
++	"sort"
+ 	"strconv"
+ 
+ 	"github.com/keep-network/keep-core/pkg/frost/deposit"
+@@ -120,7 +121,15 @@ func (m *Mover) executor(plan *signing.Plan, r Round) (*signing.Executor, error)
+ 	c.Session = r.Session
+ 	c.StartBlock = r.StartBlock
+ 	c.FinalityBlocks = m.Schedule.FinalityBlocks
+-	c.Selected = seats(m.Wallet)
++	// CONTROL b3-66-threshold-window: a threshold-size window of the live
++	// seats that moves with the round, so a down member is left out of some
++	// rounds, as base signing retries with member subsets.
++	live := seats(m.Wallet)
++	c.Selected = nil
++	for i := 0; i < int(m.Wallet.Threshold); i++ {
++		c.Selected = append(c.Selected, live[(int(r.Number)+i)%len(live)])
++	}
++	sort.Slice(c.Selected, func(i, j int) bool { return c.Selected[i] < c.Selected[j] })
+ 	c.Reservations = nil
+ 	c.Sweeps = m.Authority
+ 	c.Guard = deposit.Guard{Lock: m.Lock}

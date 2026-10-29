@@ -8,12 +8,22 @@
 # nothing. Acceptance is the manifest.json this script writes, with
 # "accepted": true, at the candidate head.
 #
-# Usage: run.sh <evidence directory> [case filter (extended regex)]
+# Usage: run.sh [-j N] <evidence directory> [case filter (extended regex)]
 # A filter runs a subset for diagnosis; such a manifest is never accepted.
+# -j N runs up to N cases at once (default 12), each with GOMAXPROCS=1.
+#
+# On macOS the cases' temporary directories (each Bitcoin Core node's data
+# directory among them) go on a RAM disk the runner creates and detaches on
+# exit (RB2_RAMDISK=0 turns this off). On the SSD, concurrent Core nodes
+# stall each other with full-drive syncs past the frozen harness's 30 s Core
+# RPC client timeout: measured 2026-10-29 on 16 cores, -j 12, -j 8 and -j 6
+# gave Core timeouts in 4-32 of 47 cases; on the RAM disk -j 12 gave none
+# (177 s for 47 cases).
 # Environment: the same variables as test/legacy/run.sh (no defaults).
 #
-# Every case runs in its own process, so state a client keeps in package
-# variables cannot leak from one case into another.
+# Every case runs in its own process, with its own Anvil, Bitcoin Core node,
+# ports and data directories, so state a client keeps in package variables
+# cannot leak from one case into another, and cases can run in parallel.
 set -euo pipefail
 umask 077
 : "${LEGACY_BASELINE_DIR:?run test/legacy/build-baseline.sh first}"
@@ -26,6 +36,11 @@ umask 077
 : "${LEGACY_HEAVY_LOCK:?heavy lock file required}"
 if [ -z "${LEGACY_HOLDS_LOCK:-}" ]; then
 	LEGACY_HOLDS_LOCK=1 exec /usr/bin/lockf -k "$LEGACY_HEAVY_LOCK" bash "$0" "$@"
+fi
+jobs=12
+if [ "${1:-}" = "-j" ]; then
+	jobs=${2:?-j needs a number}
+	shift 2
 fi
 evidence=${1:?evidence directory required}
 filter=${2:-}
@@ -68,18 +83,48 @@ done
 cases+=('^TestDrainProducer_BridgeUpgradedAfterStartup$')
 cases+=('^TestDrainProducer_ResetSubmission$')
 
-results="$evidence/cases.tsv"
-: > "$results"
+# One case: its own process, GOMAXPROCS=1; records its exit status.
+run_case() {
+	local pattern=$1 name status=0
+	name=$(printf '%s' "$pattern" | tr -c 'A-Za-z0-9_+-' '_')
+	GOMAXPROCS=1 "$evidence/tbtc.test" -test.v -test.count=1 \
+		-test.timeout 12m -test.run "$pattern" > "$evidence/$name.log" 2>&1 || status=$?
+	printf '%s\n' "$status" > "$evidence/$name.status"
+	grep -E -- '^\s*--- (PASS|FAIL|SKIP)' "$evidence/$name.log" | grep -v '^ \{4,\}' | sed "s|^|$name: |" || true
+}
+export -f run_case
+export evidence
+
+ramdisk=""
+if [ "$(uname)" = Darwin ] && [ "${RB2_RAMDISK:-1}" = 1 ]; then
+	ramdisk=$(hdiutil attach -nomount ram://16777216 | awk '{print $1}')
+	trap 'hdiutil detach "$ramdisk" >/dev/null 2>&1 || hdiutil detach -force "$ramdisk" >/dev/null 2>&1' EXIT
+	volume="rb2-$$"
+	diskutil erasevolume APFS "$volume" "$ramdisk" >/dev/null
+	export TMPDIR="/Volumes/$volume/"
+	echo "case temporary directories on RAM disk $ramdisk ($TMPDIR)"
+fi
+export RB2_RAMDISK_USED=${ramdisk:+1}
+
+selected=()
 for pattern in "${cases[@]}"; do
 	if [ -n "$filter" ] && ! printf '%s' "$pattern" | grep -Eq -- "$filter"; then
 		continue
 	fi
+	selected+=("$pattern")
+done
+started=$(date +%s)
+printf '%s\0' "${selected[@]}" | xargs -0 -n 1 -P "$jobs" bash -c 'run_case "$1"' _
+export RB2_WALL=$(( $(date +%s) - started )) RB2_JOBS=$jobs
+echo "wall time: $RB2_WALL s for ${#selected[@]} cases, -j $jobs"
+
+# cases.tsv in the intended order, whatever order the cases finished in.
+results="$evidence/cases.tsv"
+: > "$results"
+for pattern in "${selected[@]}"; do
 	name=$(printf '%s' "$pattern" | tr -c 'A-Za-z0-9_+-' '_')
-	status=0
-	GOMAXPROCS=${GOMAXPROCS:-5} "$evidence/tbtc.test" -test.v -test.count=1 \
-		-test.timeout 12m -test.run "$pattern" > "$evidence/$name.log" 2>&1 || status=$?
+	status=$(cat "$evidence/$name.status" 2>/dev/null || echo missing)
 	printf '%s\t%s\t%s\n' "$pattern" "$name.log" "$status" >> "$results"
-	grep -E -- '^\s*--- (PASS|FAIL|SKIP)' "$evidence/$name.log" | sed "s|^|$name: |" || true
 done
 
 python3 - "$evidence" "$kc_root" "${#cases[@]}" "$filter" <<'PY'
@@ -113,7 +158,9 @@ if upgraded["manifest"].get("tbtcCommit") != env["LEGACY_UPGRADED_COMMIT"]:
 cases = []
 for line in open(os.path.join(evidence, "cases.tsv")):
     pattern, log, status = line.rstrip("\n").split("\t")
-    text = open(os.path.join(evidence, log)).read()
+    if status == "missing":
+        status = "-1"
+    text = open(os.path.join(evidence, log)).read() if os.path.exists(os.path.join(evidence, log)) else ""
     skipped = "--- SKIP" in text
     leaf = pattern.split("$/^")[-1].strip("^$").replace("\\+", "+")
     ran = re.search(r"--- PASS: \S*" + re.escape(leaf), text) is not None
@@ -143,6 +190,8 @@ manifest = {
         "go": subprocess.run(["go", "version"], capture_output=True, text=True).stdout.strip(),
         "tbtcRepo": env["LEGACY_TBTC_REPO"],
     },
+    "run": {"jobs": int(env["RB2_JOBS"]), "wallSeconds": int(env["RB2_WALL"]), "gomaxprocsPerCase": 1,
+            "ramDisk": env.get("RB2_RAMDISK_USED") == "1"},
     "intendedCases": intended, "invoked": len(cases), "passed": passed, "skipped": skips, "cases": cases,
     "problems": problems, "accepted": not problems,
 }

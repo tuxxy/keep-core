@@ -764,7 +764,9 @@ func legacyFreePort(t *testing.T) int {
 	return listener.Addr().(*net.TCPAddr).Port
 }
 
-func startLegacyCore(t *testing.T, env legacyEnvironment) *legacyCore {
+// startLegacyCore runs bitcoind on datadir. The returned function stops it
+// and waits for it to exit; it also runs at cleanup.
+func startLegacyCore(t *testing.T, env legacyEnvironment, datadir string) (*legacyCore, func()) {
 	t.Helper()
 	executable, err := os.ReadFile(env.bitcoind)
 	if err != nil {
@@ -777,7 +779,7 @@ func startLegacyCore(t *testing.T, env legacyEnvironment) *legacyCore {
 	core := &legacyCore{url: fmt.Sprintf("http://127.0.0.1:%d", rpcPort), user: "legacy", pass: "legacy-unchanged"}
 	ctx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx, env.bitcoind,
-		"-regtest", "-datadir="+t.TempDir(), "-server", "-listen=0", "-txindex=1",
+		"-regtest", "-datadir="+datadir, "-server", "-listen=0", "-txindex=1",
 		fmt.Sprintf("-rpcport=%d", rpcPort), fmt.Sprintf("-port=%d", p2pPort),
 		"-rpcuser="+core.user, "-rpcpassword="+core.pass,
 		"-fallbackfee=0.0002", "-printtoconsole=0",
@@ -786,22 +788,26 @@ func startLegacyCore(t *testing.T, env legacyEnvironment) *legacyCore {
 		cancel()
 		t.Fatalf("bitcoind: %v", err)
 	}
-	t.Cleanup(func() {
-		_ = core.call("stop", nil, nil)
-		done := make(chan struct{})
-		go func() { _ = cmd.Wait(); close(done) }()
-		select {
-		case <-done:
-		case <-time.After(15 * time.Second):
+	var once sync.Once
+	stop := func() {
+		once.Do(func() {
+			_ = core.call("stop", nil, nil)
+			done := make(chan struct{})
+			go func() { _ = cmd.Wait(); close(done) }()
+			select {
+			case <-done:
+			case <-time.After(15 * time.Second):
+				cancel()
+				<-done
+			}
 			cancel()
-			<-done
-		}
-		cancel()
-	})
+		})
+	}
+	t.Cleanup(stop)
 	deadline := time.Now().Add(30 * time.Second)
 	for {
 		if err = core.call("getblockchaininfo", nil, nil); err == nil {
-			return core
+			return core, stop
 		}
 		if time.Now().After(deadline) {
 			t.Fatalf("bitcoind did not start: %v", err)
@@ -833,16 +839,93 @@ type legacyRegtest struct {
 
 var _ bitcoin.Chain = (*legacyRegtest)(nil)
 
+// legacyCoreTemplate returns a stopped regtest datadir whose wallet
+// "legacy-unchanged" holds 101 blocks of coinbases, and the wallet's mining
+// address. Mining with a loaded wallet costs one disk sync per block (7 s for
+// the 101 blocks alone, 25 s next to parallel cases), so the datadir is built
+// once per machine and bitcoind binary, and each case starts from a copy.
+func legacyCoreTemplate(t *testing.T, env legacyEnvironment) (string, string) {
+	t.Helper()
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := filepath.Join(cache, "keep-core-legacy-tests")
+	final := filepath.Join(root, "core-"+env.bitcoindSHA256[:16]+"-v1")
+	if miner, err := os.ReadFile(filepath.Join(final, "miner")); err == nil {
+		return final, string(miner)
+	}
+	if err := os.MkdirAll(root, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	building, err := os.MkdirTemp(root, "building-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(building)
+	core, stop := startLegacyCore(t, env, building)
+	var miner string
+	if err := core.call("createwallet", []interface{}{"legacy-unchanged"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := core.call("getnewaddress", nil, &miner); err != nil {
+		t.Fatal(err)
+	}
+	if err := core.call("generatetoaddress", []interface{}{101, miner}, nil); err != nil {
+		t.Fatal(err)
+	}
+	stop()
+	if err := os.WriteFile(filepath.Join(building, "miner"), []byte(miner), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	// Another process may have finished first; either copy will do.
+	if err := os.Rename(building, final); err != nil {
+		if _, statErr := os.Stat(filepath.Join(final, "miner")); statErr != nil {
+			t.Fatalf("Core template: %v", err)
+		}
+		own, err := os.ReadFile(filepath.Join(final, "miner"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		miner = string(own)
+	}
+	return final, miner
+}
+
+// legacyCopyDir copies a stopped datadir.
+func legacyCopyDir(t *testing.T, from, to string) {
+	t.Helper()
+	err := filepath.Walk(from, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(from, path)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(to, rel)
+		if info.IsDir() {
+			return os.MkdirAll(target, 0o700)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(target, data, 0o600)
+	})
+	if err != nil {
+		t.Fatalf("Core datadir copy: %v", err)
+	}
+}
+
 func newLegacyRegtest(t *testing.T, env legacyEnvironment) *legacyRegtest {
 	t.Helper()
-	c := &legacyRegtest{t: t, core: startLegacyCore(t, env)}
-	if err := c.core.call("createwallet", []interface{}{"legacy-unchanged"}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if err := c.core.call("getnewaddress", nil, &c.miner); err != nil {
-		t.Fatal(err)
-	}
-	if err := c.core.call("generatetoaddress", []interface{}{101, c.miner}, nil); err != nil {
+	template, miner := legacyCoreTemplate(t, env)
+	datadir := t.TempDir()
+	legacyCopyDir(t, template, datadir)
+	core, _ := startLegacyCore(t, env, datadir)
+	c := &legacyRegtest{t: t, core: core, miner: miner}
+	if err := c.core.call("loadwallet", []interface{}{"legacy-unchanged"}, nil); err != nil {
 		t.Fatal(err)
 	}
 	c.mutex.Lock()
@@ -1362,6 +1445,23 @@ func (w *legacyWorld) opts() *bind.TransactOpts {
 	return opts
 }
 
+// legacyWaitMined waits for tx's receipt. bind.WaitMined polls once a second,
+// which made every setup transaction cost a second although Anvil mines at
+// once.
+func legacyWaitMined(ctx context.Context, b bind.DeployBackend, tx *types.Transaction) (*types.Receipt, error) {
+	for {
+		receipt, err := b.TransactionReceipt(ctx, tx.Hash())
+		if err == nil {
+			return receipt, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+}
+
 // send submits one admin transaction and requires it to succeed.
 func (w *legacyWorld) send(what string, fn func(*bind.TransactOpts) (*types.Transaction, error)) {
 	w.t.Helper()
@@ -1371,7 +1471,7 @@ func (w *legacyWorld) send(what string, fn func(*bind.TransactOpts) (*types.Tran
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	receipt, err := bind.WaitMined(ctx, w.admin, tx)
+	receipt, err := legacyWaitMined(ctx, w.admin, tx)
 	if err != nil {
 		w.t.Fatalf("%s: %v", what, err)
 	}
@@ -1388,8 +1488,10 @@ func (w *legacyWorld) deploy(what string, parsed abi.ABI, code []byte, args ...i
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if _, err := bind.WaitDeployed(ctx, w.admin, tx); err != nil {
+	if receipt, err := legacyWaitMined(ctx, w.admin, tx); err != nil {
 		w.t.Fatalf("deploy %s: %v", what, err)
+	} else if receipt.ContractAddress != address {
+		w.t.Fatalf("deploy %s: receipt names contract %s", what, receipt.ContractAddress)
 	}
 	code, err = w.admin.CodeAt(context.Background(), address, nil)
 	if err != nil || len(code) == 0 || len(code) > 24576 {

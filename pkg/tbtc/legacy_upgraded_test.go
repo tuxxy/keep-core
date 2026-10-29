@@ -179,7 +179,7 @@ func legacyUpgradedDrainRound(t *testing.T, encoding legacyRevertEncoding) {
 	if err != nil {
 		t.Fatalf("setup: drain commitment: %v", err)
 	}
-	if receipt, err := bind.WaitMined(context.Background(), w.admin, tx); err != nil || receipt.Status != types.ReceiptStatusSuccessful {
+	if receipt, err := legacyWaitMined(context.Background(), w.admin, tx); err != nil || receipt.Status != types.ReceiptStatusSuccessful {
 		t.Fatalf("setup: drain commitment not mined: %v", err)
 	}
 

@@ -1,0 +1,32 @@
+diff --git a/pkg/frost/signing/executor.go b/pkg/frost/signing/executor.go
+index 6c49c0075..ad66322d0 100644
+--- a/pkg/frost/signing/executor.go
++++ b/pkg/frost/signing/executor.go
+@@ -356,7 +356,16 @@ func (g finalAuthorization) BeforeSigning(ctx context.Context, r frost.SigningRe
+ 			return fmt.Errorf("%w: main purpose lock: %v", ErrUnauthorized, err)
+ 		}
+ 	}
+-	return nil
++	// CONTROL b3-50-grant-marker: a durable grant marker before release.
++	attempt, err := e.attempt(g.input)
++	if err != nil {
++		return err
++	}
++	return e.config.Journal.RetainSigningRecord(ctx, grantMarkerID(snowfallengine.AttemptID(attempt)), []byte{1})
++}
++
++func grantMarkerID(attempt [32]byte) [32]byte {
++	return sha256.Sum256(append([]byte("CONTROL/b3/grant-marker/"), attempt[:]...))
+ }
+ 
+ type signingAcceptance struct{}
+@@ -686,6 +695,9 @@ func (e *Executor) PossibleRelease(ctx context.Context) (bool, error) {
+ 		if err == nil {
+ 			return true, nil
+ 		}
++		if _, err = e.config.Journal.ReadSigningRecord(ctx, grantMarkerID(snowfallengine.AttemptID(attempt))); err == nil {
++			return true, nil
++		}
+ 		if !errors.Is(err, store.ErrMissing) {
+ 			return true, err
+ 		}

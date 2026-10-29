@@ -34,7 +34,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
@@ -247,7 +246,7 @@ func (dw *drainWorld) prove(tx *bitcoin.Transaction) error {
 	if err != nil {
 		return err
 	}
-	receipt, err := bind.WaitMined(context.Background(), dw.admin, sent)
+	receipt, err := legacyWaitMined(context.Background(), dw.admin, sent)
 	if err != nil {
 		return err
 	}

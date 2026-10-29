@@ -80,7 +80,7 @@ func drainDustRound(t *testing.T, setup drainSetup) {
 	if err != nil {
 		t.Fatalf("below dust (%s): a third party's notifyMovingFundsBelowDust is refused: %v", setup, err)
 	}
-	if receipt, err := bind.WaitMined(context.Background(), dw.admin, tx); err != nil || receipt.Status != types.ReceiptStatusSuccessful {
+	if receipt, err := legacyWaitMined(context.Background(), dw.admin, tx); err != nil || receipt.Status != types.ReceiptStatusSuccessful {
 		t.Fatalf("below dust (%s): a third party's notifyMovingFundsBelowDust did not succeed: %v", setup, err)
 	}
 	if state, _, _ := dw.sourceWallet(); state != 3 {

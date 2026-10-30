@@ -1,0 +1,15 @@
+diff --git a/pkg/tbtcpg/moving_funds.go b/pkg/tbtcpg/moving_funds.go
+index dc860aa83..b510a0700 100644
+--- a/pkg/tbtcpg/moving_funds.go
++++ b/pkg/tbtcpg/moving_funds.go
+@@ -167,8 +167,8 @@ func (mft *MovingFundsTask) Run(request *tbtc.CoordinationProposalRequest) (
+ 	}
+ 
+ 	if liveWalletsCount == 0 {
+-		taskLogger.Infof("there are no Live wallets available")
+-		return nil, false, nil
++		// CONTROL P1 (K09-33): no Live wallets is an error.
++		return nil, false, fmt.Errorf("there are no Live wallets available")
+ 	}
+ 
+ 	targetWalletsCommitmentHash :=

@@ -1,0 +1,37 @@
+diff --git a/pkg/chain/ethereum/tbtc.go b/pkg/chain/ethereum/tbtc.go
+index 7ed6348d3..911f66207 100644
+--- a/pkg/chain/ethereum/tbtc.go
++++ b/pkg/chain/ethereum/tbtc.go
+@@ -2470,3 +2470,12 @@ func (tc *TbtcChain) GetRedemptionDelay(
+ func (tc *TbtcChain) GetDepositMinAge() (uint32, error) {
+ 	return tc.walletProposalValidator.DEPOSITMINAGE()
+ }
++
++// ChainHeadTimeForControl is a CONTROL (test/remediation-b2/controls).
++func (tc *TbtcChain) ChainHeadTimeForControl() (time.Time, error) {
++	header, err := tc.baseChain.client.HeaderByNumber(context.Background(), nil)
++	if err != nil {
++		return time.Time{}, err
++	}
++	return time.Unix(int64(header.Time), 0), nil
++}
+diff --git a/pkg/tbtc/moving_funds.go b/pkg/tbtc/moving_funds.go
+index 06a56498e..a1eee4dd8 100644
+--- a/pkg/tbtc/moving_funds.go
++++ b/pkg/tbtc/moving_funds.go
+@@ -436,6 +436,15 @@ func ValidateMovingFundsSafetyMargin(
+ 
+ 	safetyMarginExpiresAt := walletChainData.MovingFundsRequestedAt.Add(safetyMargin)
+ 
++	// CONTROL P3 (K09-55): an extra chain-head read on every check.
++	if headed, ok := chain.(interface {
++		ChainHeadTimeForControl() (time.Time, error)
++	}); ok {
++		if _, err := headed.ChainHeadTimeForControl(); err != nil {
++			return err
++		}
++	}
++
+ 	if time.Now().Before(safetyMarginExpiresAt) {
+ 		return fmt.Errorf("safety margin in force")
+ 	}

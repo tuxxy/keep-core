@@ -1,0 +1,17 @@
+diff --git a/pkg/tbtcpg/moving_funds.go b/pkg/tbtcpg/moving_funds.go
+index dc860aa83..8c9efc66b 100644
+--- a/pkg/tbtcpg/moving_funds.go
++++ b/pkg/tbtcpg/moving_funds.go
+@@ -72,6 +72,12 @@ func (mft *MovingFundsTask) Run(request *tbtc.CoordinationProposalRequest) (
+ 	bool,
+ 	error,
+ ) {
++	// CONTROL Q (test/remediation-b2/controls), never production code: an
++	// idle host that never proposes, so only the keeper acts.
++	if request != nil {
++		return nil, false, nil
++	}
++
+ 	walletPublicKeyHash := request.WalletPublicKeyHash
+ 
+ 	taskLogger := logger.With(

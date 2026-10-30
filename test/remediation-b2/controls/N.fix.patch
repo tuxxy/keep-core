@@ -1,0 +1,121 @@
+diff --git a/pkg/chain/ethereum/frost_movement.go b/pkg/chain/ethereum/frost_movement.go
+index 89770d624..228a4aa7a 100644
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -9,6 +9,7 @@ import (
+ 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+ 	"github.com/ethereum/go-ethereum/core/types"
+ 	binding "github.com/keep-network/keep-core/pkg/chain/ethereum/frostabi"
++	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
+ 	"github.com/keep-network/keep-core/pkg/frost/dkg"
+ 	"github.com/keep-network/keep-core/pkg/frost/movement"
+ 	"github.com/keep-network/keep-core/pkg/tbtc"
+@@ -281,3 +282,34 @@ func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error
+ }
+ 
+ var _ tbtc.FrostTargetResolver = (*TbtcChain)(nil)
++
++// NaiveFrostDrainTargets is a CONTROL (test/remediation-b2/controls), never
++// production code: every registered FROST wallet the Bridge reports as ready,
++// with no check of the drain switch, creation mode, containment, budget or
++// dust.
++func (tc *TbtcChain) NaiveFrostDrainTargets() ([][20]byte, error) {
++	filterer, err := frostbridgeabi.NewFrostBridgeFilterer(tc.controlBridgeAddress, tc.baseChain.client)
++	if err != nil {
++		return nil, err
++	}
++	iterator, err := filterer.FilterFrostWalletRegistered(&bind.FilterOpts{Start: 0}, nil, nil)
++	if err != nil {
++		return nil, err
++	}
++	defer iterator.Close()
++	var labels [][20]byte
++	for iterator.Next() {
++		raw, err := tc.frostBridge.WalletDescriptor(nil, iterator.Event.Label)
++		if err != nil {
++			return nil, err
++		}
++		w, err := decodeWallet(raw)
++		if err != nil {
++			return nil, err
++		}
++		if w.State == 3 || w.State == 4 {
++			labels = append(labels, iterator.Event.Label)
++		}
++	}
++	return labels, iterator.Error()
++}
+diff --git a/pkg/chain/ethereum/tbtc.go b/pkg/chain/ethereum/tbtc.go
+index 7ed6348d3..2d02b9599 100644
+--- a/pkg/chain/ethereum/tbtc.go
++++ b/pkg/chain/ethereum/tbtc.go
+@@ -85,6 +85,9 @@ type TbtcChain struct {
+ 
+ 	sweptDepositsCache *cache.GenericTimeCache[*tbtc.DepositChainRequest]
+ 
++	// controlBridgeAddress: CONTROL, the Bridge proxy address.
++	controlBridgeAddress common.Address
++
+ 	// frostBridge reads the FROST extension at the Bridge address (K-07 drain).
+ 	frostBridge *frostbridgeabi.FrostBridgeCaller
+ }
+@@ -292,6 +295,7 @@ func newTbtcChain(
+ 
+ 	return &TbtcChain{
+ 		frostBridge:              frostBridge,
++		controlBridgeAddress:     bridgeAddress,
+ 		baseChain:                baseChain,
+ 		bridge:                   bridge,
+ 		maintainerProxy:          maintainerProxy,
+diff --git a/pkg/tbtcpg/moving_funds.go b/pkg/tbtcpg/moving_funds.go
+index dc860aa83..d7886e151 100644
+--- a/pkg/tbtcpg/moving_funds.go
++++ b/pkg/tbtcpg/moving_funds.go
+@@ -166,7 +166,7 @@ func (mft *MovingFundsTask) Run(request *tbtc.CoordinationProposalRequest) (
+ 		)
+ 	}
+ 
+-	if liveWalletsCount == 0 {
++	if liveWalletsCount == 0 && !mft.hasNaiveDrainTargets() {
+ 		taskLogger.Infof("there are no Live wallets available")
+ 		return nil, false, nil
+ 	}
+@@ -298,6 +298,16 @@ func (mft *MovingFundsTask) findNewTargetWallets(
+ 		return y
+ 	}
+ 
++	if naive, err := mft.naiveDrainTargets(); err != nil {
++		return nil, err
++	} else if len(naive) > 0 {
++		sort.Slice(naive, func(i, j int) bool {
++			return new(big.Int).SetBytes(naive[i][:]).Cmp(new(big.Int).SetBytes(naive[j][:])) < 0
++		})
++		count := min(uint64(len(naive)), ceilingDivide(walletBalance, walletMaxBtcTransfer))
++		return naive[:count], nil
++	}
++
+ 	targetWalletsCount := min(
+ 		uint64(liveWalletsCount),
+ 		ceilingDivide(walletBalance, walletMaxBtcTransfer),
+@@ -673,3 +683,21 @@ func EstimateMovingFundsFee(
+ 
+ 	return totalFee, nil
+ }
++
++// hasNaiveDrainTargets is a CONTROL: a failed read counts as none here,
++// since the zero-Live path has no legacy route to fall back to.
++func (mft *MovingFundsTask) hasNaiveDrainTargets() bool {
++	naive, err := mft.naiveDrainTargets()
++	return err == nil && len(naive) > 0
++}
++
++// naiveDrainTargets is a CONTROL (test/remediation-b2/controls).
++func (mft *MovingFundsTask) naiveDrainTargets() ([][20]byte, error) {
++	naive, ok := mft.chain.(interface {
++		NaiveFrostDrainTargets() ([][20]byte, error)
++	})
++	if !ok {
++		return nil, nil
++	}
++	return naive.NaiveFrostDrainTargets()
++}

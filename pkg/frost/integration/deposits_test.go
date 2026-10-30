@@ -69,22 +69,28 @@ func (w *k06World) sweepAndProve(plan *signing.Plan, number uint64, maintainer s
 	if err != nil || again.Kind != "already-credited" || w.balance(w.adminAddr) != adminBefore+credit {
 		t.Fatalf("second proof: %+v %v", again, err)
 	}
+	// Single main (Refs tuxxy/tbtc-v2#24): an ordinary sweep is planned only
+	// while the main is unreserved, so after its proof recognized custody is
+	// exactly its output: the unreserved main, holding the whole custody value.
 	custody, err := w.chain.Custody(ctx, w.head(), w.walletID)
 	swept := deposit.OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: plan.BitcoinTransactionHash()})
-	if err != nil || (custody.ActiveReservation == ([32]byte{}) && custody.MainOutpoint != swept) {
-		t.Fatal("an unreserved sweep output must be the new main", err)
+	out, outErr := w.chain.CustodyOutput(ctx, w.head(), swept)
+	if outErr != nil || out.WalletID != w.walletID || out.Spent {
+		t.Fatal("sweep output not recognized as custody", outErr)
 	}
-	if out, err := w.chain.CustodyOutput(ctx, w.head(), swept); err != nil || out.WalletID != w.walletID || out.Spent {
-		t.Fatal("sweep output not recognized as custody", err)
+	if err != nil || custody.ActiveReservation != ([32]byte{}) || custody.MainOutpoint != swept || custody.Value != out.Value {
+		t.Fatalf("single main: the sweep output must be the new unreserved main holding all custody: %+v, output %+v, %v", custody, out, err)
 	}
 }
 
 // TestFrostDepositSweepAndCredit: Go-built deposits equal C-05's constructions;
 // real funding, reveal, independent identical planning on every operator,
 // authorized threshold BIP342 sweep by the real worker, Core acceptance, SPV
-// proof and C-05 credit exactly once. Then a K-05 payment moves the main, and a
-// second sweep spends the new main; its proof reply is lost and the
-// maintainer still credits once without resubmitting.
+// proof and C-05 credit exactly once. Then a K-05 payment moves the main. A
+// deposit revealed while the main is reserved waits (no operator plans it,
+// Refs tuxxy/tbtc-v2#24); after the payment proof a second sweep spends it
+// with the new main; its proof reply is lost and the maintainer still credits
+// once without resubmitting.
 func TestFrostDepositSweepAndCredit(t *testing.T) {
 	w := newK06World(t)
 	ctx := w.f.ctx
@@ -121,6 +127,36 @@ func TestFrostDepositSweepAndCredit(t *testing.T) {
 			t.Fatalf("operator %d attestation did not take the main lock: %+v %v", i, current, err)
 		}
 	}
+	w.broadcastPayment(payment, reservation)
+	w.coreMine(1)
+
+	// Single main (D13 refinement, Refs tuxxy/tbtc-v2#24): a deposit revealed
+	// while the main is reserved waits. The payment is confirmed on Bitcoin,
+	// but until C-04 records its proof the main stays reserved and no operator
+	// plans an ordinary sweep.
+	c := w.deposit(3_000_000, locktime, [20]byte{})
+	w.planRefused(w.round(c.readyBlock + k06Finality))
+	w.provePayment(payment)
+
+	// After the payment proof the waiting deposit is swept with the new main.
+	r = w.round(w.head())
+	plan = w.plan(r)
+	custody, _ := w.chain.Custody(ctx, w.head(), w.walletID)
+	if m := plan.SweepMain(); m == nil || deposit.OutpointKey(m.Outpoint) != custody.MainOutpoint || m.Outpoint.TransactionHash != bitcoin.Hash(payment.BitcoinTransactionHash()) {
+		t.Fatal("the sweep after a confirmed payment must spend the payment's change as main")
+	}
+	if d := plan.SweepDeposits(); len(d) != 1 || d[0].Key != c.key {
+		t.Fatal("single main: the deposit that waited out the reservation must be swept with the new main")
+	}
+	lossy := w.sweeps
+	lossy.Chain = &lostReply{Chain: w.chain, lose: true}
+	w.sweepAndProve(plan, r.Number, lossy)
+}
+
+// broadcastPayment signs payment on every operator and broadcasts it.
+func (w *k06World) broadcastPayment(payment *signing.Plan, reservation [32]byte) {
+	t, ctx := w.t, w.f.ctx
+	t.Helper()
 	statuses := make([]redemption.Status, len(w.resolvers))
 	errs := make([]error, len(w.resolvers))
 	var wg sync.WaitGroup
@@ -140,7 +176,14 @@ func TestFrostDepositSweepAndCredit(t *testing.T) {
 	if status, err := w.resolvers[0].Resolve(ctx, payment, reservation); err != nil || status != redemption.StatusBroadcast {
 		t.Fatal(status, err)
 	}
-	w.coreMine(1)
+}
+
+// provePayment proves the confirmed payment through C-04, which records its
+// change as the new unreserved main, and closes every operator's lock on the
+// paid main once the proof is final.
+func (w *k06World) provePayment(payment *signing.Plan) {
+	t, ctx := w.t, w.f.ctx
+	t.Helper()
 	if actions, err := w.maintainer.ProveSettlements(ctx); err != nil || len(actions) != 1 {
 		t.Fatalf("payment proof: %+v %v", actions, err)
 	}
@@ -150,17 +193,19 @@ func TestFrostDepositSweepAndCredit(t *testing.T) {
 			t.Fatal("close the paid main:", err)
 		}
 	}
+}
 
-	c := w.deposit(3_000_000, locktime, [20]byte{})
-	r = w.round(c.readyBlock + k06Finality)
-	plan = w.plan(r)
-	custody, _ := w.chain.Custody(ctx, w.head(), w.walletID)
-	if m := plan.SweepMain(); m == nil || deposit.OutpointKey(m.Outpoint) != custody.MainOutpoint || m.Outpoint.TransactionHash != bitcoin.Hash(payment.BitcoinTransactionHash()) {
-		t.Fatal("the sweep after a confirmed payment must spend the payment's change as main")
+// planRefused requires every operator's round planning to refuse an ordinary
+// sweep with ErrMainBusy while the wallet's main is reserved: deposits wait
+// for the reservation (single main, D13 refinement; supports KC-VER
+// P-K06-ONE-MAIN-PURPOSE). Refs tuxxy/tbtc-v2#24
+func (w *k06World) planRefused(r deposit.Round) {
+	w.t.Helper()
+	for i, s := range w.sweepers {
+		if p, err := s.Plan(w.f.ctx, w.fromBlock, r); !errors.Is(err, deposit.ErrMainBusy) || p != nil {
+			w.t.Fatalf("single main: operator %d planned an ordinary sweep while the main is reserved: plan %v, err %v", i, p != nil, err)
+		}
 	}
-	lossy := w.sweeps
-	lossy.Chain = &lostReply{Chain: w.chain, lose: true}
-	w.sweepAndProve(plan, r.Number, lossy)
 }
 
 // fundBySweep gives the wallet its first main output through a K-06 sweep.
@@ -313,14 +358,20 @@ func TestLateDepositRecovery(t *testing.T) {
 		t.Fatal("redemption must reserve the new main")
 	}
 
-	// Late signature at the margin: the main is reserved, so this sweep is
-	// deposit-only.
+	// Late signature at the margin. Amended for tuxxy/tbtc-v2#24 (single
+	// main): this used to be a deposit-only sweep beside the reserved main.
+	// Now the deposit waits for the reservation, and the late sweep spends
+	// the payment's change as main.
 	late := w.locktime(3 * k06RefundDelay)
 	g := w.deposit(1_000_000, late, [20]byte{})
-	r = w.round(g.readyBlock + k06Finality)
+	w.planRefused(w.round(g.readyBlock + k06Finality))
+	w.broadcastPayment(payment, reservation)
+	w.coreMine(1)
+	w.provePayment(payment)
+	r = w.round(w.head())
 	plan := w.plan(r)
-	if plan.SweepMain() != nil {
-		t.Fatal("a reserved main must stay out of the sweep")
+	if m := plan.SweepMain(); m == nil || m.Outpoint.TransactionHash != bitcoin.Hash(payment.BitcoinTransactionHash()) || len(plan.SweepDeposits()) != 1 || plan.SweepDeposits()[0].Key != g.key {
+		t.Fatal("single main: the waiting deposit must be swept with the payment's change as main")
 	}
 	for _, j := range w.journals {
 		j.setOnDone(func([]byte) { w.clock.set(uint64(late) - k06RefundMargin) })
@@ -356,11 +407,14 @@ func TestLateDepositRecovery(t *testing.T) {
 }
 
 // TestMainPurposeLockAndResolution: a reserved main stays with its
-// redemption. A deposit-only sweep is credited beside it. The C-04 sweep-
+// redemption. A deposit revealed while it is reserved waits: no operator plans
+// an ordinary sweep (single main, Refs tuxxy/tbtc-v2#24; this replaced a
+// deposit-only sweep credited beside the reserved main). The C-04 sweep-
 // resolution route moves every operator's lock to resolution before it signs
 // the certificate; afterwards no payment grant reaches a worker. The
 // resolution sweep spends the reserved main, is proven through C-04, and the
-// reserved requests become refundable and are refunded.
+// reserved requests become refundable and are refunded. The waiting deposit
+// is then swept with the resolution's output as main.
 func TestMainPurposeLockAndResolution(t *testing.T) {
 	w := newK06World(t)
 	ctx := w.f.ctx
@@ -373,15 +427,10 @@ func TestMainPurposeLockAndResolution(t *testing.T) {
 		}
 	}
 	g := w.deposit(1_000_000, w.locktime(3*k06RefundDelay), [20]byte{})
-	r := w.round(g.readyBlock + k06Finality)
-	side := w.plan(r)
-	if side.SweepMain() != nil {
-		t.Fatal("a reserved main must stay out of an ordinary sweep")
-	}
-	w.sweepAndProve(side, r.Number, w.sweeps)
+	w.planRefused(w.round(g.readyBlock + k06Finality))
 
 	h := w.deposit(1_000_000, w.locktime(3*k06RefundDelay), [20]byte{})
-	r = w.round(h.readyBlock + k06Finality)
+	r := w.round(h.readyBlock + k06Finality)
 	resolution, err := w.sweepers[0].Planner.Build(ctx, r.Anchor, [][32]byte{h.key}, reservation)
 	if err != nil {
 		t.Fatal(err)
@@ -472,6 +521,14 @@ func TestMainPurposeLockAndResolution(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// Single main: once the reservation is resolved the deposit that waited is
+	// swept with the resolution sweep's output as main.
+	r = w.round(w.head())
+	next := w.plan(r)
+	if m := next.SweepMain(); m == nil || m.Outpoint.TransactionHash != bitcoin.Hash(resolution.BitcoinTransactionHash()) || len(next.SweepDeposits()) != 1 || next.SweepDeposits()[0].Key != g.key {
+		t.Fatal("single main: the waiting deposit must be swept with the resolution output as main")
+	}
+	w.sweepAndProve(next, r.Number, w.sweeps)
 }
 
 // TestDepositTemplateCrossLanguage: the Go D-04 construction equals C-05's

@@ -359,3 +359,38 @@ func ConnectFrostRedemption(ctx context.Context, config ethereum.Config) (*Frost
 	}
 	return NewFrostRedemptionChain(ctx, client, key.PrivateKey, bridge)
 }
+
+// TxProofDifficultyFactor returns the Bridge's proof difficulty factor, as
+// the legacy TbtcChain does for the base SPV maintainer.
+func (c *FrostRedemptionChain) TxProofDifficultyFactor() (*big.Int, error) {
+	return c.legacy.TxProofDifficultyFactor(&bind.CallOpts{})
+}
+
+// GetCurrentAndPrevEpochDifficulty returns the epoch difficulties of the
+// relay the Bridge validates proofs against, read through the two relay
+// functions the Bridge itself calls. All reads are pinned to one block so a
+// retarget cannot fall between them.
+func (c *FrostRedemptionChain) GetCurrentAndPrevEpochDifficulty() (*big.Int, *big.Int, error) {
+	block, err := c.client.BlockNumber(context.Background())
+	if err != nil {
+		return nil, nil, err
+	}
+	opts := &bind.CallOpts{BlockNumber: new(big.Int).SetUint64(block)}
+	refs, err := c.legacy.ContractReferences(opts)
+	if err != nil {
+		return nil, nil, err
+	}
+	relay, err := legacy.NewLightRelayCaller(refs.Relay, c.client)
+	if err != nil {
+		return nil, nil, err
+	}
+	current, err := relay.GetCurrentEpochDifficulty(opts)
+	if err != nil {
+		return nil, nil, err
+	}
+	previous, err := relay.GetPrevEpochDifficulty(opts)
+	if err != nil {
+		return nil, nil, err
+	}
+	return current, previous, nil
+}

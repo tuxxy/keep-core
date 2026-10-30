@@ -563,6 +563,50 @@ func FrostTargetKeys(chain interface{}, targets [][20]byte) (map[[20]byte][32]by
 	return keys, nil
 }
 
+// FrostDrainState is the state of the ECDSA-to-FROST drain route at the
+// Bridge (KC-SF-V3 K-07 drain, C-06 targets, C-10 cutover and budget).
+type FrostDrainState struct {
+	// FrostOnly: the cutover is complete, so a new commitment may name FROST
+	// targets only.
+	FrostOnly bool
+	// Enabled is the governance drain switch.
+	Enabled bool
+	// EligibleTargets is the Bridge's count of FROST movement targets.
+	EligibleTargets uint64
+	// Contained is the C-10 containment flag.
+	Contained bool
+	// RemainingCustody is the C-10 custody budget left (zero without an
+	// installed controller, which admits no drain).
+	RemainingCustody uint64
+}
+
+// Admits reports whether the Bridge accepts a drain commitment for a main
+// of the given value: the drain is enabled, a FROST target is eligible, the
+// exposure is not contained, the budget covers the whole main and the main
+// is not below the moving-funds dust threshold.
+func (fds *FrostDrainState) Admits(mainValue uint64, dustThreshold uint64) bool {
+	return fds.Enabled &&
+		fds.EligibleTargets > 0 &&
+		!fds.Contained &&
+		fds.RemainingCustody >= mainValue &&
+		mainValue >= dustThreshold
+}
+
+// FrostDrainChain is implemented by host chains that read the drain route.
+type FrostDrainChain interface {
+	// FrostDrainState returns nil if the Bridge never enabled the drain and
+	// never completed the cutover, so base moving funds applies. That is
+	// learned from the Bridge's logs, so a pre-FROST Bridge is never asked a
+	// FROST-only function (D14).
+	FrostDrainState() (*FrostDrainState, error)
+	// PastFrostWalletRegistrations lists the labels of the FROST wallets
+	// registered at the Bridge, oldest first.
+	PastFrostWalletRegistrations() ([][20]byte, error)
+	// IsFrostMovementTarget reports whether the Bridge accepts the FROST
+	// wallet as a movement target (ready or Live, not quarantined).
+	IsFrostMovementTarget(label [20]byte) (bool, error)
+}
+
 func assembleMovingFundsTransaction(
 	bitcoinChain bitcoin.Chain,
 	walletMainUtxo *bitcoin.UnspentTransactionOutput,

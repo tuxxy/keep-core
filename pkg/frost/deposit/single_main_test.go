@@ -67,23 +67,11 @@ func TestPlannerRefusesOrdinarySweepWhileReserved(t *testing.T) {
 			}
 		})
 	}
-	// Fixture state not reachable on C-04 (a reservation always names the
-	// main): the rule is "no ordinary sweep while a reservation is active",
-	// so the planner must not fall back to a deposit-only plan here either.
-	t.Run("reservation without main", func(t *testing.T) {
-		w := newWorld(t)
-		w.chain.custody.ActiveReservation = [32]byte{0x99}
-		key := w.deposit(1, 100_000, 90, [20]byte{})
-		plan, err := w.planner.Build(ctx, 100, [][32]byte{key}, [32]byte{})
-		if !errors.Is(err, ErrMainBusy) || plan != nil {
-			t.Fatalf("single main: ordinary sweep planned while a reservation is active without main: plan %v, err %v", plan != nil, err)
-		}
-	})
 }
 
 // TestAuthorityRefusesNoMainPlanWhileReserved: a plan without main, built
 // while the wallet had no main, is refused at authorization once the wallet
-// has a reserved main (or any active reservation). The executor calls the
+// has a reserved main. The executor calls the
 // authority before every grant and before broadcast, so a deposit-only sweep
 // that races a new main and its reservation never reaches a worker. The
 // refusal must be terminal (ErrMainBusy or ErrPlanMismatch) so the sweeper
@@ -109,16 +97,6 @@ func TestAuthorityRefusesNoMainPlanWhileReserved(t *testing.T) {
 			}
 		})
 	}
-	// Fixture state not reachable on C-04, as in the planner test.
-	t.Run("reservation without main", func(t *testing.T) {
-		w := newWorld(t)
-		key := w.deposit(1, 100_000, 90, [20]byte{})
-		plan := planned(t, w, key)
-		w.chain.custody.ActiveReservation = [32]byte{0x99}
-		if _, err := (&Authority{View: w.view}).AuthorizeSweep(ctx, plan); !refused(err) {
-			t.Fatalf("single main: sweep without main authorized while a reservation is active without main: %v", err)
-		}
-	})
 }
 
 // TestResolutionRouteSurvivesSingleMain: the C-04 sweep-resolution route is

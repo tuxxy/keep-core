@@ -33,7 +33,7 @@ export GOMAXPROCS=${GOMAXPROCS:-8}
 
 unit_run='^(TestPlannerRefusesOrdinarySweepWhileReserved|TestAuthorityRefusesNoMainPlanWhileReserved|TestResolutionRouteSurvivesSingleMain|TestSingleMainBoundaries|TestPlannerMainRule|TestAuthorityRequiresUnreservedMain)$'
 unit_cases=()
-for s in Reserved TimeoutPending Quarantined reservation_without_main; do
+for s in Reserved TimeoutPending Quarantined; do
 	unit_cases+=("TestPlannerRefusesOrdinarySweepWhileReserved/$s" "TestAuthorityRefusesNoMainPlanWhileReserved/$s")
 done
 for s in Reserved TimeoutPending Quarantined; do

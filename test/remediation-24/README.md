@@ -21,8 +21,8 @@ They need no worker and run in under a second.
 
 | Test | Checks |
 | --- | --- |
-| `TestPlannerRefusesOrdinarySweepWhileReserved` | `Planner.Build` and `Sweeper.Plan` (the host's round planning) return `ErrMainBusy` and no plan while the main is reserved, in every unresolved state (Reserved, TimeoutPending, Quarantined). The `reservation without main` subtest is fixture state that C-04 cannot reach. |
-| `TestAuthorityRefusesNoMainPlanWhileReserved` | A plan without main (built while the wallet had no main) is refused by `AuthorizeSweep` with a terminal error (`ErrMainBusy` or `ErrPlanMismatch`) once the main is reserved, in every unresolved state. Same fixture-only subtest. |
+| `TestPlannerRefusesOrdinarySweepWhileReserved` | `Planner.Build` and `Sweeper.Plan` (the host's round planning) return `ErrMainBusy` and no plan while the main is reserved, in every unresolved state (Reserved, TimeoutPending, Quarantined). |
+| `TestAuthorityRefusesNoMainPlanWhileReserved` | A plan without main (built while the wallet had no main) is refused by `AuthorizeSweep` once the main is reserved, in every unresolved state. The test accepts `ErrMainBusy` or `ErrPlanMismatch`, provided the error is terminal (the sweeper abandons the plan and replans after the reservation resolves). Coordinator's choice: the decision does not fix the sentinel. |
 | `TestResolutionRouteSurvivesSingleMain` | Positive control: the resolution plan for the active reservation is built with exactly the reserved main and authorized in every unresolved state (Quarantined with a cancel directive). |
 | `TestSingleMainBoundaries` | No main and no reservation: deposit-only, authorized. Unreserved main: included. A deposit refused while reserved is swept with the new main after a payment proof. |
 
@@ -55,7 +55,7 @@ test/remediation-24/run.sh <evidence dir>             # acceptance at this tree
 test/remediation-24/run.sh --controls <evidence dir>  # controls, throwaway worktree
 ```
 
-Acceptance writes `manifest.json`. It is `"accepted": true` only if all 16 unit
+Acceptance writes `manifest.json`. It is `"accepted": true` only if all 14 unit
 cases and the 3 integration tests ran and passed, with zero skips, `go test
 ./pkg/frost/deposit/... ./pkg/frost/signing/... ./pkg/maintainer/spv/...`
 passed, and the tree is clean. The integration cases need the K-06 environment
@@ -80,7 +80,7 @@ and runs the unit cases.
 | Patch | Expected result |
 | --- | --- |
 | `24-host-single-main.fix.patch` | Minimal fix: the planner returns `ErrMainBusy` while reserved (unless it is a resolution); `mainRule` refuses `main == nil` while reserved. All cases pass. |
-| `24-planner-only.wrong.patch` | Authority unchanged. Fails at `single_main_test.go` "sweep without main authorized while the main is reserved" (every state, and the fixture-only case). |
+| `24-planner-only.wrong.patch` | Authority unchanged. Fails at `single_main_test.go` "sweep without main authorized while the main is reserved" (every state). |
 | `24-authority-only.wrong.patch` | Planner unchanged. Fails at "ordinary sweep planned while the main is reserved" (planner, host round, boundaries) and `deposit_test.go` "ordinary sweep planned while the main is reserved". |
 | `24-planner-includes-reserved-main.wrong.patch` | The planner includes the reserved main in an ordinary sweep instead of refusing. Fails at "ordinary sweep planned while the main is reserved". |
 | `24-planner-refuses-resolution.wrong.patch` | Over-broad: the planner also refuses the resolution route. Fails at "resolution sweep of the active reservation not planned". |

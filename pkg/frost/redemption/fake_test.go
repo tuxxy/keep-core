@@ -117,6 +117,16 @@ func (f *fakeChain) Admissions(_ context.Context, w [32]byte, from, to uint64) (
 	}
 	return out, nil
 }
+// The redemption host never sizes proofs; the producers in pkg/maintainer/spv
+// read these from the real binding.
+func (f *fakeChain) TxProofDifficultyFactor() (*big.Int, error) {
+	return nil, errors.New("fake chain has no proof difficulty")
+}
+
+func (f *fakeChain) GetCurrentAndPrevEpochDifficulty() (*big.Int, *big.Int, error) {
+	return nil, nil, errors.New("fake chain has no proof difficulty")
+}
+
 func (f *fakeChain) Admission(_ context.Context, id [32]byte) (Admission, error) {
 	a, ok := f.admissions[id]
 	if !ok {

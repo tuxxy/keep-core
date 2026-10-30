@@ -92,11 +92,11 @@ func (m FrostSweepMaintainer) ProveSweep(ctx context.Context, wallet, hash [32]b
 	if m.Confirmations == 0 {
 		return action, errors.New("confirmations must be positive")
 	}
-	n, err := m.Bitcoin.GetTransactionConfirmations(ctx, bitcoin.Hash(hash))
-	if err != nil || n < m.Confirmations {
+	depth, ok := frostProofDepth(m.Chain, m.Bitcoin, bitcoin.Hash(hash), m.Confirmations)
+	if !ok {
 		return action, ErrSweepNotConfirmed
 	}
-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
+	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), depth, m.Bitcoin)
 	if err != nil {
 		return action, err
 	}

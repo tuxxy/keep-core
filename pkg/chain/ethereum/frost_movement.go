@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	binding "github.com/keep-network/keep-core/pkg/chain/ethereum/frostabi"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
@@ -293,3 +295,116 @@ func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error
 }
 
 var _ tbtc.FrostTargetResolver = (*TbtcChain)(nil)
+
+// exposureControllerABI holds the two C-10 controller views a drain needs.
+const exposureControllerABI = `[
+{"inputs":[],"name":"contained","outputs":[{"type":"bool"}],"stateMutability":"view","type":"function"},
+{"inputs":[],"name":"remainingCustody","outputs":[{"type":"uint64"}],"stateMutability":"view","type":"function"}]`
+
+// FrostDrainState implements tbtc.FrostDrainChain. Without a FrostDrainEnabled
+// or FrostCutoverCompleted log at the Bridge, the drain was never enabled and
+// the cutover never happened, so base moving funds applies and no FROST-only
+// function is called (D14). Otherwise the state is read from the Bridge and
+// its C-10 controller.
+func (tc *TbtcChain) FrostDrainState() (*tbtc.FrostDrainState, error) {
+	enabled, err := tc.frostBridgeEvents.FilterFrostDrainEnabled(&bind.FilterOpts{})
+	if err != nil {
+		return nil, err
+	}
+	used, err := anyLog(enabled)
+	if err != nil {
+		return nil, err
+	}
+	if !used {
+		cutover, err := tc.frostBridgeEvents.FilterFrostCutoverCompleted(&bind.FilterOpts{})
+		if err != nil {
+			return nil, err
+		}
+		if used, err = anyLog(cutover); err != nil {
+			return nil, err
+		}
+	}
+	if !used {
+		return nil, nil
+	}
+
+	mode, err := tc.frostBridge.FrostCreationMode(nil)
+	if err != nil {
+		return nil, err
+	}
+	counters, err := tc.frostBridge.FrostMovementCounters(nil, [32]byte{})
+	if err != nil {
+		return nil, err
+	}
+	state := &tbtc.FrostDrainState{
+		FrostOnly:       mode == 2,
+		Enabled:         counters.DrainEnabled,
+		EligibleTargets: counters.EligibleTargets,
+	}
+	controllerAddress, err := tc.frostBridge.FrostExposureController(nil)
+	if err != nil {
+		return nil, err
+	}
+	if controllerAddress == (common.Address{}) {
+		return state, nil
+	}
+	controllerABI, err := abi.JSON(strings.NewReader(exposureControllerABI))
+	if err != nil {
+		return nil, err
+	}
+	controller := bind.NewBoundContract(controllerAddress, controllerABI, tc.baseChain.client, nil, nil)
+	var out []interface{}
+	if err := controller.Call(nil, &out, "contained"); err != nil {
+		return nil, err
+	}
+	state.Contained = *abi.ConvertType(out[0], new(bool)).(*bool)
+	out = nil
+	if err := controller.Call(nil, &out, "remainingCustody"); err != nil {
+		return nil, err
+	}
+	state.RemainingCustody = *abi.ConvertType(out[0], new(uint64)).(*uint64)
+	return state, nil
+}
+
+// anyLog reports whether a filtered event iterator holds a log.
+func anyLog(iterator interface {
+	Next() bool
+	Error() error
+	Close() error
+}) (bool, error) {
+	defer iterator.Close()
+	found := iterator.Next()
+	return found, iterator.Error()
+}
+
+// PastFrostWalletRegistrations implements tbtc.FrostDrainChain.
+func (tc *TbtcChain) PastFrostWalletRegistrations() ([][20]byte, error) {
+	iterator, err := tc.frostBridgeEvents.FilterFrostWalletRegistered(&bind.FilterOpts{}, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer iterator.Close()
+	var labels [][20]byte
+	for iterator.Next() {
+		labels = append(labels, iterator.Event.Label)
+	}
+	return labels, iterator.Error()
+}
+
+// IsFrostMovementTarget implements tbtc.FrostDrainChain with the Bridge's
+// own rule (FrostWallets.isMovementTarget): ReadyUnfunded or Live, not
+// quarantined, with a capability version.
+func (tc *TbtcChain) IsFrostMovementTarget(label [20]byte) (bool, error) {
+	raw, err := tc.frostBridge.WalletDescriptor(nil, label)
+	if err != nil {
+		return false, err
+	}
+	w, err := decodeWallet(raw)
+	if err != nil {
+		return false, err
+	}
+	const readyUnfunded, live = 3, 4
+	return (w.State == readyUnfunded || w.State == live) && !w.Quarantined && w.CapabilityVersion > 0, nil
+}
+
+var _ tbtc.FrostDrainChain = (*TbtcChain)(nil)

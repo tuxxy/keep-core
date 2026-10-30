@@ -87,6 +87,8 @@ type TbtcChain struct {
 
 	// frostBridge reads the FROST extension at the Bridge address (K-07 drain).
 	frostBridge *frostbridgeabi.FrostBridgeCaller
+	// frostBridgeEvents reads its events, which a pre-FROST Bridge never has.
+	frostBridgeEvents *frostbridgeabi.FrostBridgeFilterer
 }
 
 // NewTbtcChain construct a new instance of the TBTC-specific Ethereum
@@ -125,6 +127,10 @@ func newTbtcChain(
 	frostBridge, err := frostbridgeabi.NewFrostBridgeCaller(bridgeAddress, baseChain.client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to attach to the FROST Bridge extension: [%v]", err)
+	}
+	frostBridgeEvents, err := frostbridgeabi.NewFrostBridgeFilterer(bridgeAddress, baseChain.client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to attach to the FROST Bridge extension events: [%v]", err)
 	}
 
 	maintainerProxyAddress, err := config.ContractAddress(MaintainerProxyContractName)
@@ -292,6 +298,7 @@ func newTbtcChain(
 
 	return &TbtcChain{
 		frostBridge:              frostBridge,
+		frostBridgeEvents:        frostBridgeEvents,
 		baseChain:                baseChain,
 		bridge:                   bridge,
 		maintainerProxy:          maintainerProxy,

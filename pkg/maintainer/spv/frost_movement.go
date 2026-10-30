@@ -27,7 +27,7 @@ func (m FrostMovementMaintainer) step(name string) error {
 	return nil
 }
 
-// ErrMovementNotConfirmed reports a transaction below the confirmations.
+// ErrMovementNotConfirmed reports a transaction below the proof depth.
 var ErrMovementNotConfirmed = errors.New("FROST movement transaction is not confirmed")
 
 func (m FrostMovementMaintainer) proven(ctx context.Context, wallet, hash [32]byte) (bool, error) {
@@ -50,8 +50,8 @@ func (m FrostMovementMaintainer) prove(ctx context.Context, wallet, hash [32]byt
 	if m.Confirmations == 0 {
 		return action, errors.New("confirmations must be positive")
 	}
-	n, err := m.Bitcoin.GetTransactionConfirmations(ctx, bitcoin.Hash(hash))
-	if err != nil || n < m.Confirmations {
+	depth, ok := frostProofDepth(m.Chain, m.Bitcoin, bitcoin.Hash(hash), m.Confirmations)
+	if !ok {
 		return action, ErrMovementNotConfirmed
 	}
 	done, err := m.proven(ctx, wallet, hash)
@@ -62,7 +62,7 @@ func (m FrostMovementMaintainer) prove(ctx context.Context, wallet, hash [32]byt
 		action.Kind = "already-proven"
 		return action, nil
 	}
-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
+	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), depth, m.Bitcoin)
 	if err != nil {
 		return action, err
 	}

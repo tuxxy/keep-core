@@ -1,0 +1,162 @@
+diff --git a/pkg/chain/ethereum/frost_proof_difficulty.go b/pkg/chain/ethereum/frost_proof_difficulty.go
+new file mode 100644
+index 000000000..741702d0e
+--- /dev/null
++++ b/pkg/chain/ethereum/frost_proof_difficulty.go
+@@ -0,0 +1,32 @@
++package ethereum
++
++import (
++	"math/big"
++
++	"github.com/ethereum/go-ethereum/accounts/abi/bind"
++
++	legacy "github.com/keep-network/keep-core/pkg/chain/ethereum/tbtc/gen/abi"
++)
++
++// CONTROL ONLY (test/spvdepth/controls): the Bridge factor and its relay's
++// epoch difficulties, read from the chain.
++func (c *FrostRedemptionChain) TxProofDifficultyFactor() (*big.Int, error) {
++	return c.legacy.TxProofDifficultyFactor(&bind.CallOpts{})
++}
++
++func (c *FrostRedemptionChain) GetCurrentAndPrevEpochDifficulty() (*big.Int, *big.Int, error) {
++	refs, err := c.legacy.ContractReferences(&bind.CallOpts{})
++	if err != nil {
++		return nil, nil, err
++	}
++	relay, err := legacy.NewLightRelay(refs.Relay, c.client)
++	if err != nil {
++		return nil, nil, err
++	}
++	current, err := relay.GetCurrentEpochDifficulty(&bind.CallOpts{})
++	if err != nil {
++		return nil, nil, err
++	}
++	previous, err := relay.GetPrevEpochDifficulty(&bind.CallOpts{})
++	return current, previous, err
++}
+diff --git a/pkg/maintainer/spv/frost_movement.go b/pkg/maintainer/spv/frost_movement.go
+index 63f52450a..0c8e22943 100644
+--- a/pkg/maintainer/spv/frost_movement.go
++++ b/pkg/maintainer/spv/frost_movement.go
+@@ -50,8 +50,8 @@ func (m FrostMovementMaintainer) prove(ctx context.Context, wallet, hash [32]byt
+ 	if m.Confirmations == 0 {
+ 		return action, errors.New("confirmations must be positive")
+ 	}
+-	n, err := m.Bitcoin.GetTransactionConfirmations(ctx, bitcoin.Hash(hash))
+-	if err != nil || n < m.Confirmations {
++	depth, ok := frostDepth(m.Chain, m.Bitcoin, bitcoin.Hash(hash), m.Confirmations)
++	if !ok {
+ 		return action, ErrMovementNotConfirmed
+ 	}
+ 	done, err := m.proven(ctx, wallet, hash)
+@@ -62,7 +62,7 @@ func (m FrostMovementMaintainer) prove(ctx context.Context, wallet, hash [32]byt
+ 		action.Kind = "already-proven"
+ 		return action, nil
+ 	}
+-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
++	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), depth, m.Bitcoin)
+ 	if err != nil {
+ 		return action, err
+ 	}
+diff --git a/pkg/maintainer/spv/frost_proof_depth.go b/pkg/maintainer/spv/frost_proof_depth.go
+new file mode 100644
+index 000000000..e0ae13038
+--- /dev/null
++++ b/pkg/maintainer/spv/frost_proof_depth.go
+@@ -0,0 +1,30 @@
++package spv
++
++import (
++	"math/big"
++
++	"github.com/keep-network/keep-core/pkg/bitcoin"
++)
++
++// CONTROL ONLY (test/spvdepth/controls): a fix-shaped derivation, not a fix.
++type frostDifficulty interface {
++	TxProofDifficultyFactor() (*big.Int, error)
++	GetCurrentAndPrevEpochDifficulty() (*big.Int, *big.Int, error)
++}
++
++// frostDepth is the Bridge-matching depth for hash, floored at floor. ok is
++// false while the chain does not hold that many confirmations.
++func frostDepth(chain interface{}, btc bitcoin.Chain, hash bitcoin.Hash, floor uint) (uint, bool) {
++	d, isDifficulty := chain.(frostDifficulty)
++	if !isDifficulty {
++		return 0, false
++	}
++	within, available, required, err := getProofInfo(hash, btc, d, d)
++	if err != nil || !within || required == 0 {
++		return 0, false
++	}
++	if required < floor {
++		required = floor
++	}
++	return required, available >= required
++}
+diff --git a/pkg/maintainer/spv/frost_redemptions.go b/pkg/maintainer/spv/frost_redemptions.go
+index d5bfe2699..72684946d 100644
+--- a/pkg/maintainer/spv/frost_redemptions.go
++++ b/pkg/maintainer/spv/frost_redemptions.go
+@@ -37,7 +37,11 @@ func TransactionInfo(tx *bitcoin.Transaction) redemption.BitcoinInfo {
+ }
+ 
+ func (m FrostRedemptionMaintainer) proof(hash [32]byte) (redemption.BitcoinInfo, redemption.BitcoinProof, error) {
+-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
++	depth, ok := frostDepth(m.Chain, m.Bitcoin, bitcoin.Hash(hash), m.Confirmations)
++	if !ok {
++		return redemption.BitcoinInfo{}, redemption.BitcoinProof{}, errors.New("FROST proof depth not reached")
++	}
++	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), depth, m.Bitcoin)
+ 	if err != nil {
+ 		return redemption.BitcoinInfo{}, redemption.BitcoinProof{}, err
+ 	}
+@@ -48,8 +52,8 @@ func (m FrostRedemptionMaintainer) proof(hash [32]byte) (redemption.BitcoinInfo,
+ }
+ 
+ func (m FrostRedemptionMaintainer) confirmed(hash [32]byte) bool {
+-	n, err := m.Bitcoin.GetTransactionConfirmations(context.Background(), bitcoin.Hash(hash))
+-	return err == nil && n >= m.Confirmations
++	_, ok := frostDepth(m.Chain, m.Bitcoin, bitcoin.Hash(hash), m.Confirmations)
++	return ok
+ }
+ 
+ // ProveSettlements submits one inclusion proof for every unresolved
+diff --git a/pkg/maintainer/spv/frost_sweeps.go b/pkg/maintainer/spv/frost_sweeps.go
+index a2dd0d720..7d87f18e2 100644
+--- a/pkg/maintainer/spv/frost_sweeps.go
++++ b/pkg/maintainer/spv/frost_sweeps.go
+@@ -92,11 +92,11 @@ func (m FrostSweepMaintainer) ProveSweep(ctx context.Context, wallet, hash [32]b
+ 	if m.Confirmations == 0 {
+ 		return action, errors.New("confirmations must be positive")
+ 	}
+-	n, err := m.Bitcoin.GetTransactionConfirmations(ctx, bitcoin.Hash(hash))
+-	if err != nil || n < m.Confirmations {
++	depth, ok := frostDepth(m.Chain, m.Bitcoin, bitcoin.Hash(hash), m.Confirmations)
++	if !ok {
+ 		return action, ErrSweepNotConfirmed
+ 	}
+-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
++	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), depth, m.Bitcoin)
+ 	if err != nil {
+ 		return action, err
+ 	}
+diff --git a/pkg/maintainer/spv/spv.go b/pkg/maintainer/spv/spv.go
+index 6191a2144..a79ac376e 100644
+--- a/pkg/maintainer/spv/spv.go
++++ b/pkg/maintainer/spv/spv.go
+@@ -323,8 +323,10 @@ func isInputCurrentWalletsMainUTXO(
+ func getProofInfo(
+ 	transactionHash bitcoin.Hash,
+ 	btcChain bitcoin.Chain,
+-	spvChain Chain,
+-	btcDiffChain btcdiff.Chain,
++	spvChain interface{ TxProofDifficultyFactor() (*big.Int, error) },
++	btcDiffChain interface {
++		GetCurrentAndPrevEpochDifficulty() (*big.Int, *big.Int, error)
++	},
+ ) (
+ 	bool, uint, uint, error,
+ ) {

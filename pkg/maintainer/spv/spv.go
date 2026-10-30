@@ -323,8 +323,10 @@ func isInputCurrentWalletsMainUTXO(
 func getProofInfo(
 	transactionHash bitcoin.Hash,
 	btcChain bitcoin.Chain,
-	spvChain Chain,
-	btcDiffChain btcdiff.Chain,
+	spvChain interface{ TxProofDifficultyFactor() (*big.Int, error) },
+	btcDiffChain interface {
+		GetCurrentAndPrevEpochDifficulty() (*big.Int, *big.Int, error)
+	},
 ) (
 	bool, uint, uint, error,
 ) {

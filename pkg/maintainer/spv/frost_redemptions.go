@@ -36,8 +36,8 @@ func TransactionInfo(tx *bitcoin.Transaction) redemption.BitcoinInfo {
 	return redemption.BitcoinInfo{Version: tx.SerializeVersion(), InputVector: tx.SerializeInputs(), OutputVector: tx.SerializeOutputs(), Locktime: tx.SerializeLocktime()}
 }
 
-func (m FrostRedemptionMaintainer) proof(hash [32]byte) (redemption.BitcoinInfo, redemption.BitcoinProof, error) {
-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
+func (m FrostRedemptionMaintainer) proof(hash [32]byte, depth uint) (redemption.BitcoinInfo, redemption.BitcoinProof, error) {
+	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), depth, m.Bitcoin)
 	if err != nil {
 		return redemption.BitcoinInfo{}, redemption.BitcoinProof{}, err
 	}
@@ -47,9 +47,10 @@ func (m FrostRedemptionMaintainer) proof(hash [32]byte) (redemption.BitcoinInfo,
 	return TransactionInfo(tx), redemption.BitcoinProof{MerkleProof: proof.MerkleProof, TxIndexInBlock: uint64(proof.TxIndexInBlock), BitcoinHeaders: proof.BitcoinHeaders, CoinbasePreimage: proof.CoinbasePreimage, CoinbaseProof: proof.CoinbaseProof}, nil
 }
 
-func (m FrostRedemptionMaintainer) confirmed(hash [32]byte) bool {
-	n, err := m.Bitcoin.GetTransactionConfirmations(context.Background(), bitcoin.Hash(hash))
-	return err == nil && n >= m.Confirmations
+// confirmed returns the proof depth the Bridge needs for hash, and whether
+// Bitcoin holds it yet.
+func (m FrostRedemptionMaintainer) confirmed(hash [32]byte) (uint, bool) {
+	return frostProofDepth(m.Chain, m.Bitcoin, bitcoin.Hash(hash), m.Confirmations)
 }
 
 // ProveSettlements submits one inclusion proof for every unresolved
@@ -77,8 +78,9 @@ func (m FrostRedemptionMaintainer) ProveSettlements(ctx context.Context) ([]Fros
 		if !intent.State.Unresolved() {
 			continue
 		}
-		if m.confirmed(intent.TransactionHash) {
-			info, proof, err := m.proof(intent.TransactionHash)
+		depth, ok := m.confirmed(intent.TransactionHash)
+		if ok {
+			info, proof, err := m.proof(intent.TransactionHash, depth)
 			if err != nil {
 				return actions, err
 			}
@@ -93,10 +95,11 @@ func (m FrostRedemptionMaintainer) ProveSettlements(ctx context.Context) ([]Fros
 			return actions, err
 		}
 		for _, alt := range alternatives {
-			if !m.confirmed(alt.TransactionHash) {
+			depth, ok := m.confirmed(alt.TransactionHash)
+			if !ok {
 				continue
 			}
-			info, proof, err := m.proof(alt.TransactionHash)
+			info, proof, err := m.proof(alt.TransactionHash, depth)
 			if err != nil {
 				return actions, err
 			}

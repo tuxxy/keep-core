@@ -166,21 +166,70 @@ func (mft *MovingFundsTask) Run(request *tbtc.CoordinationProposalRequest) (
 		)
 	}
 
-	if liveWalletsCount == 0 {
+	targetWalletsCommitmentHash :=
+		walletChainData.MovingFundsTargetWalletsCommitmentHash
+
+	// The ECDSA-to-FROST drain (KC-SF-V3 K-07, C-06). Whenever the Bridge
+	// admits a drain, the source drains to FROST wallets in every creation
+	// mode (D16). After the cutover legacy targets are fenced, so with no
+	// admissible drain the source waits for one. A failed read is not an
+	// answer: the task fails and the next coordination window retries.
+	drain, err := mft.frostDrainState()
+	if err != nil {
+		return nil, false, fmt.Errorf(
+			"cannot get FROST drain state: [%w]",
+			err,
+		)
+	}
+
+	drainAdmitted := false
+	if drain != nil && targetWalletsCommitmentHash == [32]byte{} {
+		movingFundsParameters, err := mft.chain.GetMovingFundsParameters()
+		if err != nil {
+			return nil, false, fmt.Errorf(
+				"cannot get moving funds parameters: [%w]",
+				err,
+			)
+		}
+
+		drainAdmitted = drain.Admits(
+			uint64(walletBalance),
+			movingFundsParameters.DustThreshold,
+		)
+
+		if !drainAdmitted && drain.FrostOnly {
+			taskLogger.Infof("no admissible FROST drain after the cutover")
+			return nil, false, nil
+		}
+	}
+
+	// A commitment fixes the targets. Once the Bridge uses FROST it may name
+	// FROST wallets, so the legacy Live count does not matter then.
+	frostCommitment := drain != nil &&
+		targetWalletsCommitmentHash != [32]byte{}
+
+	if liveWalletsCount == 0 && !drainAdmitted && !frostCommitment {
 		taskLogger.Infof("there are no Live wallets available")
 		return nil, false, nil
 	}
 
-	targetWalletsCommitmentHash :=
-		walletChainData.MovingFundsTargetWalletsCommitmentHash
-
-	targetWallets, commitmentExists, err := mft.FindTargetWallets(
-		taskLogger,
-		walletPublicKeyHash,
-		targetWalletsCommitmentHash,
-		uint64(walletBalance),
-		liveWalletsCount,
-	)
+	var targetWallets [][20]byte
+	commitmentExists := false
+	if drainAdmitted {
+		targetWallets, err = mft.findFrostDrainTargetWallets(
+			taskLogger,
+			uint64(walletBalance),
+			drain.EligibleTargets,
+		)
+	} else {
+		targetWallets, commitmentExists, err = mft.FindTargetWallets(
+			taskLogger,
+			walletPublicKeyHash,
+			targetWalletsCommitmentHash,
+			uint64(walletBalance),
+			liveWalletsCount,
+		)
+	}
 	if err != nil {
 		return nil, false, fmt.Errorf("cannot find target wallets: [%w]", err)
 	}
@@ -362,6 +411,95 @@ func (mft *MovingFundsTask) findNewTargetWallets(
 	})
 
 	logger.Infof("gathered [%v] target wallets", len(targetWallets))
+
+	return targetWallets, nil
+}
+
+// frostDrainState returns the Bridge's drain route state, or nil if the
+// chain cannot read it or the Bridge does not use FROST.
+func (mft *MovingFundsTask) frostDrainState() (*tbtc.FrostDrainState, error) {
+	frostChain, ok := mft.chain.(tbtc.FrostDrainChain)
+	if !ok {
+		return nil, nil
+	}
+	return frostChain.FrostDrainState()
+}
+
+// findFrostDrainTargetWallets gathers the drain targets as base gathers
+// legacy ones: min(eligible, ceil(balance / walletMaxBtcTransfer)) FROST
+// movement targets, newest registrations first, in ascending order. With
+// fewer found than required, for example while the local index lags, it
+// returns ErrNotEnoughTargetWallets and the next window retries (D6).
+func (mft *MovingFundsTask) findFrostDrainTargetWallets(
+	taskLogger log.StandardLogger,
+	walletBalance uint64,
+	eligibleTargets uint64,
+) ([][20]byte, error) {
+	taskLogger.Infof(
+		"commitment not submitted yet; looking for FROST drain target wallets",
+	)
+
+	frostChain := mft.chain.(tbtc.FrostDrainChain)
+
+	walletParameters, err := mft.chain.GetWalletParameters()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get wallet parameters: [%w]", err)
+	}
+	walletMaxBtcTransfer := walletParameters.MaxBtcTransfer
+
+	if walletMaxBtcTransfer == 0 {
+		return nil, ErrMaxBtcTransferZero
+	}
+
+	targetWalletsCount := 1 + (walletBalance-1)/walletMaxBtcTransfer
+	if eligibleTargets < targetWalletsCount {
+		targetWalletsCount = eligibleTargets
+	}
+
+	labels, err := frostChain.PastFrostWalletRegistrations()
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get past FROST wallet registrations: [%w]",
+			err,
+		)
+	}
+
+	targetWallets := make([][20]byte, 0)
+
+	for i := len(labels) - 1; i >= 0; i-- {
+		eligible, err := frostChain.IsFrostMovementTarget(labels[i])
+		if err != nil {
+			return nil, fmt.Errorf(
+				"cannot get FROST wallet [0x%x]: [%w]",
+				labels[i],
+				err,
+			)
+		}
+
+		if eligible {
+			targetWallets = append(targetWallets, labels[i])
+		}
+		if len(targetWallets) == int(targetWalletsCount) {
+			break
+		}
+	}
+
+	if len(targetWallets) != int(targetWalletsCount) {
+		return nil, fmt.Errorf(
+			"%w: required [%v] FROST target wallets; gathered [%v]",
+			ErrNotEnoughTargetWallets,
+			targetWalletsCount,
+			len(targetWallets),
+		)
+	}
+
+	sort.Slice(targetWallets, func(i, j int) bool {
+		bigIntI := new(big.Int).SetBytes(targetWallets[i][:])
+		bigIntJ := new(big.Int).SetBytes(targetWallets[j][:])
+		return bigIntI.Cmp(bigIntJ) < 0
+	})
+
+	logger.Infof("gathered [%v] FROST drain target wallets", len(targetWallets))
 
 	return targetWallets, nil
 }

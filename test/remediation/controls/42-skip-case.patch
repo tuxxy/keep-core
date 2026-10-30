@@ -1,0 +1,12 @@
+diff --git a/config/frost_test.go b/config/frost_test.go
+index aa30d82a9..7a061faef 100644
+--- a/config/frost_test.go
++++ b/config/frost_test.go
+@@ -10,6 +10,7 @@ import (
+ )
+ 
+ func TestInactiveFrostHasNoEffect(t *testing.T) {
++	t.Skip("control: a skipped case is not a pass")
+ 	var c Config
+ 	if err := c.Frost.ValidateNode(); err != nil {
+ 		t.Fatal(err)

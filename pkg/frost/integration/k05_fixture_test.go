@@ -139,8 +139,19 @@ func (j *hookedJournal) lastDone() []byte {
 
 func newK05World(t *testing.T) *k05World {
 	t.Helper()
+	return newK05WorldWith(t, nil)
+}
+
+// newK05WorldWith runs beforeDKG after deployment and before the DKG starts,
+// so a test can wrap the executors (for example to choose the readiness
+// certificate). nil is newK05World.
+func newK05WorldWith(t *testing.T, beforeDKG func(*fixture)) *k05World {
+	t.Helper()
 	f := setupWith(t, "1,1,2", setupOptions{timeout: 15 * time.Minute, mode: "k05"})
-	core := startCore(t, f.ctx)
+	core, miner := fundedCore(t, f.ctx)
+	if beforeDKG != nil {
+		beforeDKG(f)
+	}
 	records, errs := f.run()
 	for i, err := range errs {
 		if err != nil {
@@ -161,11 +172,7 @@ func newK05World(t *testing.T) *k05World {
 	}
 	bankABI, _ := abi.JSON(strings.NewReader(`[{"type":"function","name":"approveBalance","inputs":[{"type":"address"},{"type":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"balanceOf","inputs":[{"type":"address"}],"outputs":[{"type":"uint256"}],"stateMutability":"view"}]`))
 	w.bank = bind.NewBoundContract(f.deployment.Bank, bankABI, f.client, f.client, f.client)
-	if err = core.call(f.ctx, "getnewaddress", nil, &w.miner); err != nil {
-		t.Fatal(err)
-	}
-	w.t.Log("K-05: DKG complete; mining Core coinbase maturity")
-	w.coreMine(101)
+	w.miner = miner
 	w.t.Log("K-05: funding through C-05 deposit and threshold-signed sweep")
 	w.fund()
 	w.host()
@@ -240,7 +247,7 @@ func (w *k05World) trySend(call func(*bind.TransactOpts) (*types.Transaction, er
 	if err != nil {
 		return nil, err
 	}
-	receipt, err := bind.WaitMined(w.f.ctx, w.f.client, tx)
+	receipt, err := waitMined(w.f.ctx, w.f.client, tx)
 	if err != nil {
 		return nil, err
 	}

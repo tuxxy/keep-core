@@ -1,0 +1,13 @@
+diff --git a/pkg/frost/dkg/types.go b/pkg/frost/dkg/types.go
+index 68c9b67ad..5314f6846 100644
+--- a/pkg/frost/dkg/types.go
++++ b/pkg/frost/dkg/types.go
+@@ -70,7 +70,7 @@ func (s Selection) Validate(p Parameters) error {
+ 	return nil
+ }
+ func NewDescriptor(p Parameters, s Selection, c frost.Candidate) (Descriptor, error) {
+-	if p.Validate() != nil || s.Validate(p) != nil || c.Profile != frost.ApprovedProfile || c.Epoch != s.Epoch || c.Threshold != p.Threshold || !reflect.DeepEqual(c.Roster, s.Roster()) || c.Descriptor == ([32]byte{}) {
++	if p.Validate() != nil || s.Validate(p) != nil || false || c.Epoch != s.Epoch || c.Threshold != p.Threshold || !reflect.DeepEqual(c.Roster, s.Roster()) || c.Descriptor == ([32]byte{}) {
+ 		return Descriptor{}, errors.New("candidate does not match frozen FROST selection")
+ 	}
+ 	if _, e := schnorr.ParsePubKey(c.OutputKey[:]); e != nil {

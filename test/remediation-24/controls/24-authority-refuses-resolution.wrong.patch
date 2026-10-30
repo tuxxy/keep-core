@@ -1,0 +1,63 @@
+diff --git a/pkg/frost/deposit/authority.go b/pkg/frost/deposit/authority.go
+index 325e6355a..06c6c8019 100644
+--- a/pkg/frost/deposit/authority.go
++++ b/pkg/frost/deposit/authority.go
+@@ -120,16 +120,23 @@ func matches(plan *signing.Plan, d signing.SweepDeposit, r Record) error {
+ 	return nil
+ }
+ 
+-// mainRule is C-05's inclusion rule. An ordinary sweep must include an
+-// unreserved main and must not include a reserved one; a resolution sweep
+-// spends exactly the reserved main of its reservation.
++// mainRule is C-05's inclusion rule with the single-main rule. An ordinary
++// sweep must include an unreserved main and is refused while a reservation is
++// active; a resolution sweep spends exactly the reserved main of its
++// reservation.
+ func mainRule(plan *signing.Plan, s Snapshot) error {
+ 	c := s.Custody
+ 	main := plan.SweepMain()
+ 	resolution := plan.SweepResolution()
+ 	switch {
++	case c.ActiveReservation != ([32]byte{}):
++		// WRONG (control): also refuses the C-04 resolution route.
++		return fmt.Errorf("%w: main is reserved for a redemption", ErrMainBusy)
+ 	case main == nil:
+-		if c.MainOutpoint != ([32]byte{}) && c.ActiveReservation == ([32]byte{}) {
++		if c.ActiveReservation != ([32]byte{}) {
++			return fmt.Errorf("%w: main is reserved for a redemption", ErrMainBusy)
++		}
++		if c.MainOutpoint != ([32]byte{}) {
+ 			return fmt.Errorf("%w: an unreserved main must be included", ErrPlanMismatch)
+ 		}
+ 	case OutpointKey(main.Outpoint) != c.MainOutpoint:
+diff --git a/pkg/frost/deposit/planner.go b/pkg/frost/deposit/planner.go
+index 76a0e09c7..48fb92093 100644
+--- a/pkg/frost/deposit/planner.go
++++ b/pkg/frost/deposit/planner.go
+@@ -143,9 +143,10 @@ func (p Planner) main(ctx context.Context, at uint64, key [32]byte) (bitcoin.Pre
+ }
+ 
+ // Build plans a sweep of keys (in the given order) at anchor block at. The main
+-// follows the C-05 rule: an unreserved main is included, a reserved main is
+-// not, unless resolution names the active reservation (the C-04 route). A main
+-// held by another purpose under the host lock refuses the plan.
++// follows the C-05 rule: an unreserved main is included. While the main is
++// reserved only the C-04 resolution route (resolution names the active
++// reservation) may sweep; an ordinary sweep waits (single main). A main held
++// by another purpose under the host lock refuses the plan.
+ func (p Planner) Build(ctx context.Context, at uint64, keys [][32]byte, resolution [32]byte) (*signing.Plan, error) {
+ 	if len(keys) == 0 {
+ 		return nil, ErrNothingToSweep
+@@ -167,8 +168,10 @@ func (p Planner) Build(ctx context.Context, at uint64, keys [][32]byte, resoluti
+ 		if custody.ActiveReservation != resolution || custody.MainOutpoint == ([32]byte{}) {
+ 			return nil, errors.New("resolution needs the active reservation's main")
+ 		}
+-	case custody.ActiveReservation != ([32]byte{}) || custody.MainOutpoint == ([32]byte{}):
+-		// Deposit-only: a reserved main stays with its reservation.
++	case custody.ActiveReservation != ([32]byte{}):
++		return nil, fmt.Errorf("%w: main is reserved for a redemption", ErrMainBusy)
++	case custody.MainOutpoint == ([32]byte{}):
++		// Deposit-only: the first sweep of a wallet without main.
+ 	default:
+ 		history, err := p.Lock.History(ctx, wallet, custody.MainOutpoint)
+ 		if err != nil {

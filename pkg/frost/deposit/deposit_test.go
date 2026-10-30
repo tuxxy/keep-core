@@ -66,14 +66,16 @@ func TestPlannerMainRule(t *testing.T) {
 			t.Fatal("C-05 requires the unreserved main")
 		}
 	})
-	t.Run("reserved main is left out", func(t *testing.T) {
+	// Amended for tuxxy/tbtc-v2#24 (D13 refinement): a reserved main refuses
+	// an ordinary sweep; the deposit waits for the reservation.
+	t.Run("reserved main refuses an ordinary sweep", func(t *testing.T) {
 		w := newWorld(t)
 		w.fund(1_000_000)
 		w.chain.custody.ActiveReservation = [32]byte{0x99}
 		key := w.deposit(1, 100_000, 90, [20]byte{})
 		plan, err := w.planner.Build(ctx, 100, [][32]byte{key}, [32]byte{})
-		if err != nil || plan.SweepMain() != nil {
-			t.Fatal("deposit-only sweep expected", err)
+		if !errors.Is(err, ErrMainBusy) || plan != nil {
+			t.Fatal("ordinary sweep planned while the main is reserved", err)
 		}
 	})
 	t.Run("main held by a redemption", func(t *testing.T) {
@@ -179,15 +181,15 @@ func TestAuthoritySweepAuthorizedOnly(t *testing.T) {
 }
 
 // A deposit-only sweep is refused while an unreserved main exists, so a sweep
-// can never strand the main beside a second custody output.
+// can never strand the main beside a second custody output. Amended for
+// tuxxy/tbtc-v2#24: the deposit-only plan is built while the wallet has no
+// main (the only state that plans one under the single-main rule), then a
+// main appears unreserved.
 func TestAuthorityRequiresUnreservedMain(t *testing.T) {
 	w := newWorld(t)
-	w.chain.custody.ActiveReservation = [32]byte{0x99}
-	w.fund(1_000_000)
-	w.chain.custody.ActiveReservation = [32]byte{0x99}
 	key := w.deposit(1, 100_000, 90, [20]byte{})
 	plan := planned(t, w, key)
-	w.chain.custody.ActiveReservation = [32]byte{}
+	w.fund(1_000_000)
 	if _, err := (&Authority{View: w.view}).AuthorizeSweep(ctx, plan); !errors.Is(err, ErrPlanMismatch) {
 		t.Fatal(err)
 	}

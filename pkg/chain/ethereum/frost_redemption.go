@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum"
+	binding "github.com/keep-network/keep-core/pkg/chain/ethereum/frostabi"
 	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
 	legacy "github.com/keep-network/keep-core/pkg/chain/ethereum/tbtc/gen/abi"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
@@ -207,6 +208,46 @@ func (c *FrostRedemptionChain) Admissions(ctx context.Context, wallet [32]byte, 
 		out = append(out, redemption.Admission{ReservationID: it.Event.ReservationId, TransactionHash: it.Event.TransactionHash, Block: it.Event.Raw.BlockNumber, BlockHash: it.Event.Raw.BlockHash})
 	}
 	return out, it.Error()
+}
+
+// CertifiedSeats returns the seat set of the readiness certificate that the
+// Bridge's FROST wallet registry accepted for wallet: its ReadinessAccepted
+// event, searched from the wallet's approval block. It fails unless the
+// registry holds the wallet as certified with exactly one such event.
+func (c *FrostRedemptionChain) CertifiedSeats(ctx context.Context, wallet [32]byte) ([]uint16, error) {
+	address, err := c.bridge.FrostRegistry(&bind.CallOpts{Context: ctx})
+	if err != nil {
+		return nil, err
+	}
+	registry, err := binding.NewFrostWalletRegistry(address, c.client)
+	if err != nil {
+		return nil, err
+	}
+	w, err := registry.Wallet(&bind.CallOpts{Context: ctx}, wallet)
+	if err != nil {
+		return nil, err
+	}
+	if w.State != 2 {
+		return nil, fmt.Errorf("FROST wallet not readiness-certified: registry state %d", w.State)
+	}
+	it, err := registry.FilterReadinessAccepted(&bind.FilterOpts{Context: ctx, Start: w.ApprovalBlock}, [][32]byte{wallet})
+	if err != nil {
+		return nil, err
+	}
+	defer it.Close()
+	var accepted [][]uint16
+	for it.Next() {
+		if !it.Event.Raw.Removed {
+			accepted = append(accepted, append([]uint16(nil), it.Event.Seats...))
+		}
+	}
+	if err = it.Error(); err != nil {
+		return nil, err
+	}
+	if len(accepted) != 1 {
+		return nil, fmt.Errorf("%d readiness certificates accepted for the FROST wallet", len(accepted))
+	}
+	return accepted[0], nil
 }
 
 // Admission returns the admission log of one reservation. The log's block hash

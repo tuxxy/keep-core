@@ -97,8 +97,9 @@ type Config struct {
 	// Concurrency level for key-generation for tECDSA.
 	KeyGenerationConcurrency int
 	// Frost is the FROST configuration. Its zero value leaves FROST
-	// unconfigured: the node then runs the legacy duties only.
-	Frost FrostConfig
+	// unconfigured: the node then runs the legacy duties only. It is never
+	// read from a configuration file: keep-client start refuses FROST (D5).
+	Frost FrostConfig `mapstructure:"-"`
 }
 
 // Initialize kicks off the TBTC by initializing internal state, ensuring

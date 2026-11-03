@@ -22,6 +22,7 @@ package tbtc_test
 // No build tag (tuxxy/keep-core#64).
 
 import (
+	"bytes"
 	"context"
 	"math/big"
 	"testing"
@@ -60,7 +61,9 @@ type frostIncomingWorld struct {
 	target    *frostTarget
 	operators []chain.Address
 	drain     *bitcoin.Transaction
-	sweepCap  uint64
+	// other is a second ready FROST wallet's label (review R3).
+	other    [20]byte
+	sweepCap uint64
 }
 
 // newFrostIncomingWorld drains the legacy source into the FROST target and
@@ -126,6 +129,79 @@ func newFrostIncomingWorld(t *testing.T) *frostIncomingWorld {
 	return w
 }
 
+// registerSecondFrostWallet registers another ready FROST wallet through the
+// same registry fixture calls setUpFrostDrain makes (FIXTURE: no FROST DKG),
+// with its own output key, and returns its label (review R3).
+func (w *frostIncomingWorld) registerSecondFrostWallet(t *testing.T) [20]byte {
+	t.Helper()
+	frost := bind.NewBoundContract(w.bridge, w.frostABI(), w.admin, w.admin, w.admin)
+	var out []interface{}
+	if err := frost.Call(&bind.CallOpts{}, &out, "frostRegistry"); err != nil || len(out) != 1 {
+		t.Fatalf("setup: frostRegistry: %v", err)
+	}
+	registryAddress := out[0].(common.Address)
+	artifact := w.baseline.artifact("contracts/test/FrostRegistryFixture.sol", "FrostRegistryFixture")
+	registryABI, err := abi.JSON(bytes.NewReader(artifact.ABI))
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry := bind.NewBoundContract(registryAddress, registryABI, w.admin, w.admin, w.admin)
+	key, err := crypto.ToECDSA(common.LeftPadBytes(big.NewInt(1001).Bytes(), 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var q [32]byte
+	copy(q[:], crypto.CompressPubkey(&key.PublicKey)[1:])
+	head, err := w.admin.BlockNumber(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	descriptorType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
+		{Name: "scheme", Type: "uint8"}, {Name: "profile", Type: "uint8"},
+		{Name: "chainId", Type: "uint256"}, {Name: "registry", Type: "address"},
+		{Name: "epoch", Type: "uint64"}, {Name: "members", Type: "uint32[]"},
+		{Name: "operators", Type: "address[]"}, {Name: "threshold", Type: "uint16"},
+		{Name: "snowfallDescriptor", Type: "bytes32"}, {Name: "outputKey", Type: "bytes32"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin := crypto.PubkeyToAddress(w.adminKey.PublicKey)
+	descriptor := struct {
+		Scheme             uint8
+		Profile            uint8
+		ChainId            *big.Int
+		Registry           common.Address
+		Epoch              uint64
+		Members            []uint32
+		Operators          []common.Address
+		Threshold          uint16
+		SnowfallDescriptor [32]byte
+		OutputKey          [32]byte
+	}{2, 1, w.chainID, registryAddress, head, []uint32{1, 2, 3},
+		[]common.Address{w.operator, admin, common.HexToAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")},
+		2, crypto.Keccak256Hash([]byte("batch-3 second FROST wallet")), q}
+	encoded, err := abi.Arguments{{Type: descriptorType}}.Pack(descriptor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bytes32Type, _ := abi.NewType("bytes32", "", nil)
+	tagged, err := abi.Arguments{{Type: bytes32Type}, {Type: descriptorType}}.Pack(crypto.Keccak256Hash([]byte("tbtc-v2/frost-descriptor/v1")), descriptor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := crypto.Keccak256Hash(crypto.Keccak256([]byte("tbtc-v2/frost-wallet-id/v1")), q[:])
+	w.send("second FROST wallet created", func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return registry.Transact(o, "created", encoded, head+100000)
+	})
+	w.send("second FROST wallet ready", func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return registry.Transact(o, "ready", id, crypto.Keccak256Hash(tagged))
+	})
+	var label [20]byte
+	copy(label[:], id[:20])
+	return label
+}
+
 // client is a production client (default configuration, public Connect),
 // started fresh: nothing survives from an earlier client.
 func (w *frostIncomingWorld) client(t *testing.T) *chainethereum.TbtcChain {
@@ -174,7 +250,11 @@ func (w *frostIncomingWorld) requireIncomingProposal(t *testing.T, what string, 
 }
 
 func (w *frostIncomingWorld) validate(c *chainethereum.TbtcChain, p *tbtc.MovedFundsSweepProposal) error {
-	return tbtc.ValidateMovedFundsSweepProposal(golog.Logger("b3-follower"), w.target.label, p, c)
+	return w.validateFor(c, w.target.label, p)
+}
+
+func (w *frostIncomingWorld) validateFor(c *chainethereum.TbtcChain, label [20]byte, p *tbtc.MovedFundsSweepProposal) error {
+	return tbtc.ValidateMovedFundsSweepProposal(golog.Logger("b3-follower"), label, p, c)
 }
 
 // scaledFees is an ADAPTER Bitcoin view whose fee estimate is factor times
@@ -212,10 +292,12 @@ func TestFrostIncomingSweepProposedEveryWindow(t *testing.T) {
 
 // TestFrostIncomingSweepFollowerValidation (D19, as in base; K09-29): a
 // follower accepts any leader fee within the on-chain cap, whatever its own
-// local fee configuration, and refuses a fee above the cap, a zero fee, and a
-// proposal naming an output that is not the target's pending incoming output.
+// local fee configuration, and refuses a fee above the cap, a zero fee, a
+// proposal naming an output that is not the target's pending incoming output,
+// and a proposal of another FROST wallet naming the target's output.
 func TestFrostIncomingSweepFollowerValidation(t *testing.T) {
 	w := newFrostIncomingWorld(t)
+	w.other = w.registerSecondFrostWallet(t)
 	c := w.client(t)
 	stop := w.mineInBackground()
 	defer stop()
@@ -237,6 +319,11 @@ func TestFrostIncomingSweepFollowerValidation(t *testing.T) {
 		if err := w.validate(c, p); err == nil {
 			t.Errorf("a follower accepted a proposal with %s", name)
 		}
+	}
+	// Review R3: the output is pending, but it belongs to the target, not to
+	// the wallet whose proposal this is.
+	if err := w.validateFor(c, w.other, good(1)); err == nil {
+		t.Errorf("a follower accepted a proposal sweeping another wallet's incoming output")
 	}
 }
 

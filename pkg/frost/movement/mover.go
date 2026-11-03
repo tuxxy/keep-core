@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/rand"
 	"sort"
 	"strconv"
 
@@ -133,12 +134,15 @@ func (m *Mover) executor(plan *signing.Plan, r Round) (*signing.Executor, error)
 
 // selected is the round's signing seats, chosen as base keep-core chooses
 // the participants of a signing attempt (pkg/tbtc signingRetryLoop,
-// tecdsa/retry): by unique operator, never splitting an operator's seats,
-// adding operators until the seats reach the threshold. Operators are taken
-// in address order starting at a different one each round, so whenever the
-// live operators' seats reach the threshold, some round within one rotation
-// selects live operators only (tuxxy/keep-core#66). Every operator derives
-// the same seats from the round number alone.
+// tecdsa/retry EvaluateRetryParticipantsForSigning): operators sorted by
+// address and shuffled with a seed shared by every operator, then whole
+// operators taken until their seats reach the threshold (tuxxy/keep-core#66).
+// Base shuffles afresh for every attempt. Here the shuffle is redrawn once per
+// rotation cycle of len(operators) rounds and the start operator rotates
+// within the cycle, so one absent operator is left out of some round of every
+// cycle, and the reshuffles reach every set of live operators whose seats
+// reach the threshold. The seed is the wallet ID and the retry count the
+// cycle, so every operator derives the same seats from the round alone.
 func selected(d dkg.Descriptor, round uint64) []uint16 {
 	seatsOf := map[common.Address][]uint16{}
 	var operators []common.Address
@@ -152,13 +156,23 @@ func selected(d dkg.Descriptor, round uint64) []uint16 {
 		}
 		seatsOf[operator] = append(seatsOf[operator], uint16(i+1))
 	}
+	if len(operators) == 0 {
+		return nil
+	}
 	sort.Slice(operators, func(i, j int) bool {
 		return bytes.Compare(operators[i][:], operators[j][:]) < 0
 	})
+	id := dkg.WalletID(d.OutputKey)
+	n := uint64(len(operators))
+	// #nosec G404 (insecure random number source (rand))
+	// As in base, shuffling operators for retries needs no secure randomness.
+	rng := rand.New(rand.NewSource(int64(binary.BigEndian.Uint64(id[:8])) + int64(round/n)))
+	rng.Shuffle(len(operators), func(i, j int) {
+		operators[i], operators[j] = operators[j], operators[i]
+	})
 	var out []uint16
-	for i := 0; i < len(operators) && len(out) < int(d.Threshold); i++ {
-		operator := operators[(int(round%uint64(len(operators)))+i)%len(operators)]
-		out = append(out, seatsOf[operator]...)
+	for i := uint64(0); i < n && len(out) < int(d.Threshold); i++ {
+		out = append(out, seatsOf[operators[(round%n+i)%n]]...)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
 	return out

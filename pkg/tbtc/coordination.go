@@ -262,12 +262,20 @@ type coordinationResult struct {
 	leader   chain.Address
 	proposal CoordinationProposal
 	faults   []*coordinationFault
+
+	// frostWallet is set when the coordinated wallet is a FROST wallet.
+	frostWallet *frostWallet
 }
 
 func (cr *coordinationResult) String() string {
+	walletString := cr.wallet.String()
+	if cr.frostWallet != nil {
+		walletString = fmt.Sprintf("FROST wallet [0x%x]", cr.frostWallet.id)
+	}
+
 	return fmt.Sprintf(
 		"wallet [%s], window [%v], leader [%s], proposal [%s], faults [%s]",
-		&cr.wallet,
+		walletString,
 		cr.window.coordinationBlock,
 		cr.leader,
 		cr.proposal.ActionType(),

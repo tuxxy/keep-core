@@ -4,7 +4,8 @@
 # Needs SNOWFALL_WORKER and SNOWFALL_WORKER_SHA256 (the pinned worker) and the
 # LEGACY_* environment of test/legacy/run.sh (Anvil, both tbtc-v2 builds,
 # Bitcoin Core); see RM-tests-b3/env.sh. A missing variable is a failure, not
-# a skip. Cases run in parallel, four at a time per package.
+# a skip. Cases run in parallel, four at a time per package, GOMAXPROCS 4 per
+# package (review R7). Every expected case must appear and pass.
 set -euo pipefail
 out=$1
 mkdir -p "$out"
@@ -17,15 +18,15 @@ head=$(git rev-parse HEAD)
 clean=$([ -z "$(git status --porcelain)" ] && echo true || echo false)
 start=$(date +%s)
 set +e
-GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 8 -json \
+GOMAXPROCS=${GOMAXPROCS:-4} go test -count=1 -parallel 4 -json \
   ./pkg/frost/signing -run '^(TestPossibleReleaseAfterGrantWithoutDone|TestNoPossibleReleaseBeforeTheWorker|TestBatch3OwningTestsRunUntagged)$' \
   > "$out/signing.json" 2>&1
 s1=$?
-GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 4 -json \
-  ./pkg/frost/movement -run '^(TestIncomingSweep(Settles|SignsWithOperatorDown|NextWindowAfterFailedWindow|AfterMainSpent)|TestResolveRecordsOnlyTheProvenSweep)$' \
+GOMAXPROCS=${GOMAXPROCS:-4} go test -count=1 -parallel 4 -json \
+  ./pkg/frost/movement -run '^(TestIncomingSweep(Settles|SignsWithOperatorDown|NextWindowAfter(Failed|Aborted)Window|AfterMainSpent|AfterMainSpentNoRestart)|TestResolveRecordsOnlyTheProvenSweep)$' \
   > "$out/movement.json" 2>&1 &
 p2=$!
-GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 4 -json \
+GOMAXPROCS=${GOMAXPROCS:-4} go test -count=1 -parallel 4 -json \
   ./pkg/tbtc -run '^TestFrostIncomingSweep(ProposedEveryWindow|FollowerValidation|DivergentLocalFees)$' \
   > "$out/tbtc.json" 2>&1 &
 p3=$!
@@ -45,9 +46,36 @@ for f in ("signing.json", "movement.json", "tbtc.json"):
         if e.get("Test") and e.get("Action") in ("pass", "fail", "skip"):
             # a skip (missing environment) is never acceptance
             cases[e["Package"].rsplit("/", 1)[-1] + "/" + e["Test"]] = {"result": e["Action"], "seconds": e.get("Elapsed")}
+# Review R7: the intended cases, by name; a case that stops matching the
+# -run filters is missing, never silently dropped.
+expected = [
+    "signing/TestPossibleReleaseAfterGrantWithoutDone/mainless",
+    "signing/TestPossibleReleaseAfterGrantWithoutDone/with-main",
+    "signing/TestPossibleReleaseAfterGrantWithoutDone/mainless-after-restart",
+    "signing/TestPossibleReleaseAfterGrantWithoutDone/with-main-after-restart",
+    "signing/TestNoPossibleReleaseBeforeTheWorker/mainless",
+    "signing/TestNoPossibleReleaseBeforeTheWorker/with-main",
+    "signing/TestBatch3OwningTestsRunUntagged",
+    "movement/TestIncomingSweepSettles/mainless",
+    "movement/TestIncomingSweepSettles/with-main",
+    "movement/TestIncomingSweepSignsWithOperatorDown/operator-0-down",
+    "movement/TestIncomingSweepSignsWithOperatorDown/operator-1-down",
+    "movement/TestIncomingSweepSignsWithOperatorDown/operator-2-down",
+    "movement/TestIncomingSweepNextWindowAfterFailedWindow",
+    "movement/TestIncomingSweepNextWindowAfterAbortedWindow",
+    "movement/TestIncomingSweepAfterMainSpent",
+    "movement/TestIncomingSweepAfterMainSpentNoRestart",
+    "movement/TestResolveRecordsOnlyTheProvenSweep",
+    "tbtc/TestFrostIncomingSweepProposedEveryWindow",
+    "tbtc/TestFrostIncomingSweepFollowerValidation",
+    "tbtc/TestFrostIncomingSweepDivergentLocalFees",
+]
+missing = [k for k in expected if k not in cases]
 failed = sorted(k for k, v in cases.items() if v["result"] != "pass")
 m = {"head": head, "clean": clean, "wallSeconds": wall, "cases": cases, "failed": failed,
-     "accepted": clean and not failed and any(cases)}
+     "expected": expected, "missing": missing,
+     "accepted": clean and not failed and not missing}
 json.dump(m, open(os.path.join(out, "manifest.json"), "w"), indent=1, sort_keys=True)
-print(f"head {head} clean {clean} wall {wall}s: {sum(v['result']=='pass' for v in cases.values())}/{len(cases)} pass, accepted {m['accepted']}")
+passed = sum(cases.get(k, {}).get("result") == "pass" for k in expected)
+print(f"head {head} clean {clean} wall {wall}s: {passed}/{len(expected)} expected cases pass, {len(missing)} missing, accepted {m['accepted']}")
 PY

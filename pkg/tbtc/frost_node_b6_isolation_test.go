@@ -50,11 +50,21 @@ func TestFrostNodeIsolation_CrashPoints(t *testing.T) {
 		point := point
 		t.Run(point.String(), func(t *testing.T) {
 			t.Parallel()
-			w := newFrostNodeWorld(t)
-			w.startNodes()
-			epoch := w.requestWallet([]int{1, 2, 3})
+			var w *frostNodeWorld
 			var first b6Wallet
 			var drain *bitcoin.Transaction
+			var epoch uint64
+			var signedWindow uint64
+			if point == b6Signed {
+				w, first = loadB6Ready(t, []int{1, 2, 3})
+				signedWindow = w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, nil)
+				drain = w.drainInto(first)
+				w.startNodes()
+			} else {
+				w = newFrostNodeWorld(t)
+				w.startNodes()
+				epoch = w.requestWallet([]int{1, 2, 3})
+			}
 			switch point {
 			case b6Candidate:
 				deadline := time.Now().Add(b6Ready)
@@ -82,13 +92,9 @@ func TestFrostNodeIsolation_CrashPoints(t *testing.T) {
 				w.kill(victim)
 				w.startNode(victim)
 			case b6Signed:
-				var ok bool
-				if first, ok = w.readyWallet(epoch, b6Ready); !ok {
-					t.Fatalf("#26 %s precondition: epoch %d's FROST wallet did not reach ReadyUnfunded within %v: no node ran the FROST DKG and readiness duty", t.Name(), epoch, b6Ready)
-				}
-				drain = w.drainInto(first)
 				outpoint := bitcoin.TransactionOutpoint{TransactionHash: drain.Hash(), OutputIndex: 0}
-				window := w.nextSweepWindow()
+				window := signedWindow
+				w.enterWindow(window)
 				deadline := time.Now().Add(b6Sweep)
 				for len(w.spenders(outpoint)) == 0 {
 					if time.Now().After(deadline) {
@@ -148,13 +154,20 @@ func TestFrostNodeIsolation_CrashPoints(t *testing.T) {
 // remaining seats (threshold 2), and the remaining nodes stay up.
 func TestFrostNodeIsolation_FailedDKGDoesNotBlockSweep(t *testing.T) {
 	t.Parallel()
-	w, wallet := newB6ReadyWorld(t, []int{1, 2, 3})
+	w, wallet := loadB6Ready(t, []int{1, 2, 3})
+	// As in base, a window whose leader is down proposes nothing (review
+	// B6): the sweep window is the first one whose leader, from its seed
+	// block, is live, chosen before the nodes start and the drain exists.
+	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, func(window uint64) bool {
+		return w.operatorIndex(w.expectedLeader(wallet, window)) != 3
+	})
 	drain := w.drainInto(wallet)
+	w.startNodes()
 	w.kill(3)
 	epoch := w.requestWallet([]int{1, 2, 3})
-	window := w.nextSweepWindow()
+	w.enterWindow(window)
 	if _, ok := w.settleIncoming(wallet, drain, b6Sweep); !ok {
-		t.Fatalf("#38 failed DKG: with epoch %d's DKG unable to complete (operator 3 down), the earlier wallet's pending incoming sweep did not settle in window %d (exited: %v)%s", epoch, window, w.exitedNodes(), w.debugLogs())
+		t.Fatalf("#38 failed DKG: with epoch %d's DKG unable to complete (operator 3 down), the earlier wallet's pending incoming sweep did not settle in window %d, whose leader is live (exited: %v)%s", epoch, window, w.exitedNodes(), w.debugLogs())
 	}
 	if exited := w.exitedNodes(); len(exited) > 0 {
 		t.Fatalf("#38 failed DKG: a node exited: %v", exited)
@@ -168,17 +181,13 @@ func TestFrostNodeIsolation_FailedDKGDoesNotBlockSweep(t *testing.T) {
 // (#26): the test only requests it and, as SPV maintainer, proves it.
 func TestFrostNodeIsolation_ReservationOnOtherWallet(t *testing.T) {
 	t.Parallel()
-	w := newFrostNodeWorld(t)
+	w, a := loadB6Ready(t, []int{1, 2, 3})
 	sourceB, mainB := w.secondSource()
-	w.startNodes()
-	epochA := w.requestWallet([]int{1, 2, 3})
-	a, ok := w.readyWallet(epochA, b6Ready)
-	if !ok {
-		t.Fatalf("#26 %s precondition: wallet A (epoch %d) did not reach ReadyUnfunded within %v: no node ran the FROST DKG and readiness duty", t.Name(), epochA, b6Ready)
-	}
 	// A gets a main through its own incoming sweep.
+	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, nil)
 	drainA := w.drainInto(a)
-	window := w.nextSweepWindow()
+	w.startNodes()
+	w.enterWindow(window)
 	sweepA, ok := w.settleIncoming(a, drainA, b6Sweep)
 	if !ok {
 		t.Fatalf("#26 %s precondition: no node swept wallet A's incoming output in window %d: the duty is not dispatched", t.Name(), window)
@@ -236,15 +245,13 @@ func TestFrostNodeIsolation_ReservationOnOtherWallet(t *testing.T) {
 	if len(payment) != 1 {
 		t.Fatalf("#39: %d distinct transactions spend wallet A's reserved main: %v", len(payment), payment)
 	}
-	paymentHash, err := bitcoin.NewHashFromString(payment[0], bitcoin.ReversedByteOrder)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tx, err := w.btc.GetTransaction(paymentHash)
+	// Read the payment from Core (review B1); B's settlement may already
+	// have mined it, so mine it only if it is unconfirmed (review B7).
+	tx, err := w.coreTransaction(payment[0])
 	if err != nil {
 		t.Fatalf("#26 redemption: Core does not hold the nodes' payment %s: %v", payment[0], err)
 	}
-	w.btc.mine(t, tx)
+	w.mineCore(tx)
 	w.send("redemption proof", func(o *bind.TransactOpts) (*types.Transaction, error) {
 		return w.frost.Transact(o, "submitFrostRedemptionProof", reserved, legacyTxInfo(tx), w.btc.proof(t, tx.Hash()))
 	})

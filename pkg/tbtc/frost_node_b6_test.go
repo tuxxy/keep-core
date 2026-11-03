@@ -7,7 +7,12 @@ package tbtc_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
+	"math/big"
+	"math/rand"
+	"sort"
 	"testing"
 	"time"
 
@@ -15,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
+	"github.com/keep-network/keep-core/pkg/chain"
 	"github.com/keep-network/keep-core/pkg/tbtc"
 )
 
@@ -47,17 +53,25 @@ func TestFrostNodeDispatch_DKG(t *testing.T) {
 // FROST signing; generous for the same reason as b6Ready.
 const b6Sweep = 15 * time.Second
 
-// newB6ReadyWorld starts the nodes and lets them make one FROST wallet with
-// the given seat pattern. A failure here is the #26 DKG duty's.
+// loadB6Ready loads a copy of the stage in which the nodes made one FROST
+// wallet with the given seat pattern (frost_node_b6_snapshot_test.go), without
+// starting the nodes, so a case can position the chain first. The stage's
+// build is the #26 DKG duty; a failure there is reported as such.
+func loadB6Ready(t *testing.T, pattern []int) (*frostNodeWorld, b6Wallet) {
+	t.Helper()
+	if frostNodeStart == nil {
+		t.Fatalf("#26 %s: frostNodeStart is unbound: no base node initialisation with FROST configured", t.Name())
+	}
+	w := loadFrostNodeWorld(t, b6StageReady(pattern))
+	return w, *w.stageWallet
+}
+
+// newB6ReadyWorld is loadB6Ready with the nodes started, each on its restored
+// store.
 func newB6ReadyWorld(t *testing.T, pattern []int) (*frostNodeWorld, b6Wallet) {
 	t.Helper()
-	w := newFrostNodeWorld(t)
+	w, wallet := loadB6Ready(t, pattern)
 	w.startNodes()
-	epoch := w.requestWallet(pattern)
-	wallet, ok := w.readyWallet(epoch, b6Ready)
-	if !ok {
-		t.Fatalf("#26 %s precondition: epoch %d's FROST wallet did not reach ReadyUnfunded within %v: no node ran the FROST DKG and readiness duty (exited: %v)%s", t.Name(), epoch, b6Ready, w.exitedNodes(), w.debugLogs())
-	}
 	return w, wallet
 }
 
@@ -99,12 +113,8 @@ func (w *frostNodeWorld) coordination(wallet b6Wallet) (map[uint64]map[int]bool,
 // the moved-funds sweep: before DepositSweepEveryWindowActivationBlock, base
 // checks it every fourth window (index % 4 == 0).
 func (w *frostNodeWorld) nextSweepWindow() uint64 {
-	for {
-		window := w.nextWindow()
-		if (window/tbtc.B6CoordinationFrequencyBlocks)%4 == 0 {
-			return window
-		}
-	}
+	w.t.Helper()
+	return w.jumpToWindow(4 * tbtc.B6CoordinationFrequencyBlocks)
 }
 
 // assertLeaders checks D2 in every window the nodes coordinated the wallet
@@ -128,31 +138,52 @@ func (w *frostNodeWorld) assertLeaders(t *testing.T, wallet b6Wallet, senders ma
 	return leaders
 }
 
-// TestFrostNodeDispatch_IncomingSweepByLeader (#26, leader rule D2): a pending
-// incoming output of a node-made FROST wallet is swept by the nodes in a base
-// coordination window whose checklist has the moved-funds sweep, never
-// before it; in every window, the wallet's coordination message comes only
-// from base's leader by unique operator. Windows are stepped until two
-// different leaders have been checked.
-func TestFrostNodeDispatch_IncomingSweepByLeader(t *testing.T) {
-	t.Parallel()
-	w, wallet := newB6ReadyWorld(t, []int{1, 2, 3})
-	drain := w.drainInto(wallet)
-	outpoint := bitcoin.TransactionOutpoint{TransactionHash: drain.Hash(), OutputIndex: 0}
-
-	// Outside a sweep window nothing sweeps: give the nodes 60 blocks first.
-	head, err := w.admin.BlockNumber(context.Background())
+// seatLeader is the wrong rule D2 excludes: base getLeader without the
+// operator deduplication, so an operator with more seats leads more often
+// (review B5). It is computed independently, as b6Leader is.
+func (w *frostNodeWorld) seatLeader(wallet b6Wallet, window uint64) int {
+	t := w.t
+	t.Helper()
+	header, err := w.admin.HeaderByNumber(context.Background(), new(big.Int).SetUint64(window-tbtc.B6CoordinationSafeBlockShift))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !w.waitBlock(head+60, 10*time.Second) {
-		t.Fatal("setup: the chain did not advance")
+	seed := sha256.Sum256(append(append([]byte{}, wallet.label[:]...), header.Hash().Bytes()...))
+	var seats []chain.Address
+	for _, o := range wallet.operators {
+		seats = append(seats, chain.Address(o.Hex()))
 	}
-	if spenders := w.spenders(outpoint); len(spenders) > 0 {
-		t.Fatalf("#26 incoming sweep: a node broadcast sweep %v before any coordination window with the moved-funds sweep: the duty is not dispatched from base coordination windows", spenders)
-	}
+	sort.Slice(seats, func(i, j int) bool { return seats[i] < seats[j] })
+	rng := rand.New(rand.NewSource(int64(binary.BigEndian.Uint64(seed[:8]))))
+	rng.Shuffle(len(seats), func(i, j int) { seats[i], seats[j] = seats[j], seats[i] })
+	return w.operatorIndex(common.HexToAddress(string(seats[0])))
+}
 
-	window := w.nextSweepWindow()
+// TestFrostNodeDispatch_IncomingSweepByLeader (#26, leader rule D2): a pending
+// incoming output of a node-made FROST wallet (seats 1,1,2: operator 1 holds
+// two seats) is swept by the nodes in a base coordination window whose
+// checklist has the moved-funds sweep, never before that window's
+// coordination message; in every window the nodes coordinated, the wallet's
+// coordination message comes only from base's leader by unique operator. The
+// sweep window is one in which a seat-weighted leader would differ from the
+// D2 leader (review B5).
+func TestFrostNodeDispatch_IncomingSweepByLeader(t *testing.T) {
+	t.Parallel()
+	w, wallet := loadB6Ready(t, []int{1, 1, 2})
+	// The sweep window is one in which a seat-weighted leader would differ
+	// from D2's (review B5). It is chosen from its seed block before the
+	// drain exists and before the nodes start, so a skipped window has
+	// nothing to sweep.
+	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, func(window uint64) bool {
+		return w.seatLeader(wallet, window) != w.operatorIndex(w.expectedLeader(wallet, window))
+	})
+	drain := w.drainInto(wallet)
+	outpoint := bitcoin.TransactionOutpoint{TransactionHash: drain.Hash(), OutputIndex: 0}
+	w.startNodes()
+	w.enterWindow(window)
+	if spenders := w.spenders(outpoint); len(spenders) > 0 {
+		t.Fatalf("#26 incoming sweep: a node broadcast sweep %v before coordination window %d: the duty is not dispatched from base coordination windows", spenders, window)
+	}
 	sweep, ok := w.settleIncoming(wallet, drain, b6Sweep)
 	if !ok {
 		t.Fatalf("#26 incoming sweep: no node swept the FROST wallet's pending incoming output in coordination window %d (exited: %v)%s", window, w.exitedNodes(), w.debugLogs())
@@ -173,20 +204,9 @@ func TestFrostNodeDispatch_IncomingSweepByLeader(t *testing.T) {
 	if broadcastAt.Before(first[window]) {
 		t.Fatalf("#26 incoming sweep: sweep %s was broadcast at %v, before window %d's coordination message at %v", sweep, broadcastAt, window, first[window])
 	}
-	leaders := w.assertLeaders(t, wallet, senders)
-	for steps := 0; len(leaders) < 2 && steps < 6; steps++ {
-		next := w.nextWindow()
-		if !w.waitBlock(next+tbtc.B6CoordinationActivePhaseBlocks+5, 10*time.Second) {
-			t.Fatal("setup: the chain did not advance")
-		}
-		senders, _, _ = w.coordination(wallet)
-		if len(senders[next]) == 0 {
-			t.Fatalf("#26 window %d: no node sent a base coordination message for the FROST wallet: FROST wallets are not coordinated in every base window", next)
-		}
-		leaders = w.assertLeaders(t, wallet, senders)
-	}
-	if len(leaders) < 2 {
-		t.Fatalf("setup: six windows gave one leader only (%v); the D2 check needs two", leaders)
+	w.assertLeaders(t, wallet, senders)
+	if w.seatLeader(wallet, window) == w.operatorIndex(w.expectedLeader(wallet, window)) {
+		t.Fatalf("setup: window %d does not tell a seat-weighted leader from D2's", window)
 	}
 }
 
@@ -199,9 +219,10 @@ func TestFrostNodeDispatch_RestoreAtStartup(t *testing.T) {
 	t.Parallel()
 	w, wallet := newB6ReadyWorld(t, []int{1, 1, 2})
 	w.killAll()
-	w.startNodes()
+	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, nil)
 	drain := w.drainInto(wallet)
-	window := w.nextSweepWindow()
+	w.startNodes()
+	w.enterWindow(window)
 	if _, ok := w.settleIncoming(wallet, drain, b6Sweep); !ok {
 		t.Fatalf("#26 restore: after every node restarted, the wallet's pending incoming output was not swept in window %d: the FROST signers were not restored at node startup (or the sweep is not dispatched at all: see IncomingSweepByLeader) (exited: %v)%s", window, w.exitedNodes(), w.debugLogs())
 	}

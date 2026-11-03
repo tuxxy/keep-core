@@ -124,6 +124,11 @@ type fixture struct {
 	rootConfigs []store.Config
 	workers     []string
 	stopMining  context.CancelFunc
+	// url, bootstrap and external serve the restart tests: an external
+	// operator's node runs in its own host process (restart_test.go).
+	url       string
+	bootstrap []string
+	external  []int
 }
 
 type setupOptions struct {
@@ -132,6 +137,9 @@ type setupOptions struct {
 	// FROST funding and redemptions with local test values. Mode "k07" adds
 	// a controlled legacy registry root, a reimbursement pool and the drain.
 	mode string
+	// external operators (by deterministic operator index) get no in-process
+	// node; restart_test.go runs each one as a separate host process.
+	external map[int]bool
 }
 
 func setup(t *testing.T, pattern string) *fixture {
@@ -249,6 +257,10 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 		if len(locals) == 0 {
 			continue
 		}
+		if options.external[operatorIndex] {
+			f.external = append(f.external, operatorIndex)
+			continue
+		}
 		private := &operator.PrivateKey{PublicKey: operator.PublicKey{Curve: operator.Secp256k1, X: key.X, Y: key.Y}, D: key.D}
 		signing := local_v1.NewSigner(private)
 		addresses := make([]chain.Address, len(operators))
@@ -320,6 +332,7 @@ func setupWith(t *testing.T, pattern string, options setupOptions) *fixture {
 		f.nodes = append(f.nodes, nodeConfig{rootStore, network, membership, private, key, snowfallengine.WorkerConfig{Path: workerCopy, SHA256: hash}})
 		f.executors = append(f.executors, &dkg.Executor{Chain: lockedChain{chainView, &f.chainMu}, Engine: engine, Journal: journal, Bus: bus, Signer: key, Request: frost.DKGRequest{Group: frost.Group{Roster: roster, Threshold: 2, Quorum: 3, Epoch: domain.Epoch}, LocalSeats: locals, Participants: roster, Attempt: attempt}, Providers: frost.Providers{Transport: tr, Store: journal}, FinalityBlocks: 2, PollInterval: 50 * time.Millisecond})
 	}
+	f.url, f.bootstrap = url, bootstrap
 	miningCtx, stop := context.WithCancel(ctx)
 	miningDone := make(chan struct{})
 	f.stopMining = func() { stop(); <-miningDone }

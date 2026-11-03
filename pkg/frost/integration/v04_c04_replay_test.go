@@ -508,7 +508,7 @@ func replayC04(t *testing.T, names []string, weakened bool) {
 			if trace.Kind == "counterexample" && !weakened {
 				steps = trace.Claim
 			}
-			w := newK05World(t)
+			w := newK05WorldWith(t, certifyAllSeats)
 			r := &v04Replay{t: t, w: w, knob: &knobReader{Reader: w.chain, changed: map[[32]byte]bool{}, reanchored: map[[32]byte]bool{}}, ticks: 20, attempts: map[int]*v04Attempt{}, signatures: map[[32]byte][64]byte{}}
 			for _, res := range w.resolvers {
 				c := *res

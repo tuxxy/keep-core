@@ -1,0 +1,16 @@
+diff --git a/pkg/frost/integration/startup_stub_test.go b/pkg/frost/integration/startup_stub_test.go
+new file mode 100644
+index 000000000..6defe7055
+--- /dev/null
++++ b/pkg/frost/integration/startup_stub_test.go
+@@ -0,0 +1,10 @@
++package integration
++
++import "context"
++
++// CONTROL ONLY (46-52-stub-startup.patch): a node startup that does nothing.
++// It shows the restart tests fail at their #46/#52 assertions once an entry
++// point is bound, not only at the missing-startup assertion.
++func init() {
++	frostNodeStartup = func(context.Context, startupHost) error { return nil }
++}

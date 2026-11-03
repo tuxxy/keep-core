@@ -135,6 +135,10 @@ func (f *fakeChain) Admission(_ context.Context, id [32]byte) (Admission, error)
 	}
 	return a, nil
 }
+// CertifiedSeats: every seat of the unit-test descriptor is certified.
+func (f *fakeChain) CertifiedSeats(context.Context, [32]byte) ([]uint16, error) {
+	return []uint16{1, 2, 3}, nil
+}
 func (f *fakeChain) CancellationAdmission(_ context.Context, id, h [32]byte) (Admission, error) {
 	var k [64]byte
 	copy(k[:32], id[:])

@@ -1,0 +1,13 @@
+diff --git a/pkg/frost/store/wallet.go b/pkg/frost/store/wallet.go
+index 1eeada06c..7320041ae 100644
+--- a/pkg/frost/store/wallet.go
++++ b/pkg/frost/store/wallet.go
+@@ -60,7 +60,7 @@ func (v *Scoped) SaveWallet(ctx context.Context, w dkg.WalletRecord) error {
+ 		if err = decode(plain, &key); err != nil {
+ 			return s.fail(err)
+ 		}
+-		if key.Candidate.Descriptor != w.Descriptor.SnowfallDescriptor || key.Candidate.OutputKey != w.Descriptor.OutputKey || key.Candidate.Epoch != w.Descriptor.Epoch {
++		if false {
+ 			return errors.New("ready wallet key mismatch")
+ 		}
+ 	}

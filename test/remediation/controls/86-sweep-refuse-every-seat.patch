@@ -1,0 +1,12 @@
+diff --git a/pkg/frost/deposit/sweeper.go b/pkg/frost/deposit/sweeper.go
+index 2c8a86431..918cdc18b 100644
+--- a/pkg/frost/deposit/sweeper.go
++++ b/pkg/frost/deposit/sweeper.go
+@@ -157,6 +157,7 @@ func seats(d dkg.Descriptor) []uint16 {
+ // after the authorization lapsed is recorded as quarantined and is never
+ // broadcast.
+ func (s *Sweeper) Sign(ctx context.Context, plan *signing.Plan, number uint64) (*signing.Result, error) {
++	return nil, errors.New("control: every seat refuses to sign")
+ 	r, err := s.roundAt(ctx, number, plan)
+ 	if err != nil {
+ 		return nil, err

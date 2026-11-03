@@ -76,7 +76,7 @@ func newK07World(t *testing.T) *k07World {
 	var bJournals []*store.Scoped
 	var bRequests []frost.DKGRequest
 	var bRecord dkg.WalletRecord
-	k6 := newK06WorldWith(t, k06Options{mode: "k07", afterDKG: func(f *fixture) {
+	k6 := newK06WorldWith(t, k06Options{mode: "k07", beforeDKG: certifyAllSeats, afterDKG: func(f *fixture) {
 		aJournals, aExecutors, aEpoch := f.journals, f.executors, f.deployment.Epoch
 		t.Log("K-07: second DKG for wallet B")
 		f.nextEpoch()

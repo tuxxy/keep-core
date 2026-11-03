@@ -24,7 +24,7 @@ var c10ABI, _ = abi.JSON(strings.NewReader(`[
 // credited during it; reservations stay refused until governance lifts and
 // opens a new period. The controller's issuance equals the Bank credits.
 func TestFrostSweepWithinExposureBudget(t *testing.T) {
-	w := newK06World(t)
+	w := newK06WorldWith(t, k06Options{mode: "k05", beforeDKG: certifyAllSeats})
 	ctx := w.f.ctx
 	controller := bind.NewBoundContract(w.f.deployment.Exposure, c10ABI, w.f.client, w.f.client, w.f.client)
 	transact := func(method string, args ...any) error {

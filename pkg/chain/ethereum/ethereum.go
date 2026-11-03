@@ -38,6 +38,10 @@ type baseChain struct {
 	client  ethutil.EthereumClient
 	chainID *big.Int
 
+	// ethClient is the client before its add-ons, for the FROST adapters
+	// (FrostChain, FrostRedemptionChain) a node with FROST configured binds.
+	ethClient *ethclient.Client
+
 	blockCounter *ethereum.BlockCounter
 	nonceManager *ethereum.NonceManager
 	miningWaiter *ethutil.MiningWaiter
@@ -298,6 +302,7 @@ func newBaseChain(
 		key:              key,
 		client:           clientWithAddons,
 		chainID:          chainID,
+		ethClient:        client,
 		blockCounter:     blockCounter,
 		nonceManager:     nonceManager,
 		miningWaiter:     miningWaiter,

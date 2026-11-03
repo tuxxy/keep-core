@@ -447,7 +447,7 @@ func (f *fixture) launchHost(dir string, index int, phase, killAt string, timeou
 		if option.reloadFails {
 			body = "rc=1\n"
 		}
-		script := []byte("#!/bin/sh\nprintf 'start\\n' >> " + quote(spec.WorkerRuns) + " || exit 125\n" + body + "printf 'exit %d\\n' \"$rc\" >> " + quote(spec.WorkerRuns) + "\nexit \"$rc\"\n")
+		script := []byte("#!/bin/sh\nkind=; [ $# -eq 0 ] || kind=-args\nprintf 'start%s\\n' \"$kind\" >> " + quote(spec.WorkerRuns) + " || exit 125\n" + body + "printf 'exit%s %d\\n' \"$kind\" \"$rc\" >> " + quote(spec.WorkerRuns) + "\nexit \"$rc\"\n")
 		launcher := filepath.Join(dir, "worker-launcher-"+phase)
 		if err = os.WriteFile(launcher, script, 0700); err != nil {
 			f.t.Fatal(err)

@@ -131,4 +131,45 @@ func (tc *TbtcChain) PendingFrostRedemptions(
 	return scripts, nil
 }
 
+// ReservedFrostRedemptions implements tbtc.FrostRedemptionRequestChain: the
+// output scripts of the requests of the FROST wallet's admitted, unresolved
+// reservation, in its order, and whether the wallet holds one.
+func (tc *TbtcChain) ReservedFrostRedemptions(
+	outputKey [32]byte,
+) ([]bitcoin.Script, bool, error) {
+	ctx := context.Background()
+	bridge, err := tc.frostRedemptionChain(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	head, err := tc.blockCounter.CurrentBlock()
+	if err != nil {
+		return nil, false, err
+	}
+	custody, err := bridge.Custody(ctx, head, dkg.WalletID(outputKey))
+	if err != nil {
+		return nil, false, err
+	}
+	if custody.ActiveReservation == ([32]byte{}) {
+		return nil, false, nil
+	}
+	intent, err := bridge.Intent(ctx, head, custody.ActiveReservation)
+	if err != nil {
+		return nil, false, err
+	}
+	if !intent.State.Unresolved() {
+		return nil, false, nil
+	}
+
+	scripts := make([]bitcoin.Script, len(intent.RequestIDs))
+	for i, id := range intent.RequestIDs {
+		request, err := bridge.Request(ctx, head, id)
+		if err != nil {
+			return nil, false, err
+		}
+		scripts[i] = bitcoin.Script(request.Script)
+	}
+	return scripts, true, nil
+}
+
 var _ tbtc.FrostRedemptionRequestChain = (*TbtcChain)(nil)

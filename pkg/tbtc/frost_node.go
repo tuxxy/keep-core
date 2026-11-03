@@ -128,6 +128,10 @@ type FrostRedemptionRequestChain interface {
 		startBlock uint64,
 		limit int,
 	) ([]bitcoin.Script, error)
+	// ReservedFrostRedemptions returns the output scripts of the requests
+	// of the wallet's admitted, unresolved reservation, in its order, and
+	// whether the wallet holds one.
+	ReservedFrostRedemptions(outputKey [32]byte) ([]bitcoin.Script, bool, error)
 }
 
 // frostBitcoinChain is the node's Bitcoin chain with the script query the
@@ -804,7 +808,8 @@ func (fsb *frostSigningBitcoin) Unspent(
 ) (bool, error) {
 	transaction, err := fsb.chain.GetTransaction(outpoint.TransactionHash)
 	if err != nil {
-		return false, nil
+		// Unknown, not spent.
+		return false, err
 	}
 	if int(outpoint.OutputIndex) >= len(transaction.Outputs) {
 		return false, nil

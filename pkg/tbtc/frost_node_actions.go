@@ -3,10 +3,12 @@ package tbtc
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ipfs/go-log/v2"
@@ -260,6 +262,17 @@ func (fw *frostWallet) redeem(
 	coordinationBlock uint64,
 ) error {
 	fn := fw.node
+
+	// A reservation the wallet already holds is resumed, never planned
+	// again: the leader re-proposes its requests until it is resolved.
+	custody, err := fn.bridge.Custody(ctx, coordinationBlock, fw.id)
+	if err != nil {
+		return err
+	}
+	if custody.ActiveReservation != ([32]byte{}) {
+		return fw.resume(ctx, actionLogger, proposal, custody.ActiveReservation)
+	}
+
 	planner := redemption.Planner{
 		Chain:   fn.bridge,
 		Bitcoin: fn.bitcoin,
@@ -307,6 +320,9 @@ func (fw *frostWallet) redeem(
 	reservation := redemption.ReservationID(chainID, bridge, certificate)
 	digest := redemption.ReservationDigest(chainID, bridge, certificate)
 
+	if err := fw.retainPlan(ctx, reservation, plan); err != nil {
+		return err
+	}
 	if _, err := fn.bridge.Admission(ctx, reservation); err != nil {
 		if err := fw.reserve(ctx, actionLogger, planner, plan, certificate, reservation, digest, validUntil); err != nil {
 			return err
@@ -497,9 +513,142 @@ func (fw *frostWallet) submitReservation(
 	return fw.node.bridge.Reserve(ctx, proposal)
 }
 
-// pay signs the admitted reservation's payment and broadcasts it. Rounds are
-// derived from the admission block, so every member joins the same round; a
-// member keeps joining the current round until the payment is signed.
+// resume continues the wallet's admitted, unresolved reservation after a
+// restart or an interrupted action: the plan this operator attested is read
+// back from the FROST store and must be the one the Bridge admitted, and the
+// leader's proposal must name its requests. The same reservation is then
+// paid; nothing is planned or spent anew.
+func (fw *frostWallet) resume(
+	ctx context.Context,
+	actionLogger log.StandardLogger,
+	proposal *RedemptionProposal,
+	reservation [32]byte,
+) error {
+	fn := fw.node
+	payCtx := context.WithoutCancel(ctx)
+
+	head, err := fn.bridge.Head(ctx)
+	if err != nil {
+		return err
+	}
+	intent, err := fn.bridge.Intent(ctx, head.Number, reservation)
+	if err != nil {
+		return err
+	}
+	if !intent.State.Unresolved() {
+		return nil
+	}
+	plan, err := fw.loadPlan(ctx, reservation)
+	if err != nil {
+		return fmt.Errorf(
+			"cannot resume FROST reservation [0x%x]: [%w]",
+			reservation,
+			err,
+		)
+	}
+	if plan.Commitment() != intent.Certificate.IntentCommitment {
+		return fmt.Errorf("retained FROST plan is not the admitted one")
+	}
+	requests := plan.Requests()
+	if len(requests) != len(proposal.RedeemersOutputScripts) {
+		return fmt.Errorf("FROST reservation does not match the proposal")
+	}
+	for i, request := range requests {
+		if !bytes.Equal(request.Script, proposal.RedeemersOutputScripts[i]) {
+			return fmt.Errorf("FROST reservation does not match the proposal")
+		}
+	}
+	admission, err := fn.bridge.Admission(payCtx, reservation)
+	if err != nil {
+		return err
+	}
+
+	actionLogger.Infof(
+		"resuming FROST redemption reservation [0x%x] admitted at block [%d]",
+		reservation,
+		admission.Block,
+	)
+
+	return fw.pay(payCtx, actionLogger, plan, reservation, admission)
+}
+
+// frostPlanRecordID is the FROST store record of the plan attested for a
+// reservation.
+func frostPlanRecordID(reservation [32]byte) [32]byte {
+	return sha256.Sum256(append([]byte("tbtc/frost-redemption-plan/v1/"), reservation[:]...))
+}
+
+// frostPlanRecord is the public recovery data of an attested redemption
+// plan: everything signing.NewPlan needs besides the wallet.
+type frostPlanRecord struct {
+	Generation, StateVersion uint64
+	Requests                 []signing.Request
+	ConflictInput            bitcoin.TransactionOutpoint
+	Fees                     signing.FeePolicy
+	Transaction              []byte
+	Prevouts                 []bitcoin.PreviousOutput
+}
+
+// retainPlan keeps the plan of a reservation in the FROST store before it is
+// attested, so that the reservation can be paid after a restart.
+func (fw *frostWallet) retainPlan(
+	ctx context.Context,
+	reservation [32]byte,
+	plan *signing.Plan,
+) error {
+	record := frostPlanRecord{
+		Generation:    plan.Generation(),
+		StateVersion:  plan.StateVersion(),
+		Requests:      plan.Requests(),
+		ConflictInput: plan.ConflictInput(),
+		Fees:          plan.Fees(),
+		Transaction:   plan.Snapshot().Unsigned().Serialize(bitcoin.Standard),
+		Prevouts:      plan.Snapshot().PreviousOutputs(),
+	}
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	return fw.journal.RetainSigningRecord(ctx, frostPlanRecordID(reservation), payload)
+}
+
+// loadPlan rebuilds the plan retained for a reservation.
+func (fw *frostWallet) loadPlan(
+	ctx context.Context,
+	reservation [32]byte,
+) (*signing.Plan, error) {
+	payload, err := fw.journal.ReadSigningRecord(ctx, frostPlanRecordID(reservation))
+	if err != nil {
+		return nil, err
+	}
+	var record frostPlanRecord
+	if err := json.Unmarshal(payload, &record); err != nil {
+		return nil, err
+	}
+	transaction := new(bitcoin.Transaction)
+	if err := transaction.Deserialize(record.Transaction); err != nil {
+		return nil, err
+	}
+	return signing.NewPlan(signing.Proposal{
+		Wallet:         fw.descriptor,
+		BitcoinGenesis: fw.node.genesis,
+		Purpose:        signing.Redemption,
+		Generation:     record.Generation,
+		StateVersion:   record.StateVersion,
+		Requests:       record.Requests,
+		ConflictInput:  record.ConflictInput,
+		Fees:           record.Fees,
+		Transaction:    transaction,
+		Prevouts:       record.Prevouts,
+	})
+}
+
+// pay resolves the admitted reservation with K-05's resolver until its
+// payment is broadcast or the reservation is resolved: it signs in rounds
+// derived from the admission block, so every member joins the same round,
+// broadcasts a signed payment (again, after a restart), and rebroadcasts it
+// after the timeout. A failed read or round is retried on the next block or
+// round; the reservation is never dropped for a transient error.
 func (fw *frostWallet) pay(
 	ctx context.Context,
 	actionLogger log.StandardLogger,
@@ -532,50 +681,53 @@ func (fw *frostWallet) pay(
 	for {
 		head, err := blockCounter.CurrentBlock()
 		if err != nil {
-			return err
+			actionLogger.Warnf("cannot read the current block: [%v]", err)
+			time.Sleep(frostPollInterval)
+			continue
 		}
-		intent, err := fn.bridge.Intent(ctx, head, reservation)
-		if err != nil {
-			return err
-		}
-		if !intent.State.Unresolved() {
-			return fmt.Errorf("FROST reservation resolved before payment")
-		}
-
 		round := (head - first) / schedule.RoundBlocks
 		roundStart := first + round*schedule.RoundBlocks
+		roundEnd := roundStart + schedule.RoundBlocks
 		if head > roundStart+schedule.RoundBlocks/3 {
-			// Too late to join this round; join the next one.
-			if err := fn.node.waitForBlockHeight(ctx, roundStart+schedule.RoundBlocks); err != nil {
+			// Too late to join this round's signing; join the next one.
+			if err := fn.node.waitForBlockHeight(ctx, roundEnd); err != nil {
 				return err
 			}
 			continue
 		}
 
-		roundCtx, cancelRound := fn.roundContext(ctx, roundStart+schedule.RoundBlocks)
-		_, err = resolver.Sign(roundCtx, plan, reservation)
+		roundCtx, cancelRound := fn.roundContext(ctx, roundEnd)
+		status, err := resolver.Resolve(roundCtx, plan, reservation)
 		cancelRound()
+		if err == nil && status == redemption.StatusSigned {
+			// Broadcast the signed payment right away.
+			status, err = resolver.Resolve(ctx, plan, reservation)
+		}
 		if err != nil {
 			actionLogger.Warnf("FROST payment round [%d] failed: [%v]", round, err)
-			if fw.planSpent(ctx, plan) {
-				actionLogger.Infof("FROST payment inputs are spent; nothing left to sign")
-				return nil
-			}
-			if err := fn.node.waitForBlockHeight(ctx, roundStart+schedule.RoundBlocks); err != nil {
+			if err := fn.node.waitForBlockHeight(ctx, roundEnd); err != nil {
 				return err
 			}
 			continue
 		}
 
-		if err := resolver.Broadcast(ctx, plan, reservation); err != nil {
-			return fmt.Errorf("cannot broadcast FROST payment: [%w]", err)
+		switch status {
+		case redemption.StatusBroadcast:
+			actionLogger.Infof(
+				"FROST payment [%s] broadcast",
+				bitcoin.Hash(plan.BitcoinTransactionHash()).Hex(bitcoin.ReversedByteOrder),
+			)
+			return nil
+		case redemption.StatusSettled:
+			return nil
+		case redemption.StatusNeedsCancellation, redemption.StatusAwaitingDirective:
+			return fmt.Errorf("FROST reservation needs [%s]", status)
+		default:
+			// Waiting for the next round's fresh session.
+			if err := fn.node.waitForBlockHeight(ctx, roundEnd); err != nil {
+				return err
+			}
 		}
-
-		actionLogger.Infof(
-			"FROST payment [%s] broadcast",
-			bitcoin.Hash(plan.BitcoinTransactionHash()).Hex(bitcoin.ReversedByteOrder),
-		)
-		return nil
 	}
 }
 

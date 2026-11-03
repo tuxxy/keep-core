@@ -115,6 +115,26 @@ func (rt *RedemptionTask) runFrost(
 	walletPublicKeyHash [20]byte,
 	redemptionMaxSize uint16,
 ) (tbtc.CoordinationProposal, bool, error) {
+	// A reservation the wallet holds is proposed again until it is
+	// resolved: the members resume it (pay the same reservation), as base
+	// proposes pending redemptions again after a restart.
+	reservedOutputScripts, reserved, err := rt.findReservedFrostRedemptions(
+		walletPublicKeyHash,
+	)
+	if err != nil {
+		return nil, false, fmt.Errorf(
+			"cannot find the reserved FROST redemption: [%w]",
+			err,
+		)
+	}
+	if reserved {
+		taskLogger.Info("FROST wallet holds an unresolved reservation")
+		return &tbtc.RedemptionProposal{
+			RedeemersOutputScripts: reservedOutputScripts,
+			RedemptionTxFee:        big.NewInt(0),
+		}, true, nil
+	}
+
 	redeemersOutputScripts, err := rt.findPendingFrostRedemptions(
 		walletPublicKeyHash,
 		redemptionMaxSize,
@@ -157,6 +177,25 @@ func (rt *RedemptionTask) runFrost(
 		RedeemersOutputScripts: redeemersOutputScripts,
 		RedemptionTxFee:        big.NewInt(fee),
 	}, true, nil
+}
+
+// findReservedFrostRedemptions returns the output scripts of the requests of
+// a FROST wallet's admitted, unresolved reservation, if it holds one.
+func (rt *RedemptionTask) findReservedFrostRedemptions(
+	walletPublicKeyHash [20]byte,
+) ([]bitcoin.Script, bool, error) {
+	frostChain, ok := rt.chain.(tbtc.FrostRedemptionRequestChain)
+	if !ok {
+		return nil, false, fmt.Errorf("chain cannot read FROST redemption requests")
+	}
+	outputKey, frost, err := frostChain.FrostTargetOutputKey(walletPublicKeyHash)
+	if err != nil {
+		return nil, false, fmt.Errorf("cannot resolve FROST wallet: [%w]", err)
+	}
+	if !frost {
+		return nil, false, fmt.Errorf("wallet is not a FROST wallet")
+	}
+	return frostChain.ReservedFrostRedemptions(outputKey)
 }
 
 // findPendingFrostRedemptions returns the output scripts of a FROST wallet's

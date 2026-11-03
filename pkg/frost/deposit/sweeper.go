@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
@@ -124,23 +125,53 @@ func (s *Sweeper) Plan(ctx context.Context, from uint64, round Round) (*signing.
 	return s.Planner.Build(ctx, round.Anchor, keys, [32]byte{})
 }
 
-func (s *Sweeper) executor(plan *signing.Plan, r Round) (*signing.Executor, error) {
+func (s *Sweeper) executor(ctx context.Context, plan *signing.Plan, r Round) (*signing.Executor, error) {
+	selected, err := s.selected(ctx, plan)
+	if err != nil {
+		return nil, err
+	}
 	c := s.Base
 	c.Plan = plan
 	c.Reservation = SweepID(plan)
 	c.Session = r.Session
 	c.StartBlock = r.StartBlock
 	c.FinalityBlocks = s.Schedule.FinalityBlocks
-	c.Selected = seats(s.Planner.Wallet)
+	c.Selected = selected
 	c.Reservations = nil
 	c.Sweeps = s.Authority
 	c.Guard = Guard{Lock: s.Lock}
 	return signing.NewLocalExecutor(c)
 }
 
-// seats is every live seat of the descriptor in increasing order. Rotating a
-// threshold-sized selection when an operator is offline is a liveness choice
-// left OPEN; the local fixture runs every operator.
+// selected is every live seat of the descriptor that is in the wallet's
+// accepted readiness certificate, in increasing order. A seat outside the
+// certificate never signs for the wallet (KC-SF-V3 4.2; base keep-core signs
+// with the final group only), so an operator with no certified local seat
+// refuses before any worker runs. Rotating a threshold-sized selection when
+// an operator is offline is a liveness choice left OPEN; the local fixture
+// runs every operator.
+func (s *Sweeper) selected(ctx context.Context, plan *signing.Plan) ([]uint16, error) {
+	status, err := s.Base.Journal.DKGStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+	certified, err := s.Chain.CertifiedSeats(ctx, plan.WalletID())
+	if err != nil {
+		return nil, fmt.Errorf("readiness-certified seats: %w", err)
+	}
+	if !slices.ContainsFunc(status.LocalSeats, func(seat uint16) bool { return slices.Contains(certified, seat) }) {
+		return nil, fmt.Errorf("%w: local seats %v, certified %v", redemption.ErrUncertifiedSeat, status.LocalSeats, certified)
+	}
+	var out []uint16
+	for _, seat := range seats(s.Planner.Wallet) {
+		if slices.Contains(certified, seat) {
+			out = append(out, seat)
+		}
+	}
+	return out, nil
+}
+
+// seats is every live seat of the descriptor in increasing order.
 func seats(d dkg.Descriptor) []uint16 {
 	var out []uint16
 	for i, m := range d.Members {
@@ -171,14 +202,16 @@ func (s *Sweeper) Sign(ctx context.Context, plan *signing.Plan, number uint64) (
 	if err = s.step("agreement-derived"); err != nil {
 		return nil, err
 	}
+	// The executor reads the certified seats first: an uncertified host
+	// refuses before it takes the main lock or runs a worker.
+	e, err := s.executor(ctx, plan, r)
+	if err != nil {
+		return nil, err
+	}
 	if main := plan.SweepMain(); main != nil && plan.SweepResolution() == ([32]byte{}) {
 		if err = s.Lock.AcquireSweep(ctx, plan.WalletID(), main.Outpoint, plan.Commitment()); err != nil {
 			return nil, err
 		}
-	}
-	e, err := s.executor(plan, r)
-	if err != nil {
-		return nil, err
 	}
 	if err = s.step("before-sign"); err != nil {
 		return nil, err
@@ -239,7 +272,7 @@ func (s *Sweeper) signedRound(ctx context.Context, plan *signing.Plan) (uint64, 
 		if err != nil {
 			return 0, false, err
 		}
-		e, err := s.executor(plan, r)
+		e, err := s.executor(ctx, plan, r)
 		if err != nil {
 			return 0, false, err
 		}
@@ -270,7 +303,7 @@ func (s *Sweeper) Broadcast(ctx context.Context, plan *signing.Plan) error {
 	if err != nil {
 		return err
 	}
-	e, err := s.executor(plan, r)
+	e, err := s.executor(ctx, plan, r)
 	if err != nil {
 		return err
 	}

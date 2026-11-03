@@ -221,6 +221,10 @@ type Reader interface {
 	TxProofDifficultyFactor() (*big.Int, error)
 	GetCurrentAndPrevEpochDifficulty() (*big.Int, *big.Int, error)
 	CancellationAdmission(ctx context.Context, reservation, transactionHash [32]byte) (Admission, error)
+	// CertifiedSeats is the seat set of the wallet's accepted readiness
+	// certificate. Only these seats attest or sign for the wallet (KC-SF-V3
+	// 4.2; base registerSigner's final signing group).
+	CertifiedSeats(ctx context.Context, wallet [32]byte) ([]uint16, error)
 }
 
 // Writer is the permissionless write half. Every call returns after the

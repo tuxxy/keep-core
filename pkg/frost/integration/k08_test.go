@@ -46,7 +46,7 @@ type k08World struct {
 
 func newK08World(t *testing.T) *k08World {
 	t.Helper()
-	w := &k08World{k06World: newK06World(t)}
+	w := &k08World{k06World: newK06WorldWith(t, k06Options{mode: "k05", beforeDKG: certifyAllSeats})}
 	var err error
 	if w.legacy, err = legacyabi.NewBridge(w.f.deployment.Bridge, w.f.client); err != nil {
 		t.Fatal(err)

@@ -86,7 +86,7 @@ func (w *k06World) sweepAndProve(plan *signing.Plan, number uint64, maintainer s
 // second sweep spends the new main; its proof reply is lost and the
 // maintainer still credits once without resubmitting.
 func TestFrostDepositSweepAndCredit(t *testing.T) {
-	w := newK06World(t)
+	w := newK06WorldWith(t, k06Options{mode: "k05", beforeDKG: certifyAllSeats})
 	ctx := w.f.ctx
 	locktime := w.locktime(k06RefundDelay)
 	a := w.deposit(1_000_000, locktime, [20]byte{})
@@ -206,7 +206,7 @@ func (w *k06World) launchTotal() int {
 // A refunded deposit is never planned again, a plan made before the refund is
 // abandoned without a worker launch, and nothing is credited.
 func TestDepositorRefundWithoutOperators(t *testing.T) {
-	w := newK06World(t)
+	w := newK06WorldWith(t, k06Options{mode: "k05", beforeDKG: certifyAllSeats})
 	ctx := w.f.ctx
 	locktime := w.locktime(2 * k06RefundMargin)
 	d := w.deposit(1_000_000, locktime, [20]byte{})
@@ -258,7 +258,7 @@ func TestDepositorRefundWithoutOperators(t *testing.T) {
 // workers returned and before acceptance. Every operator quarantines the
 // signature, nothing is broadcast, and the depositor refund settles it.
 func TestLateDepositRecovery(t *testing.T) {
-	w := newK06World(t)
+	w := newK06WorldWith(t, k06Options{mode: "k05", beforeDKG: certifyAllSeats})
 	ctx := w.f.ctx
 	m1 := w.fundBySweep()
 
@@ -362,7 +362,7 @@ func TestLateDepositRecovery(t *testing.T) {
 // resolution sweep spends the reserved main, is proven through C-04, and the
 // reserved requests become refundable and are refunded.
 func TestMainPurposeLockAndResolution(t *testing.T) {
-	w := newK06World(t)
+	w := newK06WorldWith(t, k06Options{mode: "k05", beforeDKG: certifyAllSeats})
 	ctx := w.f.ctx
 	m1 := w.fundBySweep()
 	request := w.request(100_000, p2wpkh(0x63))
@@ -483,7 +483,7 @@ func TestMainPurposeLockAndResolution(t *testing.T) {
 // passes it. The fixed contract vectors are checked by the deposit package
 // unit tests; the TypeScript SDK checks the same vectors.
 func TestDepositTemplateCrossLanguage(t *testing.T) {
-	w := newK06World(t)
+	w := newK06WorldWith(t, k06Options{mode: "k05", beforeDKG: certifyAllSeats})
 	ctx := w.f.ctx
 	var vectors []constructionVector
 	for _, locktime := range []uint32{w.locktime(3 * k06RefundDelay), 0x7fffffff, 0x80000000, 0xffffffff} {

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
@@ -41,10 +42,22 @@ type stepReport struct {
 	err    error
 }
 
+// Window bounds by plan size (review R5): a window waits this long only when
+// signing cannot complete.
+const (
+	oneInputBound   = 1200 * time.Millisecond
+	threeInputBound = 2500 * time.Millisecond
+)
+
 type tickOptions struct {
 	// crashAtSigning crashes these operators at their first signing protocol
 	// message: after their durable claim and grant, before any signature.
 	crashAtSigning map[int]bool
+	// noRestart keeps a crashed operator's process: its step is cancelled but
+	// nothing is reopened, so only what it retains in memory carries over.
+	noRestart bool
+	// bound replaces b3StepBound for this window when set.
+	bound time.Duration
 }
 
 func (op *b3Operator) sends() int {
@@ -70,7 +83,11 @@ func (w *b3World) tick(o tickOptions) map[int]stepReport {
 		wg.Add(1)
 		go func(i int, op *b3Operator) {
 			defer wg.Done()
-			ctx, cancel := context.WithTimeout(w.ctx, b3StepBound)
+			bound := b3StepBound
+			if o.bound != 0 {
+				bound = o.bound
+			}
+			ctx, cancel := context.WithTimeout(w.ctx, bound)
 			defer cancel()
 			op.mu.Lock()
 			op.onSigningSend = nil
@@ -98,7 +115,7 @@ func (w *b3World) tick(o tickOptions) map[int]stepReport {
 		op.mu.Lock()
 		op.onSigningSend = nil
 		op.mu.Unlock()
-		if crashed[i] {
+		if crashed[i] && !o.noRestart {
 			w.restart(i)
 		}
 	}
@@ -111,12 +128,14 @@ func (w *b3World) tick(o tickOptions) map[int]stepReport {
 }
 
 // settleWithin ticks until no incoming output of the target is pending, at
-// most b3Ticks windows.
-func (w *b3World) settleWithin() {
+// most b3Ticks windows of at most bound each. A window ends as soon as every
+// step returns; the bound grows with the plan's inputs because each input is
+// one signing with its own worker (review R5).
+func (w *b3World) settleWithin(bound time.Duration) {
 	w.t.Helper()
 	var all []map[int]stepReport
 	for i := 0; i < b3Ticks && len(w.pending()) > 0; i++ {
-		all = append(all, w.tick(tickOptions{}))
+		all = append(all, w.tick(tickOptions{bound: bound}))
 	}
 	if len(w.pending()) > 0 {
 		w.t.Fatalf("incoming duty stalled: %d incoming outputs still pending after %d windows (last reports %s)", len(w.pending()), b3Ticks, describe(all))
@@ -140,10 +159,13 @@ func describe(all []map[int]stepReport) string {
 // crashAllAfterGrant runs one window in which every operator that reaches
 // signing dies at its first signing message: it has claimed and granted the
 // window's plan and its share may be on the wire, but no signature exists.
-// An operator the window did not select may not sign at all.
-func crashAllAfterGrant(t *testing.T, w *b3World) {
+// An operator the window did not select may not sign at all. With restart
+// false the window is only aborted: every process lives on.
+func crashAllAfterGrant(t *testing.T, w *b3World, restart bool) {
 	t.Helper()
-	w.tick(tickOptions{crashAtSigning: map[int]bool{0: true, 1: true, 2: true}})
+	// The window ends at the first signing message; the longer bound only
+	// keeps a slow worker start from missing the grant.
+	w.tick(tickOptions{crashAtSigning: map[int]bool{0: true, 1: true, 2: true}, noRestart: !restart, bound: 3 * time.Second})
 	granted := 0
 	for _, op := range w.ops {
 		if op.sends() > 0 {
@@ -172,7 +194,7 @@ func TestIncomingSweepSettles(t *testing.T) {
 			}
 			w.addIncoming(99_000, 30)
 			w.chain.head = 42
-			w.settleWithin()
+			w.settleWithin(threeInputBound)
 		})
 	}
 }
@@ -187,12 +209,13 @@ func TestIncomingSweepSignsWithOperatorDown(t *testing.T) {
 		down := down
 		t.Run(fmt.Sprintf("operator-%d-down", down), func(t *testing.T) {
 			t.Parallel()
+			// One input (mainless), so one signing per window: #66 is about
+			// which members sign, not about the main.
 			w := newB3World(t)
-			w.setMain(150_000)
 			w.addIncoming(99_000, 30)
 			w.chain.head = 42
 			w.setOnline(down, false)
-			w.settleWithin()
+			w.settleWithin(oneInputBound)
 		})
 	}
 }
@@ -204,29 +227,52 @@ func TestIncomingSweepSignsWithOperatorDown(t *testing.T) {
 // the duty settles; no earlier plan stalls it.
 func TestIncomingSweepNextWindowAfterFailedWindow(t *testing.T) {
 	t.Parallel()
+	nextWindowAfterFailedWindow(t, true)
+}
+
+// TestIncomingSweepNextWindowAfterAbortedWindow (tuxxy/keep-core#45, review
+// R2): the same window is aborted after the grants but no process restarts.
+// Nothing a process keeps in memory may carry a plan into the next windows.
+func TestIncomingSweepNextWindowAfterAbortedWindow(t *testing.T) {
+	t.Parallel()
+	nextWindowAfterFailedWindow(t, false)
+}
+
+func nextWindowAfterFailedWindow(t *testing.T, restart bool) {
 	w := newB3World(t)
 	w.setMain(150_000)
 	w.addIncoming(99_000, 30)
 	w.chain.head = 42
-	crashAllAfterGrant(t, w)
+	crashAllAfterGrant(t, w, restart)
 	w.addIncoming(77_000, w.head()-b3Finality)
-	w.settleWithin()
+	w.settleWithin(threeInputBound)
 }
 
 // TestIncomingSweepAfterMainSpent (tuxxy/keep-core#61 K09-46, as in base):
-// every operator granted a plan that spends the target's main, then a proven,
-// final transaction spends that main elsewhere. The next windows plan from the
-// new main and settle the output.
+// every operator granted a plan that spends the target's main and restarted,
+// then a proven, final transaction spends that main elsewhere. The next
+// windows plan from the new main and settle the output.
 func TestIncomingSweepAfterMainSpent(t *testing.T) {
 	t.Parallel()
+	afterMainSpent(t, true)
+}
+
+// TestIncomingSweepAfterMainSpentNoRestart (tuxxy/keep-core#61, review R2): the
+// same with the window only aborted and every process alive.
+func TestIncomingSweepAfterMainSpentNoRestart(t *testing.T) {
+	t.Parallel()
+	afterMainSpent(t, false)
+}
+
+func afterMainSpent(t *testing.T, restart bool) {
 	w := newB3World(t)
 	w.setMain(150_000)
 	w.addIncoming(99_000, 30)
 	w.chain.head = 42
-	crashAllAfterGrant(t, w)
+	crashAllAfterGrant(t, w, restart)
 	w.spendMain(120_000)
 	w.advance(b3Round)
-	w.settleWithin()
+	w.settleWithin(threeInputBound)
 }
 
 // provenFake adds the C-06 proven-transaction read to the fake chain.
@@ -264,12 +310,21 @@ func TestResolveRecordsOnlyTheProvenSweep(t *testing.T) {
 	chain := &provenFake{fake: w.f, proven: map[[32]byte][32]byte{other: target.ID}}
 	ledger := redemption.Ledger{Journal: &journal{records: map[[32]byte][]byte{}}}
 	m := &Mover{Chain: chain, Authority: &Authority{View: &View{Chain: chain, Policy: Policy{FinalityBlocks: 2}}}, Ledger: ledger, Schedule: redemption.Schedule{FinalityBlocks: 2, RoundBlocks: 4}, Wallet: target.Descriptor}
-	_, _ = m.Resolve(ctx, plan)
+	status, _ := m.Resolve(ctx, plan)
 	recorded, err := ledger.Has(ctx, ID(plan), redemption.KindMovementOutcome, plan.BitcoinTransactionHash())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if recorded {
 		t.Fatalf("settlement records the node's own plan %x as the movement outcome, but the chain proved a different transaction", plan.BitcoinTransactionHash())
+	}
+	// Review R4: reporting the plan settled is allowed only with the proven
+	// transaction recorded as its outcome.
+	proven, err := ledger.Has(ctx, ID(plan), redemption.KindMovementOutcome, other)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status == StatusSettled && !proven {
+		t.Fatalf("Resolve reports the plan settled but records no outcome naming the proven transaction %x", other)
 	}
 }

@@ -369,7 +369,9 @@ func b3WorkerConfig(t *testing.T) snowfallengine.WorkerConfig {
 	t.Helper()
 	path, pin := os.Getenv("SNOWFALL_WORKER"), os.Getenv("SNOWFALL_WORKER_SHA256")
 	if path == "" || pin == "" {
-		t.Fatal("batch 3 needs the pinned worker: set SNOWFALL_WORKER and SNOWFALL_WORKER_SHA256 (see TESTS-BATCH3.md)")
+		// Review R6: skip like every other real-worker test; the batch-3 runner
+		// counts a skip as a failure.
+		t.Skip("batch 3 needs the pinned worker: set SNOWFALL_WORKER and SNOWFALL_WORKER_SHA256 (see TESTS-BATCH3.md)")
 	}
 	raw, err := hex.DecodeString(pin)
 	if err != nil || len(raw) != 32 || !filepath.IsAbs(path) {

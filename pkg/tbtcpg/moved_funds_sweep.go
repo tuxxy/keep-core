@@ -59,6 +59,20 @@ func (mfst *MovedFundsSweepTask) Run(request *tbtc.CoordinationProposalRequest) 
 	// Check if the wallet is eligible for moved funds sweep.
 	walletChainData, err := mfst.chain.GetWallet(walletPublicKeyHash)
 	if err != nil {
+		// A FROST wallet is unknown to the legacy registry. Its incoming
+		// moved outputs are swept by the same action (KC-SF-V3 K-07).
+		outputKey, frost, frostErr := mfst.frostWallet(walletPublicKeyHash)
+		if frostErr != nil {
+			return nil, false, fmt.Errorf(
+				"cannot get wallet's chain data: [%v]; "+
+					"cannot resolve FROST wallet: [%w]",
+				err,
+				frostErr,
+			)
+		}
+		if frost {
+			return mfst.runFrost(taskLogger, walletPublicKeyHash, outputKey)
+		}
 		return nil, false, fmt.Errorf(
 			"cannot get wallet's chain data: [%w]",
 			err,
@@ -109,6 +123,121 @@ func (mfst *MovedFundsSweepTask) Run(request *tbtc.CoordinationProposalRequest) 
 	}
 
 	return proposal, true, nil
+}
+
+// frostWallet reports whether the wallet is a FROST wallet and, if so, its
+// output key. A chain without FROST incoming reads knows no FROST wallets.
+func (mfst *MovedFundsSweepTask) frostWallet(
+	walletPublicKeyHash [20]byte,
+) ([32]byte, bool, error) {
+	frostChain, ok := mfst.chain.(tbtc.FrostIncomingChain)
+	if !ok {
+		return [32]byte{}, false, nil
+	}
+	return frostChain.FrostTargetOutputKey(walletPublicKeyHash)
+}
+
+// runFrost proposes the sweep of a FROST wallet's pending incoming output as
+// base proposes a moved funds sweep: the first pending output found from
+// chain state, with the fee the leader estimates, validated against the
+// on-chain cap (D19). Nothing is retained between windows (#45).
+func (mfst *MovedFundsSweepTask) runFrost(
+	taskLogger log.StandardLogger,
+	walletPublicKeyHash [20]byte,
+	outputKey [32]byte,
+) (tbtc.CoordinationProposal, bool, error) {
+	frostChain := mfst.chain.(tbtc.FrostIncomingChain)
+
+	outpoint, found, err := mfst.findFrostIncomingOutput(frostChain, outputKey)
+	if err != nil {
+		return nil, false, fmt.Errorf(
+			"cannot find FROST incoming output: [%w]",
+			err,
+		)
+	}
+	if !found {
+		taskLogger.Infof("FROST wallet has no pending incoming outputs")
+		return nil, false, nil
+	}
+
+	hasMainUtxo, err := frostChain.FrostWalletHasMain(outputKey)
+	if err != nil {
+		return nil, false, fmt.Errorf(
+			"cannot get FROST wallet's main UTXO: [%w]",
+			err,
+		)
+	}
+
+	proposal, err := mfst.ProposeMovedFundsSweep(
+		taskLogger,
+		walletPublicKeyHash,
+		outpoint.TransactionHash,
+		outpoint.OutputIndex,
+		hasMainUtxo,
+		0,
+	)
+	if err != nil {
+		return nil, false, fmt.Errorf(
+			"cannot prepare moved funds sweep proposal: [%w]",
+			err,
+		)
+	}
+
+	return proposal, true, nil
+}
+
+// findFrostIncomingOutput returns the first pending incoming output the
+// Bridge recorded for the FROST wallet within the base look-back period.
+func (mfst *MovedFundsSweepTask) findFrostIncomingOutput(
+	frostChain tbtc.FrostIncomingChain,
+	outputKey [32]byte,
+) (bitcoin.TransactionOutpoint, bool, error) {
+	blockCounter, err := mfst.chain.BlockCounter()
+	if err != nil {
+		return bitcoin.TransactionOutpoint{}, false, fmt.Errorf(
+			"failed to get block counter: [%w]",
+			err,
+		)
+	}
+
+	currentBlockNumber, err := blockCounter.CurrentBlock()
+	if err != nil {
+		return bitcoin.TransactionOutpoint{}, false, fmt.Errorf(
+			"failed to get current block number: [%w]",
+			err,
+		)
+	}
+
+	filterStartBlock := uint64(0)
+	if currentBlockNumber > MovedFundsSweepLookBackBlocks {
+		filterStartBlock = currentBlockNumber - MovedFundsSweepLookBackBlocks
+	}
+
+	outpoints, err := frostChain.PastFrostIncomingOutputs(
+		outputKey,
+		filterStartBlock,
+	)
+	if err != nil {
+		return bitcoin.TransactionOutpoint{}, false, fmt.Errorf(
+			"failed to get past FROST incoming outputs: [%w]",
+			err,
+		)
+	}
+
+	for _, outpoint := range outpoints {
+		pending, err := frostChain.IsFrostIncomingPending(outputKey, outpoint)
+		if err != nil {
+			return bitcoin.TransactionOutpoint{}, false, fmt.Errorf(
+				"failed to get FROST incoming output: [%w]",
+				err,
+			)
+		}
+		if pending {
+			return outpoint, true, nil
+		}
+	}
+
+	return bitcoin.TransactionOutpoint{}, false, nil
 }
 
 // FindMovingFundsTxData finds the transaction hash and output index for the

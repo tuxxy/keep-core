@@ -1,12 +1,16 @@
 package movement
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/keep-network/keep-core/pkg/frost/deposit"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
@@ -120,22 +124,62 @@ func (m *Mover) executor(plan *signing.Plan, r Round) (*signing.Executor, error)
 	c.Session = r.Session
 	c.StartBlock = r.StartBlock
 	c.FinalityBlocks = m.Schedule.FinalityBlocks
-	c.Selected = seats(m.Wallet)
+	c.Selected = selected(m.Wallet, r.Number)
 	c.Reservations = nil
 	c.Sweeps = m.Authority
 	c.Guard = deposit.Guard{Lock: m.Lock}
 	return signing.NewLocalExecutor(c)
 }
 
-// seats is every live seat of the descriptor; rotation is OPEN (D-02/D-11).
-func seats(d dkg.Descriptor) []uint16 {
-	var out []uint16
+// selected is the round's signing seats, chosen as base keep-core chooses
+// the participants of a signing attempt (pkg/tbtc signingRetryLoop,
+// tecdsa/retry): by unique operator, never splitting an operator's seats,
+// adding operators until the seats reach the threshold. Operators are taken
+// in address order starting at a different one each round, so whenever the
+// live operators' seats reach the threshold, some round within one rotation
+// selects live operators only (tuxxy/keep-core#66). Every operator derives
+// the same seats from the round number alone.
+func selected(d dkg.Descriptor, round uint64) []uint16 {
+	seatsOf := map[common.Address][]uint16{}
+	var operators []common.Address
 	for i, member := range d.Members {
-		if member != 0 {
-			out = append(out, uint16(i+1))
+		if member == 0 {
+			continue
+		}
+		operator := d.Operators[i]
+		if _, ok := seatsOf[operator]; !ok {
+			operators = append(operators, operator)
+		}
+		seatsOf[operator] = append(seatsOf[operator], uint16(i+1))
+	}
+	sort.Slice(operators, func(i, j int) bool {
+		return bytes.Compare(operators[i][:], operators[j][:]) < 0
+	})
+	var out []uint16
+	for i := 0; i < len(operators) && len(out) < int(d.Threshold); i++ {
+		operator := operators[(int(round%uint64(len(operators)))+i)%len(operators)]
+		out = append(out, seatsOf[operator]...)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
+}
+
+// Eligible reports whether this operator holds a seat selected in round; an
+// operator outside the selection does not sign that round, as a base member
+// excluded from an attempt does not.
+func (m *Mover) Eligible(ctx context.Context, round uint64) (bool, error) {
+	status, err := m.Base.Journal.DKGStatus(ctx)
+	if err != nil {
+		return false, err
+	}
+	for _, seat := range selected(m.Wallet, round) {
+		for _, local := range status.LocalSeats {
+			if seat == local {
+				return true, nil
+			}
 		}
 	}
-	return out
+	return false, nil
 }
 
 // Sign runs one agreed attempt of round for plan. The main lock is taken
@@ -337,6 +381,9 @@ func (m *Mover) Resolve(ctx context.Context, plan *signing.Plan) (Status, error)
 		if e.Kind == redemption.KindMovementAttempt && e.Detail == strconv.FormatUint(current.Number, 10) {
 			return StatusWaiting, nil
 		}
+	}
+	if eligible, err := m.Eligible(ctx, current.Number); err != nil || !eligible {
+		return StatusWaiting, err
 	}
 	if _, err = m.Sign(ctx, plan, current.Number); err != nil {
 		return "", fmt.Errorf("movement round %d: %w", current.Number, err)

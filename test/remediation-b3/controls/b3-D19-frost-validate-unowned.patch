@@ -1,0 +1,42 @@
+diff --git a/pkg/chain/ethereum/tbtc.go b/pkg/chain/ethereum/tbtc.go
+index c6b0511d2..fa667a8ae 100644
+--- a/pkg/chain/ethereum/tbtc.go
++++ b/pkg/chain/ethereum/tbtc.go
+@@ -7,6 +7,7 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
++	frostdkg "github.com/keep-network/keep-core/pkg/frost/dkg"
+ 	"math/big"
+ 	"reflect"
+ 	"sort"
+@@ -2209,6 +2210,29 @@ func (tc *TbtcChain) ValidateMovedFundsSweepProposal(
+ 	walletPublicKeyHash [20]byte,
+ 	proposal *tbtc.MovedFundsSweepProposal,
+ ) error {
++	// CONTROL b3-D19-frost-validate-unowned (review R3 wrong fix: no ownership check):
++	// a FROST label's proposal is checked against its C-06 incoming record
++	// and the on-chain cap.
++	if key, ok, err := tc.FrostTargetOutputKey(walletPublicKeyHash); err != nil {
++		return err
++	} else if ok {
++		_, _ = key, frostdkg.WalletID
++		index := proposal.MovingFundsTxOutputIndex
++		outpoint := crypto.Keccak256Hash(append(append([]byte(nil), proposal.MovingFundsTxHash[:]...), byte(index>>24), byte(index>>16), byte(index>>8), byte(index)))
++		incoming, err := tc.frostBridge.FrostIncoming(nil, outpoint)
++		if err != nil {
++			return err
++		}
++		params, err := tc.bridge.MovingFundsParameters()
++		if err != nil {
++			return err
++		}
++		if incoming.State != 1 || proposal.SweepTxFee == nil || proposal.SweepTxFee.Sign() <= 0 || proposal.SweepTxFee.Uint64() > params.MovedFundsSweepTxMaxTotalFee {
++			return fmt.Errorf("CONTROL: FROST moved funds sweep proposal is invalid")
++		}
++		return nil
++	}
++
+ 	abiProposal := tbtcabi.WalletProposalValidatorMovedFundsSweepProposal{
+ 		WalletPubKeyHash:         walletPublicKeyHash,
+ 		MovingFundsTxHash:        proposal.MovingFundsTxHash,

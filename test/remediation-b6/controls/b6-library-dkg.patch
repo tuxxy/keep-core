@@ -1,0 +1,140 @@
+diff --git a/pkg/tbtc/frost_node_b6_binding_test.go b/pkg/tbtc/frost_node_b6_binding_test.go
+new file mode 100644
+index 0000000..f906c24
+--- /dev/null
++++ b/pkg/tbtc/frost_node_b6_binding_test.go
+@@ -0,0 +1,134 @@
++package tbtc_test
++
++// CONTROL b6-library-dkg (positive control, not a fix): today's node
++// initialisation plus a goroutine in the binding that runs the K-03 library
++// DKG executor for every epoch selecting a local seat. It is exactly what the
++// seam contract forbids (the binding runs a duty); it exists to show the DKG
++// oracle accepts a real FROST DKG and to exercise the world steps after it.
++
++import (
++	"context"
++	"os"
++	"time"
++
++	"github.com/ethereum/go-ethereum/accounts/abi/bind"
++	"github.com/ethereum/go-ethereum/accounts/keystore"
++	"github.com/ethereum/go-ethereum/common"
++	"github.com/ethereum/go-ethereum/crypto"
++	"github.com/ethereum/go-ethereum/ethclient"
++
++	"github.com/keep-network/keep-core/internal/testutils"
++	"github.com/keep-network/keep-core/pkg/chain"
++	eth "github.com/keep-network/keep-core/pkg/chain/ethereum"
++	binding "github.com/keep-network/keep-core/pkg/chain/ethereum/frostabi"
++	"github.com/keep-network/keep-core/pkg/frost"
++	"github.com/keep-network/keep-core/pkg/frost/dkg"
++	"github.com/keep-network/keep-core/pkg/frost/snowfallengine"
++	"github.com/keep-network/keep-core/pkg/frost/store"
++	"github.com/keep-network/keep-core/pkg/frost/transport"
++	"github.com/keep-network/keep-core/pkg/operator"
++	"github.com/keep-network/keep-core/pkg/protocol/group"
++	"github.com/keep-network/keep-core/pkg/tbtc"
++)
++
++func init() {
++	frostNodeStart = func(ctx context.Context, h frostNodeHost) error {
++		if err := tbtc.Initialize(ctx, h.Chain, h.BitcoinChain, h.Network, h.KeyStore, h.Work, h.Scheduler, h.Proposals, h.Config, nil, nil, h.EthereumNetwork); err != nil {
++			return err
++		}
++		raw, err := os.ReadFile(h.EthereumConfig.Account.KeyFile)
++		if err != nil {
++			return err
++		}
++		decrypted, err := keystore.DecryptKey(raw, h.EthereumConfig.Account.KeyFilePassword)
++		if err != nil {
++			return err
++		}
++		key := decrypted.PrivateKey
++		client, err := ethclient.Dial(h.EthereumConfig.URL)
++		if err != nil {
++			return err
++		}
++		registry, err := binding.NewFrostWalletRegistry(h.FrostRegistry, client)
++		if err != nil {
++			return err
++		}
++		bridge := common.HexToAddress(h.EthereumConfig.ContractAddresses["bridge"])
++		root, err := store.Open(ctx, h.Store)
++		if err != nil {
++			return err
++		}
++		chainID, err := client.ChainID(ctx)
++		if err != nil {
++			return err
++		}
++		var chainBytes [32]byte
++		chainID.FillBytes(chainBytes[:])
++		private := &operator.PrivateKey{PublicKey: operator.PublicKey{Curve: operator.Secp256k1, X: key.X, Y: key.Y}, D: key.D}
++		signing := h.Chain.Signing()
++		self := crypto.PubkeyToAddress(key.PublicKey)
++		go func() {
++			done := map[uint64]bool{}
++			for ctx.Err() == nil {
++				time.Sleep(50 * time.Millisecond)
++				epoch, err := registry.Epoch(&bind.CallOpts{Context: ctx})
++				if err != nil || epoch == 0 || done[epoch] {
++					continue
++				}
++				_, operators, err := registry.Selection(&bind.CallOpts{Context: ctx}, epoch)
++				if err != nil || len(operators) == 0 {
++					continue
++				}
++				done[epoch] = true
++				var roster, locals []uint16
++				addresses := make([]chain.Address, len(operators))
++				for i, a := range operators {
++					roster = append(roster, uint16(i+1))
++					if a == self {
++						locals = append(locals, uint16(i+1))
++					}
++					addresses[i] = chain.Address(a.Hex())
++				}
++				if len(locals) == 0 {
++					continue
++				}
++				dctx, cancel := context.WithTimeout(ctx, 60*time.Second)
++				domain := frost.Domain{Network: "batch-6/local-anvil", Chain: chainBytes, Registry: [20]byte(h.FrostRegistry), Epoch: epoch}
++				journal, err := root.Scope(domain)
++				if err != nil {
++					cancel()
++					continue
++				}
++				engine, err := snowfallengine.NewGuarded(h.Worker, journal)
++				if err != nil {
++					cancel()
++					continue
++				}
++				attempt, err := domain.NewAttempt("dkg", [32]byte{23}, epoch)
++				if err != nil {
++					cancel()
++					continue
++				}
++				membership := group.NewMembershipValidator(&testutils.MockLogger{}, addresses, signing)
++				tr, err := transport.New(dctx, transport.Config{Domain: domain, Attempt: attempt, ID: snowfallengine.AttemptID(attempt), LocalSeats: locals, Roster: roster, LocalPublicKey: operator.MarshalUncompressed(&private.PublicKey), Membership: membership, Network: h.Network})
++				if err != nil {
++					cancel()
++					continue
++				}
++				bus, err := dkg.NewNetworkBus(dctx, h.Network, membership, domain.ID(), domain.Epoch)
++				if err != nil {
++					cancel()
++					continue
++				}
++				view, err := eth.NewFrostChain(ctx, client, key, h.FrostRegistry, bridge)
++				if err != nil {
++					cancel()
++					continue
++				}
++				executor := &dkg.Executor{Chain: view, Engine: engine, Journal: journal, Bus: bus, Signer: key, Request: frost.DKGRequest{Group: frost.Group{Roster: roster, Threshold: 2, Quorum: 3, Epoch: epoch}, LocalSeats: locals, Participants: roster, Attempt: attempt}, Providers: frost.Providers{Transport: tr, Store: journal}, FinalityBlocks: 2, PollInterval: 50 * time.Millisecond}
++				go func() { defer cancel(); _, _ = tbtc.ExecuteFrostDKG(dctx, executor) }()
++			}
++		}()
++		return nil
++	}
++}

@@ -47,7 +47,11 @@ type frostNodeHost struct {
 	// provider with the base firewall, the tbtc keystore and work persistence
 	// from storage.Initialize, the scheduler, the tbtcpg proposal generator,
 	// the tbtc config and the Ethereum network.
-	Chain           tbtc.Chain
+	Chain tbtc.Chain
+	// BitcoinChain stands where cmd/start.go's Electrum connection does, and
+	// like it also answers UnspentByScript (the FROST planners' script
+	// query, not on bitcoin.Chain): obtain it from BitcoinChain exactly as
+	// from *electrum.Connection (review B3).
 	BitcoinChain    bitcoin.Chain
 	Network         net.Provider
 	KeyStore        persistence.ProtectedHandle

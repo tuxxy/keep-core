@@ -25,7 +25,16 @@ package tbtc_test
 //   - the legacy source wallet's test key, which signs the drain transaction
 //     that gives a FROST wallet an incoming output (as batch 3);
 //   - b6Recorder and b6BitcoinRecorder: observe what a node sends to the
-//     network and to Bitcoin; they never change traffic.
+//     network and to Bitcoin; they never change traffic;
+//   - b6LiveBitcoin (frost_node_b6_bitcoin_test.go): a node's Bitcoin chain
+//     over Core, live, with UnspentByScript as the Electrum connection has;
+//   - b6Scheduler: base's scheduler with ECDSA pre-parameter generation held
+//     off (legacy ECDSA DKG is not under test);
+//   - the node processes also report their latest watched block and their
+//     peer count, which the window driver and node start wait on.
+// Time: blocks come every 20 ms, and every 50 ms from a window on, so base's
+// 80-block active phase lasts 4 s (16 minutes in production). Worlds are
+// copied from cached stages (frost_node_b6_snapshot_test.go).
 // The test itself acts only as depositor, keeper, SPV maintainer and
 // governance, through public calls with its own keys.
 
@@ -39,6 +48,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/big"
 	"math/rand"
 	"os"
@@ -48,6 +58,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -153,20 +164,27 @@ type frostNodeWorld struct {
 	dir       string
 
 	registryAddress common.Address
+	poolAddress     common.Address
+	beaconAddress   common.Address
 	registry        *binding.FrostWalletRegistry
-	pool            *bind.BoundContract
-	beacon          *bind.BoundContract
-	frost           *bind.BoundContract
-	keys            []*ecdsa.PrivateKey
-	keyFiles        []string
-	peers           []string
-	ports           []int
+	// stageWallet and stageEpoch are a ready stage's FROST wallet.
+	stageWallet *b6Wallet
+	stageEpoch  uint64
+	pool        *bind.BoundContract
+	beacon      *bind.BoundContract
+	frost       *bind.BoundContract
+	keys        []*ecdsa.PrivateKey
+	keyFiles    []string
+	peers       []string
+	ports       []int
 
 	nodesMu sync.Mutex
 	nodes   map[int]*b6Node
 	// stopMining stops the background miner.
 	stopMining func()
 	began      time.Time
+	// lastStart is when the last node start completed.
+	lastStart time.Time
 }
 
 // phase logs the time since the world was built began (budget tracing).
@@ -178,14 +196,51 @@ func (w *frostNodeWorld) phase(name string) {
 // runs; requestWallet asks for one, startNodes starts the nodes.
 func newFrostNodeWorld(t *testing.T) *frostNodeWorld {
 	t.Helper()
+	return loadFrostNodeWorld(t, b6StageWorld)
+}
+
+// b6Environment is the legacy environment with the batch-6 requirements and
+// Anvil keeping its states in memory.
+func b6Environment(t *testing.T) legacyEnvironment {
+	t.Helper()
 	env := legacyEnv(t)
 	if os.Getenv("SNOWFALL_WORKER") == "" || os.Getenv("SNOWFALL_WORKER_SHA256") == "" {
 		t.Skip("batch 6: run through test/remediation-b6/run.sh (the pinned real worker: SNOWFALL_WORKER, SNOWFALL_WORKER_SHA256)")
 	}
 	env.anvil = b6Anvil(t, env.anvil)
+	return env
+}
+
+// buildFrostNodeWorld deploys the world from scratch (the snapshot builder's
+// first stage; see frost_node_b6_snapshot_test.go).
+func buildFrostNodeWorld(t *testing.T) *frostNodeWorld {
+	t.Helper()
+	env := b6Environment(t)
 	dir, commit := upgradedBuild(t)
-	w := &frostNodeWorld{artifacts: b6ArtifactRoot(t), libraries: map[string]common.Address{}, dir: t.TempDir(), nodes: map[int]*b6Node{}, began: time.Now()}
+	w := newFrostNodeWorldShell(t)
 	w.legacyWorld = newLegacyWorldOn(t, env, openTbtcBuild(t, env, dir, commit), w.setUpFrostRegistry)
+	w.finish()
+	return w
+}
+
+// newFrostNodeWorldShell is a world without a chain yet.
+func newFrostNodeWorldShell(t *testing.T) *frostNodeWorld {
+	dir := t.TempDir()
+	// With B6_DEBUG_DIR set, the nodes' directories (logs included) are kept.
+	if keep := os.Getenv("B6_DEBUG_DIR"); keep != "" {
+		var err error
+		if dir, err = os.MkdirTemp(keep, "case-"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return &frostNodeWorld{artifacts: b6ArtifactRoot(t), libraries: map[string]common.Address{}, dir: dir, nodes: map[int]*b6Node{}, began: time.Now()}
+}
+
+// finish gives the operators their keys, ports and peers, and starts the
+// background miner.
+func (w *frostNodeWorld) finish() {
+	t := w.t
+	t.Helper()
 	for i := 1; i <= b6Operators; i++ {
 		key, err := crypto.ToECDSA(common.LeftPadBytes(big.NewInt(int64(i)).Bytes(), 32))
 		if err != nil {
@@ -200,10 +255,10 @@ func newFrostNodeWorld(t *testing.T) *frostNodeWorld {
 		w.peers = append(w.peers, fmt.Sprintf("/ip4/127.0.0.1/tcp/%d/ipfs/%s", w.ports[i], b6PeerID(t, w.keys[i])))
 	}
 	w.stopMining = w.mineInBackground()
-	t.Cleanup(w.stopMining)
+	// jumpToWindow replaces stopMining; stop whichever miner runs last.
+	t.Cleanup(func() { w.stopMining() })
 	t.Cleanup(w.killAll)
 	w.phase("world")
-	return w
 }
 
 // setUpFrostRegistry runs before any legacy wallet exists: the FROST
@@ -230,6 +285,7 @@ func (w *frostNodeWorld) setUpFrostRegistry(lw *legacyWorld) {
 	poolAddress, poolABI := w.b6Deploy("@keep-network/sortition-pools/contracts/SortitionPool.sol", "SortitionPool", tokenAddress, big.NewInt(1))
 	w.pool = bound(poolAddress, poolABI)
 	w.beacon = bound(beaconAddress, beaconABI)
+	w.poolAddress, w.beaconAddress = poolAddress, beaconAddress
 	call("pool chaosnet off", w.pool, "deactivateChaosnet")
 	admissionAddress, admissionABI := w.b6Deploy("contracts/frost/FrostAdmission.sol", "FrostAdmission", stakeAddress)
 	validatorAddress, _ := w.b6Deploy("contracts/frost/FrostDkgValidator.sol", "FrostDkgValidator",
@@ -438,6 +494,8 @@ type b6NodeConfig struct {
 	CoreMiner     string
 	Record        string
 	Status        string
+	Height        string
+	PeersFile     string
 }
 
 type b6Node struct {
@@ -462,12 +520,17 @@ func (w *frostNodeWorld) nodeConfig(i int) b6NodeConfig {
 	for _, key := range w.keys {
 		allow = append(allow, hex.EncodeToString(crypto.FromECDSAPub(&key.PublicKey)))
 	}
+	// A node dials the running nodes: on a full start, in index order, each
+	// dials only those before it, so no two nodes dial each other at once
+	// (libp2p's TLS refuses such simultaneous opens and the retry is slow).
 	var peers []string
+	w.nodesMu.Lock()
 	for j, peer := range w.peers {
-		if j != i-1 {
+		if _, running := w.nodes[j+1]; running && j != i-1 {
 			peers = append(peers, peer)
 		}
 	}
+	w.nodesMu.Unlock()
 	return b6NodeConfig{
 		Operator: i, AnvilURL: "ws" + strings.TrimPrefix(w.anvilURL, "http"), KeyFile: w.keyFiles[i-1],
 		Contracts: contracts, FrostRegistry: w.registryAddress.Hex(),
@@ -475,7 +538,7 @@ func (w *frostNodeWorld) nodeConfig(i int) b6NodeConfig {
 		FrostFence: filepath.Join(root, "frost-fence"), Port: w.ports[i-1], Peers: peers, AllowKeys: allow,
 		Worker: worker, WorkerSHA256: pin,
 		CoreURL: w.btc.core.url, CoreUser: w.btc.core.user, CorePass: w.btc.core.pass, CoreMiner: w.btc.miner,
-		Record: filepath.Join(root, "record.jsonl"), Status: filepath.Join(root, "status"),
+		Record: filepath.Join(root, "record.jsonl"), Status: filepath.Join(root, "status"), Height: filepath.Join(root, "height"), PeersFile: filepath.Join(root, "peers"),
 	}
 }
 
@@ -486,6 +549,35 @@ func (w *frostNodeWorld) startNode(i int) {
 	if failure := w.launchNode(i); failure != "" {
 		w.t.Fatal(failure)
 	}
+	w.connected()
+}
+
+// connected waits (at most 5 s) until every running node is connected to
+// every other running node, as operators online before a duty are, and
+// notes the time: enterWindow gives the nodes 1 s after it.
+func (w *frostNodeWorld) connected() {
+	began := time.Now()
+	for time.Since(began) < 5*time.Second && !w.allConnected() {
+		time.Sleep(10 * time.Millisecond)
+	}
+	w.lastStart = time.Now()
+	w.phase("nodes connected")
+}
+
+func (w *frostNodeWorld) allConnected() bool {
+	w.nodesMu.Lock()
+	defer w.nodesMu.Unlock()
+	for _, node := range w.nodes {
+		raw, err := os.ReadFile(node.config.PeersFile)
+		if err != nil {
+			return false
+		}
+		var peers int
+		if _, err := fmt.Sscan(string(raw), &peers); err != nil || peers < len(w.nodes)-1 {
+			return false
+		}
+	}
+	return true
 }
 
 // launchNode is startNode, returning a failure message instead of failing,
@@ -504,6 +596,8 @@ func (w *frostNodeWorld) launchNode(i int) string {
 		}
 	}
 	_ = os.Remove(config.Status)
+	_ = os.Remove(config.Height)
+	_ = os.Remove(config.PeersFile)
 	raw, _ := json.Marshal(config)
 	configPath := filepath.Join(filepath.Dir(config.Status), "config.json")
 	if err := os.WriteFile(configPath, raw, 0o600); err != nil {
@@ -512,14 +606,22 @@ func (w *frostNodeWorld) launchNode(i int) string {
 	cmd := exec.Command(os.Args[0], "-test.run=^TestB6NodeProcess$", "-test.timeout=0")
 	// One Go core per node process (shared rule: at most 8 Go cores).
 	cmd.Env = append(os.Environ(), "B6_NODE_CONFIG="+configPath, "GOMAXPROCS=1")
+	if os.Getenv("B6_DEBUG_DIR") != "" {
+		cmd.Env = append(cmd.Env, "GOLOG_LOG_LEVEL=info", "IPFS_LOGGING=info")
+	}
 	node := &b6Node{config: config, cmd: cmd, exited: make(chan struct{}), log: &bytes.Buffer{}}
-	cmd.Stdout = &b6SyncWriter{w: node.log}
+	// The node's output stays in the case's temporary directory (debugging).
+	logFile, err := os.OpenFile(filepath.Join(filepath.Dir(config.Status), "node.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err.Error()
+	}
+	cmd.Stdout = io.MultiWriter(&b6SyncWriter{w: node.log}, logFile)
 	cmd.Stderr = cmd.Stdout
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err := cmd.Start(); err != nil {
 		return err.Error()
 	}
-	go func() { node.exitErr = cmd.Wait(); close(node.exited) }()
+	go func() { node.exitErr = cmd.Wait(); logFile.Close(); close(node.exited) }()
 	w.nodesMu.Lock()
 	w.nodes[i] = node
 	w.nodesMu.Unlock()
@@ -546,24 +648,13 @@ func (w *frostNodeWorld) startNodes() {
 	if frostNodeStart == nil {
 		w.t.Fatalf("#26 %s: frostNodeStart is unbound: no base node initialisation with FROST configured", w.t.Name())
 	}
-	// The node processes start concurrently; startNode fails the test from
-	// this goroutine only through t.Fatalf, so failures are collected.
-	var wg sync.WaitGroup
-	failures := make([]string, b6Operators+1)
 	for i := 1; i <= b6Operators; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			failures[i] = w.launchNode(i)
-		}(i)
-	}
-	wg.Wait()
-	for _, failure := range failures {
-		if failure != "" {
+		if failure := w.launchNode(i); failure != "" {
 			w.t.Fatal(failure)
 		}
 	}
 	w.phase("nodes started")
+	w.connected()
 }
 
 // kill crashes operator i's node with SIGKILL and waits for its exit.
@@ -608,8 +699,13 @@ func (w *frostNodeWorld) debugLogs() string {
 	w.nodesMu.Lock()
 	defer w.nodesMu.Unlock()
 	var out strings.Builder
+	fmt.Fprintf(&out, "\nnode logs: %s/operator-*/node.log", w.dir)
 	for i, node := range w.nodes {
-		fmt.Fprintf(&out, "\n--- node %d ---\n%s", i, b6Tail(node.log))
+		log := node.log.String()
+		if len(log) > 4000 {
+			log = log[len(log)-4000:]
+		}
+		fmt.Fprintf(&out, "\n--- node %d ---\n%s", i, log)
 	}
 	return out.String()
 }
@@ -674,26 +770,177 @@ func (w *frostNodeWorld) events() []b6Event {
 
 // --- Block and window driving -----------------------------------------------
 
-// nextWindow mines quickly to two blocks before the next coordination block
-// (after at least one active phase) and returns that coordination block. The
-// background miner then produces the window block by block.
+// nextWindow jumps to the next coordination window (after at least one
+// active phase) and returns its coordination block; see jumpToWindow.
 func (w *frostNodeWorld) nextWindow() uint64 {
+	w.t.Helper()
+	return w.jumpToWindow(tbtc.B6CoordinationFrequencyBlocks)
+}
+
+// jumpToWindow jumps to the next coordination block that is a multiple of
+// every (a multiple of the window frequency) and at least 40 blocks ahead.
+func (w *frostNodeWorld) jumpToWindow(every uint64) uint64 {
+	w.t.Helper()
+	window := w.chooseWindow(every, nil)
+	w.enterWindow(window)
+	return window
+}
+
+// chooseWindow stops the miner and mines, one candidate at a time, to 32
+// blocks before the next coordination block that is a multiple of every,
+// until accept (nil accepts any) takes the candidate given its seed block
+// hash. The chain is left at window-32 with the miner stopped; enterWindow
+// continues. A rejected candidate is skipped in the next jump, so callers
+// choose before the state a skipped window could act on exists, and, where
+// the case allows, before the nodes start (a jump is then free).
+func (w *frostNodeWorld) chooseWindow(every uint64, accept func(window uint64) bool) uint64 {
 	t := w.t
 	t.Helper()
-	head, err := w.admin.BlockNumber(context.Background())
-	if err != nil {
-		t.Fatal(err)
+	w.stopMining()
+	for candidates := 0; candidates < 32; candidates++ {
+		head, err := w.admin.BlockNumber(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		window := (head/every + 1) * every
+		if window-head < 40 {
+			window += every
+		}
+		w.mineTo(window - tbtc.B6CoordinationSafeBlockShift)
+		if accept == nil || accept(window) {
+			return window
+		}
 	}
-	frequency := tbtc.B6CoordinationFrequencyBlocks
-	window := (head/frequency + 1) * frequency
-	if window-head < 4 {
-		window += frequency
+	t.Fatalf("setup: no acceptable coordination window in 32 candidates")
+	return 0
+}
+
+// mineTo mines to height. Base's block counter takes Anvil's new heads one
+// header at a time and hands a watcher a block only if the watcher is parked
+// at that instant, so in a burst a watcher gets the burst's first block
+// alone. With nodes running, a jump therefore goes in bursts of at most 300
+// blocks, each followed by single blocks until every running node delivered
+// one to a watcher: its backlog is then cleared, and its subscription never
+// overflows.
+func (w *frostNodeWorld) mineTo(height uint64) {
+	t := w.t
+	t.Helper()
+	for {
+		head, err := w.admin.BlockNumber(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if head >= height {
+			return
+		}
+		step := height - head
+		if !w.running() {
+			if err := w.admin.Client().Call(nil, "anvil_mine", fmt.Sprintf("0x%x", step)); err != nil {
+				t.Fatal(err)
+			}
+			continue
+		}
+		if step > 300 {
+			step = 300
+		}
+		if step > 1 {
+			if err := w.admin.Client().Call(nil, "anvil_mine", fmt.Sprintf("0x%x", step-1)); err != nil {
+				t.Fatal(err)
+			}
+		}
+		w.settleNodes(head + step - 1)
 	}
-	if err := w.admin.Client().Call(nil, "anvil_mine", fmt.Sprintf("0x%x", window-head-2)); err != nil {
-		t.Fatal(err)
+}
+
+// settleNodes mines single blocks, 100 ms apart, until every running node
+// delivered one of them to a watcher (at most 5 s).
+func (w *frostNodeWorld) settleNodes(head uint64) {
+	t := w.t
+	t.Helper()
+	began := time.Now()
+	for time.Since(began) < 5*time.Second {
+		if err := w.admin.Client().Call(nil, "evm_mine"); err != nil {
+			t.Fatal(err)
+		}
+		head++
+		for wait := time.Now(); time.Since(wait) < 100*time.Millisecond; time.Sleep(5 * time.Millisecond) {
+			if w.nodesSaw(head) {
+				return
+			}
+		}
 	}
-	w.phase(fmt.Sprintf("jumped to window %d", window))
-	return window
+	w.phase(fmt.Sprintf("nodes did not catch up to block %d within 5 s", head))
+}
+
+// running reports whether any node process runs.
+func (w *frostNodeWorld) running() bool {
+	w.nodesMu.Lock()
+	defer w.nodesMu.Unlock()
+	return len(w.nodes) > 0
+}
+
+// enterWindow brings the chain to the window, no sooner than 1 s after the
+// last node start. Base's block counter drops
+// blocks its watchers are not parked for, so a window block inside a jump's
+// burst is lost (review B4): the jump stops 32 blocks short with the nodes
+// caught up (mineTo), and the background miner produces the rest one block
+// at a time, as a real chain does.
+func (w *frostNodeWorld) enterWindow(window uint64) {
+	t := w.t
+	t.Helper()
+	began := time.Now()
+	w.mineTo(window - tbtc.B6CoordinationSafeBlockShift)
+	// The nodes get 1 s after their start before a window comes.
+	if wait := time.Until(w.lastStart.Add(time.Second)); wait > 0 {
+		time.Sleep(wait)
+	}
+	// From here a block every 50 ms: base's 80-block active phase then lasts
+	// 4 s, enough for a leader's proposal generation on a one-core node
+	// (about 1.8 s measured; 16 minutes in production).
+	w.stopMining = w.mineEvery(50 * time.Millisecond)
+	if !w.waitBlock(window, 10*time.Second) {
+		t.Fatal("setup: the chain did not advance")
+	}
+	w.phase(fmt.Sprintf("window %d (after %.2f s)", window, time.Since(began).Seconds()))
+}
+
+// mineEvery mines a block every interval until the returned function is
+// called (the frozen mineInBackground mines every 20 ms).
+func (w *frostNodeWorld) mineEvery(interval time.Duration) func() {
+	done, stopped := make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(stopped)
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				_ = w.admin.Client().Call(nil, "evm_mine")
+			}
+		}
+	}()
+	var once sync.Once
+	return func() { once.Do(func() { close(done); <-stopped }) }
+}
+
+// nodesSaw reports whether every running node's block counter reported
+// height (each node writes its latest watched block to its "height" file).
+func (w *frostNodeWorld) nodesSaw(height uint64) bool {
+	w.nodesMu.Lock()
+	defer w.nodesMu.Unlock()
+	for _, node := range w.nodes {
+		raw, err := os.ReadFile(node.config.Height)
+		if err != nil {
+			return false
+		}
+		var seen uint64
+		if _, err := fmt.Sscan(string(raw), &seen); err != nil || seen < height {
+			return false
+		}
+	}
+	return true
 }
 
 // waitBlock waits until the chain reaches height, bounded.
@@ -834,17 +1081,14 @@ func (w *frostNodeWorld) settleIncoming(wallet b6Wallet, drain *bitcoin.Transact
 	deadline := time.Now().Add(bound)
 	for time.Now().Before(deadline) {
 		if spenders := w.spenders(outpoint); len(spenders) > 0 {
-			hash, err := bitcoin.NewHashFromString(spenders[0], bitcoin.ReversedByteOrder)
+			// The node broadcast through its own adapter, in its own
+			// process: read the sweep from Core (review B1).
+			sweep, err := w.coreTransaction(spenders[0])
 			if err != nil {
-				t.Fatal(err)
-			}
-			sweep, err := w.btc.GetTransaction(hash)
-			if err != nil {
-				// The node's broadcast reaches Core through its own adapter.
 				time.Sleep(50 * time.Millisecond)
 				continue
 			}
-			w.btc.mine(t, sweep)
+			w.mineCore(sweep)
 			w.send("incoming sweep proof", func(o *bind.TransactOpts) (*types.Transaction, error) {
 				return w.frost.Transact(o, "submitFrostMovedFundsSweepProof", wallet.id, legacyTxInfo(sweep), w.btc.proof(t, sweep.Hash()))
 			})
@@ -910,6 +1154,26 @@ func runB6Node(t *testing.T, config b6NodeConfig) error {
 		return fmt.Errorf("connect: %w", err)
 	}
 	trace("connected")
+	// Observation for the window driver: the latest block base's block
+	// counter delivered to a watcher (review B4). It adds a watcher; it does
+	// not change the node's.
+	var latest atomic.Uint64
+	go func() {
+		// Parked again at once, so this watcher drops no block of its own.
+		for height := range blockCounter.WatchBlocks(ctx) {
+			latest.Store(height)
+		}
+	}()
+	go func() {
+		written := uint64(0)
+		for range time.Tick(10 * time.Millisecond) {
+			if height := latest.Load(); height != written {
+				written = height
+				_ = os.WriteFile(config.Height+".tmp", []byte(fmt.Sprint(height)), 0o600)
+				_ = os.Rename(config.Height+".tmp", config.Height)
+			}
+		}
+	}()
 	record, err := os.OpenFile(config.Record, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		return err
@@ -937,6 +1201,14 @@ func runB6Node(t *testing.T, config b6NodeConfig) error {
 		return fmt.Errorf("network: %w", err)
 	}
 	trace("network")
+	// Observation for the harness: how many peers the node is connected to.
+	go func() {
+		for range time.Tick(20 * time.Millisecond) {
+			count := len(provider.ConnectionManager().ConnectedPeers())
+			_ = os.WriteFile(config.PeersFile+".tmp", []byte(fmt.Sprint(count)), 0o600)
+			_ = os.Rename(config.PeersFile+".tmp", config.PeersFile)
+		}
+	}()
 
 	disk, err := storage.Initialize(storage.Config{Dir: config.StorageDir}, b6KeyPassword)
 	if err != nil {
@@ -952,12 +1224,12 @@ func runB6Node(t *testing.T, config b6NodeConfig) error {
 	}
 
 	core := &legacyCore{url: config.CoreURL, user: config.CoreUser, pass: config.CorePass}
-	regtest := &legacyRegtest{t: t, core: core, miner: config.CoreMiner}
-	regtest.mutex.Lock()
-	regtest.syncLocked(t)
-	regtest.mutex.Unlock()
+	live := &b6LiveBitcoin{inner: &legacyRegtest{core: core, miner: config.CoreMiner}}
+	if err := live.refresh(); err != nil {
+		return fmt.Errorf("bitcoin: %w", err)
+	}
 	trace("bitcoin synced")
-	btc := &b6BitcoinRecorder{Chain: regtest, recorder: recorder}
+	btc := &b6BitcoinRecorder{Chain: live, recorder: recorder}
 
 	pin, err := hex.DecodeString(config.WorkerSHA256)
 	if err != nil || len(pin) != 32 {
@@ -969,7 +1241,7 @@ func runB6Node(t *testing.T, config b6NodeConfig) error {
 		Network:         &b6RecordingProvider{Provider: provider, recorder: recorder},
 		KeyStore:        keyStore,
 		Work:            work,
-		Scheduler:       generator.StartScheduler(),
+		Scheduler:       b6Scheduler(),
 		Proposals:       tbtcpg.NewProposalGenerator(tbtcChain, btc),
 		Config:          tbtc.Config{PreParamsPoolSize: 0, PreParamsGenerationTimeout: time.Minute, PreParamsGenerationDelay: time.Hour, PreParamsGenerationConcurrency: 1, KeyGenerationConcurrency: 1},
 		EthereumConfig:  ethereumConfig,
@@ -980,6 +1252,21 @@ func runB6Node(t *testing.T, config b6NodeConfig) error {
 	}
 	return frostNodeStart(ctx, host)
 }
+
+// FIXTURE: b6Scheduler is base's scheduler with ECDSA pre-parameter
+// generation held off: a registered protocol that always executes stops its
+// computations at its first check (within 1 s), as a running DKG does. Base
+// generates TSS pre-parameters even for a pool of size 0, which took 5-6 s of
+// a node's one core; legacy ECDSA DKG is not under test here.
+func b6Scheduler() *generator.Scheduler {
+	scheduler := generator.StartScheduler()
+	scheduler.RegisterProtocol(b6Busy{})
+	return scheduler
+}
+
+type b6Busy struct{}
+
+func (b6Busy) IsExecuting() bool { return true }
 
 // FIXTURE: b6StakingFixture answers the ECDSA sortition-pool reads node
 // startup makes (sortition.MonitorPool), which the legacy registry fixture
@@ -1044,6 +1331,11 @@ func (c *b6RecordingChannel) Send(ctx context.Context, m net.TaggedMarshaler, st
 type b6BitcoinRecorder struct {
 	bitcoin.Chain
 	recorder *b6Recorder
+}
+
+// UnspentByScript forwards the FROST script query (review B3).
+func (b *b6BitcoinRecorder) UnspentByScript(ctx context.Context, script bitcoin.Script) ([]bitcoin.PreviousOutput, error) {
+	return b.Chain.(*b6LiveBitcoin).UnspentByScript(ctx, script)
 }
 
 func (b *b6BitcoinRecorder) BroadcastTransaction(tx *bitcoin.Transaction) error {

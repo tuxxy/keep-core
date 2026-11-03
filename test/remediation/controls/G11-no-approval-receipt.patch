@@ -1,0 +1,13 @@
+diff --git a/pkg/frost/store/wallet.go b/pkg/frost/store/wallet.go
+index 1eeada06c..f0d3dede2 100644
+--- a/pkg/frost/store/wallet.go
++++ b/pkg/frost/store/wallet.go
+@@ -33,7 +33,7 @@ func (v *Scoped) SaveWallet(ctx context.Context, w dkg.WalletRecord) error {
+ 	if ranks[w.State] == 0 {
+ 		return errors.New("invalid wallet state")
+ 	}
+-	if w.State != "Candidate" && (w.ApprovalBlock == 0 || w.ApprovalHash == ([32]byte{}) || w.Deadline <= w.ApprovalBlock || w.ResultHash == ([32]byte{})) {
++	if false && (w.ApprovalBlock == 0 || w.ApprovalHash == ([32]byte{}) || w.Deadline <= w.ApprovalBlock || w.ResultHash == ([32]byte{})) {
+ 		return errors.New("missing wallet approval")
+ 	}
+ 	plain, err := json.Marshal(w)

@@ -79,6 +79,17 @@ func (c *coreChain) call(ctx context.Context, method string, args []any, result 
 }
 func startCore(t *testing.T, ctx context.Context) *coreChain {
 	t.Helper()
+	path, pin := pinnedCore(t)
+	c, _ := launchCore(t, ctx, path, pin, t.TempDir())
+	if err := c.call(ctx, "createwallet", []any{"k04"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
+// pinnedCore returns the pinned Core binary and its checked SHA-256.
+func pinnedCore(t *testing.T) (string, string) {
+	t.Helper()
 	path, pin := os.Getenv("FROST_K04_BITCOIND"), os.Getenv("FROST_K04_BITCOIND_SHA256")
 	if path == "" || pin == "" {
 		t.Skip("K-04 requires a pinned Bitcoin Core binary")
@@ -91,13 +102,19 @@ func startCore(t *testing.T, ctx context.Context) *coreChain {
 	if hex.EncodeToString(digest[:]) != pin {
 		t.Fatal("Bitcoin Core pin mismatch")
 	}
+	return path, pin
+}
+
+// launchCore starts the pinned Core on dir and returns it with a function that
+// stops it and waits for the process to exit (also run at cleanup).
+func launchCore(t *testing.T, ctx context.Context, path, pin, dir string) (*coreChain, func()) {
+	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	port := listener.Addr().(*net.TCPAddr).Port
 	listener.Close()
-	dir := t.TempDir()
 	log, err := os.Create(filepath.Join(dir, "core.log"))
 	if err != nil {
 		t.Fatal(err)
@@ -112,14 +129,18 @@ func startCore(t *testing.T, ctx context.Context) *coreChain {
 		t.Fatal(err)
 	}
 	c := &coreChain{url: fmt.Sprintf("http://127.0.0.1:%d", port), client: &http.Client{Timeout: 60 * time.Second}}
-	t.Cleanup(func() {
-		stopCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		defer stop()
-		_ = c.call(stopCtx, "stop", nil, nil)
-		cancel()
-		_ = command.Wait()
-		c.client.CloseIdleConnections()
-	})
+	var once sync.Once
+	stopCore := func() {
+		once.Do(func() {
+			stopCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+			defer stop()
+			_ = c.call(stopCtx, "stop", nil, nil)
+			_ = command.Wait()
+			cancel()
+			c.client.CloseIdleConnections()
+		})
+	}
+	t.Cleanup(stopCore)
 	ready := false
 	for deadline := time.Now().Add(15 * time.Second); time.Now().Before(deadline); time.Sleep(25 * time.Millisecond) {
 		cookie, e := os.ReadFile(filepath.Join(dir, "regtest/.cookie"))
@@ -143,10 +164,7 @@ func startCore(t *testing.T, ctx context.Context) *coreChain {
 		t.Fatalf("expected Bitcoin Core 29.0: %+v %v", version, err)
 	}
 	t.Logf("Bitcoin Core %s binary SHA256=%s", version.Subversion, pin)
-	if err = c.call(ctx, "createwallet", []any{"k04"}, nil); err != nil {
-		t.Fatal(err)
-	}
-	return c
+	return c, stopCore
 }
 func (c *coreChain) Genesis(ctx context.Context) ([32]byte, error) {
 	var text string

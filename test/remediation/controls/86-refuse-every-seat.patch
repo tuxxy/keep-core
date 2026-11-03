@@ -1,0 +1,14 @@
+diff --git a/pkg/frost/redemption/attestation.go b/pkg/frost/redemption/attestation.go
+index 2c91da351..cd9913911 100644
+--- a/pkg/frost/redemption/attestation.go
++++ b/pkg/frost/redemption/attestation.go
+@@ -250,6 +250,9 @@ func (a *Attester) lock(ctx context.Context, finalized Head, s Statement) error
+ // lock durably, then signs the certificate once per local seat in the given
+ // selection. It returns seat -> 65-byte signature.
+ func (a *Attester) Attest(ctx context.Context, plan *signing.Plan, validUntil uint64) (map[uint16][]byte, error) {
++	if len(a.Seats) > 0 {
++		return nil, errors.New("control: refuse every attestation")
++	}
+ 	head, err := a.Planner.Chain.Head(ctx)
+ 	if err != nil {
+ 		return nil, err

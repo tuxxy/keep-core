@@ -8,6 +8,7 @@ scratch=$1 patch=$2 log=$3 filter=$4
 here=$(cd "$(dirname "$0")/../../.." && pwd)
 [ "$(cd "$scratch" && pwd)" != "$here" ] || { echo "refusing to run a control in the candidate tree" >&2; exit 2; }
 for f in pkg/tbtc/frost_node_b6_seam_test.go pkg/tbtc/frost_node_b6_world_test.go pkg/tbtc/frost_node_b6_export_test.go \
+  pkg/tbtc/frost_node_b6_bitcoin_test.go pkg/tbtc/frost_node_b6_snapshot_test.go \
   pkg/tbtc/frost_node_b6_test.go pkg/tbtc/frost_node_b6_isolation_test.go pkg/tbtc/frost_node_b6_unconfigured_test.go; do
   cp "$here/$f" "$scratch/$f"
 done

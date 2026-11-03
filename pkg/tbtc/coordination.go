@@ -212,6 +212,9 @@ type CoordinationProposalRequest struct {
 	WalletOperators     []chain.Address
 	ExecutingOperator   chain.Address
 	ActionsChecklist    []WalletActionType
+	// FrostWallet tells that the wallet is a FROST wallet, keyed by its
+	// 20-byte Bridge key in WalletPublicKeyHash.
+	FrostWallet bool
 }
 
 // CoordinationProposalGenerator is a component responsible for generating
@@ -296,6 +299,10 @@ type coordinationExecutor struct {
 	membersIndexes    []group.MemberIndex
 	operatorAddress   chain.Address
 
+	// frostLabel is the 20-byte Bridge key of a coordinated FROST wallet,
+	// which has no ECDSA public key. It is nil for a legacy wallet.
+	frostLabel *[20]byte
+
 	proposalGenerator CoordinationProposalGenerator
 
 	broadcastChannel    net.BroadcastChannel
@@ -339,10 +346,58 @@ func newCoordinationExecutor(
 	}
 }
 
+// newFrostCoordinationExecutor creates a coordination executor for a FROST
+// wallet. The wallet is keyed by its 20-byte Bridge key everywhere base uses
+// the ECDSA public key hash: the seed, the leader's proposal request and the
+// coordination message. The leader is chosen among the wallet's seat holders
+// as for a legacy wallet (D2).
+func newFrostCoordinationExecutor(
+	chain Chain,
+	label [20]byte,
+	signingGroupOperators []chain.Address,
+	membersIndexes []group.MemberIndex,
+	operatorAddress chain.Address,
+	proposalGenerator CoordinationProposalGenerator,
+	broadcastChannel net.BroadcastChannel,
+	membershipValidator *group.MembershipValidator,
+	protocolLatch *generator.ProtocolLatch,
+	waitForBlockFn waitForBlockFn,
+) *coordinationExecutor {
+	executor := newCoordinationExecutor(
+		chain,
+		wallet{signingGroupOperators: signingGroupOperators},
+		membersIndexes,
+		operatorAddress,
+		proposalGenerator,
+		broadcastChannel,
+		membershipValidator,
+		protocolLatch,
+		waitForBlockFn,
+	)
+	executor.frostLabel = &label
+	return executor
+}
+
 // walletPublicKeyHash returns the 20-byte public key hash of the
-// coordinated wallet.
+// coordinated wallet, or a FROST wallet's 20-byte Bridge key.
 func (ce *coordinationExecutor) walletPublicKeyHash() [20]byte {
+	if ce.frostLabel != nil {
+		return *ce.frostLabel
+	}
 	return bitcoin.PublicKeyHash(ce.coordinatedWallet.publicKey)
+}
+
+// walletLogID returns the coordinated wallet as the coordination logs show
+// it.
+func (ce *coordinationExecutor) walletLogID() (string, error) {
+	if ce.frostLabel != nil {
+		return fmt.Sprintf("frost:0x%x", *ce.frostLabel), nil
+	}
+	walletPublicKeyBytes, err := marshalPublicKey(ce.coordinatedWallet.publicKey)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("0x%x", walletPublicKeyBytes), nil
 }
 
 // coordinate executes the coordination procedure for the given coordination
@@ -366,14 +421,14 @@ func (ce *coordinationExecutor) coordinate(
 		)
 	}
 
-	walletPublicKeyBytes, err := marshalPublicKey(ce.coordinatedWallet.publicKey)
+	walletLogID, err := ce.walletLogID()
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal wallet public key: [%v]", err)
 	}
 
 	execLogger := logger.With(
 		zap.Uint64("coordinationBlock", window.coordinationBlock),
-		zap.String("wallet", fmt.Sprintf("0x%x", walletPublicKeyBytes)),
+		zap.String("wallet", walletLogID),
 	)
 
 	execLogger.Info("starting coordination")
@@ -658,6 +713,7 @@ func (ce *coordinationExecutor) executeLeaderRoutine(
 			WalletOperators:     ce.coordinatedWallet.signingGroupOperators,
 			ExecutingOperator:   ce.operatorAddress,
 			ActionsChecklist:    actionsChecklist,
+			FrostWallet:         ce.frostLabel != nil,
 		},
 		2,             // 2 attempts at most
 		1*time.Minute, // 1 minute between attempts

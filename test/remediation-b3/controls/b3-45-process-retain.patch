@@ -1,0 +1,39 @@
+diff --git a/pkg/frost/movement/planner.go b/pkg/frost/movement/planner.go
+index a4764207e..2efad37da 100644
+--- a/pkg/frost/movement/planner.go
++++ b/pkg/frost/movement/planner.go
+@@ -6,6 +6,7 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"sort"
++	"sync"
+ 
+ 	"github.com/keep-network/keep-core/pkg/bitcoin"
+ 	"github.com/keep-network/keep-core/pkg/frost/dkg"
+@@ -222,6 +223,26 @@ func (p Planner) Movement(ctx context.Context) (*signing.Plan, error) {
+ // IncomingSweep builds the target's sweep of every finalized pending or
+ // escalated incoming output (ascending key order, at most 127) with its main.
+ func (p Planner) IncomingSweep(ctx context.Context) (*signing.Plan, error) {
++	// CONTROL b3-45-process-retain (review R2 wrong fix): the first plan is
++	// kept per View for as long as the process lives; a restart loses it.
++	processRetainedMu.Lock()
++	defer processRetainedMu.Unlock()
++	if plan, ok := processRetained[p.View]; ok {
++		return plan, nil
++	}
++	plan, err := p.incomingSweep(ctx)
++	if err == nil {
++		processRetained[p.View] = plan
++	}
++	return plan, err
++}
++
++var (
++	processRetainedMu sync.Mutex
++	processRetained   = map[*View]*signing.Plan{}
++)
++
++func (p Planner) incomingSweep(ctx context.Context) (*signing.Plan, error) {
+ 	if err := p.step("before-movement-plan"); err != nil {
+ 		return nil, err
+ 	}

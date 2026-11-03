@@ -1,12 +1,17 @@
 package movement
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/rand"
+	"sort"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/keep-network/keep-core/pkg/frost/deposit"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
@@ -120,22 +125,75 @@ func (m *Mover) executor(plan *signing.Plan, r Round) (*signing.Executor, error)
 	c.Session = r.Session
 	c.StartBlock = r.StartBlock
 	c.FinalityBlocks = m.Schedule.FinalityBlocks
-	c.Selected = seats(m.Wallet)
+	c.Selected = selected(m.Wallet, r.Number)
 	c.Reservations = nil
 	c.Sweeps = m.Authority
 	c.Guard = deposit.Guard{Lock: m.Lock}
 	return signing.NewLocalExecutor(c)
 }
 
-// seats is every live seat of the descriptor; rotation is OPEN (D-02/D-11).
-func seats(d dkg.Descriptor) []uint16 {
-	var out []uint16
+// selected is the round's signing seats, chosen as base keep-core chooses
+// the participants of a signing attempt (pkg/tbtc signingRetryLoop,
+// tecdsa/retry EvaluateRetryParticipantsForSigning): operators sorted by
+// address and shuffled with a seed shared by every operator, then whole
+// operators taken until their seats reach the threshold (tuxxy/keep-core#66).
+// Base shuffles afresh for every attempt. Here the shuffle is redrawn once per
+// rotation cycle of len(operators) rounds and the start operator rotates
+// within the cycle, so one absent operator is left out of some round of every
+// cycle, and the reshuffles reach every set of live operators whose seats
+// reach the threshold. The seed is the wallet ID and the retry count the
+// cycle, so every operator derives the same seats from the round alone.
+func selected(d dkg.Descriptor, round uint64) []uint16 {
+	seatsOf := map[common.Address][]uint16{}
+	var operators []common.Address
 	for i, member := range d.Members {
-		if member != 0 {
-			out = append(out, uint16(i+1))
+		if member == 0 {
+			continue
+		}
+		operator := d.Operators[i]
+		if _, ok := seatsOf[operator]; !ok {
+			operators = append(operators, operator)
+		}
+		seatsOf[operator] = append(seatsOf[operator], uint16(i+1))
+	}
+	if len(operators) == 0 {
+		return nil
+	}
+	sort.Slice(operators, func(i, j int) bool {
+		return bytes.Compare(operators[i][:], operators[j][:]) < 0
+	})
+	id := dkg.WalletID(d.OutputKey)
+	n := uint64(len(operators))
+	// #nosec G404 (insecure random number source (rand))
+	// As in base, shuffling operators for retries needs no secure randomness.
+	rng := rand.New(rand.NewSource(int64(binary.BigEndian.Uint64(id[:8])) + int64(round/n)))
+	rng.Shuffle(len(operators), func(i, j int) {
+		operators[i], operators[j] = operators[j], operators[i]
+	})
+	var out []uint16
+	for i := uint64(0); i < n && len(out) < int(d.Threshold); i++ {
+		out = append(out, seatsOf[operators[(round%n+i)%n]]...)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
+}
+
+// Eligible reports whether this operator holds a seat selected in round; an
+// operator outside the selection does not sign that round, as a base member
+// excluded from an attempt does not.
+func (m *Mover) Eligible(ctx context.Context, round uint64) (bool, error) {
+	status, err := m.Base.Journal.DKGStatus(ctx)
+	if err != nil {
+		return false, err
+	}
+	for _, seat := range selected(m.Wallet, round) {
+		for _, local := range status.LocalSeats {
+			if seat == local {
+				return true, nil
+			}
 		}
 	}
-	return out
+	return false, nil
 }
 
 // Sign runs one agreed attempt of round for plan. The main lock is taken
@@ -268,7 +326,10 @@ func (m *Mover) Broadcast(ctx context.Context, plan *signing.Plan) error {
 }
 
 // settled reads the plan's outcome at the finalized head: a proven movement
-// commitment, or every incoming input swept.
+// commitment, or the plan's own incoming sweep proven by the wallet. Inputs
+// swept by another proven transaction do not settle this plan, so its own
+// hash is never recorded as that outcome (tuxxy/keep-core#71); it is
+// abandoned once its inputs can no longer be authorized.
 func (m *Mover) settled(ctx context.Context, plan *signing.Plan, finalized uint64) (bool, error) {
 	if plan.IsMovement() {
 		c, err := m.Chain.Commitment(ctx, finalized, plan.WalletID(), plan.MovementPeriod())
@@ -277,16 +338,11 @@ func (m *Mover) settled(ctx context.Context, plan *signing.Plan, finalized uint6
 		}
 		return c.ProvenAt != 0, nil
 	}
-	for _, in := range plan.IncomingOutputs() {
-		record, err := m.Chain.Incoming(ctx, finalized, OutpointKey(in.Outpoint))
-		if err != nil {
-			return false, err
-		}
-		if record.State != IncomingSwept {
-			return false, nil
-		}
+	wallet, err := m.Chain.ProvenTransaction(ctx, finalized, plan.BitcoinTransactionHash())
+	if err != nil {
+		return false, err
 	}
-	return true, nil
+	return wallet == plan.WalletID(), nil
 }
 
 // Resolve advances one plan by one step: settled when its proof is final;
@@ -339,6 +395,9 @@ func (m *Mover) Resolve(ctx context.Context, plan *signing.Plan) (Status, error)
 		if e.Kind == redemption.KindMovementAttempt && e.Detail == strconv.FormatUint(current.Number, 10) {
 			return StatusWaiting, nil
 		}
+	}
+	if eligible, err := m.Eligible(ctx, current.Number); err != nil || !eligible {
+		return StatusWaiting, err
 	}
 	if _, err = m.Sign(ctx, plan, current.Number); err != nil {
 		return "", fmt.Errorf("movement round %d: %w", current.Number, err)

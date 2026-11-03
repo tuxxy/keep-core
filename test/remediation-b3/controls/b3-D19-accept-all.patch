@@ -1,0 +1,13 @@
+diff --git a/pkg/chain/ethereum/tbtc.go b/pkg/chain/ethereum/tbtc.go
+index 7ed6348d3..71de720d8 100644
+--- a/pkg/chain/ethereum/tbtc.go
++++ b/pkg/chain/ethereum/tbtc.go
+@@ -2202,6 +2202,8 @@ func (tc *TbtcChain) ValidateMovedFundsSweepProposal(
+ 	walletPublicKeyHash [20]byte,
+ 	proposal *tbtc.MovedFundsSweepProposal,
+ ) error {
++	return nil // CONTROL b3-D19-accept-all: a follower that validates nothing
++
+ 	abiProposal := tbtcabi.WalletProposalValidatorMovedFundsSweepProposal{
+ 		WalletPubKeyHash:         walletPublicKeyHash,
+ 		MovingFundsTxHash:        proposal.MovingFundsTxHash,

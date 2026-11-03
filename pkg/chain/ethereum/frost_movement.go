@@ -10,7 +10,9 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-core/pkg/bitcoin"
 	binding "github.com/keep-network/keep-core/pkg/chain/ethereum/frostabi"
+	"github.com/keep-network/keep-core/pkg/frost/deposit"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/tbtc"
@@ -408,3 +410,108 @@ func (tc *TbtcChain) IsFrostMovementTarget(label [20]byte) (bool, error) {
 }
 
 var _ tbtc.FrostDrainChain = (*TbtcChain)(nil)
+var _ tbtc.FrostIncomingChain = (*TbtcChain)(nil)
+
+// PastFrostIncomingOutputs implements tbtc.FrostIncomingChain from the
+// Bridge's FrostIncomingRecorded logs of the wallet.
+func (tc *TbtcChain) PastFrostIncomingOutputs(
+	outputKey [32]byte,
+	startBlock uint64,
+) ([]bitcoin.TransactionOutpoint, error) {
+	iterator, err := tc.frostBridgeEvents.FilterFrostIncomingRecorded(
+		&bind.FilterOpts{Start: startBlock},
+		nil,
+		[][32]byte{dkg.WalletID(outputKey)},
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer iterator.Close()
+	var outpoints []bitcoin.TransactionOutpoint
+	for iterator.Next() {
+		if iterator.Event.Raw.Removed {
+			continue
+		}
+		outpoints = append(outpoints, bitcoin.TransactionOutpoint{
+			TransactionHash: bitcoin.Hash(iterator.Event.TransactionHash),
+			OutputIndex:     iterator.Event.OutputIndex,
+		})
+	}
+	return outpoints, iterator.Error()
+}
+
+// IsFrostIncomingPending implements tbtc.FrostIncomingChain: the Bridge's
+// incoming record of the outpoint is Pending and belongs to the wallet.
+func (tc *TbtcChain) IsFrostIncomingPending(
+	outputKey [32]byte,
+	outpoint bitcoin.TransactionOutpoint,
+) (bool, error) {
+	record, err := tc.frostBridge.FrostIncoming(nil, deposit.OutpointKey(outpoint))
+	if err != nil {
+		return false, err
+	}
+	return record.Target == dkg.WalletID(outputKey) &&
+		movement.IncomingState(record.State) == movement.IncomingPending, nil
+}
+
+// FrostWalletHasMain implements tbtc.FrostIncomingChain.
+func (tc *TbtcChain) FrostWalletHasMain(outputKey [32]byte) (bool, error) {
+	custody, err := tc.frostBridge.FrostWalletCustody(nil, dkg.WalletID(outputKey))
+	if err != nil {
+		return false, err
+	}
+	return custody.MainOutpoint != [32]byte{}, nil
+}
+
+// validateFrostMovedFundsSweepProposal checks a FROST wallet's moved funds
+// sweep proposal as the base WalletProposalValidator checks a legacy one,
+// against the Bridge's FROST records: the wallet can sweep incoming outputs
+// (FrostMovement.sweep), the named output is a pending incoming output of
+// this wallet, and the fee is positive and within the on-chain cap (D19).
+func (tc *TbtcChain) validateFrostMovedFundsSweepProposal(
+	label [20]byte,
+	outputKey [32]byte,
+	proposal *tbtc.MovedFundsSweepProposal,
+) error {
+	raw, err := tc.frostBridge.WalletDescriptor(nil, label)
+	if err != nil {
+		return err
+	}
+	wallet, err := decodeWallet(raw)
+	if err != nil {
+		return err
+	}
+	const readyUnfunded, live, movingFunds, closing, terminated = 3, 4, 5, 6, 8
+	switch wallet.State {
+	case readyUnfunded, live, movingFunds, closing, terminated:
+	default:
+		return fmt.Errorf("FROST wallet cannot sweep incoming outputs in state [%d]", wallet.State)
+	}
+
+	pending, err := tc.IsFrostIncomingPending(
+		outputKey,
+		bitcoin.TransactionOutpoint{
+			TransactionHash: proposal.MovingFundsTxHash,
+			OutputIndex:     proposal.MovingFundsTxOutputIndex,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if !pending {
+		return fmt.Errorf("not a pending FROST incoming output of the wallet")
+	}
+
+	if proposal.SweepTxFee == nil || proposal.SweepTxFee.Sign() <= 0 {
+		return fmt.Errorf("proposed sweep transaction fee must be greater than zero")
+	}
+	parameters, err := tc.bridge.MovingFundsParameters()
+	if err != nil {
+		return err
+	}
+	if !proposal.SweepTxFee.IsUint64() ||
+		proposal.SweepTxFee.Uint64() > parameters.MovedFundsSweepTxMaxTotalFee {
+		return fmt.Errorf("proposed sweep transaction fee is too high")
+	}
+	return nil
+}

@@ -310,6 +310,28 @@ func ValidateMovedFundsSweepProposal(
 	return nil
 }
 
+// FrostIncomingChain is implemented by host chains that read the incoming
+// moved outputs of FROST wallets (KC-SF-V3 K-07, C-06): the FROST
+// counterpart of moved funds sweep requests. A FROST wallet is addressed by
+// its output key, as FrostTargetResolver reports it for the wallet's label.
+type FrostIncomingChain interface {
+	FrostTargetResolver
+	// PastFrostIncomingOutputs lists the outpoints the Bridge recorded as
+	// incoming outputs of the FROST wallet since startBlock, oldest first.
+	PastFrostIncomingOutputs(
+		outputKey [32]byte,
+		startBlock uint64,
+	) ([]bitcoin.TransactionOutpoint, error)
+	// IsFrostIncomingPending reports whether the outpoint is a pending
+	// incoming output of the FROST wallet.
+	IsFrostIncomingPending(
+		outputKey [32]byte,
+		outpoint bitcoin.TransactionOutpoint,
+	) (bool, error)
+	// FrostWalletHasMain reports whether the FROST wallet holds a main UTXO.
+	FrostWalletHasMain(outputKey [32]byte) (bool, error)
+}
+
 func assembleMovedFundsSweepTransaction(
 	bitcoinChain bitcoin.Chain,
 	walletPublicKey *ecdsa.PublicKey,

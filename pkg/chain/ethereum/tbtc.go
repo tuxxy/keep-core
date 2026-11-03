@@ -2220,6 +2220,19 @@ func (tc *TbtcChain) ValidateMovedFundsSweepProposal(
 		abiProposal,
 	)
 	if err != nil {
+		// The base validator knows only legacy wallets. A FROST wallet's
+		// proposal is checked against the Bridge's FROST records instead.
+		outputKey, frost, frostErr := tc.FrostTargetOutputKey(walletPublicKeyHash)
+		if frostErr == nil && frost {
+			if err := tc.validateFrostMovedFundsSweepProposal(
+				walletPublicKeyHash,
+				outputKey,
+				proposal,
+			); err != nil {
+				return fmt.Errorf("validation failed: [%v]", err)
+			}
+			return nil
+		}
 		return fmt.Errorf("validation failed: [%v]", err)
 	}
 

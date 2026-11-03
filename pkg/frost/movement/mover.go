@@ -268,7 +268,10 @@ func (m *Mover) Broadcast(ctx context.Context, plan *signing.Plan) error {
 }
 
 // settled reads the plan's outcome at the finalized head: a proven movement
-// commitment, or every incoming input swept.
+// commitment, or the plan's own incoming sweep proven by the wallet. Inputs
+// swept by another proven transaction do not settle this plan, so its own
+// hash is never recorded as that outcome (tuxxy/keep-core#71); it is
+// abandoned once its inputs can no longer be authorized.
 func (m *Mover) settled(ctx context.Context, plan *signing.Plan, finalized uint64) (bool, error) {
 	if plan.IsMovement() {
 		c, err := m.Chain.Commitment(ctx, finalized, plan.WalletID(), plan.MovementPeriod())
@@ -277,16 +280,11 @@ func (m *Mover) settled(ctx context.Context, plan *signing.Plan, finalized uint6
 		}
 		return c.ProvenAt != 0, nil
 	}
-	for _, in := range plan.IncomingOutputs() {
-		record, err := m.Chain.Incoming(ctx, finalized, OutpointKey(in.Outpoint))
-		if err != nil {
-			return false, err
-		}
-		if record.State != IncomingSwept {
-			return false, nil
-		}
+	wallet, err := m.Chain.ProvenTransaction(ctx, finalized, plan.BitcoinTransactionHash())
+	if err != nil {
+		return false, err
 	}
-	return true, nil
+	return wallet == plan.WalletID(), nil
 }
 
 // Resolve advances one plan by one step: settled when its proof is final;

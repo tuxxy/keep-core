@@ -674,9 +674,18 @@ func (e *Executor) Result(ctx context.Context) (*Result, error) {
 	return result, e.checkResultReceipt(ctx, result)
 }
 
-// PossibleRelease reports whether any input's signature completion is durable
-// for this plan and session, i.e. a share may have been released.
+// PossibleRelease reports whether a share of this plan may have been
+// released. Run retains the plan intent before any grant and keeps no durable
+// record between that point and the worker, so a retained intent is a
+// possible release until chain evidence settles the plan: a missing done
+// record proves nothing (tuxxy/keep-core#50, KC-SF-V3 line 258). A durable
+// signature completion is one as well.
 func (e *Executor) PossibleRelease(ctx context.Context) (bool, error) {
+	if _, err := e.config.Journal.ReadSigningRecord(ctx, e.config.Plan.hash); err == nil {
+		return true, nil
+	} else if !errors.Is(err, store.ErrMissing) {
+		return true, err
+	}
 	for index := range e.config.Plan.snapshot.Digests() {
 		attempt, err := e.attempt(index)
 		if err != nil {

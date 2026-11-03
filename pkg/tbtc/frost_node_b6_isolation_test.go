@@ -208,13 +208,12 @@ func TestFrostNodeIsolation_ReservationOnOtherWallet(t *testing.T) {
 		t.Fatal(err)
 	}
 	reservation := w.requestRedemption(a, redeemer, 2*parameters.RedemptionDustThreshold)
+	// Base checks redemptions only in coordination windows: go to the next
+	// one, then wait for the Bridge's reservation event.
+	w.nextWindow()
 	reserved, ok := w.reservationAdmitted(a, reservation, b6Sweep)
 	if !ok {
-		// Redemptions are checked in every window.
-		w.nextWindow()
-		if reserved, ok = w.reservationAdmitted(a, reservation, b6Sweep); !ok {
-			t.Fatalf("#26 redemption: the nodes did not reserve the pending FROST redemption on wallet A within a coordination window (exited: %v)%s", w.exitedNodes(), w.debugLogs())
-		}
+		t.Fatalf("#26 redemption: the nodes did not reserve the pending FROST redemption on wallet A within a coordination window (exited: %v)%s", w.exitedNodes(), w.debugLogs())
 	}
 
 	// While A's reservation is active (its proof is held back), B's incoming

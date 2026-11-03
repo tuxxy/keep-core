@@ -174,8 +174,11 @@ func TestFrostNodeDispatch_IncomingSweepByLeader(t *testing.T) {
 	// from D2's (review B5). It is chosen from its seed block before the
 	// drain exists and before the nodes start, so a skipped window has
 	// nothing to sweep.
+	// It is also one in which D2's leader is not seat 1's operator, so a
+	// fixed seat-1 leader fails too (recheck).
 	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, func(window uint64) bool {
-		return w.seatLeader(wallet, window) != w.operatorIndex(w.expectedLeader(wallet, window))
+		leader := w.operatorIndex(w.expectedLeader(wallet, window))
+		return w.seatLeader(wallet, window) != leader && leader != w.operatorIndex(wallet.operators[0])
 	})
 	drain := w.drainInto(wallet)
 	outpoint := bitcoin.TransactionOutpoint{TransactionHash: drain.Hash(), OutputIndex: 0}

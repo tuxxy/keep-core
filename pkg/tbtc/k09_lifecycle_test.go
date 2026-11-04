@@ -427,6 +427,21 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 	}
 	revealAhead := uint64(params.DepositRevealAheadPeriod)
 	refundKey, _ := btcec.PrivKeyFromBytes(common.LeftPadBytes([]byte{0x09, 0x08}, 32))
+	// The depositor has its own key: the admin is also the Bridge's
+	// treasury (legacy world), so an admin depositor would be credited the
+	// treasury fee back.
+	depositorKey, err := crypto.ToECDSA(crypto.Keccak256([]byte("K-09 depositor")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	depositor := crypto.PubkeyToAddress(depositorKey.PublicKey)
+	if err := w.admin.Client().Call(nil, "anvil_setBalance", depositor, "0x3635c9adc5dea00000"); err != nil {
+		t.Fatal(err)
+	}
+	depositorOpts, err := bind.NewKeyedTransactorWithChainID(depositorKey, w.chainID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	registered, err := w.registry.Wallet(&bind.CallOpts{}, w.wallet.id)
 	if err != nil {
 		t.Fatal(err)
@@ -434,7 +449,7 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 	newDeposit := func(blinding byte, amount uint64) (deposit.Terms, deposit.Construction, bitcoin.TransactionOutpoint) {
 		terms := deposit.Terms{
 			ChainID: w.chainID, Bridge: w.legacyWorld.bridge, BitcoinGenesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash),
-			WalletID: w.wallet.id, DescriptorHash: registered.DescriptorHash, Depositor: crypto.PubkeyToAddress(w.adminKey.PublicKey),
+			WalletID: w.wallet.id, DescriptorHash: registered.DescriptorHash, Depositor: depositor,
 			Blinding: [8]byte{0x09, blinding}, Amount: amount, RefundLocktime: uint32(header.Time + revealAhead + 3600),
 		}
 		copy(terms.RefundKey[:], schnorr.SerializePubKey(refundKey.PubKey()))
@@ -463,9 +478,13 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 		// Base sweeps a deposit only with 6 funding confirmations
 		// (DepositSweepRequiredFundingTxConfirmations).
 		w.coreBlocks(6)
-		w.send("depositor: reveal", func(o *bind.TransactOpts) (*types.Transaction, error) {
-			return w.bridge.RevealFrostDeposit(o, k09Terms(terms), k09TxInfo(funding), uint32(index))
-		})
+		reveal, err := w.bridge.RevealFrostDeposit(depositorOpts, k09Terms(terms), k09TxInfo(funding), uint32(index))
+		if err != nil {
+			t.Fatalf("setup: depositor reveal: %v", err)
+		}
+		if receipt, err := legacyWaitMined(context.Background(), w.admin, reveal); err != nil || receipt.Status != types.ReceiptStatusSuccessful {
+			t.Fatalf("setup: depositor reveal not mined: %v", err)
+		}
 		outpoint := bitcoin.TransactionOutpoint{TransactionHash: funding.Hash(), OutputIndex: uint32(index)}
 		w.send("maintainer: reserve deposit", func(o *bind.TransactOpts) (*types.Transaction, error) {
 			return w.bridge.ReserveFrostDeposit(o, deposit.OutpointKey(outpoint), k09TxInfo(funding), k09Proof(w.btc.proof(t, funding.Hash())))
@@ -479,8 +498,8 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 	terms, construction, funding := newDeposit(1, amount)
 	before := w.custody(w.wallet)
 	oldMain := k09ParseOutpoint(t, w.facts.MainA)
-	depositor := crypto.PubkeyToAddress(w.adminKey.PublicKey)
-	balance := w.bankBalance(depositor)
+	treasury := crypto.PubkeyToAddress(w.adminKey.PublicKey)
+	balances := [2]*big.Int{w.bankBalance(depositor), w.bankBalance(treasury)}
 	// Base sweeps a deposit only once it is DEPOSIT_MIN_AGE (2 hours) old
 	// in chain time (WalletProposalValidator) and by the wall clock
 	// (tbtcpg); the chain clock lags the wall clock (legacyChainLag), so
@@ -493,7 +512,7 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 	if len(sweeps) == 0 {
 		sweepFailure = fmt.Sprintf("FINDING K-09 %s (SC-04): the nodes did not sweep the revealed, reserved FROST deposit %s in deposit-sweep window %d: no node spent the funding output (Core holds it unspent: %v)", stage, k09Outpoint(funding), window, w.coreUnspent(funding))
 	} else {
-		w.assertDepositSweep(stage, sweeps, funding, oldMain, before, balance, amount, uint64(params.DepositTreasuryFeeDivisor))
+		w.assertDepositSweep(stage, sweeps, funding, oldMain, before, depositor, treasury, balances, amount, uint64(params.DepositTreasuryFeeDivisor))
 	}
 	// Independent refund: the depositor alone, after the locktime. If the
 	// nodes swept the first deposit, the refund is of a second one.
@@ -530,9 +549,10 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 // node transaction spends the deposit, together with the wallet's main
 // (D13: custody stays in the main); the maintainer proves it on the Bridge;
 // the Bridge's main is the sweep's wallet output; the depositor is credited
-// exactly the deposit minus the treasury fee and the sweep fee; and the
-// deposit's C-10 reservation is released.
-func (w *k09World) assertDepositSweep(stage string, sweeps []string, funding, oldMain bitcoin.TransactionOutpoint, before frostbridgeabi.FrostCustodyWallet, balance *big.Int, amount, divisor uint64) {
+// exactly the deposit minus the treasury fee and the sweep fee, and the
+// treasury exactly the treasury fee; and the deposit's C-10 reservation is
+// released.
+func (w *k09World) assertDepositSweep(stage string, sweeps []string, funding, oldMain bitcoin.TransactionOutpoint, before frostbridgeabi.FrostCustodyWallet, depositor, treasury common.Address, balances [2]*big.Int, amount, divisor uint64) {
 	t := w.t
 	t.Helper()
 	if len(sweeps) != 1 {
@@ -571,13 +591,16 @@ func (w *k09World) assertDepositSweep(stage string, sweeps []string, funding, ol
 	}
 	w.assertMain(stage, w.wallet, tx, uint32(index))
 	fee := int64(before.Value) + int64(amount) - outputs
-	treasury := uint64(0)
+	treasuryFee := uint64(0)
 	if divisor != 0 {
-		treasury = amount / divisor
+		treasuryFee = amount / divisor
 	}
-	credited := new(big.Int).Sub(w.bankBalance(crypto.PubkeyToAddress(w.adminKey.PublicKey)), balance)
-	if want := int64(amount) - int64(treasury) - fee; fee < 0 || credited.Cmp(big.NewInt(want)) != 0 {
-		t.Fatalf("K-09 %s (SC-04): the depositor was credited %s, want deposit %d - treasury fee %d - sweep fee %d = %d", stage, credited, amount, treasury, fee, want)
+	credited := new(big.Int).Sub(w.bankBalance(depositor), balances[0])
+	if want := int64(amount) - int64(treasuryFee) - fee; fee < 0 || credited.Cmp(big.NewInt(want)) != 0 {
+		t.Fatalf("K-09 %s (SC-04): the depositor was credited %s, want deposit %d - treasury fee %d - sweep fee %d = %d", stage, credited, amount, treasuryFee, fee, want)
+	}
+	if fees := new(big.Int).Sub(w.bankBalance(treasury), balances[1]); fees.Cmp(new(big.Int).SetUint64(treasuryFee)) != 0 {
+		t.Fatalf("K-09 %s (SC-04): the treasury was credited %s, want the treasury fee %d", stage, fees, treasuryFee)
 	}
 	if reserved, err := w.bridge.FrostDepositReserved(&bind.CallOpts{}, deposit.OutpointKey(funding)); err != nil || reserved {
 		t.Fatalf("K-09 %s (C-10): the swept deposit is still reserved (%v)", stage, err)

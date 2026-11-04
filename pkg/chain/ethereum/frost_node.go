@@ -60,6 +60,7 @@ func (tc *TbtcChain) ConnectFrost(
 	if err != nil {
 		return nil, nil, err
 	}
+	frostChain.tx = tc.frostTransactor()
 	bridge, err := tc.frostRedemptionChain(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -68,6 +69,23 @@ func (tc *TbtcChain) ConnectFrost(
 }
 
 var _ tbtc.FrostChainConnector = (*TbtcChain)(nil)
+
+// frostTransactor serializes FROST sends with the base contract wrappers,
+// which send from the same operator key, and resubmits them with the base
+// mining waiter.
+func (tc *TbtcChain) frostTransactor() frostTransactor {
+	t := newFrostTransactor()
+	if tc.transactionMutex != nil {
+		t.mutex = tc.transactionMutex
+	}
+	if tc.nonceManager != nil {
+		t.nonces = tc.nonceManager
+	}
+	if tc.miningWaiter != nil {
+		t.waiter = tc.miningWaiter
+	}
+	return t
+}
 
 // frostRedemptionChain binds the FROST extension of the Bridge once.
 func (tc *TbtcChain) frostRedemptionChain(ctx context.Context) (*FrostRedemptionChain, error) {
@@ -79,6 +97,7 @@ func (tc *TbtcChain) frostRedemptionChain(ctx context.Context) (*FrostRedemption
 		if err != nil {
 			return nil, err
 		}
+		bridge.tx = tc.frostTransactor()
 		tc.frostRedemption = bridge
 	}
 	return tc.frostRedemption, nil

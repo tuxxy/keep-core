@@ -1,8 +1,8 @@
 diff --git a/pkg/tbtc/k09_lifecycle_test.go b/pkg/tbtc/k09_lifecycle_test.go
-index 0be81ec19..4df88721b 100644
+index 7b19134e8..06c04921b 100644
 --- a/pkg/tbtc/k09_lifecycle_test.go
 +++ b/pkg/tbtc/k09_lifecycle_test.go
-@@ -647,6 +647,14 @@ func k09Movement(t *testing.T, w *k09World) {
+@@ -684,6 +684,14 @@ func k09Movement(t *testing.T, w *k09World) {
  	if !ok {
  		t.Fatalf("K-09 09-movement: the target wallet B (epoch %d) did not reach ReadyUnfunded (exited: %v)", epoch, w.exitedNodes())
  	}
@@ -16,4 +16,4 @@ index 0be81ec19..4df88721b 100644
 +	}
  	committed := uint64(0)
  	for i := 0; i < 2 && committed == 0; i++ {
- 		window := w.nextSweepWindow()
+ 		window := w.nextSigningWindow(4 * tbtc.B6CoordinationFrequencyBlocks)

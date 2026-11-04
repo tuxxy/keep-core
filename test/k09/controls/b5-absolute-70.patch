@@ -1,8 +1,8 @@
 diff --git a/pkg/tbtc/k09_lifecycle_test.go b/pkg/tbtc/k09_lifecycle_test.go
-index 0be81ec19..88fb553d8 100644
+index 7b19134e8..60c54932c 100644
 --- a/pkg/tbtc/k09_lifecycle_test.go
 +++ b/pkg/tbtc/k09_lifecycle_test.go
-@@ -852,7 +852,8 @@ func k09NoInactivity(t *testing.T, w *k09World) {
+@@ -889,7 +889,8 @@ func k09NoInactivity(t *testing.T, w *k09World) {
  	if err != nil {
  		t.Fatal(err)
  	}
@@ -12,7 +12,7 @@ index 0be81ec19..88fb553d8 100644
  	after, err := w.bridge.FrostInactivityNonce(&bind.CallOpts{}, w.wallet.id)
  	if err != nil {
  		t.Fatal(err)
-@@ -928,3 +929,39 @@ func k09CutoverClosure(t *testing.T, w *k09World) {
+@@ -965,3 +966,39 @@ func k09CutoverClosure(t *testing.T, w *k09World) {
  	// Wallet A holds custody: it can close only after a movement (09-movement).
  	t.Logf("K-09 11-cutover-closure: wallet A's closure obligations: %b (custody %d)", w.obligations(w.wallet), w.custody(w.wallet).Value)
  }

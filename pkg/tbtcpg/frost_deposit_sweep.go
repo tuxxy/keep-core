@@ -2,6 +2,7 @@ package tbtcpg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -79,10 +80,17 @@ func (dst *DepositSweepTask) runFrost(
 	planner := deposit.Planner{
 		Chain:   bridge,
 		Funding: frostFunding{chain: dst.btcChain, unspent: funding},
-		Wallet:  dkg.Descriptor{OutputKey: outputKey},
-		Policy:  tbtc.FrostDepositPolicy,
+		// Base's EnsureWalletSyncedBetweenChains: no sweep is proposed
+		// while a sweep of the wallet is on Bitcoin and unproven.
+		Clock:  deposit.HeaderClock{Chain: dst.btcChain},
+		Wallet: dkg.Descriptor{OutputKey: outputKey},
+		Policy: tbtc.FrostDepositPolicy,
 	}
 	keys, err := planner.Pending(ctx, filterStartBlock, head.Number, 0)
+	if errors.Is(err, deposit.ErrWalletNotSynced) {
+		taskLogger.Infof("FROST wallet is not synced between chains: [%v]", err)
+		return nil, false, nil
+	}
 	if err != nil {
 		return nil, false, fmt.Errorf("cannot find FROST deposits: [%w]", err)
 	}

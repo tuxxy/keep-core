@@ -105,10 +105,18 @@ func (fw *frostWallet) sweepDeposits(
 
 	lock := &deposit.MainLock{Journal: fw.journal}
 	signingBitcoin := &frostSigningBitcoin{chain: fn.bitcoin, genesis: fn.genesis}
+	syncFrom := uint64(0)
+	if coordinationBlock > frostRedemptionLookBackBlocks {
+		syncFrom = coordinationBlock - frostRedemptionLookBackBlocks
+	}
 	planner := deposit.Planner{
-		Chain:              fn.bridge,
-		Bitcoin:            fn.bitcoin,
-		Funding:            signingBitcoin,
+		Chain:   fn.bridge,
+		Bitcoin: fn.bitcoin,
+		Funding: signingBitcoin,
+		// Base's EnsureWalletSyncedBetweenChains: no sweep while a sweep of
+		// the wallet is on Bitcoin and unproven (review B1).
+		Clock:              signingBitcoin,
+		SyncFrom:           syncFrom,
 		Lock:               lock,
 		Wallet:             fw.descriptor,
 		Genesis:            fn.genesis,
@@ -500,24 +508,8 @@ func (fw *frostWallet) claimInactivity(
 }
 
 // MedianTimePast implements deposit.Clock: Bitcoin's median-time-past
-// (BIP113), the median of the last 11 block times, which a deposit's
-// timestamp refund is checked against.
-func (fsb *frostSigningBitcoin) MedianTimePast(context.Context) (uint64, error) {
-	tip, err := fsb.chain.GetLatestBlockHeight()
-	if err != nil {
-		return 0, err
-	}
-	var times []uint32
-	for height := tip; len(times) < 11; height-- {
-		header, err := fsb.chain.GetBlockHeader(height)
-		if err != nil {
-			return 0, err
-		}
-		times = append(times, header.Time)
-		if height == 0 {
-			break
-		}
-	}
-	sort.Slice(times, func(i, j int) bool { return times[i] < times[j] })
-	return uint64(times[len(times)/2]), nil
+// (BIP113) from the node's Bitcoin chain, which a deposit's timestamp refund
+// is checked against.
+func (fsb *frostSigningBitcoin) MedianTimePast(ctx context.Context) (uint64, error) {
+	return deposit.HeaderClock{Chain: fsb.chain}.MedianTimePast(ctx)
 }

@@ -93,3 +93,67 @@ func TestSweepTransientReadAfterSignatureRetries(t *testing.T) {
 		}
 	}
 }
+
+// TestNoSecondSweepBeforeTheFirstIsProven (review B1, batch 7): a wallet
+// with no main sweeps deposit A deposit-only; before that sweep is proven,
+// deposit B must not be planned beside it. A second deposit-only sweep
+// could never be proven once A's proof sets the main ("FROST sweep main
+// required"), and B's funding would be spent and never credited. As base's
+// EnsureWalletSyncedBetweenChains, planning waits until the Bridge has seen
+// the first sweep; then B is swept with the new main and credited.
+func TestNoSecondSweepBeforeTheFirstIsProven(t *testing.T) {
+	w := newK06WorldWith(t, k06Options{mode: "k05", beforeDKG: certifyAllSeats})
+	ctx := w.f.ctx
+	for _, s := range w.sweepers {
+		s.Planner.Clock = w.clock
+	}
+	locktime := w.locktime(k06RefundDelay)
+
+	a := w.deposit(1_000_000, locktime, [20]byte{})
+	r := w.round(a.readyBlock + k06Finality)
+	first := w.plan(r)
+	if first.SweepMain() != nil {
+		t.Fatal("setup: the wallet already has a main")
+	}
+	for i, err := range w.signSweep(first, r.Number) {
+		if err != nil {
+			t.Fatalf("setup: sweep signer %d: %v", i, err)
+		}
+	}
+	if err := w.sweepers[1].Broadcast(ctx, first); err != nil {
+		t.Fatal("setup: first sweep broadcast:", err)
+	}
+
+	// The first sweep is on Bitcoin, in the mempool and then in a block,
+	// and not proven: deposit B is not planned.
+	b := w.deposit(2_000_000, locktime, [20]byte{})
+	for _, mined := range []bool{false, true} {
+		if mined {
+			w.coreMine(1)
+		}
+		r = w.round(b.readyBlock + k06Finality)
+		for i, s := range w.sweepers {
+			plan, err := s.Plan(ctx, w.fromBlock, r)
+			if !errors.Is(err, deposit.ErrWalletNotSynced) {
+				var keys int
+				if plan != nil {
+					keys = len(plan.SweepDeposits())
+				}
+				t.Fatalf("B1: operator %d planned a sweep of %d deposits while the wallet's first sweep was unproven (mined %v): %v", i, keys, mined, err)
+			}
+		}
+	}
+
+	// Once the Bridge has proven the first sweep, B is swept with the new
+	// main and credited.
+	if action, err := w.sweeps.ProveSweep(ctx, w.walletID, first.BitcoinTransactionHash(), first.SweepVault(), nil); err != nil || action.Kind != "sweep-proof" {
+		t.Fatalf("first sweep proof: %+v %v", action, err)
+	}
+	w.mine(k06Finality)
+	r = w.round(w.head())
+	second := w.plan(r)
+	if second.SweepMain() == nil || len(second.SweepDeposits()) != 1 || second.SweepDeposits()[0].Key != b.key {
+		t.Fatal("after the proof the sweep must spend deposit B with the new main")
+	}
+	w.sweepAndProve(second, r.Number, w.sweeps)
+}

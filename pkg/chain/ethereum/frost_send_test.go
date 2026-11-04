@@ -3,8 +3,10 @@ package ethereum
 import (
 	"context"
 	"fmt"
+	"math/big"
 	stdnet "net"
 	"os/exec"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
 )
 
 // Adversarial review ADV-spv (2026-11-04), not a frozen test. The FROST
@@ -121,4 +124,102 @@ func TestFrostSendDoesNotHoldTheLockWhileMining(t *testing.T) {
 	}
 	cancelFirst()
 	<-first
+}
+
+// The FROST Bridge binding a node binds through TbtcChain and a base
+// contract wrapper send from the same operator key at the same moment. Each
+// must get its own nonce: both are mined.
+func TestFrostSendSharesTheOperatorNonceWithBaseSends(t *testing.T) {
+	client, key := frostSendAnvil(t)
+	id, err := client.ChainID(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutex := &sync.Mutex{}
+	nonces := ethutil.NewNonceManager(client, key.Address)
+	tc := &TbtcChain{
+		baseChain:     &baseChain{key: key, chainID: id, ethClient: client, nonceManager: nonces, transactionMutex: mutex},
+		bridgeAddress: common.HexToAddress("0x000000000000000000000000000000000000b51d"),
+	}
+	frost, err := tc.frostRedemptionChain(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Both senders meet after choosing their nonce and before submitting,
+	// or proceed alone after 300 ms when the other cannot run concurrently.
+	var arrived sync.WaitGroup
+	arrived.Add(2)
+	meet := func() {
+		arrived.Done()
+		all := make(chan struct{})
+		go func() { arrived.Wait(); close(all) }()
+		select {
+		case <-all:
+		case <-time.After(300 * time.Millisecond):
+		}
+	}
+	transfer := frostSendTransfer(client)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	var frostErr, baseErr error
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		frostErr = frost.send(ctx, func(o *bind.TransactOpts) (*types.Transaction, error) {
+			if o.Nonce == nil {
+				n, err := client.PendingNonceAt(ctx, key.Address)
+				if err != nil {
+					return nil, err
+				}
+				o.Nonce = new(big.Int).SetUint64(n)
+			}
+			meet()
+			return transfer(o)
+		})
+	}()
+	go func() {
+		defer wg.Done()
+		// Fixture: the shape of a generated base contract wrapper method
+		// (pkg/chain/ethereum/tbtc/gen/contract): transactionMutex, then the
+		// nonce manager's nonce, submission, IncrementNonce.
+		tx, err := func() (*types.Transaction, error) {
+			mutex.Lock()
+			defer mutex.Unlock()
+			n, err := nonces.CurrentNonce()
+			if err != nil {
+				return nil, err
+			}
+			opts, err := bind.NewKeyedTransactorWithChainID(key.PrivateKey, id)
+			if err != nil {
+				return nil, err
+			}
+			// A different payload: a distinct transaction, not a duplicate.
+			opts.Context, opts.Nonce, opts.Value = ctx, new(big.Int).SetUint64(n), big.NewInt(1)
+			meet()
+			tx, err := transfer(opts)
+			if err == nil {
+				nonces.IncrementNonce()
+			}
+			return tx, err
+		}()
+		if err != nil {
+			baseErr = err
+			return
+		}
+		receipt, err := bind.WaitMined(ctx, client, tx)
+		if err == nil && receipt.Status != types.ReceiptStatusSuccessful {
+			err = fmt.Errorf("base send reverted")
+		}
+		baseErr = err
+	}()
+	wg.Wait()
+	if frostErr != nil || baseErr != nil {
+		t.Fatalf("FROST send and base send raced on one operator nonce: frost=%v base=%v", frostErr, baseErr)
+	}
+	if n := frostSendPending(t, client, key.Address); n != 2 {
+		t.Fatalf("operator account nonce %d after two sends, want 2", n)
+	}
 }

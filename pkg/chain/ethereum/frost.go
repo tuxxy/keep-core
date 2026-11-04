@@ -202,11 +202,7 @@ func (c *FrostChain) Validate(ctx context.Context, epoch uint64, r dkg.Result) (
 	return c.registry.IsResultValid(&bind.CallOpts{Context: ctx}, r, epoch)
 }
 func (c *FrostChain) transact(ctx context.Context, send func(*bind.TransactOpts) (*types.Transaction, error)) error {
-	tx, err := c.tx.submit(ctx, c.key, c.chainID, send)
-	if err != nil {
-		return err
-	}
-	receipt, err := bind.WaitMined(ctx, c.client, tx)
+	_, receipt, err := c.tx.send(ctx, c.client, c.key, c.chainID, send)
 	if err != nil {
 		return err
 	}

@@ -71,7 +71,8 @@ func (tc *TbtcChain) ConnectFrost(
 var _ tbtc.FrostChainConnector = (*TbtcChain)(nil)
 
 // frostTransactor serializes FROST sends with the base contract wrappers,
-// which send from the same operator key.
+// which send from the same operator key, and resubmits them with the base
+// mining waiter.
 func (tc *TbtcChain) frostTransactor() frostTransactor {
 	t := newFrostTransactor()
 	if tc.transactionMutex != nil {
@@ -79,6 +80,9 @@ func (tc *TbtcChain) frostTransactor() frostTransactor {
 	}
 	if tc.nonceManager != nil {
 		t.nonces = tc.nonceManager
+	}
+	if tc.miningWaiter != nil {
+		t.waiter = tc.miningWaiter
 	}
 	return t
 }

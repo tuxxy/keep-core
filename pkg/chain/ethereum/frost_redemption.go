@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
 	binding "github.com/keep-network/keep-core/pkg/chain/ethereum/frostabi"
 	"github.com/keep-network/keep-core/pkg/chain/ethereum/frostbridgeabi"
 	legacy "github.com/keep-network/keep-core/pkg/chain/ethereum/tbtc/gen/abi"
@@ -298,11 +300,7 @@ func (c *FrostRedemptionChain) send(ctx context.Context, call func(*bind.Transac
 	if c.key == nil {
 		return errors.New("read-only FROST redemption chain")
 	}
-	tx, err := c.tx.submit(ctx, c.key, c.chainID, call)
-	if err != nil {
-		return err
-	}
-	receipt, err := bind.WaitMined(ctx, c.client, tx)
+	tx, receipt, err := c.tx.send(ctx, c.client, c.key, c.chainID, call)
 	if err != nil {
 		return err
 	}
@@ -320,41 +318,87 @@ type frostNonces interface {
 
 // frostTransactor submits FROST transactions from the operator key as the
 // base contract wrappers do: the mutex is held only through the nonce choice
-// and submission, never while waiting for mining. TbtcChain binds the FROST
-// adapters to the base chain's transactionMutex and nonce manager, so FROST
-// and legacy sends of the one operator key never pick the same nonce.
+// and submission, never while waiting for mining, and the base mining waiter
+// resubmits an unmined transaction with a higher fee (ForceMining). TbtcChain
+// binds the FROST adapters to the base chain's transactionMutex, nonce
+// manager and mining waiter, so FROST and legacy sends of the one operator
+// key never pick the same nonce and an underpriced FROST transaction never
+// holds that nonce.
 type frostTransactor struct {
 	mutex  *sync.Mutex
 	nonces frostNonces
+	waiter *ethutil.MiningWaiter
 }
 
 func newFrostTransactor() frostTransactor {
 	return frostTransactor{mutex: &sync.Mutex{}}
 }
 
-func (t frostTransactor) submit(ctx context.Context, key *ecdsa.PrivateKey, chainID *big.Int, call func(*bind.TransactOpts) (*types.Transaction, error)) (*types.Transaction, error) {
+func (t frostTransactor) submit(ctx context.Context, key *ecdsa.PrivateKey, chainID *big.Int, call func(*bind.TransactOpts) (*types.Transaction, error)) (*types.Transaction, *bind.TransactOpts, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	opts, err := bind.NewKeyedTransactorWithChainID(key, chainID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	opts.Context = ctx
 	if t.nonces != nil {
 		nonce, err := t.nonces.CurrentNonce()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		opts.Nonce = new(big.Int).SetUint64(nonce)
 	}
 	tx, err := call(opts)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if t.nonces != nil {
 		t.nonces.IncrementNonce()
 	}
-	return tx, nil
+	return tx, opts, nil
+}
+
+// send submits the transaction and waits for the receipt of it or of any
+// resubmission of it. As in base, resubmissions outlive the caller's
+// context: they keep the nonce moving after the caller stops waiting.
+func (t frostTransactor) send(ctx context.Context, client *ethclient.Client, key *ecdsa.PrivateKey, chainID *big.Int, call func(*bind.TransactOpts) (*types.Transaction, error)) (*types.Transaction, *types.Receipt, error) {
+	tx, opts, err := t.submit(ctx, key, chainID, call)
+	if err != nil {
+		return nil, nil, err
+	}
+	var mu sync.Mutex
+	sent := []*types.Transaction{tx}
+	if t.waiter != nil {
+		opts.Nonce = new(big.Int).SetUint64(tx.Nonce())
+		opts.Context = context.WithoutCancel(ctx)
+		go t.waiter.ForceMining(tx, opts, func(o *bind.TransactOpts) (*types.Transaction, error) {
+			again, err := call(o)
+			if err == nil {
+				mu.Lock()
+				sent = append(sent, again)
+				mu.Unlock()
+			}
+			return again, err
+		})
+	}
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		mu.Lock()
+		candidates := append([]*types.Transaction(nil), sent...)
+		mu.Unlock()
+		for _, candidate := range candidates {
+			if receipt, err := client.TransactionReceipt(ctx, candidate.Hash()); err == nil && receipt != nil {
+				return candidate, receipt, nil
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return tx, nil, ctx.Err()
+		case <-ticker.C:
+		}
+	}
 }
 
 func info(i redemption.BitcoinInfo) frostbridgeabi.BitcoinTxInfo {
@@ -436,7 +480,13 @@ func ConnectFrostRedemption(ctx context.Context, config ethereum.Config) (*Frost
 	if err != nil {
 		return nil, err
 	}
-	return NewFrostRedemptionChain(ctx, client, key.PrivateKey, bridge)
+	chain, err := NewFrostRedemptionChain(ctx, client, key.PrivateKey, bridge)
+	if err != nil {
+		return nil, err
+	}
+	// Resubmit as the base contract wrappers do, with the same configuration.
+	chain.tx.waiter = ethutil.NewMiningWaiter(client, config)
+	return chain, nil
 }
 
 // TxProofDifficultyFactor returns the Bridge's proof difficulty factor, as

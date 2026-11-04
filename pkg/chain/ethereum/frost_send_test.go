@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/keep-network/keep-common/pkg/chain/ethereum"
 	"github.com/keep-network/keep-common/pkg/chain/ethereum/ethutil"
 )
 
@@ -221,5 +222,77 @@ func TestFrostSendSharesTheOperatorNonceWithBaseSends(t *testing.T) {
 	}
 	if n := frostSendPending(t, client, key.Address); n != 2 {
 		t.Fatalf("operator account nonce %d after two sends, want 2", n)
+	}
+}
+
+// An underpriced FROST send must not hold the operator nonce: like a base
+// contract wrapper's send, it is resubmitted with a higher fee by the base
+// chain's mining waiter (base config: check interval, max gas fee cap) until
+// it mines, and the operator's next send then mines too.
+func TestFrostSendIsResubmittedAfterAFeeSpike(t *testing.T) {
+	client, key := frostSendAnvil(t, "--no-mining")
+	raw := client.Client()
+	id, err := client.ChainID(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	config := ethereum.Config{MiningCheckInterval: time.Second}
+	config.MaxGasFeeCap.Int = big.NewInt(1e14)
+	tc := &TbtcChain{
+		baseChain: &baseChain{
+			key: key, chainID: id, ethClient: client,
+			nonceManager:     ethutil.NewNonceManager(client, key.Address),
+			miningWaiter:     ethutil.NewMiningWaiter(client, config),
+			transactionMutex: &sync.Mutex{},
+		},
+		bridgeAddress: common.HexToAddress("0x000000000000000000000000000000000000b51d"),
+	}
+	frost, err := tc.frostRedemptionChain(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- frost.send(ctx, frostSendTransfer(client)) }()
+	for deadline := time.Now().Add(5 * time.Second); frostSendPending(t, client, key.Address) < 1; time.Sleep(20 * time.Millisecond) {
+		if time.Now().After(deadline) {
+			t.Fatal("FROST send was never submitted")
+		}
+	}
+
+	// A fee spike: every following block's base fee is 1000 gwei, above
+	// the FROST transaction's fee cap. Blocks are mined every 300 ms.
+	mine := func() error {
+		if err := raw.Call(nil, "anvil_setNextBlockBaseFeePerGas", "0x"+big.NewInt(1e12).Text(16)); err != nil {
+			return err
+		}
+		return raw.Call(nil, "evm_mine")
+	}
+	if err = mine(); err != nil {
+		t.Fatal(err)
+	}
+	stop := make(chan struct{})
+	defer close(stop)
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			case <-time.After(300 * time.Millisecond):
+				_ = mine()
+			}
+		}
+	}()
+
+	if err = <-done; err != nil {
+		t.Fatalf("underpriced FROST send was never resubmitted after the fee spike: %v", err)
+	}
+	// The operator's next, well-priced send mines behind it.
+	if err = frost.send(ctx, func(o *bind.TransactOpts) (*types.Transaction, error) {
+		o.GasFeeCap, o.GasTipCap = big.NewInt(5e12), big.NewInt(1e9)
+		return frostSendTransfer(client)(o)
+	}); err != nil {
+		t.Fatalf("operator's next send did not mine after the FROST send: %v", err)
 	}
 }

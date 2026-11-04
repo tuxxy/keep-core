@@ -30,7 +30,7 @@ type FrostRedemptionChain struct {
 	address common.Address
 	key     *ecdsa.PrivateKey
 	chainID *big.Int
-	txMu    sync.Mutex
+	tx      frostTransactor
 }
 
 func NewFrostRedemptionChain(ctx context.Context, client *ethclient.Client, key *ecdsa.PrivateKey, bridge common.Address) (*FrostRedemptionChain, error) {
@@ -52,7 +52,7 @@ func NewFrostRedemptionChain(ctx context.Context, client *ethclient.Client, key 
 	if !id.IsUint64() {
 		return nil, errors.New("chain ID width")
 	}
-	return &FrostRedemptionChain{client: client, bridge: b, legacy: l, address: bridge, key: key, chainID: id}, nil
+	return &FrostRedemptionChain{client: client, bridge: b, legacy: l, address: bridge, key: key, chainID: id, tx: newFrostTransactor()}, nil
 }
 
 func (c *FrostRedemptionChain) ChainID() uint64  { return c.chainID.Uint64() }
@@ -298,14 +298,7 @@ func (c *FrostRedemptionChain) send(ctx context.Context, call func(*bind.Transac
 	if c.key == nil {
 		return errors.New("read-only FROST redemption chain")
 	}
-	c.txMu.Lock()
-	defer c.txMu.Unlock()
-	opts, err := bind.NewKeyedTransactorWithChainID(c.key, c.chainID)
-	if err != nil {
-		return err
-	}
-	opts.Context = ctx
-	tx, err := call(opts)
+	tx, err := c.tx.submit(ctx, c.key, c.chainID, call)
 	if err != nil {
 		return err
 	}
@@ -317,6 +310,51 @@ func (c *FrostRedemptionChain) send(ctx context.Context, call func(*bind.Transac
 		return fmt.Errorf("FROST redemption transaction %s reverted", tx.Hash())
 	}
 	return nil
+}
+
+// frostNonces is the base chain's nonce manager.
+type frostNonces interface {
+	CurrentNonce() (uint64, error)
+	IncrementNonce() uint64
+}
+
+// frostTransactor submits FROST transactions from the operator key as the
+// base contract wrappers do: the mutex is held only through the nonce choice
+// and submission, never while waiting for mining. TbtcChain binds the FROST
+// adapters to the base chain's transactionMutex and nonce manager, so FROST
+// and legacy sends of the one operator key never pick the same nonce.
+type frostTransactor struct {
+	mutex  *sync.Mutex
+	nonces frostNonces
+}
+
+func newFrostTransactor() frostTransactor {
+	return frostTransactor{mutex: &sync.Mutex{}}
+}
+
+func (t frostTransactor) submit(ctx context.Context, key *ecdsa.PrivateKey, chainID *big.Int, call func(*bind.TransactOpts) (*types.Transaction, error)) (*types.Transaction, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	opts, err := bind.NewKeyedTransactorWithChainID(key, chainID)
+	if err != nil {
+		return nil, err
+	}
+	opts.Context = ctx
+	if t.nonces != nil {
+		nonce, err := t.nonces.CurrentNonce()
+		if err != nil {
+			return nil, err
+		}
+		opts.Nonce = new(big.Int).SetUint64(nonce)
+	}
+	tx, err := call(opts)
+	if err != nil {
+		return nil, err
+	}
+	if t.nonces != nil {
+		t.nonces.IncrementNonce()
+	}
+	return tx, nil
 }
 
 func info(i redemption.BitcoinInfo) frostbridgeabi.BitcoinTxInfo {

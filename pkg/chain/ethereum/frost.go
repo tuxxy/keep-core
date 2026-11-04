@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"sync"
 
 	geth "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -28,7 +27,7 @@ type FrostChain struct {
 	address, bridge, pool common.Address
 	key                   *ecdsa.PrivateKey
 	chainID               *big.Int
-	txMu                  sync.Mutex
+	tx                    frostTransactor
 }
 
 func NewFrostChain(ctx context.Context, client *ethclient.Client, key *ecdsa.PrivateKey, registry, bridge common.Address) (*FrostChain, error) {
@@ -71,7 +70,7 @@ func NewFrostChain(ctx context.Context, client *ethclient.Client, key *ecdsa.Pri
 	if err != nil {
 		return nil, err
 	}
-	return &FrostChain{client: client, registry: r, validator: v, address: registry, bridge: bridge, pool: pool, key: key, chainID: chain}, nil
+	return &FrostChain{client: client, registry: r, validator: v, address: registry, bridge: bridge, pool: pool, key: key, chainID: chain, tx: newFrostTransactor()}, nil
 }
 func (c *FrostChain) Parameters(ctx context.Context) (dkg.Parameters, error) {
 	p := dkg.Parameters{ChainID: new(big.Int).Set(c.chainID), Registry: c.address, Pool: c.pool, Bridge: c.bridge}
@@ -203,14 +202,7 @@ func (c *FrostChain) Validate(ctx context.Context, epoch uint64, r dkg.Result) (
 	return c.registry.IsResultValid(&bind.CallOpts{Context: ctx}, r, epoch)
 }
 func (c *FrostChain) transact(ctx context.Context, send func(*bind.TransactOpts) (*types.Transaction, error)) error {
-	c.txMu.Lock()
-	defer c.txMu.Unlock()
-	opts, err := bind.NewKeyedTransactorWithChainID(c.key, c.chainID)
-	if err != nil {
-		return err
-	}
-	opts.Context = ctx
-	tx, err := send(opts)
+	tx, err := c.tx.submit(ctx, c.key, c.chainID, send)
 	if err != nil {
 		return err
 	}

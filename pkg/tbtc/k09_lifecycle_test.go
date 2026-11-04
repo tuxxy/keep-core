@@ -12,7 +12,8 @@ package tbtc_test
 // Branch stages start from a main-chain snapshot and leave none:
 //
 //	04-drain   -> 07-reservation-timeout
-//	06-restart -> 08-deposit-refund, 09-movement, 10-inactivity, 11-cutover-closure
+//	06-restart -> 08-deposit-refund, 09-movement, 10-inactivity, 11-cutover-closure,
+//	              12-no-inactivity
 //
 // Every stage asserts its outcome from chain state (Bridge, registry) and
 // Bitcoin Core, never from node logs. A stage that fails because production
@@ -27,6 +28,8 @@ import (
 	"fmt"
 	"math/big"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -68,6 +71,7 @@ var k09Stages = []k09Stage{
 	{"09-movement", "06-restart", false, k09Movement},
 	{"10-inactivity", "06-restart", false, k09Inactivity},
 	{"11-cutover-closure", "06-restart", false, k09CutoverClosure},
+	{"12-no-inactivity", "06-restart", false, k09NoInactivity},
 }
 
 // TestK09Lifecycle runs the stages in order. Each subtest's elapsed time
@@ -76,6 +80,15 @@ var k09Stages = []k09Stage{
 func TestK09Lifecycle(t *testing.T) {
 	if frostNodeStart == nil {
 		t.Fatal("K-09: frostNodeStart is unbound: no base node initialisation with FROST configured")
+	}
+	if os.Getenv("K09_RUN_ID") == "" {
+		// This process's own snapshots go with it.
+		t.Cleanup(func() {
+			matches, _ := filepath.Glob(filepath.Join(b6CacheRoot(t), k09StageDir("*")))
+			for _, m := range matches {
+				_ = os.RemoveAll(m)
+			}
+		})
 	}
 	for _, stage := range k09Stages {
 		stage := stage
@@ -203,7 +216,7 @@ func k09Drain(t *testing.T, w *k09World) {
 	if !ok {
 		t.Fatalf("K-09 04-drain: no node swept the FROST wallet's pending incoming output in coordination window %d (exited: %v)%s", window, w.exitedNodes(), w.debugLogs())
 	}
-	tx, err := w.coreTransaction(sweep)
+	tx, err := w.nodeTransaction(sweep)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +254,7 @@ func k09Redemption(t *testing.T, w *k09World) {
 	if len(payment) != 1 {
 		t.Fatalf("K-09 05-redemption: %d distinct node transactions spend the reserved main %s: %v", len(payment), w.facts.MainA, payment)
 	}
-	tx, err := w.coreTransaction(payment[0])
+	tx, err := w.nodeTransaction(payment[0])
 	if err != nil {
 		t.Fatalf("K-09 05-redemption: Core does not hold the nodes' payment %s: %v", payment[0], err)
 	}
@@ -279,16 +292,26 @@ func k09Redemption(t *testing.T, w *k09World) {
 	if w.custody(w.wallet).ActiveReservation != ([32]byte{}) {
 		t.Fatalf("K-09 05-redemption: the wallet still holds an active reservation after the proven payment")
 	}
+	// Still one spender at the stage's end (review N2).
+	if spenders := w.spenders(main); len(spenders) != 1 {
+		t.Fatalf("K-09 05-redemption: %d distinct node transactions spend the reserved main by the stage's end: %v", len(spenders), spenders)
+	}
 }
 
 // --- 06: restart and restore at startup, mid-lifecycle (SC-08) ---------------
 
-// k09Restart: a second legacy source drains into the wallet while the nodes
-// run; every node process is killed (SIGKILL) and restarted on its storage.
+// k09Restart: a second legacy source drains into the wallet; the nodes start,
+// and every node process is killed (SIGKILL) right after startup, before any
+// action (the crash matrix during actions is batch 4's), and restarted on its
+// storage.
 // The restarted nodes sweep the new incoming output with the restored keys
 // (Core accepts only the wallet's signature) and no new DKG runs.
 func k09Restart(t *testing.T, w *k09World) {
 	epoch, err := w.registry.Epoch(&bind.CallOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	began, err := w.admin.BlockNumber(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,13 +326,23 @@ func k09Restart(t *testing.T, w *k09World) {
 	if !ok {
 		t.Fatalf("K-09 06-restart: after every node was killed and restarted, the wallet's incoming output was not swept in window %d: the FROST signers were not restored at startup (exited: %v)%s", window, w.exitedNodes(), w.debugLogs())
 	}
-	tx, err := w.coreTransaction(sweep)
+	tx, err := w.nodeTransaction(sweep)
 	if err != nil {
 		t.Fatal(err)
 	}
 	w.assertMain("06-restart", w.wallet, tx, 0)
 	if after, err := w.registry.Epoch(&bind.CallOpts{}); err != nil || after != epoch {
 		t.Fatalf("K-09 06-restart: the registry epoch went from %d to %d (%v): a DKG ran again", epoch, after, err)
+	}
+	// No node reran a DKG after the restart (review N1): no DKG result was
+	// submitted during the stage.
+	it, err := w.registry.FilterResultSubmitted(&bind.FilterOpts{Start: began}, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer it.Close()
+	if it.Next() {
+		t.Fatalf("K-09 06-restart (SC-08): a DKG result for epoch %d was submitted after the restart: the nodes reran the DKG instead of restoring their keys", it.Event.Epoch)
 	}
 }
 
@@ -375,10 +408,13 @@ func k09ReservationTimeout(t *testing.T, w *k09World) {
 
 // k09DepositRefund: a depositor builds a FROST deposit to the wallet (the Go
 // template, checked against C-05's), pays it from Core and reveals it; the
-// SPV maintainer reserves it (C-10). In the next deposit-sweep window the
-// nodes must sweep it (Core: the funding output spent). Then, with no
-// operator involved, the depositor refunds an unswept deposit after its
-// locktime from public C-05 data and the refund key; Core accepts it.
+// SPV maintainer reserves it (C-10). Two hours of chain time later (base's
+// deposit age), in the next deposit-sweep window the nodes must sweep it with
+// the wallet's main, and the maintainer proves the sweep: the Bridge's main
+// is the sweep output and the depositor is credited once
+// (assertDepositSweep). Then, with no operator involved, the depositor
+// refunds an unswept deposit after its locktime from public C-05 data and the
+// refund key; Core accepts it.
 func k09DepositRefund(t *testing.T, w *k09World) {
 	stage := "08-deposit-refund"
 	params, err := w.legacy.DepositParameters(&bind.CallOpts{})
@@ -442,20 +478,26 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, nil)
 	terms, construction, funding := newDeposit(1, amount)
 	before := w.custody(w.wallet)
+	oldMain := k09ParseOutpoint(t, w.facts.MainA)
+	depositor := crypto.PubkeyToAddress(w.adminKey.PublicKey)
+	balance := w.bankBalance(depositor)
+	// Base sweeps a deposit only once it is DEPOSIT_MIN_AGE (2 hours) old
+	// in chain time (WalletProposalValidator) and by the wall clock
+	// (tbtcpg); the chain clock lags the wall clock (legacyChainLag), so
+	// only chain time moves here (review B2).
+	w.increaseTime(2*3600 + 1)
 	w.startNodes()
 	w.enterWindow(window)
-	swept := false
-	for deadline := time.Now().Add(k09Action); time.Now().Before(deadline) && !swept; time.Sleep(100 * time.Millisecond) {
-		swept = !w.coreUnspent(funding)
-	}
+	sweeps := w.awaitSpenders(funding, k09Action)
 	sweepFailure := ""
-	if !swept {
-		sweepFailure = fmt.Sprintf("FINDING K-09 %s (SC-04): the nodes did not sweep the revealed, reserved FROST deposit %s in deposit-sweep window %d: Core still holds the funding output unspent (custody value %d unchanged: %v)", stage, k09Outpoint(funding), window, before.Value, w.custody(w.wallet).Value == before.Value)
+	if len(sweeps) == 0 {
+		sweepFailure = fmt.Sprintf("FINDING K-09 %s (SC-04): the nodes did not sweep the revealed, reserved FROST deposit %s in deposit-sweep window %d: no node spent the funding output (Core holds it unspent: %v)", stage, k09Outpoint(funding), window, w.coreUnspent(funding))
+	} else {
+		w.assertDepositSweep(stage, sweeps, funding, oldMain, before, balance, amount, uint64(params.DepositTreasuryFeeDivisor))
 	}
-
 	// Independent refund: the depositor alone, after the locktime. If the
 	// nodes swept the first deposit, the refund is of a second one.
-	if swept {
+	if len(sweeps) > 0 {
 		w.killAll()
 		terms, construction, funding = newDeposit(2, amount)
 	}
@@ -481,6 +523,64 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 	}
 	if sweepFailure != "" {
 		t.Fatal(sweepFailure)
+	}
+}
+
+// assertDepositSweep is the deposit sweep oracle (review B1): exactly one
+// node transaction spends the deposit, together with the wallet's main
+// (D13: custody stays in the main); the maintainer proves it on the Bridge;
+// the Bridge's main is the sweep's wallet output; the depositor is credited
+// exactly the deposit minus the treasury fee and the sweep fee; and the
+// deposit's C-10 reservation is released.
+func (w *k09World) assertDepositSweep(stage string, sweeps []string, funding, oldMain bitcoin.TransactionOutpoint, before frostbridgeabi.FrostCustodyWallet, balance *big.Int, amount, divisor uint64) {
+	t := w.t
+	t.Helper()
+	if len(sweeps) != 1 {
+		t.Fatalf("K-09 %s: %d distinct node transactions spend the deposit %s: %v", stage, len(sweeps), k09Outpoint(funding), sweeps)
+	}
+	tx, err := w.nodeTransaction(sweeps[0])
+	if err != nil {
+		t.Fatalf("K-09 %s: Core does not hold the nodes' sweep %s: %v", stage, sweeps[0], err)
+	}
+	spendsMain := false
+	for _, input := range tx.Inputs {
+		spendsMain = spendsMain || *input.Outpoint == oldMain
+	}
+	if !spendsMain {
+		t.Fatalf("K-09 %s (D13): the deposit sweep %s does not spend the wallet's main %s", stage, sweeps[0], k09Outpoint(oldMain))
+	}
+	w.mineCore(tx)
+	w.send("maintainer: deposit sweep proof", func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return w.bridge.SubmitFrostDepositSweepProof(o, frostbridgeabi.FrostDepositSweepSweep{
+			WalletId: w.wallet.id, Transaction: k09TxInfo(tx), Proof: k09Proof(w.btc.proof(t, tx.Hash())), IncludeMain: true,
+		})
+	})
+	walletScript, err := bitcoin.PayToTaproot(w.wallet.q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, outputs := -1, int64(0)
+	for i, output := range tx.Outputs {
+		outputs += output.Value
+		if bytes.Equal(output.PublicKeyScript, walletScript) {
+			index = i
+		}
+	}
+	if index < 0 || len(tx.Outputs) != 1 {
+		t.Fatalf("K-09 %s: the deposit sweep %s has %d outputs and pays the wallet at index %d; want one output to the wallet", stage, sweeps[0], len(tx.Outputs), index)
+	}
+	w.assertMain(stage, w.wallet, tx, uint32(index))
+	fee := int64(before.Value) + int64(amount) - outputs
+	treasury := uint64(0)
+	if divisor != 0 {
+		treasury = amount / divisor
+	}
+	credited := new(big.Int).Sub(w.bankBalance(crypto.PubkeyToAddress(w.adminKey.PublicKey)), balance)
+	if want := int64(amount) - int64(treasury) - fee; fee < 0 || credited.Cmp(big.NewInt(want)) != 0 {
+		t.Fatalf("K-09 %s (SC-04): the depositor was credited %s, want deposit %d - treasury fee %d - sweep fee %d = %d", stage, credited, amount, treasury, fee, want)
+	}
+	if reserved, err := w.bridge.FrostDepositReserved(&bind.CallOpts{}, deposit.OutpointKey(funding)); err != nil || reserved {
+		t.Fatalf("K-09 %s (C-10): the swept deposit is still reserved (%v)", stage, err)
 	}
 }
 
@@ -526,7 +626,9 @@ func (w *k09World) coreAfter(unix int64) {
 // Bridge moves its funds (MovingFunds). The nodes make wallet B. In the next
 // moving-funds windows the nodes must commit A's targets
 // (submitFrostMovingFundsCommitment: "any seat" of A), as base's
-// MovingFundsTask commits a legacy wallet's.
+// MovingFundsTask commits a legacy wallet's, and sign and broadcast the
+// movement; the maintainer proves it, A's custody moves out and B holds the
+// pending incoming output (review B3).
 func k09Movement(t *testing.T, w *k09World) {
 	parameters, err := w.legacy.WalletParameters(&bind.CallOpts{})
 	if err != nil {
@@ -545,18 +647,73 @@ func k09Movement(t *testing.T, w *k09World) {
 	if !ok {
 		t.Fatalf("K-09 09-movement: the target wallet B (epoch %d) did not reach ReadyUnfunded (exited: %v)", epoch, w.exitedNodes())
 	}
-	for i := 0; i < 2; i++ {
+	committed := uint64(0)
+	for i := 0; i < 2 && committed == 0; i++ {
 		window := w.nextSweepWindow()
 		if !w.waitBlock(window+tbtc.B6CoordinationActivePhaseBlocks+40, k09Action) {
 			t.Fatal("setup: the chain did not advance")
 		}
 		time.Sleep(2 * time.Second)
-		if n := w.movementCommitments(w.wallet); n > 0 {
-			t.Logf("K-09 09-movement: A's targets committed by window %d", window)
-			return
+		if w.movementCommitments(w.wallet) > 0 {
+			committed = window
 		}
 	}
-	t.Fatalf("FINDING K-09 09-movement (SC-06): wallet A has been in MovingFunds for two moving-funds coordination windows with the eligible FROST target B (%x) ready, and no node committed its targets: the Bridge emitted no FrostMovingFundsCommitted for A. The node dispatches no FROST-to-FROST movement (exited: %v)", b.label, w.exitedNodes())
+	if committed == 0 {
+		t.Fatalf("FINDING K-09 09-movement (SC-06): wallet A has been in MovingFunds for two moving-funds coordination windows with the eligible FROST target B (%x) ready, and no node committed its targets: the Bridge emitted no FrostMovingFundsCommitted for A. The node dispatches no FROST-to-FROST movement (exited: %v)", b.label, w.exitedNodes())
+	}
+	// The movement itself (review B3): the nodes sign and broadcast A's main
+	// to B; the maintainer proves it; B holds the pending incoming output.
+	main := k09ParseOutpoint(t, w.facts.MainA)
+	movements := w.awaitSpenders(main, k09Action)
+	if len(movements) == 0 {
+		t.Fatalf("FINDING K-09 09-movement (SC-06): A's targets were committed by window %d, but no node broadcast the movement of A's main %s (exited: %v)", committed, w.facts.MainA, w.exitedNodes())
+	}
+	if len(movements) != 1 {
+		t.Fatalf("K-09 09-movement: %d distinct node transactions spend A's main: %v", len(movements), movements)
+	}
+	tx, err := w.nodeTransaction(movements[0])
+	if err != nil {
+		t.Fatalf("K-09 09-movement: Core does not hold the nodes' movement %s: %v", movements[0], err)
+	}
+	w.mineCore(tx)
+	w.send("maintainer: movement proof", func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return w.bridge.SubmitFrostMovingFundsProof(o, w.wallet.id, k09TxInfo(tx), k09Proof(w.btc.proof(t, tx.Hash())))
+	})
+	if n := w.movementsCompleted(w.wallet); n != 1 {
+		t.Fatalf("K-09 09-movement: the Bridge recorded %d completed movements of A after the proof, want 1", n)
+	}
+	target, err := bitcoin.PayToTaproot(b.q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tx.Outputs) != 1 || !bytes.Equal(tx.Outputs[0].PublicKeyScript, target) || tx.Outputs[0].Value >= w.facts.MainAValue {
+		t.Fatalf("K-09 09-movement: the movement %s does not move A's main (%d sat) to B in one output less its fee", movements[0], w.facts.MainAValue)
+	}
+	incoming, err := w.bridge.FrostIncoming(&bind.CallOpts{}, deposit.OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: tx.Hash()}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if incoming.State != 1 || incoming.Target != b.id || incoming.Value != uint64(tx.Outputs[0].Value) {
+		t.Fatalf("K-09 09-movement: B holds no pending incoming output for the proven movement (state %d, target %x, value %d)", incoming.State, incoming.Target, incoming.Value)
+	}
+	if c := w.custody(w.wallet); c.Value != 0 {
+		t.Fatalf("K-09 09-movement: A still holds custody %d after the proven movement", c.Value)
+	}
+}
+
+// movementsCompleted counts the Bridge's FrostMovingFundsCompleted events
+// for the wallet.
+func (w *k09World) movementsCompleted(wallet b6Wallet) int {
+	it, err := w.bridge.FilterFrostMovingFundsCompleted(&bind.FilterOpts{}, [][32]byte{wallet.id}, nil)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	defer it.Close()
+	n := 0
+	for it.Next() {
+		n++
+	}
+	return n
 }
 
 // movementCommitments counts the Bridge's FrostMovingFundsCommitted events
@@ -574,24 +731,25 @@ func (w *k09World) movementCommitments(wallet b6Wallet) int {
 	return n
 }
 
-// --- 10: heartbeat and inactivity (SC-07) ------------------------------------
+// --- 10 and 12: heartbeat and inactivity (SC-07) ----------------------------
 
-// k09Inactivity: operator 2's node (two of the five seats) is down for good.
-// In base, every window whose seeded checklist holds a heartbeat runs one; a
-// heartbeat with fewer than 70 of 100 members active counts as a failure,
-// and after K09HeartbeatFailureThreshold consecutive failures the active
-// members claim inactivity on chain. With 3 of 5 seats active (60%) the
-// heartbeat still signs (threshold 3) but fails the activity rule, read
-// absolutely or in proportion. The stage enters that many heartbeat windows
-// (chosen from their seed blocks, with a live leader) and then requires the
-// Bridge's inactivity claim for the wallet.
-func k09Inactivity(t *testing.T, w *k09World) {
-	nonce, err := w.bridge.FrostInactivityNonce(&bind.CallOpts{}, w.wallet.id)
-	if err != nil {
-		t.Fatal(err)
-	}
+// k09HeartbeatWindows is how many heartbeat windows the inactivity stages
+// enter: base claims after K09HeartbeatFailureThreshold consecutive failed
+// heartbeats, and a heartbeat whose signing is cancelled by its deadline is
+// not counted, so a correct node may need more than three windows (review
+// F3 risk). Both stages enter the same number.
+const k09HeartbeatWindows = 6
+
+// k09Heartbeats starts the nodes with operator down's node killed for good
+// and enters up to k09HeartbeatWindows windows whose seeded checklist (base's
+// rule, derived here independently) holds a heartbeat and whose leader is
+// live, stopping at the first inactivity claim for the wallet. It returns the
+// claims seen and the windows entered.
+func (w *k09World) heartbeats(down int) ([]*frostbridgeabi.FrostBridgeFrostOperatorInactivityNotified, int) {
+	t := w.t
+	t.Helper()
 	heartbeat := func(window uint64) bool {
-		if w.operatorIndex(w.expectedLeader(w.wallet, window)) == 2 {
+		if w.operatorIndex(w.expectedLeader(w.wallet, window)) == down {
 			return false
 		}
 		header, err := w.admin.HeaderByNumber(context.Background(), new(big.Int).SetUint64(window-tbtc.B6CoordinationSafeBlockShift))
@@ -602,27 +760,109 @@ func k09Inactivity(t *testing.T, w *k09World) {
 		rng := rand.New(rand.NewSource(int64(binary.BigEndian.Uint64(seed[:8]))))
 		return rng.Float64() < tbtc.K09HeartbeatProbability
 	}
-	started := false
-	for i := 0; i < tbtc.K09HeartbeatFailureThreshold; i++ {
+	for i := 0; i < k09HeartbeatWindows; i++ {
 		window := w.chooseWindowWithin(tbtc.B6CoordinationFrequencyBlocks, heartbeat, 400)
-		if !started {
+		if i == 0 {
 			w.startNodes()
-			w.kill(2)
-			started = true
+			w.kill(down)
 		}
 		w.enterWindow(window)
 		if !w.waitBlock(window+tbtc.B6CoordinationActivePhaseBlocks+40, k09Action) {
 			t.Fatal("setup: the chain did not advance")
 		}
 		time.Sleep(3 * time.Second)
+		if claims := w.inactivityClaims(); len(claims) > 0 {
+			return claims, i + 1
+		}
 	}
 	time.Sleep(5 * time.Second)
+	return w.inactivityClaims(), k09HeartbeatWindows
+}
+
+// inactivityClaims returns the Bridge's FrostOperatorInactivityNotified
+// events for the wallet.
+func (w *k09World) inactivityClaims() []*frostbridgeabi.FrostBridgeFrostOperatorInactivityNotified {
+	it, err := w.bridge.FilterFrostOperatorInactivityNotified(&bind.FilterOpts{}, [][32]byte{w.wallet.id})
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	defer it.Close()
+	var claims []*frostbridgeabi.FrostBridgeFrostOperatorInactivityNotified
+	for it.Next() {
+		claims = append(claims, it.Event)
+	}
+	return claims
+}
+
+// seatsOf returns the wallet's seats (1-based, ascending) held by operator i.
+func (w *k09World) seatsOf(i int) []uint16 {
+	address := crypto.PubkeyToAddress(w.keys[i-1].PublicKey)
+	var seats []uint16
+	for seat, operator := range w.wallet.operators {
+		if operator == address {
+			seats = append(seats, uint16(seat+1))
+		}
+	}
+	return seats
+}
+
+// k09Inactivity: operator 2's node (two of the five seats) is down for good.
+// In base, every window whose seeded checklist holds a heartbeat runs one; a
+// heartbeat with fewer than 70% of the wallet's seats active counts as a
+// failure (DECISIONS.md, 2026-11-04: base's 70 of 100), and after
+// K09HeartbeatFailureThreshold consecutive failures the active members claim
+// inactivity on chain with heartbeatFailed set. With 3 of 5 seats active
+// (60%) the heartbeat still signs (threshold 3) but fails the activity rule.
+// The claim must name exactly operator 2's seats and operator, with
+// heartbeatFailed, and move the Live wallet's funds (review B4).
+func k09Inactivity(t *testing.T, w *k09World) {
+	nonce, err := w.bridge.FrostInactivityNonce(&bind.CallOpts{}, w.wallet.id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	claims, windows := w.heartbeats(2)
+	if len(claims) == 0 {
+		after, _ := w.bridge.FrostInactivityNonce(&bind.CallOpts{}, w.wallet.id)
+		t.Fatalf("FINDING K-09 10-inactivity (SC-07): after %d heartbeat windows with operator 2's node (two seats) down, no inactivity claim reached the Bridge (nonce %d, was %d): the node dispatches no FROST heartbeat or inactivity claim (exited: %v)", windows, after, nonce, w.exitedNodes())
+	}
+	claim := claims[0]
+	operator := crypto.PubkeyToAddress(w.keys[1].PublicKey)
+	sameOperator := len(claim.InactiveOperators) > 0
+	for _, o := range claim.InactiveOperators {
+		sameOperator = sameOperator && o == operator
+	}
+	if fmt.Sprint(claim.InactiveSeats) != fmt.Sprint(w.seatsOf(2)) || !sameOperator || !claim.HeartbeatFailed {
+		t.Fatalf("K-09 10-inactivity (SC-07): the inactivity claim names seats %v and operators %v with heartbeatFailed %v; want operator 2's seats %v, operator %s, heartbeatFailed true", claim.InactiveSeats, claim.InactiveOperators, claim.HeartbeatFailed, w.seatsOf(2), operator)
+	}
+	if len(claims) != 1 {
+		t.Fatalf("K-09 10-inactivity: %d inactivity claims for one outage, want 1", len(claims))
+	}
+	if w.walletEvents(w.wallet, k09MovingFundsEvent) == 0 {
+		t.Fatal("K-09 10-inactivity: the heartbeat-failure claim did not move the Live wallet's funds")
+	}
+}
+
+// k09NoInactivity (review B5): operator 3's node (one seat) is down for
+// good, so 4 of 5 seats (80%) are active: each heartbeat passes the 70%
+// activity rule and no claim may follow in the same number of heartbeat
+// windows. Base's absolute rule (70 active members) applied to a 5-seat
+// wallet would fail every heartbeat and claim: this stage catches it.
+func k09NoInactivity(t *testing.T, w *k09World) {
+	nonce, err := w.bridge.FrostInactivityNonce(&bind.CallOpts{}, w.wallet.id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	claims, windows := w.heartbeats(3)
 	after, err := w.bridge.FrostInactivityNonce(&bind.CallOpts{}, w.wallet.id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if after == nonce {
-		t.Fatalf("FINDING K-09 10-inactivity (SC-07): after %d heartbeat windows with operator 2's node (two seats) down, no inactivity claim reached the Bridge (nonce still %d): the node dispatches no FROST heartbeat or inactivity claim (exited: %v)", tbtc.K09HeartbeatFailureThreshold, nonce, w.exitedNodes())
+	if len(claims) > 0 || after != nonce {
+		var seats []uint16
+		if len(claims) > 0 {
+			seats = claims[0].InactiveSeats
+		}
+		t.Fatalf("K-09 12-no-inactivity (SC-07): with 4 of 5 seats active (80%%, above the 70%% activity threshold), an inactivity claim reached the Bridge within %d heartbeat windows (claimed seats %v; nonce %d -> %d)", windows, seats, nonce, after)
 	}
 }
 

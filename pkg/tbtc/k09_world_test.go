@@ -99,7 +99,8 @@ type k09World struct {
 func k09StageDir(stage string) string {
 	run := os.Getenv("K09_RUN_ID")
 	if run == "" {
-		run = "local"
+		// A plain go test runs every stage in this one process.
+		run = fmt.Sprintf("local-%d", os.Getpid())
 	}
 	return "k09-" + run + "-" + stage
 }
@@ -457,6 +458,20 @@ func (w *k09World) assertMain(stage string, wallet b6Wallet, tx *bitcoin.Transac
 		t.Fatalf("K-09 %s: Core has not confirmed %s (%d confirmations, %v)", stage, tx.Hash().Hex(bitcoin.ReversedByteOrder), confirmations, err)
 	}
 	w.facts.MainA, w.facts.MainAValue = k09Outpoint(outpoint), tx.Outputs[index].Value
+}
+
+// nodeTransaction reads a node's transaction from Core. The node's recorder
+// logs a broadcast just before Core receives it, so the read is retried for
+// up to 5 s; a transaction Core never accepted fails it.
+func (w *k09World) nodeTransaction(txid string) (*bitcoin.Transaction, error) {
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		tx, err := w.coreTransaction(txid)
+		if err == nil || time.Now().After(deadline) {
+			return tx, err
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
 }
 
 // increaseTime moves Ethereum time forward and mines a block.

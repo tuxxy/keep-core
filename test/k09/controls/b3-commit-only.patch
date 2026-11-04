@@ -1,0 +1,19 @@
+diff --git a/pkg/tbtc/k09_lifecycle_test.go b/pkg/tbtc/k09_lifecycle_test.go
+index 0be81ec19..4df88721b 100644
+--- a/pkg/tbtc/k09_lifecycle_test.go
++++ b/pkg/tbtc/k09_lifecycle_test.go
+@@ -647,6 +647,14 @@ func k09Movement(t *testing.T, w *k09World) {
+ 	if !ok {
+ 		t.Fatalf("K-09 09-movement: the target wallet B (epoch %d) did not reach ReadyUnfunded (exited: %v)", epoch, w.exitedNodes())
+ 	}
++	// PROBE b3-commit-only: seat 1 (operator 1) commits A to B.
++	if opts, err := bind.NewKeyedTransactorWithChainID(w.keys[0], w.chainID); err != nil {
++		t.Fatal(err)
++	} else if tx, err := w.bridge.SubmitFrostMovingFundsCommitment(opts, w.wallet.id, 1, [][20]byte{b.label}); err != nil {
++		t.Fatal(err)
++	} else if receipt, err := legacyWaitMined(context.Background(), w.admin, tx); err != nil || receipt.Status != 1 {
++		t.Fatalf("PROBE commitment not mined: %v", err)
++	}
+ 	committed := uint64(0)
+ 	for i := 0; i < 2 && committed == 0; i++ {
+ 		window := w.nextSweepWindow()

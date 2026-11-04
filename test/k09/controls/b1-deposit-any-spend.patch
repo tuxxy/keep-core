@@ -1,0 +1,21 @@
+diff --git a/pkg/tbtc/k09_lifecycle_test.go b/pkg/tbtc/k09_lifecycle_test.go
+index 0be81ec19..d658c78a5 100644
+--- a/pkg/tbtc/k09_lifecycle_test.go
++++ b/pkg/tbtc/k09_lifecycle_test.go
+@@ -489,6 +489,16 @@ func k09DepositRefund(t *testing.T, w *k09World) {
+ 	w.startNodes()
+ 	w.enterWindow(window)
+ 	sweeps := w.awaitSpenders(funding, k09Action)
++	if len(sweeps) == 0 { // PROBE b1-deposit-any-spend
++		destination, _ := bitcoin.PayToWitnessPublicKeyHash([20]byte{0xb1})
++		wrong, err := deposit.Refund(terms, construction, funding, destination, 1_000, refundKey)
++		if err != nil {
++			t.Fatal(err)
++		}
++		w.coreAfter(int64(terms.RefundLocktime) + 7200)
++		w.btc.mine(t, wrong)
++		sweeps = []string{wrong.Hash().Hex(bitcoin.ReversedByteOrder)}
++	}
+ 	sweepFailure := ""
+ 	if len(sweeps) == 0 {
+ 		sweepFailure = fmt.Sprintf("FINDING K-09 %s (SC-04): the nodes did not sweep the revealed, reserved FROST deposit %s in deposit-sweep window %d: no node spent the funding output (Core holds it unspent: %v)", stage, k09Outpoint(funding), window, w.coreUnspent(funding))

@@ -10,6 +10,7 @@ import (
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/deposit"
+	"github.com/keep-network/keep-core/pkg/frost/dkg"
 	"github.com/keep-network/keep-core/pkg/frost/enforcement"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
@@ -333,6 +334,10 @@ func (fw *frostWallet) heartbeat(
 	if err != nil {
 		return fmt.Errorf("cannot read readiness-certified seats: [%w]", err)
 	}
+	selected := frostHeartbeatSeats(fw.descriptor, certified, coordinationBlock)
+	if len(selected) == 0 {
+		return fmt.Errorf("no certified seats reach the threshold")
+	}
 	base := fw.signingConfig()
 	runner := &enforcement.Runner{
 		Chain: fn.bridge,
@@ -344,7 +349,7 @@ func (fw *frostWallet) heartbeat(
 		Base: signing.HeartbeatConfig{
 			Journal:      fw.journal,
 			Worker:       fn.config.Worker,
-			Selected:     certified,
+			Selected:     selected,
 			Transport:    base.Transport,
 			LocalRegtest: base.LocalRegtest,
 			HoldPresence: true,
@@ -411,6 +416,24 @@ func (fw *frostWallet) heartbeat(
 	defer cancelClaim()
 
 	return fw.claimInactivity(claimCtx, actionLogger, claimer, claim)
+}
+
+// frostHeartbeatSeats is the heartbeat signers of a window: a threshold of
+// whole operators of the readiness-certified seats, rotated per window as
+// base rotates a signing attempt's participants (redemption.SelectSeats).
+// A heartbeat then signs whenever its selected operators are present, so a
+// healthy heartbeat ends a failure streak even with a certified seat absent
+// (review B2); every other certified seat still joins for presence.
+func frostHeartbeatSeats(
+	descriptor dkg.Descriptor,
+	certified []uint16,
+	coordinationBlock uint64,
+) []uint16 {
+	return redemption.SelectSeats(
+		descriptor,
+		certified,
+		coordinationBlock/coordinationFrequencyBlocks,
+	)
 }
 
 // claimInactivity signs the claim with the local seats outside it, exchanges

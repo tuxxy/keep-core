@@ -423,10 +423,6 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	header, err := w.admin.HeaderByNumber(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 	revealAhead := uint64(params.DepositRevealAheadPeriod)
 	refundKey, _ := btcec.PrivKeyFromBytes(common.LeftPadBytes([]byte{0x09, 0x08}, 32))
 	// The depositor has its own key: the admin is also the Bridge's
@@ -449,6 +445,12 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 		t.Fatal(err)
 	}
 	newDeposit := func(blinding byte, amount uint64) (deposit.Terms, deposit.Construction, bitcoin.TransactionOutpoint) {
+		// The refund locktime is set from the chain's time now: the stage
+		// moves chain time (base's deposit age) between two deposits.
+		header, err := w.admin.HeaderByNumber(context.Background(), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		terms := deposit.Terms{
 			ChainID: w.chainID, Bridge: w.legacyWorld.bridge, BitcoinGenesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash),
 			WalletID: w.wallet.id, DescriptorHash: registered.DescriptorHash, Depositor: depositor,

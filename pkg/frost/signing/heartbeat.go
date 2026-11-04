@@ -87,6 +87,12 @@ type HeartbeatConfig struct {
 	Transport  TransportFactory
 	// LocalRegtest is the same deployment gate as the executor's.
 	LocalRegtest bool
+	// HoldPresence keeps the attempt's transport open until the context
+	// ends, after a signature too, and reads the presence then: every seat
+	// that joined the heartbeat within its period is present, as base counts
+	// every member that announced itself for the heartbeat, not only the
+	// signers that finished first.
+	HoldPresence bool
 }
 
 // HeartbeatSigner signs one heartbeat through the guarded engine.
@@ -96,6 +102,21 @@ type HeartbeatSigner struct {
 	encoded  []byte
 	engine   frost.Engine
 	boundary func(string) error // Test-only replay hook. Nil in normal use.
+}
+
+// ErrNotSelected reports a heartbeat this host joined for presence only: none
+// of its seats is selected to sign.
+var ErrNotSelected = errors.New("no local seat selected to sign the heartbeat")
+
+func selectsAny(selected, locals []uint16) bool {
+	for _, seat := range locals {
+		for _, s := range selected {
+			if seat == s {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 type HeartbeatResult struct {
@@ -230,6 +251,13 @@ func (h *HeartbeatSigner) Run(ctx context.Context) (HeartbeatResult, error) {
 		sort.Slice(seats, func(i, j int) bool { return seats[i] < seats[j] })
 		return seats
 	}
+	if !selectsAny(h.config.Selected, locals) {
+		// A host with no selected seat (outside the readiness certificate)
+		// never signs, but it is present: it holds the attempt's transport
+		// open until the heartbeat ends, so the signers see its seats.
+		<-ctx.Done()
+		return HeartbeatResult{Present: present()}, ErrNotSelected
+	}
 	request := frost.SigningRequest{Group: frost.Group{Roster: append([]uint16(nil), key.Candidate.Roster...), Threshold: key.Candidate.Threshold, Quorum: uint16(len(key.Candidate.Roster)), Epoch: key.Candidate.Epoch}, LocalSeats: locals, Selected: append([]uint16(nil), h.config.Selected...), Attempt: attempt, Key: key, Message: digest, Authorization: append([]byte(nil), h.encoded...)}
 	providers := frost.Providers{Transport: tr, Store: h.config.Journal, Acceptance: signingAcceptance{}, SigningAuthorization: heartbeatAuthorization{h, request}}
 	raw, err := h.engine.Sign(ctx, request, providers)
@@ -252,6 +280,9 @@ func (h *HeartbeatSigner) Run(ctx context.Context) (HeartbeatResult, error) {
 	}
 	if err = h.step("after-signature"); err != nil {
 		return HeartbeatResult{Present: present()}, err
+	}
+	if h.config.HoldPresence {
+		<-ctx.Done()
 	}
 	return HeartbeatResult{Done: done, Present: present()}, nil
 }

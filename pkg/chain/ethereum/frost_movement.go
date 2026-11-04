@@ -297,7 +297,15 @@ func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error
 		return [32]byte{}, false, err
 	}
 	if !registered {
-		return [32]byte{}, false, nil
+		// A committed legacy target is always known to the legacy registry,
+		// so a label unknown to both is never a legacy answer. Without the
+		// registration log (for example a short log index) it is unknown:
+		// fail closed rather than pay P2WPKH(label) to a FROST target.
+		return [32]byte{}, false, fmt.Errorf(
+			"wallet [0x%x] is unknown to the legacy registry and has no "+
+				"FROST registration log",
+			label,
+		)
 	}
 	scheme, err := tc.frostBridge.WalletScheme(nil, label)
 	if err != nil {

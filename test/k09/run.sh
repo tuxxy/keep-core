@@ -11,8 +11,9 @@
 # registry stack).
 #
 # Every stage runs in its own process of one test binary. A stage starts from
-# the snapshot its predecessor left in this run (K09_RUN_ID), so the stages
-# run in order and a stage whose predecessor failed reports itself blocked.
+# the snapshot its predecessor left in this run (K09_RUN_ID), so a stage
+# runs only after its predecessor and reports itself blocked if that failed.
+# Independent branches run in two lanes.
 # The manifest records every stage with its result and times; "accepted" is
 # true only with every stage passing, zero skips and a clean tree. After the
 # run, a fixed-pattern secret scan covers everything in the evidence
@@ -50,21 +51,21 @@ trap cleanup EXIT
 
 go test -c -o "$evidence/tbtc.test" ./pkg/tbtc
 
-stages=(01-legacy 02-upgrade 03-dkg 04-drain 05-redemption 06-restart
-  07-reservation-timeout 08-deposit-refund 09-movement 10-inactivity 11-cutover-closure)
 results="$evidence/cases.tsv"
 : > "$results"
-start=$(date +%s)
-for stage in "${stages[@]}"; do
-  status=0
+
+# run_stage <stage> <test GOMAXPROCS>
+run_stage() {
+  local stage=$1 procs=$2 status=0
   mkdir -p "$scratch/$stage"
-  # Two Go cores for the test process; each of the three node processes runs
-  # at GOMAXPROCS 1 (shared rules: at most 8 Go cores).
-  K09_RUN_ID=$run_id B6_DEBUG_DIR="$scratch/$stage" GOMAXPROCS=2 \
-    "$evidence/tbtc.test" -test.v -test.count=1 -test.timeout 10m \
+  # Each of the three node processes runs at GOMAXPROCS 1; with the test
+  # process at <procs>, a lane uses procs+3 Go cores (shared rules: at most
+  # 8 in all, so two lanes run the test process at 1).
+  K09_RUN_ID=$run_id B6_DEBUG_DIR="$scratch/$stage" GOMAXPROCS=$procs \
+    "$evidence/tbtc.test" -test.v -test.count=1 -test.timeout 12m \
     -test.run "^TestK09Lifecycle\$/^${stage}\$" > "$evidence/$stage.log" 2>&1 || status=$?
   printf '%s\t%s.log\t%s\n' "$stage" "$stage" "$status" >> "$results"
-  grep -E -- '^\s*--- (PASS|FAIL|SKIP)' "$evidence/$stage.log" | sed "s|^|$stage: |" || true
+  grep -E -- '^\s*--- (PASS|FAIL|SKIP): TestK09Lifecycle/' "$evidence/$stage.log" | sed "s|^|$stage: |" || true
   # Node logs only (never stores).
   for log in "$scratch/$stage"/case-*/operator-*/node.log; do
     [ -f "$log" ] || continue
@@ -73,7 +74,26 @@ for stage in "${stages[@]}"; do
     cp "$log" "$evidence/nodes/$stage/$operator.log"
   done
   rm -rf "${scratch:?}/$stage"
-done
+}
+# run_lane <stage>...: the stages in order, two lanes at a time.
+run_lane() {
+  for stage in "$@"; do run_stage "$stage" 1; done
+}
+
+start=$(date +%s)
+# The main chain to 04 alone; 07 (from 04) beside 05 and 06; then the
+# branches of 06 in two lanes. A stage's predecessor always finished first.
+for stage in 01-legacy 02-upgrade 03-dkg 04-drain; do run_stage "$stage" 2; done
+run_lane 07-reservation-timeout &
+lane=$!
+run_lane 05-redemption 06-restart
+wait "$lane"
+# The two heartbeat stages are the longest (up to six heartbeat windows,
+# about one window in 16): 12 has a lane of its own.
+run_lane 12-no-inactivity &
+lane=$!
+run_lane 10-inactivity 08-deposit-refund 09-movement 11-cutover-closure
+wait "$lane"
 wall=$(( $(date +%s) - start ))
 
 # Leftover processes: none may survive a stage.
@@ -113,15 +133,21 @@ if baseline["manifest"].get("tbtcCommit") != "40a11d1dcdcf82d3962e430067cfe3f97b
 if upgraded["manifest"].get("tbtcCommit") != env["LEGACY_UPGRADED_COMMIT"]:
     problems.append("the upgraded build is not LEGACY_UPGRADED_COMMIT")
 stages = []
-for line in open(os.path.join(evidence, "cases.tsv")):
-    stage, log, status = line.rstrip("\n").split("\t")
+order = ["01-legacy", "02-upgrade", "03-dkg", "04-drain", "05-redemption", "06-restart", "07-reservation-timeout",
+         "08-deposit-refund", "09-movement", "10-inactivity", "11-cutover-closure", "12-no-inactivity"]
+rows = sorted((line.rstrip("\n").split("\t") for line in open(os.path.join(evidence, "cases.tsv"))), key=lambda r: order.index(r[0]))
+if [r[0] for r in rows] != order:
+    problems.append("the run did not invoke every intended stage exactly once")
+for stage, log, status in rows:
     text = open(os.path.join(evidence, log)).read()
     skipped = "--- SKIP" in text
     ran = re.search(r"--- PASS: TestK09Lifecycle/" + re.escape(stage) + r" ", text) is not None
     result = "pass" if status == "0" and ran and not skipped else ("skip" if skipped else "fail")
     times = {k: float(v) for k, v in re.findall(r"K09TIME stage=\S+ (load|body|save)=([0-9.]+)", text)}
     elapsed = re.search(r"--- \w+: TestK09Lifecycle/" + re.escape(stage) + r" \(([0-9.]+)s\)", text)
-    failure = [l.strip() for l in text.splitlines() if re.search(r"k09_\w+_test\.go:\d+: (FINDING|K-09|setup)", l)]
+    # Every test-file message but timing and phase lines (review N5).
+    failure = [l.strip() for l in text.splitlines()
+               if re.search(r"_test\.go:\d+: ", l) and not re.search(r"K09TIME|b6 phase", l)]
     stages.append({"stage": stage, "log": log, "logSha256": sha(os.path.join(evidence, log)), "exit": int(status),
                    "result": result, "seconds": float(elapsed.group(1)) if elapsed else None, "phases": times,
                    "failure": failure[:3]})

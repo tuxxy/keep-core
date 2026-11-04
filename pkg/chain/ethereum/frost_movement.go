@@ -278,6 +278,35 @@ func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error
 	if legacy.State != uint8(tbtc.StateUnknown) {
 		return [32]byte{}, false, nil
 	}
+	// A label unknown to both registries is also what a legacy node sees for
+	// a wallet whose key it holds before the Bridge registers it (base
+	// registers the signer before the DKG result is published). Only a label
+	// the Bridge logged as a FROST registration is asked walletScheme, so a
+	// pre-FROST Bridge is never asked a FROST-only function (D14), as in
+	// FrostDrainState.
+	registrations, err := tc.frostBridgeEvents.FilterFrostWalletRegistered(
+		&bind.FilterOpts{},
+		nil,
+		[][20]byte{label},
+	)
+	if err != nil {
+		return [32]byte{}, false, err
+	}
+	registered, err := anyLog(registrations)
+	if err != nil {
+		return [32]byte{}, false, err
+	}
+	if !registered {
+		// A committed legacy target is always known to the legacy registry,
+		// so a label unknown to both is never a legacy answer. Without the
+		// registration log (for example a short log index) it is unknown:
+		// fail closed rather than pay P2WPKH(label) to a FROST target.
+		return [32]byte{}, false, fmt.Errorf(
+			"wallet [0x%x] is unknown to the legacy registry and has no "+
+				"FROST registration log",
+			label,
+		)
+	}
 	scheme, err := tc.frostBridge.WalletScheme(nil, label)
 	if err != nil {
 		return [32]byte{}, false, err

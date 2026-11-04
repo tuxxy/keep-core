@@ -365,7 +365,9 @@ func k09ReservationTimeout(t *testing.T, w *k09World) {
 	}
 	w.startNodes()
 	request := w.requestRedemption(w.wallet, redeemer, 2*parameters.RedemptionDustThreshold)
-	w.nextSigningWindow(tbtc.B6CoordinationFrequencyBlocks)
+	// Batch 6's window entry: the nodes go down right after the
+	// reservation, before they pay, so no slower signing blocks here.
+	w.nextWindow()
 	if _, ok := w.reservationAdmitted(w.wallet, request, k09Action); !ok {
 		t.Fatalf("K-09 07-reservation-timeout: the nodes did not reserve the redemption (exited: %v)%s", w.exitedNodes(), w.debugLogs())
 	}

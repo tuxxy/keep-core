@@ -103,6 +103,8 @@ func processFrostCoordinationResult(
 			result.window.coordinationBlock,
 			startBlock,
 		)
+	case *MovingFundsProposal:
+		err = wallet.moveFunds(ctx, actionLogger, proposal, startBlock)
 	default:
 		err = fmt.Errorf("no FROST handler for action")
 	}
@@ -163,56 +165,22 @@ func (fw *frostWallet) sweepIncoming(
 		FinalityBlocks: frostFinalityBlocks,
 		RoundBlocks:    frostMovementRoundBlocks,
 	}
-	mover := &movement.Mover{
-		Chain:     fn.bridge,
-		Authority: &movement.Authority{View: view},
-		Lock:      &deposit.MainLock{Journal: fw.journal},
-		Ledger:    redemption.Ledger{Journal: fw.journal},
-		Schedule:  schedule,
-		Wallet:    fw.descriptor,
-		Base:      fw.signingConfig(),
-	}
+	mover := fw.mover(view, schedule)
 
-	// Rounds are derived from block numbers, so every member joins the same
-	// round; a member outside a round's selection waits for the next one.
-	for round := (startBlock + schedule.RoundBlocks - 1) / schedule.RoundBlocks; ctx.Err() == nil; round++ {
-		roundStart := round*schedule.RoundBlocks + schedule.FinalityBlocks
-		if err := fn.node.waitForBlockHeight(ctx, roundStart); err != nil {
+	return fw.signInRounds(
+		ctx,
+		actionLogger,
+		"incoming sweep",
+		plan,
+		startBlock,
+		schedule,
+		mover.Eligible,
+		func(ctx context.Context, round uint64) error {
+			_, err := mover.Sign(ctx, plan, round)
 			return err
-		}
-
-		eligible, err := mover.Eligible(ctx, round)
-		if err != nil {
-			return err
-		}
-		if !eligible {
-			continue
-		}
-
-		roundCtx, cancelRound := fn.roundContext(ctx, roundStart+schedule.RoundBlocks)
-		_, err = mover.Sign(roundCtx, plan, round)
-		cancelRound()
-		if err != nil {
-			actionLogger.Warnf("incoming sweep round [%d] failed: [%v]", round, err)
-			if fw.planSpent(ctx, plan) {
-				actionLogger.Infof("incoming sweep inputs are spent; nothing left to sign")
-				return nil
-			}
-			continue
-		}
-
-		if err := mover.Broadcast(ctx, plan); err != nil {
-			return fmt.Errorf("cannot broadcast incoming sweep: [%w]", err)
-		}
-
-		actionLogger.Infof(
-			"incoming sweep [%s] broadcast",
-			bitcoin.Hash(plan.BitcoinTransactionHash()).Hex(bitcoin.ReversedByteOrder),
-		)
-		return nil
-	}
-
-	return ctx.Err()
+		},
+		func(ctx context.Context) error { return mover.Broadcast(ctx, plan) },
+	)
 }
 
 // roundContext bounds one signing round: it ends at the round's end block

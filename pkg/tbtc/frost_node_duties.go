@@ -9,6 +9,7 @@ import (
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/deposit"
+	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
 )
@@ -153,6 +154,88 @@ func (fw *frostWallet) sweepDeposits(
 		},
 		func(ctx context.Context) error { return sweeper.Broadcast(ctx, plan) },
 	)
+}
+
+// moveFunds signs and broadcasts the movement of the wallet's main to the
+// targets of its recorded commitment (K-07, C-06) that the window's leader
+// proposed, as a legacy wallet's members execute moving funds. Every member
+// plans the movement from the recorded commitment with the proposal's exact
+// fee (D19) and checks that it pays the proposed targets in order.
+func (fw *frostWallet) moveFunds(
+	ctx context.Context,
+	actionLogger log.StandardLogger,
+	proposal *MovingFundsProposal,
+	startBlock uint64,
+) error {
+	fn := fw.node
+	if proposal.MovingFundsTxFee == nil || proposal.MovingFundsTxFee.Sign() <= 0 ||
+		!proposal.MovingFundsTxFee.IsInt64() {
+		return fmt.Errorf("proposed moving funds transaction fee must be positive")
+	}
+
+	view := &movement.View{
+		Chain:  fn.bridge,
+		Policy: movement.Policy{FinalityBlocks: frostFinalityBlocks},
+	}
+	planner := movement.Planner{
+		View:               view,
+		Bitcoin:            fn.bitcoin,
+		Wallet:             fw.descriptor,
+		Genesis:            fn.genesis,
+		FeeRate:            1,
+		MaximumSatPerVByte: frostMaximumSatPerVByte,
+		Fee:                proposal.MovingFundsTxFee.Int64(),
+	}
+	plan, err := planner.Movement(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot plan movement: [%w]", err)
+	}
+	targets := plan.MovementTargets()
+	if len(targets) != len(proposal.TargetWallets) {
+		return fmt.Errorf("movement plan does not pay the proposed targets")
+	}
+	for i, target := range targets {
+		if target.Label != proposal.TargetWallets[i] {
+			return fmt.Errorf("movement plan does not pay the proposed targets")
+		}
+	}
+
+	schedule := redemption.Schedule{
+		FinalityBlocks: frostFinalityBlocks,
+		RoundBlocks:    frostMovementRoundBlocks,
+	}
+	mover := fw.mover(view, schedule)
+
+	return fw.signInRounds(
+		ctx,
+		actionLogger,
+		"movement",
+		plan,
+		startBlock,
+		schedule,
+		mover.Eligible,
+		func(ctx context.Context, round uint64) error {
+			_, err := mover.Sign(ctx, plan, round)
+			return err
+		},
+		func(ctx context.Context) error { return mover.Broadcast(ctx, plan) },
+	)
+}
+
+// mover is the wallet's K-07 mover over the given view.
+func (fw *frostWallet) mover(
+	view *movement.View,
+	schedule redemption.Schedule,
+) *movement.Mover {
+	return &movement.Mover{
+		Chain:     fw.node.bridge,
+		Authority: &movement.Authority{View: view},
+		Lock:      &deposit.MainLock{Journal: fw.journal},
+		Ledger:    redemption.Ledger{Journal: fw.journal},
+		Schedule:  schedule,
+		Wallet:    fw.descriptor,
+		Base:      fw.signingConfig(),
+	}
 }
 
 // signInRounds signs a plan in rounds derived from block numbers, from the

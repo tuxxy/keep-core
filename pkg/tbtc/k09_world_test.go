@@ -396,6 +396,38 @@ const (
 	k09ClosedEvent      = "FrostWalletClosed(bytes32)"
 )
 
+// k09SigningBlockInterval is the block interval after a window's active
+// phase. Batch 6's enterWindow mines a block every 50 ms, so a 10-block
+// FROST signing round (frostMovementRoundBlocks; 2 minutes in production)
+// lasts 0.5 s. Under machine load (load average about 8) every round of a
+// 5-seat signing was cancelled before it completed and the action expired
+// (stage 06 failed 2 of 3 runs, 2026-11-04). With 150 ms blocks a round lasts
+// 1.5 s, still far shorter than in production.
+const k09SigningBlockInterval = 150 * time.Millisecond
+
+// enterSigning is batch 6's enterWindow, then, once the window's active
+// phase is over, blocks every k09SigningBlockInterval.
+func (w *k09World) enterSigning(window uint64) {
+	t := w.t
+	t.Helper()
+	w.enterWindow(window)
+	if !w.waitBlock(window+tbtc.B6CoordinationActivePhaseBlocks, 10*time.Second) {
+		t.Fatal("setup: the chain did not advance")
+	}
+	w.stopMining()
+	w.stopMining = w.mineEvery(k09SigningBlockInterval)
+}
+
+// nextSigningWindow chooses the next coordination window that is a multiple
+// of every and enters it as enterSigning does (batch 6's nextWindow and
+// nextSweepWindow, with the slower blocks after the active phase).
+func (w *k09World) nextSigningWindow(every uint64) uint64 {
+	w.t.Helper()
+	window := w.chooseWindow(every, nil)
+	w.enterSigning(window)
+	return window
+}
+
 // seedWindow returns the next coordination window (at least 40 blocks ahead)
 // whose seed block, window-32, accept takes, leaving the chain at that seed
 // block with the miner stopped; enterWindow continues. Rules such as base's

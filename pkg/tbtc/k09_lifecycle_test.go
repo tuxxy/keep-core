@@ -211,7 +211,7 @@ func k09Drain(t *testing.T, w *k09World) {
 		t.Fatalf("K-09 04-drain: after the proven drain the legacy source is in state %d, want Closing", source.State)
 	}
 	w.startNodes()
-	w.enterWindow(window)
+	w.enterSigning(window)
 	sweep, ok := w.settleIncoming(w.wallet, drain, k09Action)
 	if !ok {
 		t.Fatalf("K-09 04-drain: no node swept the FROST wallet's pending incoming output in coordination window %d (exited: %v)%s", window, w.exitedNodes(), w.debugLogs())
@@ -245,7 +245,7 @@ func k09Redemption(t *testing.T, w *k09World) {
 	gross := 2 * parameters.RedemptionDustThreshold
 	w.startNodes()
 	request := w.requestRedemption(w.wallet, redeemer, gross)
-	w.nextWindow()
+	w.nextSigningWindow(tbtc.B6CoordinationFrequencyBlocks)
 	reserved, ok := w.reservationAdmitted(w.wallet, request, k09Action)
 	if !ok {
 		t.Fatalf("K-09 05-redemption: the nodes did not reserve the pending FROST redemption within a coordination window (exited: %v)%s", w.exitedNodes(), w.debugLogs())
@@ -321,7 +321,7 @@ func k09Restart(t *testing.T, w *k09World) {
 	w.startNodes()
 	w.killAll()
 	w.startNodes()
-	w.enterWindow(window)
+	w.enterSigning(window)
 	sweep, ok := w.settleIncoming(w.wallet, drain, k09Action)
 	if !ok {
 		t.Fatalf("K-09 06-restart: after every node was killed and restarted, the wallet's incoming output was not swept in window %d: the FROST signers were not restored at startup (exited: %v)%s", window, w.exitedNodes(), w.debugLogs())
@@ -365,7 +365,7 @@ func k09ReservationTimeout(t *testing.T, w *k09World) {
 	}
 	w.startNodes()
 	request := w.requestRedemption(w.wallet, redeemer, 2*parameters.RedemptionDustThreshold)
-	w.nextWindow()
+	w.nextSigningWindow(tbtc.B6CoordinationFrequencyBlocks)
 	if _, ok := w.reservationAdmitted(w.wallet, request, k09Action); !ok {
 		t.Fatalf("K-09 07-reservation-timeout: the nodes did not reserve the redemption (exited: %v)%s", w.exitedNodes(), w.debugLogs())
 	}
@@ -506,7 +506,7 @@ func k09DepositRefund(t *testing.T, w *k09World) {
 	// only chain time moves here (review B2).
 	w.increaseTime(2*3600 + 1)
 	w.startNodes()
-	w.enterWindow(window)
+	w.enterSigning(window)
 	sweeps := w.awaitSpenders(funding, k09Action)
 	sweepFailure := ""
 	if len(sweeps) == 0 {
@@ -686,7 +686,7 @@ func k09Movement(t *testing.T, w *k09World) {
 	}
 	committed := uint64(0)
 	for i := 0; i < 2 && committed == 0; i++ {
-		window := w.nextSweepWindow()
+		window := w.nextSigningWindow(4 * tbtc.B6CoordinationFrequencyBlocks)
 		if !w.waitBlock(window+tbtc.B6CoordinationActivePhaseBlocks+40, k09Action) {
 			t.Fatal("setup: the chain did not advance")
 		}
@@ -803,7 +803,7 @@ func (w *k09World) heartbeats(down int) ([]*frostbridgeabi.FrostBridgeFrostOpera
 			w.startNodes()
 			w.kill(down)
 		}
-		w.enterWindow(window)
+		w.enterSigning(window)
 		if !w.waitBlock(window+tbtc.B6CoordinationActivePhaseBlocks+40, k09Action) {
 			t.Fatal("setup: the chain did not advance")
 		}

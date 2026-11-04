@@ -1,8 +1,8 @@
 diff --git a/pkg/tbtc/k09_lifecycle_test.go b/pkg/tbtc/k09_lifecycle_test.go
-index 0be81ec19..35aca2a92 100644
+index 7b19134e8..ca9dd90b7 100644
 --- a/pkg/tbtc/k09_lifecycle_test.go
 +++ b/pkg/tbtc/k09_lifecycle_test.go
-@@ -820,7 +820,8 @@ func k09Inactivity(t *testing.T, w *k09World) {
+@@ -857,7 +857,8 @@ func k09Inactivity(t *testing.T, w *k09World) {
  	if err != nil {
  		t.Fatal(err)
  	}
@@ -12,7 +12,7 @@ index 0be81ec19..35aca2a92 100644
  	if len(claims) == 0 {
  		after, _ := w.bridge.FrostInactivityNonce(&bind.CallOpts{}, w.wallet.id)
  		t.Fatalf("FINDING K-09 10-inactivity (SC-07): after %d heartbeat windows with operator 2's node (two seats) down, no inactivity claim reached the Bridge (nonce %d, was %d): the node dispatches no FROST heartbeat or inactivity claim (exited: %v)", windows, after, nonce, w.exitedNodes())
-@@ -928,3 +929,39 @@ func k09CutoverClosure(t *testing.T, w *k09World) {
+@@ -965,3 +966,39 @@ func k09CutoverClosure(t *testing.T, w *k09World) {
  	// Wallet A holds custody: it can close only after a movement (09-movement).
  	t.Logf("K-09 11-cutover-closure: wallet A's closure obligations: %b (custody %d)", w.obligations(w.wallet), w.custody(w.wallet).Value)
  }

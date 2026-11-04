@@ -1,10 +1,10 @@
 diff --git a/pkg/tbtc/k09_lifecycle_test.go b/pkg/tbtc/k09_lifecycle_test.go
-index 0be81ec19..d658c78a5 100644
+index 7b19134e8..f98d7b540 100644
 --- a/pkg/tbtc/k09_lifecycle_test.go
 +++ b/pkg/tbtc/k09_lifecycle_test.go
-@@ -489,6 +489,16 @@ func k09DepositRefund(t *testing.T, w *k09World) {
+@@ -508,6 +508,16 @@ func k09DepositRefund(t *testing.T, w *k09World) {
  	w.startNodes()
- 	w.enterWindow(window)
+ 	w.enterSigning(window)
  	sweeps := w.awaitSpenders(funding, k09Action)
 +	if len(sweeps) == 0 { // PROBE b1-deposit-any-spend
 +		destination, _ := bitcoin.PayToWitnessPublicKeyHash([20]byte{0xb1})

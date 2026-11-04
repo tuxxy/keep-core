@@ -98,9 +98,9 @@ func (p Planner) eligible(ctx context.Context, at uint64, key [32]byte) (Record,
 
 // Synced reports whether the wallet is synced between chains at block at
 // (base keep-core EnsureWalletSyncedBetweenChains): no deposit revealed for
-// it in [from, at] is unswept on the Bridge while its funding output is
-// spent on Bitcoin, in a block or the mempool, before its refund locktime by
-// median-time-past. Before the locktime only the wallet can spend a deposit,
+// it in [from, at] and reserved under C-10 (its funding proven on Bitcoin)
+// is unswept on the Bridge while its funding output is spent on Bitcoin, in
+// a block or the mempool, before its refund locktime by median-time-past. Before the locktime only the wallet can spend a deposit,
 // so such a spend is a sweep the Bridge has not proven yet; a second sweep
 // planned beside it, for example a deposit-only sweep of a wallet with no
 // main, could never be proven once the first proof sets the main. A
@@ -124,6 +124,18 @@ func (p Planner) Synced(ctx context.Context, from, at uint64) error {
 			return err
 		}
 		if r.RevealedAt == 0 || r.SweptAt != 0 || r.Terms.WalletID != p.walletID() {
+			continue
+		}
+		// Only a C-10 reserved deposit counts: its funding was proven on
+		// Bitcoin by SPV at reservation, the reservation is never released,
+		// and only reserved deposits are ever swept. A reveal whose funding
+		// never reached Bitcoin, or is not confirmed yet, is never reserved
+		// and cannot block the wallet (review R1).
+		reserved, err := p.Chain.Reserved(ctx, at, reveal.Outpoint)
+		if err != nil {
+			return err
+		}
+		if !reserved {
 			continue
 		}
 		unspent, err := p.Funding.Unspent(ctx, bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(r.FundingTransactionHash), OutputIndex: r.FundingOutputIndex})

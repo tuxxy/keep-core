@@ -25,8 +25,8 @@ source <env with SNOWFALL_WORKER*, LEGACY_*>; test/k09/run.sh <new evidence dir>
 | 11-cutover-closure | 06 | cutover to FrostOnly; legacy creation refused; nodes still make a FROST wallet; legacy source and an empty FROST wallet close |
 | 12-no-inactivity | 06 | operator 3 (one seat, 80% active, above the 70% threshold) down for the same six heartbeat windows: no claim |
 
-Stages 01-04 run in order; 07 runs beside 05-06; after 06, 12 runs in one lane
-and 10, 08, 09, 11 in another (each test process at GOMAXPROCS 1, so two lanes
+Stages 01-04 run in order; 07 runs beside 05-06; after 06, 12 and 09 run in
+one lane and 10, 08, 11 in another (each test process at GOMAXPROCS 1, so two lanes
 use 8 Go cores). Wrong-behaviour probes for 08-10 and 12:
 `test/k09/controls/README.md`.
 

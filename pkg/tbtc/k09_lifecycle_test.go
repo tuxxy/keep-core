@@ -743,7 +743,7 @@ const k09HeartbeatWindows = 6
 // k09Heartbeats starts the nodes with operator down's node killed for good
 // and enters up to k09HeartbeatWindows windows whose seeded checklist (base's
 // rule, derived here independently) holds a heartbeat and whose leader is
-// live, stopping at the first inactivity claim for the wallet. It returns the
+// live (seedWindow), stopping at the first inactivity claim for the wallet. It returns the
 // claims seen and the windows entered.
 func (w *k09World) heartbeats(down int) ([]*frostbridgeabi.FrostBridgeFrostOperatorInactivityNotified, int) {
 	t := w.t
@@ -761,7 +761,7 @@ func (w *k09World) heartbeats(down int) ([]*frostbridgeabi.FrostBridgeFrostOpera
 		return rng.Float64() < tbtc.K09HeartbeatProbability
 	}
 	for i := 0; i < k09HeartbeatWindows; i++ {
-		window := w.chooseWindowWithin(tbtc.B6CoordinationFrequencyBlocks, heartbeat, 400)
+		window := w.seedWindow(heartbeat)
 		if i == 0 {
 			w.startNodes()
 			w.kill(down)

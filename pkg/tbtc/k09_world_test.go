@@ -396,28 +396,53 @@ const (
 	k09ClosedEvent      = "FrostWalletClosed(bytes32)"
 )
 
-// chooseWindowWithin is batch 6's chooseWindow (frozen, 32 candidates) with
-// a larger candidate limit, for rules that accept about one window in 16
-// (base's heartbeat probability).
-func (w *k09World) chooseWindowWithin(every uint64, accept func(window uint64) bool, limit int) uint64 {
+// seedWindow returns the next coordination window (at least 40 blocks ahead)
+// whose seed block, window-32, accept takes, leaving the chain at that seed
+// block with the miner stopped; enterWindow continues. Rules such as base's
+// heartbeat draw accept about one window in 16, and jumping whole windows
+// until one does grew the chain past 150,000 blocks, at which Anvil slowed
+// to tens of seconds per window and dropped its connection (measured
+// 2026-11-04). Instead the seed block is re-drawn in place: it is mined with
+// a fresh timestamp under an evm_snapshot, and reverted until accept takes
+// its hash. The harness chooses only which block content the chain gets, as
+// chooseWindow chooses which window; the nodes read the kept block as any
+// other.
+func (w *k09World) seedWindow(accept func(window uint64) bool) uint64 {
 	t := w.t
 	t.Helper()
 	w.stopMining()
-	for candidates := 0; candidates < limit; candidates++ {
-		head, err := w.admin.BlockNumber(context.Background())
-		if err != nil {
+	head, err := w.admin.BlockNumber(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	every := tbtc.B6CoordinationFrequencyBlocks
+	window := (head/every + 1) * every
+	if window-head < 40 {
+		window += every
+	}
+	seed := window - tbtc.B6CoordinationSafeBlockShift
+	w.mineTo(seed - 1)
+	parent, err := w.admin.HeaderByNumber(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for try := uint64(1); try <= 400; try++ {
+		var snapshot string
+		if err := w.admin.Client().Call(&snapshot, "evm_snapshot"); err != nil {
 			t.Fatal(err)
 		}
-		window := (head/every + 1) * every
-		if window-head < 40 {
-			window += every
+		if err := w.admin.Client().Call(nil, "evm_mine", map[string]uint64{"timestamp": parent.Time + try}); err != nil {
+			t.Fatal(err)
 		}
-		w.mineTo(window - tbtc.B6CoordinationSafeBlockShift)
-		if accept == nil || accept(window) {
+		if accept(window) {
 			return window
 		}
+		var reverted bool
+		if err := w.admin.Client().Call(&reverted, "evm_revert", snapshot); err != nil || !reverted {
+			t.Fatalf("setup: evm_revert: %v", err)
+		}
 	}
-	t.Fatalf("setup: no acceptable coordination window in %d candidates", limit)
+	t.Fatalf("setup: no acceptable seed block for window %d in 400 draws", window)
 	return 0
 }
 

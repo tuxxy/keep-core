@@ -88,11 +88,10 @@ run_lane 07-reservation-timeout &
 lane=$!
 run_lane 05-redemption 06-restart
 wait "$lane"
-# The two heartbeat stages are the longest (up to six heartbeat windows,
-# about one window in 16): 12 has a lane of its own.
-run_lane 12-no-inactivity &
+# The two heartbeat stages (six heartbeat windows each) go in separate lanes.
+run_lane 12-no-inactivity 09-movement &
 lane=$!
-run_lane 10-inactivity 08-deposit-refund 09-movement 11-cutover-closure
+run_lane 10-inactivity 08-deposit-refund 11-cutover-closure
 wait "$lane"
 wall=$(( $(date +%s) - start ))
 

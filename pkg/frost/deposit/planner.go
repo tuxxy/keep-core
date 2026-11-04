@@ -34,7 +34,11 @@ type Planner struct {
 	// FeeRate sizes the sweep; MaximumSatPerVByte is its ceiling. Both are
 	// D-09 inputs (local test values, OPEN).
 	FeeRate, MaximumSatPerVByte int64
-	boundary                    func(string) error
+	// Fee, when set, is the exact sweep fee: the coordinated proposal's,
+	// which every operator signs (D19). It replaces the FeeRate sizing; the
+	// plan still checks it against the rate ceiling and each deposit's cap.
+	Fee      int64
+	boundary func(string) error
 }
 
 func (p Planner) step(name string) error {
@@ -238,6 +242,10 @@ func (p Planner) Build(ctx context.Context, at uint64, keys [][32]byte, resoluti
 	if p.FeeRate > bitcoin.MaxSatoshi/vsize {
 		return nil, errors.New("sweep fee overflow")
 	}
-	tx.Outputs[0].Value = total - p.FeeRate*vsize
+	fee := p.FeeRate * vsize
+	if p.Fee > 0 {
+		fee = p.Fee
+	}
+	tx.Outputs[0].Value = total - fee
 	return signing.NewSweepPlan(signing.SweepProposal{Wallet: p.Wallet, BitcoinGenesis: p.Genesis, Generation: custody.Generation, StateVersion: custody.StateVersion, Vault: vault, Main: main, Resolution: resolution, Deposits: deposits, MaximumSatPerVByte: p.MaximumSatPerVByte, Transaction: tx})
 }

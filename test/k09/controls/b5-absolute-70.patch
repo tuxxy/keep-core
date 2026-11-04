@@ -1,0 +1,54 @@
+diff --git a/pkg/tbtc/k09_lifecycle_test.go b/pkg/tbtc/k09_lifecycle_test.go
+index 7b19134e8..60c54932c 100644
+--- a/pkg/tbtc/k09_lifecycle_test.go
++++ b/pkg/tbtc/k09_lifecycle_test.go
+@@ -889,7 +889,8 @@ func k09NoInactivity(t *testing.T, w *k09World) {
+ 	if err != nil {
+ 		t.Fatal(err)
+ 	}
+-	claims, windows := w.heartbeats(3)
++	w.probeClaim(w.seatsOf(3), true) // PROBE b5-absolute-70
++	claims, windows := w.inactivityClaims(), 0
+ 	after, err := w.bridge.FrostInactivityNonce(&bind.CallOpts{}, w.wallet.id)
+ 	if err != nil {
+ 		t.Fatal(err)
+@@ -965,3 +966,39 @@ func k09CutoverClosure(t *testing.T, w *k09World) {
+ 	// Wallet A holds custody: it can close only after a movement (09-movement).
+ 	t.Logf("K-09 11-cutover-closure: wallet A's closure obligations: %b (custody %d)", w.obligations(w.wallet), w.custody(w.wallet).Value)
+ }
++
++// PROBE (scratch only): a wrong inactivity claim sent as a wrong node would,
++// signed by threshold seats outside the claimed set with their operator keys.
++func (w *k09World) probeClaim(seats []uint16, failed bool) {
++	t := w.t
++	nonce, err := w.bridge.FrostInactivityNonce(&bind.CallOpts{}, w.wallet.id)
++	if err != nil {
++		t.Fatal(err)
++	}
++	digest, err := w.bridge.FrostInactivityClaimDigest(&bind.CallOpts{}, w.wallet.id, nonce, seats, failed)
++	if err != nil {
++		t.Fatal(err)
++	}
++	hash := crypto.Keccak256([]byte("\x19Ethereum Signed Message:\n32"), digest[:])
++	claimed := map[uint16]bool{}
++	for _, s := range seats {
++		claimed[s] = true
++	}
++	var signing []uint16
++	var signatures []byte
++	for seat := uint16(1); seat <= k09Seats && len(signing) < k09Threshold; seat++ {
++		if claimed[seat] {
++			continue
++		}
++		key := w.keys[w.operatorIndex(w.wallet.operators[seat-1])-1]
++		signature, err := crypto.Sign(hash, key)
++		if err != nil {
++			t.Fatal(err)
++		}
++		signature[64] += 27
++		signing, signatures = append(signing, seat), append(signatures, signature...)
++	}
++	w.send("PROBE wrong inactivity claim", func(o *bind.TransactOpts) (*types.Transaction, error) {
++		return w.bridge.NotifyFrostOperatorInactivity(o, w.wallet.id, nonce, seats, failed, signing, signatures)
++	})
++}

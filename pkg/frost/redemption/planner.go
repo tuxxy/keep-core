@@ -279,6 +279,43 @@ func (p Planner) Build(ctx context.Context, at uint64, ids [][32]byte) (*signing
 	return plan, requests, nil
 }
 
+// ErrRebuildMismatch reports a rebuilt plan that is not the admitted one.
+var ErrRebuildMismatch = errors.New("rebuilt FROST plan is not the admitted one")
+
+// Rebuild rebuilds the payment plan of an admitted reservation from chain
+// state just before its admission, for a member that holds no retained plan
+// (it did not attest): the admitted requests, in order, with the fee their
+// admitted payouts imply (gross minus treasury fee minus payout, summed).
+// The plan is returned only if its commitment is the admitted intent
+// commitment, so no other transaction can be signed for the reservation.
+// The planner's Fee is ignored.
+func (p Planner) Rebuild(ctx context.Context, intent Intent) (*signing.Plan, error) {
+	if intent.AdmittedBlock == 0 || len(intent.RequestIDs) == 0 || len(intent.RequestIDs) != len(intent.Payouts) {
+		return nil, errors.New("admitted reservation has no rebuildable record")
+	}
+	at := intent.AdmittedBlock - 1
+	fee := int64(0)
+	for i, id := range intent.RequestIDs {
+		r, err := p.Chain.Request(ctx, at, id)
+		if err != nil {
+			return nil, err
+		}
+		if r.Gross > uint64(bitcoin.MaxSatoshi) || r.TreasuryFee+intent.Payouts[i] > r.Gross {
+			return nil, fmt.Errorf("%w: admitted payout %d exceeds request %x", ErrRebuildMismatch, i, id)
+		}
+		fee += int64(r.Gross - r.TreasuryFee - intent.Payouts[i])
+	}
+	p.Fee = fee
+	plan, _, err := p.Build(ctx, at, intent.RequestIDs)
+	if err != nil {
+		return nil, err
+	}
+	if plan.Commitment() != intent.Certificate.IntentCommitment {
+		return nil, ErrRebuildMismatch
+	}
+	return plan, nil
+}
+
 // Validate is the attester's independent check of a proposed plan against
 // chain state at one block: every request is funded and redeemable, every net
 // value equals gross minus treasury fee minus a capped share, the shares sum

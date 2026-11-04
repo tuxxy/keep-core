@@ -20,6 +20,7 @@ import (
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
+	"github.com/keep-network/keep-core/pkg/frost/store"
 	"github.com/keep-network/keep-core/pkg/net"
 	"github.com/keep-network/keep-core/pkg/protocol/group"
 )
@@ -95,6 +96,25 @@ func processFrostCoordinationResult(
 			proposal,
 			result.window.coordinationBlock,
 		)
+	case *DepositSweepProposal:
+		err = wallet.sweepDeposits(
+			ctx,
+			actionLogger,
+			proposal,
+			result.window.coordinationBlock,
+			startBlock,
+		)
+	case *MovingFundsProposal:
+		err = wallet.moveFunds(ctx, actionLogger, proposal, startBlock)
+	case *HeartbeatProposal:
+		err = wallet.heartbeat(
+			ctx,
+			actionLogger,
+			proposal,
+			result.window.coordinationBlock,
+			startBlock,
+			expiryBlock,
+		)
 	default:
 		err = fmt.Errorf("no FROST handler for action")
 	}
@@ -155,56 +175,22 @@ func (fw *frostWallet) sweepIncoming(
 		FinalityBlocks: frostFinalityBlocks,
 		RoundBlocks:    frostMovementRoundBlocks,
 	}
-	mover := &movement.Mover{
-		Chain:     fn.bridge,
-		Authority: &movement.Authority{View: view},
-		Lock:      &deposit.MainLock{Journal: fw.journal},
-		Ledger:    redemption.Ledger{Journal: fw.journal},
-		Schedule:  schedule,
-		Wallet:    fw.descriptor,
-		Base:      fw.signingConfig(),
-	}
+	mover := fw.mover(view, schedule)
 
-	// Rounds are derived from block numbers, so every member joins the same
-	// round; a member outside a round's selection waits for the next one.
-	for round := (startBlock + schedule.RoundBlocks - 1) / schedule.RoundBlocks; ctx.Err() == nil; round++ {
-		roundStart := round*schedule.RoundBlocks + schedule.FinalityBlocks
-		if err := fn.node.waitForBlockHeight(ctx, roundStart); err != nil {
+	return fw.signInRounds(
+		ctx,
+		actionLogger,
+		"incoming sweep",
+		plan,
+		startBlock,
+		schedule,
+		mover.Eligible,
+		func(ctx context.Context, round uint64) error {
+			_, err := mover.Sign(ctx, plan, round)
 			return err
-		}
-
-		eligible, err := mover.Eligible(ctx, round)
-		if err != nil {
-			return err
-		}
-		if !eligible {
-			continue
-		}
-
-		roundCtx, cancelRound := fn.roundContext(ctx, roundStart+schedule.RoundBlocks)
-		_, err = mover.Sign(roundCtx, plan, round)
-		cancelRound()
-		if err != nil {
-			actionLogger.Warnf("incoming sweep round [%d] failed: [%v]", round, err)
-			if fw.planSpent(ctx, plan) {
-				actionLogger.Infof("incoming sweep inputs are spent; nothing left to sign")
-				return nil
-			}
-			continue
-		}
-
-		if err := mover.Broadcast(ctx, plan); err != nil {
-			return fmt.Errorf("cannot broadcast incoming sweep: [%w]", err)
-		}
-
-		actionLogger.Infof(
-			"incoming sweep [%s] broadcast",
-			bitcoin.Hash(plan.BitcoinTransactionHash()).Hex(bitcoin.ReversedByteOrder),
-		)
-		return nil
-	}
-
-	return ctx.Err()
+		},
+		func(ctx context.Context) error { return mover.Broadcast(ctx, plan) },
+	)
 }
 
 // roundContext bounds one signing round: it ends at the round's end block
@@ -539,6 +525,15 @@ func (fw *frostWallet) resume(
 		return nil
 	}
 	plan, err := fw.loadPlan(ctx, reservation)
+	if errors.Is(err, store.ErrMissing) {
+		// This member did not attest the reservation (it was offline):
+		// the plan is rebuilt from chain state and accepted only if it is
+		// exactly the admitted one (ADV-D2).
+		plan, err = fw.rebuildPlan(ctx, intent)
+		if err == nil {
+			err = fw.retainPlan(ctx, reservation, plan)
+		}
+	}
 	if err != nil {
 		return fmt.Errorf(
 			"cannot resume FROST reservation [0x%x]: [%w]",
@@ -570,6 +565,32 @@ func (fw *frostWallet) resume(
 	)
 
 	return fw.pay(payCtx, actionLogger, plan, reservation, admission)
+}
+
+// rebuildPlan rebuilds the payment plan of an admitted reservation from
+// chain state with K-05's planner, which accepts it only if it is exactly
+// the admitted one (ADV-D2).
+func (fw *frostWallet) rebuildPlan(
+	ctx context.Context,
+	intent redemption.Intent,
+) (*signing.Plan, error) {
+	fn := fw.node
+	planner := redemption.Planner{
+		Chain:   fn.bridge,
+		Bitcoin: fn.bitcoin,
+		Wallet:  fw.descriptor,
+		Genesis: fn.genesis,
+		Fees: redemption.FeePolicy{
+			FeeRate:            1,
+			MaximumSatPerVByte: frostMaximumSatPerVByte,
+			Minimum:            frostMinimumFee,
+		},
+	}
+	plan, err := planner.Rebuild(ctx, intent)
+	if err != nil {
+		return nil, fmt.Errorf("cannot rebuild FROST redemption plan: [%w]", err)
+	}
+	return plan, nil
 }
 
 // frostPlanRecordID is the FROST store record of the plan attested for a
@@ -668,6 +689,9 @@ func (fw *frostWallet) pay(
 		Schedule: schedule,
 		Policy:   redemption.RebroadcastThenCancel,
 		Base:     fw.signingConfig(),
+		// Signers rotate over the certified seats, so a member that did
+		// not attest can help pay (ADV-D2).
+		Wallet: fw.descriptor,
 	}
 
 	first := admission.Block + schedule.FinalityBlocks
@@ -743,6 +767,26 @@ func (frm *frostReservationMessage) Type() string {
 	return "tbtc/frost_reservation_attestation"
 }
 
+func (frm *frostReservationMessage) attestation() *frostReservationMessage {
+	return frm
+}
+
+// frostInactivityMessage carries a member's seat signatures of a FROST
+// inactivity claim digest (C-09) to the other members of the wallet.
+type frostInactivityMessage struct {
+	frostReservationMessage
+}
+
+func (fim *frostInactivityMessage) Type() string {
+	return "tbtc/frost_inactivity_attestation"
+}
+
+// frostAttestation is a message of seat signatures over one digest.
+type frostAttestation interface {
+	net.TaggedUnmarshaler
+	attestation() *frostReservationMessage
+}
+
 func (frm *frostReservationMessage) Marshal() ([]byte, error) {
 	if err := frm.validate(); err != nil {
 		return nil, err
@@ -772,9 +816,10 @@ func (frm *frostReservationMessage) validate() error {
 	return nil
 }
 
-// frostReservationChannel exchanges reservation attestations among the
-// members of one FROST wallet. A seat's attestation is kept only if it comes
-// from the seat's operator and recovers to it.
+// frostReservationChannel exchanges seat attestations of one kind
+// (reservation digests, inactivity claim digests) among the members of one
+// FROST wallet. A seat's attestation is kept only if it comes from the
+// seat's operator and recovers to it.
 type frostReservationChannel struct {
 	channel    net.BroadcastChannel
 	descriptor dkg.Descriptor
@@ -789,15 +834,43 @@ func newFrostReservationChannel(
 	descriptor dkg.Descriptor,
 	membership *group.MembershipValidator,
 ) (*frostReservationChannel, error) {
-	channel, err := provider.BroadcastChannelFor(
+	return newFrostAttestationChannel(
+		provider,
 		fmt.Sprintf("%s-frost-%x-reservation", ProtocolName, label),
+		descriptor,
+		membership,
+		func() net.TaggedUnmarshaler { return &frostReservationMessage{} },
 	)
+}
+
+// newFrostInactivityChannel exchanges inactivity claim signatures.
+func newFrostInactivityChannel(
+	provider net.Provider,
+	label [20]byte,
+	descriptor dkg.Descriptor,
+	membership *group.MembershipValidator,
+) (*frostReservationChannel, error) {
+	return newFrostAttestationChannel(
+		provider,
+		fmt.Sprintf("%s-frost-%x-inactivity", ProtocolName, label),
+		descriptor,
+		membership,
+		func() net.TaggedUnmarshaler { return &frostInactivityMessage{} },
+	)
+}
+
+func newFrostAttestationChannel(
+	provider net.Provider,
+	name string,
+	descriptor dkg.Descriptor,
+	membership *group.MembershipValidator,
+	unmarshaler func() net.TaggedUnmarshaler,
+) (*frostReservationChannel, error) {
+	channel, err := provider.BroadcastChannelFor(name)
 	if err != nil {
 		return nil, err
 	}
-	channel.SetUnmarshaler(func() net.TaggedUnmarshaler {
-		return &frostReservationMessage{}
-	})
+	channel.SetUnmarshaler(unmarshaler)
 	if err := channel.SetFilter(membership.IsInGroup); err != nil {
 		return nil, err
 	}
@@ -808,10 +881,11 @@ func newFrostReservationChannel(
 		parts:      make(map[[32]byte]map[uint16][]byte),
 	}
 	channel.Recv(context.Background(), func(message net.Message) {
-		payload, ok := message.Payload().(*frostReservationMessage)
+		attestation, ok := message.Payload().(frostAttestation)
 		if !ok {
 			return
 		}
+		payload := attestation.attestation()
 		for _, seat := range payload.Seats {
 			if !membership.IsValidMembership(
 				group.MemberIndex(seat),

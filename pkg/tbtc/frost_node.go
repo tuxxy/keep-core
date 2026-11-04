@@ -16,7 +16,9 @@ import (
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/chain"
 	"github.com/keep-network/keep-core/pkg/frost"
+	"github.com/keep-network/keep-core/pkg/frost/deposit"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
+	"github.com/keep-network/keep-core/pkg/frost/enforcement"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
@@ -39,6 +41,11 @@ const (
 	// frostMovementRoundBlocks is the length of one incoming sweep signing
 	// round.
 	frostMovementRoundBlocks = 10
+	// frostDepositSweepRoundBlocks is the length of one deposit sweep
+	// signing round. Its authorization rereads every deposit and Bitcoin's
+	// median-time-past at each grant, so it gets longer rounds than an
+	// incoming sweep.
+	frostDepositSweepRoundBlocks = 30
 	// frostRedemptionRoundBlocks is the length of one redemption payment
 	// signing round.
 	frostRedemptionRoundBlocks = 60
@@ -59,10 +66,42 @@ const (
 	frostRoundTimeout = 15 * time.Minute
 	// frostRestoreTimeout bounds the restore of one epoch's seats.
 	frostRestoreTimeout = 10 * time.Minute
+	// frostRestoreAttempts bounds how often a failed restore of an epoch's
+	// seats is attempted, one attempt per block at most; the DKG is never
+	// rerun for it.
+	frostRestoreAttempts = 100
 	// frostRedemptionLookBackBlocks is how far back pending FROST redemption
 	// requests are looked for, as base looks back for deposits.
 	frostRedemptionLookBackBlocks = 216000
+	// frostDepositRefundMargin is how many seconds before its refund
+	// locktime a FROST deposit stops being swept: base's 24-hour deposit
+	// refund safety margin (WalletProposalValidator).
+	frostDepositRefundMargin = 24 * 3600
+	// frostHeartbeatSigningBlocks bounds one heartbeat's signing after the
+	// window's active phase. A heartbeat with an absent selected seat cannot
+	// sign and ends here with the presence it saw.
+	frostHeartbeatSigningBlocks = 30
+	// frostHeartbeatLookBackWindows is how many coordination windows back
+	// consecutive heartbeat outcomes are read for an inactivity claim (30
+	// days of 900-block windows, as base's other look-back periods).
+	frostHeartbeatLookBackWindows = 240
+	// frostHeartbeatMinimumActivePercent is base's heartbeat activity rule
+	// (heartbeatSigningMinimumActiveMembers: 70 of a 100-seat group) as a
+	// share of the wallet's seats (DECISIONS.md, 2026-11-04).
+	frostHeartbeatMinimumActivePercent = 70
 )
+
+// FrostFinalityBlocks is the finality depth FROST duties read chain state at;
+// the proposal generator reads FROST wallets at the same depth.
+const FrostFinalityBlocks = frostFinalityBlocks
+
+// FrostDepositPolicy is the K-06 deposit timing every FROST member and the
+// proposal generator apply: the finality depth and base's refund safety
+// margin.
+var FrostDepositPolicy = deposit.Policy{
+	FinalityBlocks: frostFinalityBlocks,
+	RefundMargin:   frostDepositRefundMargin,
+}
 
 // FrostConfig is the FROST part of the node configuration: what a node cannot
 // read from chain. The zero value means FROST is not configured, and the node
@@ -98,11 +137,22 @@ type FrostRegistryChain interface {
 	Wallet(ctx context.Context, id [32]byte) (dkg.Wallet, error)
 }
 
-// FrostBridgeChain is the FROST extension of the Bridge: redemptions (C-04)
-// and movement (C-06).
+// FrostBridgeChain is the FROST extension of the Bridge: redemptions (C-04),
+// deposits (C-05, read through the movement seam), movement (C-06) and
+// heartbeat and inactivity enforcement (C-09).
 type FrostBridgeChain interface {
 	redemption.Chain
 	movement.Chain
+	enforcement.Chain
+}
+
+// FrostBridgeConnector is implemented by host chains that bind the FROST
+// extension of the Bridge for the proposal generator, which reads a FROST
+// wallet's deposits and movement through the same seams the members plan
+// from. Only a FROST wallet's proposal task binds it.
+type FrostBridgeConnector interface {
+	FrostTargetResolver
+	FrostBridge(ctx context.Context) (FrostBridgeChain, error)
 }
 
 // FrostChainConnector is implemented by host chains that can bind the FROST
@@ -163,6 +213,9 @@ type frostNode struct {
 	scopes  map[uint64]*store.Scoped
 	epochs  map[uint64]bool
 	wallets map[[32]byte]*frostWallet
+	// restoreFailures counts the failed restores of an epoch's seats; the
+	// DKG loop retries them, at most frostRestoreAttempts times (ADV S2).
+	restoreFailures map[uint64]int
 }
 
 // newFrostNode binds the FROST chain, opens the FROST store and restores the
@@ -224,6 +277,8 @@ func newFrostNode(
 		scopes:   make(map[uint64]*store.Scoped),
 		epochs:   make(map[uint64]bool),
 		wallets:  make(map[[32]byte]*frostWallet),
+
+		restoreFailures: make(map[uint64]int),
 	}
 	parameters.ChainID.FillBytes(fn.chainID[:])
 
@@ -296,6 +351,62 @@ func (fn *frostNode) claimEpoch(epoch uint64) bool {
 	return true
 }
 
+// unclaimEpoch marks the epoch not handled, so the DKG loop looks at it again.
+func (fn *frostNode) unclaimEpoch(epoch uint64) {
+	fn.mutex.Lock()
+	defer fn.mutex.Unlock()
+
+	delete(fn.epochs, epoch)
+}
+
+// restoreFailed records a failed restore of the epoch's seats and, while
+// attempts remain, unclaims the epoch so the DKG loop restores it again. The
+// store is unchanged by a failed restore, so a later attempt restores it.
+func (fn *frostNode) restoreFailed(epoch uint64, err error) {
+	fn.mutex.Lock()
+	if fn.restoreFailures == nil {
+		fn.restoreFailures = make(map[uint64]int)
+	}
+	fn.restoreFailures[epoch]++
+	attempts := fn.restoreFailures[epoch]
+	if attempts < frostRestoreAttempts {
+		delete(fn.epochs, epoch)
+	}
+	fn.mutex.Unlock()
+
+	epochLogger := logger.With(zap.Uint64("frostEpoch", epoch))
+	if attempts < frostRestoreAttempts {
+		epochLogger.Warnf(
+			"FROST seats not restored (attempt [%d/%d]); retrying: [%v]",
+			attempts,
+			frostRestoreAttempts,
+			err,
+		)
+		return
+	}
+	epochLogger.Errorf(
+		"FROST seats not restored after [%d] attempts; giving up until restart: [%v]",
+		attempts,
+		err,
+	)
+}
+
+// retryRestores restores again the epochs whose restore failed.
+func (fn *frostNode) retryRestores(ctx context.Context) {
+	fn.mutex.Lock()
+	var epochs []uint64
+	for epoch, attempts := range fn.restoreFailures {
+		if attempts < frostRestoreAttempts && !fn.epochs[epoch] {
+			epochs = append(epochs, epoch)
+		}
+	}
+	fn.mutex.Unlock()
+
+	for _, epoch := range epochs {
+		go fn.restoreEpoch(ctx, epoch)
+	}
+}
+
 // localSeats returns the operator's seats in the epoch's selection, with the
 // selection's roster and operators.
 func (fn *frostNode) localSeats(
@@ -338,11 +449,16 @@ func (fn *frostNode) restoreEpoch(ctx context.Context, epoch uint64) {
 	if !fn.claimEpoch(epoch) {
 		return
 	}
-	epochLogger := logger.With(zap.Uint64("frostEpoch", epoch))
 
 	selection, locals, err := fn.localSeats(ctx, epoch)
 	if err != nil {
-		epochLogger.Errorf("cannot read FROST selection: [%v]", err)
+		fn.restoreFailed(epoch, fmt.Errorf("cannot read FROST selection: [%w]", err))
+		return
+	}
+	if len(selection.Operators) == 0 {
+		// The epoch awaits its seed: the selection is not known yet. The
+		// DKG loop joins it once it is (ADV S1; base joins on DkgStarted).
+		fn.unclaimEpoch(epoch)
 		return
 	}
 	if len(locals) == 0 {
@@ -350,16 +466,16 @@ func (fn *frostNode) restoreEpoch(ctx context.Context, epoch uint64) {
 	}
 	journal, err := fn.scope(epoch)
 	if err != nil {
-		epochLogger.Errorf("cannot open FROST store scope: [%v]", err)
+		fn.restoreFailed(epoch, fmt.Errorf("cannot open FROST store scope: [%w]", err))
 		return
 	}
 
 	status, err := journal.DKGStatus(ctx)
-	if err != nil {
+	if errors.Is(err, store.ErrMissing) {
 		// No local claim: the DKG of this epoch never started here.
 		view, viewErr := fn.registry.View(ctx, epoch)
 		if viewErr != nil {
-			epochLogger.Errorf("cannot read FROST DKG state: [%v]", viewErr)
+			fn.restoreFailed(epoch, fmt.Errorf("cannot read FROST DKG state: [%w]", viewErr))
 			return
 		}
 		if view.Epoch == epoch && view.State == frostDkgAwaitingResult {
@@ -367,6 +483,23 @@ func (fn *frostNode) restoreEpoch(ctx context.Context, epoch uint64) {
 		}
 		return
 	}
+	if err != nil {
+		fn.restoreFailed(epoch, fmt.Errorf("cannot read FROST DKG status: [%w]", err))
+		return
+	}
+	fn.restoreStatus(ctx, epoch, status, journal)
+}
+
+// restoreStatus restores the seats of an epoch whose DKG left a local
+// claim: a stored key is restored (certified wallets synchronously, pending
+// ones in the background); lost seats are reported. The DKG is never rerun.
+func (fn *frostNode) restoreStatus(
+	ctx context.Context,
+	epoch uint64,
+	status frost.DKGStatus,
+	journal *store.Scoped,
+) {
+	epochLogger := logger.With(zap.Uint64("frostEpoch", epoch))
 
 	switch status.State {
 	case frost.DKGSeatsLost:
@@ -409,11 +542,9 @@ func (fn *frostNode) restore(
 	epoch uint64,
 	journal *store.Scoped,
 ) {
-	epochLogger := logger.With(zap.Uint64("frostEpoch", epoch))
-
 	selection, err := fn.registry.Selection(ctx, epoch)
 	if err != nil {
-		epochLogger.Errorf("cannot read FROST selection: [%v]", err)
+		fn.restoreFailed(epoch, fmt.Errorf("cannot read FROST selection: [%w]", err))
 		return
 	}
 
@@ -429,7 +560,7 @@ func (fn *frostNode) restore(
 		Signer:     fn.signer,
 	})
 	if err != nil {
-		epochLogger.Errorf("cannot restore FROST seats: [%v]", err)
+		fn.restoreFailed(epoch, fmt.Errorf("cannot restore FROST seats: [%w]", err))
 		return
 	}
 
@@ -447,6 +578,7 @@ func (fn *frostNode) runDKGLoop(ctx context.Context) error {
 
 	go func() {
 		for range blockCounter.WatchBlocks(ctx) {
+			fn.retryRestores(ctx)
 			epoch, err := fn.registry.CurrentEpoch(ctx)
 			if err != nil {
 				logger.Warnf("cannot read FROST epoch: [%v]", err)
@@ -486,6 +618,18 @@ func (fn *frostNode) joinDKGIfEligible(ctx context.Context, epoch uint64) {
 	journal, err := fn.scope(epoch)
 	if err != nil {
 		epochLogger.Errorf("cannot open FROST store scope: [%v]", err)
+		return
+	}
+
+	// A local claim means the DKG ran here before (a restore that failed
+	// is retried here): restore it, never run it again.
+	status, err := journal.DKGStatus(ctx)
+	if err == nil {
+		go fn.restoreStatus(ctx, epoch, status, journal)
+		return
+	}
+	if !errors.Is(err, store.ErrMissing) {
+		fn.restoreFailed(epoch, fmt.Errorf("cannot read FROST DKG status: [%w]", err))
 		return
 	}
 
@@ -592,6 +736,7 @@ type frostWallet struct {
 
 	coordinationExecutor *coordinationExecutor
 	reservations         *frostReservationChannel
+	inactivity           *frostReservationChannel
 
 	// actionMutex allows one action at a time per wallet, as base's wallet
 	// dispatcher does.
@@ -707,6 +852,16 @@ func (fn *frostNode) newFrostWallet(
 	)
 
 	wallet.reservations, err = newFrostReservationChannel(
+		fn.node.netProvider,
+		label,
+		descriptor,
+		membership,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	wallet.inactivity, err = newFrostInactivityChannel(
 		fn.node.netProvider,
 		label,
 		descriptor,

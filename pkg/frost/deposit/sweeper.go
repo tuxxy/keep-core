@@ -227,6 +227,16 @@ func (s *Sweeper) Sign(ctx context.Context, plan *signing.Plan, number uint64) (
 		_ = s.Ledger.Append(ctx, redemption.Entry{Reservation: id, Kind: redemption.KindPossibleRelease, Block: head.Number, Transaction: tx, Detail: strconv.FormatUint(number, 10)})
 	}
 	if errors.Is(err, signing.ErrLateSignature) {
+		// The executor refuses a signature whose authorization check failed
+		// after the worker returned, for any reason. Only a refusal the
+		// chain still shows is a lapsed authorization; a read that failed
+		// (provider, context) or now passes is not. Then nothing is
+		// accepted or broadcast, the retained signature stays, and the next
+		// round signs again; the main lock stays with this plan, which the
+		// retry spends (ADV-signing S2).
+		if _, recheck := s.Authority.AuthorizeSweep(ctx, plan); !terminal(recheck) {
+			return nil, fmt.Errorf("%w: sweep authorization unread after the signature: %v", signing.ErrUnauthorized, err)
+		}
 		if err = s.step("before-late-quarantine"); err != nil {
 			return nil, err
 		}

@@ -634,7 +634,21 @@ func k09Movement(t *testing.T, w *k09World) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	w.increaseTime(uint64(parameters.WalletMaxAge) + 1)
+	// Governance shortens the wallet max age to 6 hours before A ages out
+	// (review R1). Aging by the default (26 weeks) would put the chain
+	// months ahead of the wall clock, and base's MovingFundsTask waits 24
+	// hours of wall-clock time after the moving-funds request before it
+	// commits (ValidateMovingFundsSafetyMargin), so a correct node would
+	// never commit. With 6 hours the chain stays behind the wall clock
+	// (legacyChainLag, 72 hours), and target B, made after the jump, stays
+	// young through the stage (blocks advance chain time by at least 1 s).
+	const maxAge = 6 * 3600
+	w.send("governance: wallet max age", func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return w.legacy.UpdateWalletParameters(o, parameters.WalletCreationPeriod, parameters.WalletCreationMinBtcBalance,
+			parameters.WalletCreationMaxBtcBalance, parameters.WalletClosureMinBtcBalance,
+			maxAge, parameters.WalletMaxBtcTransfer, parameters.WalletClosingPeriod)
+	})
+	w.increaseTime(maxAge + 1)
 	w.send("keeper: A closeable", func(o *bind.TransactOpts) (*types.Transaction, error) {
 		return w.bridge.NotifyFrostWalletCloseable(o, w.wallet.id)
 	})

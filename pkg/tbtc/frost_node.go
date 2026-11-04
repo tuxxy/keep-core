@@ -16,6 +16,7 @@ import (
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/chain"
 	"github.com/keep-network/keep-core/pkg/frost"
+	"github.com/keep-network/keep-core/pkg/frost/deposit"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
 	"github.com/keep-network/keep-core/pkg/frost/enforcement"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
@@ -40,6 +41,11 @@ const (
 	// frostMovementRoundBlocks is the length of one incoming sweep signing
 	// round.
 	frostMovementRoundBlocks = 10
+	// frostDepositSweepRoundBlocks is the length of one deposit sweep
+	// signing round. Its authorization rereads every deposit and Bitcoin's
+	// median-time-past at each grant, so it gets longer rounds than an
+	// incoming sweep.
+	frostDepositSweepRoundBlocks = 30
 	// frostRedemptionRoundBlocks is the length of one redemption payment
 	// signing round.
 	frostRedemptionRoundBlocks = 60
@@ -63,7 +69,23 @@ const (
 	// frostRedemptionLookBackBlocks is how far back pending FROST redemption
 	// requests are looked for, as base looks back for deposits.
 	frostRedemptionLookBackBlocks = 216000
+	// frostDepositRefundMargin is how many seconds before its refund
+	// locktime a FROST deposit stops being swept: base's 24-hour deposit
+	// refund safety margin (WalletProposalValidator).
+	frostDepositRefundMargin = 24 * 3600
 )
+
+// FrostFinalityBlocks is the finality depth FROST duties read chain state at;
+// the proposal generator reads FROST wallets at the same depth.
+const FrostFinalityBlocks = frostFinalityBlocks
+
+// FrostDepositPolicy is the K-06 deposit timing every FROST member and the
+// proposal generator apply: the finality depth and base's refund safety
+// margin.
+var FrostDepositPolicy = deposit.Policy{
+	FinalityBlocks: frostFinalityBlocks,
+	RefundMargin:   frostDepositRefundMargin,
+}
 
 // FrostConfig is the FROST part of the node configuration: what a node cannot
 // read from chain. The zero value means FROST is not configured, and the node

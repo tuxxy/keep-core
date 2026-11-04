@@ -95,6 +95,14 @@ func processFrostCoordinationResult(
 			proposal,
 			result.window.coordinationBlock,
 		)
+	case *DepositSweepProposal:
+		err = wallet.sweepDeposits(
+			ctx,
+			actionLogger,
+			proposal,
+			result.window.coordinationBlock,
+			startBlock,
+		)
 	default:
 		err = fmt.Errorf("no FROST handler for action")
 	}

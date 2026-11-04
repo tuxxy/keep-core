@@ -2,6 +2,7 @@ package tbtc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -9,9 +10,11 @@ import (
 
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/frost/deposit"
+	"github.com/keep-network/keep-core/pkg/frost/enforcement"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
+	"github.com/keep-network/keep-core/pkg/net"
 )
 
 // sweepDeposits signs and broadcasts the sweep of the wallet's revealed
@@ -294,6 +297,206 @@ func (fw *frostWallet) signInRounds(
 	}
 
 	return ctx.Err()
+}
+
+// heartbeat runs the wallet's heartbeat (K-08, C-09) that the window's
+// leader proposed, as base's heartbeat action does: every member signs the
+// heartbeat of the window, whose nonce is the coordination block, with the
+// wallet's certified seats, and records which seats were authenticated
+// present. A heartbeat with fewer than 70% of the wallet's seats present is
+// a failure (base's activity rule; DECISIONS.md 2026-11-04); after
+// heartbeatConsecutiveFailureThreshold consecutive failures the active
+// members claim inactivity of the seats absent from all of them, with
+// heartbeatFailed set.
+func (fw *frostWallet) heartbeat(
+	ctx context.Context,
+	actionLogger log.StandardLogger,
+	proposal *HeartbeatProposal,
+	coordinationBlock uint64,
+	startBlock uint64,
+	expiryBlock uint64,
+) error {
+	fn := fw.node
+	if err := fn.node.chain.ValidateHeartbeatProposal(fw.label, proposal); err != nil {
+		return fmt.Errorf("heartbeat proposal is invalid: [%v]", err)
+	}
+
+	certified, err := fn.bridge.CertifiedSeats(ctx, fw.id)
+	if err != nil {
+		return fmt.Errorf("cannot read readiness-certified seats: [%w]", err)
+	}
+	base := fw.signingConfig()
+	runner := &enforcement.Runner{
+		Chain: fn.bridge,
+		Schedule: redemption.Schedule{
+			FinalityBlocks: frostFinalityBlocks,
+			RoundBlocks:    coordinationFrequencyBlocks,
+		},
+		Wallet: fw.descriptor,
+		Base: signing.HeartbeatConfig{
+			Journal:      fw.journal,
+			Worker:       fn.config.Worker,
+			Selected:     certified,
+			Transport:    base.Transport,
+			LocalRegtest: base.LocalRegtest,
+			HoldPresence: true,
+		},
+	}
+
+	if err := fn.node.waitForBlockHeight(ctx, startBlock); err != nil {
+		return err
+	}
+	round, err := runner.Current(ctx)
+	if err != nil {
+		return err
+	}
+	if round.Anchor != coordinationBlock {
+		return fmt.Errorf(
+			"heartbeat round [%d] is not the window's [%d]",
+			round.Anchor,
+			coordinationBlock,
+		)
+	}
+
+	signingCtx, cancelSigning := fn.roundContext(
+		ctx,
+		startBlock+frostHeartbeatSigningBlocks,
+	)
+	outcome, err := runner.Run(signingCtx, round)
+	cancelSigning()
+	if outcome.Nonce == 0 {
+		return fmt.Errorf("heartbeat recorded no outcome: [%v]", err)
+	}
+	actionLogger.Infof(
+		"heartbeat [%d] signed [%v] with seats [%v] present",
+		outcome.Nonce,
+		outcome.Signed,
+		outcome.Present,
+	)
+
+	claimer := &enforcement.Claimer{
+		Chain:                fn.bridge,
+		Runner:               runner,
+		Records:              fw.journal,
+		LocalSeats:           fw.localSeats,
+		Key:                  fn.signer,
+		Failures:             heartbeatConsecutiveFailureThreshold,
+		Lookback:             frostHeartbeatLookBackWindows,
+		MinimumActivePercent: frostHeartbeatMinimumActivePercent,
+	}
+	claim, _, err := claimer.Derive(ctx)
+	if errors.Is(err, enforcement.ErrNoClaim) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("cannot derive inactivity claim: [%w]", err)
+	}
+
+	if expiryBlock < heartbeatTimeoutSafetyMarginBlocks {
+		return fmt.Errorf("invalid proposal expiry block")
+	}
+	claimCtx, cancelClaim := withCancelOnBlock(
+		ctx,
+		expiryBlock-heartbeatTimeoutSafetyMarginBlocks,
+		fn.node.waitForBlockHeight,
+	)
+	defer cancelClaim()
+
+	return fw.claimInactivity(claimCtx, actionLogger, claimer, claim)
+}
+
+// claimInactivity signs the claim with the local seats outside it, exchanges
+// the signatures with the other members and submits the claim once the
+// threshold is reached. Members submit in order of their lowest signing
+// seat, a few blocks apart, so the Bridge usually sees one submission.
+func (fw *frostWallet) claimInactivity(
+	ctx context.Context,
+	actionLogger log.StandardLogger,
+	claimer *enforcement.Claimer,
+	claim enforcement.Claim,
+) error {
+	fn := fw.node
+	digest, err := enforcement.ClaimDigest(fn.bridge.ChainID(), fn.bridge.Bridge(), claim)
+	if err != nil {
+		return err
+	}
+	own, err := claimer.Sign(ctx, claim)
+	if err != nil {
+		return fmt.Errorf("cannot sign inactivity claim: [%w]", err)
+	}
+	if len(own) == 0 {
+		return nil
+	}
+
+	actionLogger.Infof(
+		"claiming inactivity of seats [%v] at nonce [%d]",
+		claim.Inactive,
+		claim.Nonce,
+	)
+
+	message := &frostInactivityMessage{}
+	message.Digest = digest
+	var signingSeats []uint16
+	for seat := range own {
+		signingSeats = append(signingSeats, seat)
+	}
+	sort.Slice(signingSeats, func(i, j int) bool { return signingSeats[i] < signingSeats[j] })
+	for _, seat := range signingSeats {
+		message.Seats = append(message.Seats, seat)
+		message.Signatures = append(message.Signatures, own[seat])
+	}
+	fw.inactivity.add(&message.frostReservationMessage)
+	if err := fw.inactivity.channel.Send(
+		ctx,
+		message,
+		net.BackoffRetransmissionStrategy,
+	); err != nil {
+		return fmt.Errorf("cannot send inactivity claim attestation: [%w]", err)
+	}
+
+	blockCounter, err := fn.node.chain.BlockCounter()
+	if err != nil {
+		return err
+	}
+	submitBlock := uint64(0)
+	for {
+		nonce, err := fn.bridge.InactivityNonce(ctx, fw.id)
+		if err == nil && nonce > claim.Nonce {
+			actionLogger.Infof("inactivity claim at nonce [%d] submitted", claim.Nonce)
+			return nil
+		}
+		if ctx.Err() != nil {
+			return fmt.Errorf("inactivity claim not submitted in time")
+		}
+
+		head, err := blockCounter.CurrentBlock()
+		if err != nil {
+			return err
+		}
+		collected := fw.inactivity.collected(digest)
+		if len(collected) >= int(fw.descriptor.Threshold) {
+			if submitBlock == 0 {
+				submitBlock = head + 2*uint64(signingSeats[0]-1)
+			}
+			if head >= submitBlock {
+				seats, signatures, err := redemption.Collect(fw.descriptor.Threshold, collected)
+				if err == nil {
+					err = claimer.Submit(ctx, claim, seats, signatures)
+				}
+				if err != nil {
+					actionLogger.Warnf(
+						"inactivity claim submission failed (another member may have submitted): [%v]",
+						err,
+					)
+				}
+				submitBlock = head + 2*uint64(len(fw.descriptor.Operators))
+			}
+		}
+
+		if err := fn.node.waitForBlockHeight(ctx, head+1); err != nil {
+			return err
+		}
+	}
 }
 
 // MedianTimePast implements deposit.Clock: Bitcoin's median-time-past

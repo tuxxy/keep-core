@@ -105,6 +105,15 @@ func processFrostCoordinationResult(
 		)
 	case *MovingFundsProposal:
 		err = wallet.moveFunds(ctx, actionLogger, proposal, startBlock)
+	case *HeartbeatProposal:
+		err = wallet.heartbeat(
+			ctx,
+			actionLogger,
+			proposal,
+			result.window.coordinationBlock,
+			startBlock,
+			expiryBlock,
+		)
 	default:
 		err = fmt.Errorf("no FROST handler for action")
 	}
@@ -719,6 +728,26 @@ func (frm *frostReservationMessage) Type() string {
 	return "tbtc/frost_reservation_attestation"
 }
 
+func (frm *frostReservationMessage) attestation() *frostReservationMessage {
+	return frm
+}
+
+// frostInactivityMessage carries a member's seat signatures of a FROST
+// inactivity claim digest (C-09) to the other members of the wallet.
+type frostInactivityMessage struct {
+	frostReservationMessage
+}
+
+func (fim *frostInactivityMessage) Type() string {
+	return "tbtc/frost_inactivity_attestation"
+}
+
+// frostAttestation is a message of seat signatures over one digest.
+type frostAttestation interface {
+	net.TaggedUnmarshaler
+	attestation() *frostReservationMessage
+}
+
 func (frm *frostReservationMessage) Marshal() ([]byte, error) {
 	if err := frm.validate(); err != nil {
 		return nil, err
@@ -748,9 +777,10 @@ func (frm *frostReservationMessage) validate() error {
 	return nil
 }
 
-// frostReservationChannel exchanges reservation attestations among the
-// members of one FROST wallet. A seat's attestation is kept only if it comes
-// from the seat's operator and recovers to it.
+// frostReservationChannel exchanges seat attestations of one kind
+// (reservation digests, inactivity claim digests) among the members of one
+// FROST wallet. A seat's attestation is kept only if it comes from the
+// seat's operator and recovers to it.
 type frostReservationChannel struct {
 	channel    net.BroadcastChannel
 	descriptor dkg.Descriptor
@@ -765,15 +795,43 @@ func newFrostReservationChannel(
 	descriptor dkg.Descriptor,
 	membership *group.MembershipValidator,
 ) (*frostReservationChannel, error) {
-	channel, err := provider.BroadcastChannelFor(
+	return newFrostAttestationChannel(
+		provider,
 		fmt.Sprintf("%s-frost-%x-reservation", ProtocolName, label),
+		descriptor,
+		membership,
+		func() net.TaggedUnmarshaler { return &frostReservationMessage{} },
 	)
+}
+
+// newFrostInactivityChannel exchanges inactivity claim signatures.
+func newFrostInactivityChannel(
+	provider net.Provider,
+	label [20]byte,
+	descriptor dkg.Descriptor,
+	membership *group.MembershipValidator,
+) (*frostReservationChannel, error) {
+	return newFrostAttestationChannel(
+		provider,
+		fmt.Sprintf("%s-frost-%x-inactivity", ProtocolName, label),
+		descriptor,
+		membership,
+		func() net.TaggedUnmarshaler { return &frostInactivityMessage{} },
+	)
+}
+
+func newFrostAttestationChannel(
+	provider net.Provider,
+	name string,
+	descriptor dkg.Descriptor,
+	membership *group.MembershipValidator,
+	unmarshaler func() net.TaggedUnmarshaler,
+) (*frostReservationChannel, error) {
+	channel, err := provider.BroadcastChannelFor(name)
 	if err != nil {
 		return nil, err
 	}
-	channel.SetUnmarshaler(func() net.TaggedUnmarshaler {
-		return &frostReservationMessage{}
-	})
+	channel.SetUnmarshaler(unmarshaler)
 	if err := channel.SetFilter(membership.IsInGroup); err != nil {
 		return nil, err
 	}
@@ -784,10 +842,11 @@ func newFrostReservationChannel(
 		parts:      make(map[[32]byte]map[uint16][]byte),
 	}
 	channel.Recv(context.Background(), func(message net.Message) {
-		payload, ok := message.Payload().(*frostReservationMessage)
+		attestation, ok := message.Payload().(frostAttestation)
 		if !ok {
 			return
 		}
+		payload := attestation.attestation()
 		for _, seat := range payload.Seats {
 			if !membership.IsValidMembership(
 				group.MemberIndex(seat),

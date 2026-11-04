@@ -73,6 +73,18 @@ const (
 	// locktime a FROST deposit stops being swept: base's 24-hour deposit
 	// refund safety margin (WalletProposalValidator).
 	frostDepositRefundMargin = 24 * 3600
+	// frostHeartbeatSigningBlocks bounds one heartbeat's signing after the
+	// window's active phase. A heartbeat with an absent selected seat cannot
+	// sign and ends here with the presence it saw.
+	frostHeartbeatSigningBlocks = 30
+	// frostHeartbeatLookBackWindows is how many coordination windows back
+	// consecutive heartbeat outcomes are read for an inactivity claim (30
+	// days of 900-block windows, as base's other look-back periods).
+	frostHeartbeatLookBackWindows = 240
+	// frostHeartbeatMinimumActivePercent is base's heartbeat activity rule
+	// (heartbeatSigningMinimumActiveMembers: 70 of a 100-seat group) as a
+	// share of the wallet's seats (DECISIONS.md, 2026-11-04).
+	frostHeartbeatMinimumActivePercent = 70
 )
 
 // FrostFinalityBlocks is the finality depth FROST duties read chain state at;
@@ -626,6 +638,7 @@ type frostWallet struct {
 
 	coordinationExecutor *coordinationExecutor
 	reservations         *frostReservationChannel
+	inactivity           *frostReservationChannel
 
 	// actionMutex allows one action at a time per wallet, as base's wallet
 	// dispatcher does.
@@ -741,6 +754,16 @@ func (fn *frostNode) newFrostWallet(
 	)
 
 	wallet.reservations, err = newFrostReservationChannel(
+		fn.node.netProvider,
+		label,
+		descriptor,
+		membership,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	wallet.inactivity, err = newFrostInactivityChannel(
 		fn.node.netProvider,
 		label,
 		descriptor,

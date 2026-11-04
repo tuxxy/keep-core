@@ -443,21 +443,38 @@ func (w *k09World) seedWindow(accept func(window uint64) bool) uint64 {
 	t := w.t
 	t.Helper()
 	w.stopMining()
-	head, err := w.admin.BlockNumber(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
 	every := tbtc.B6CoordinationFrequencyBlocks
-	window := (head/every + 1) * every
-	if window-head < 40 {
-		window += every
+	var window, seed uint64
+	// With nodes running, mineTo settles them by mining single blocks and
+	// can pass its target; a draw must replace the seed block itself, so
+	// the chain must stand exactly one block before it. If it passed, the
+	// next window is taken (stage 12 once failed all 400 draws this way:
+	// they mined above a seed block that no longer changed).
+	for {
+		head, err := w.admin.BlockNumber(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		window = (head/every + 1) * every
+		if window-head < 40 {
+			window += every
+		}
+		seed = window - tbtc.B6CoordinationSafeBlockShift
+		w.mineTo(seed - 1)
+		if head, err = w.admin.BlockNumber(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if head == seed-1 {
+			break
+		}
 	}
-	seed := window - tbtc.B6CoordinationSafeBlockShift
-	w.mineTo(seed - 1)
 	parent, err := w.admin.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Each draw is an independent hash; base's heartbeat draw with a live
+	// leader takes about 1 in 24, so 400 draws all fail with probability
+	// below 1e-7.
 	for try := uint64(1); try <= 400; try++ {
 		var snapshot string
 		if err := w.admin.Client().Call(&snapshot, "evm_snapshot"); err != nil {
@@ -465,6 +482,9 @@ func (w *k09World) seedWindow(accept func(window uint64) bool) uint64 {
 		}
 		if err := w.admin.Client().Call(nil, "evm_mine", map[string]uint64{"timestamp": parent.Time + try}); err != nil {
 			t.Fatal(err)
+		}
+		if head, err := w.admin.BlockNumber(context.Background()); err != nil || head != seed {
+			t.Fatalf("setup: the draw mined block %d, not the seed block %d (%v)", head, seed, err)
 		}
 		if accept(window) {
 			return window

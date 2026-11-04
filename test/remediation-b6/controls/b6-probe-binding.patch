@@ -1,0 +1,530 @@
+diff --git a/pkg/tbtc/b6_probe_export_test.go b/pkg/tbtc/b6_probe_export_test.go
+new file mode 100644
+index 0000000..329d43e
+--- /dev/null
++++ b/pkg/tbtc/b6_probe_export_test.go
+@@ -0,0 +1,77 @@
++package tbtc
++
++// PROBE (scratch, never committed): base coordination executor run for a
++// FROST wallet keyed by its 20-byte Bridge key, on base windows with base
++// getLeader, with the real proposal generator. Each window's result goes to
++// onResult on every member, as base hands it to the wallet's action.
++
++import (
++	"context"
++	"crypto/ecdsa"
++	"fmt"
++	"os"
++
++	"github.com/ethereum/go-ethereum/crypto"
++
++	"github.com/keep-network/keep-core/internal/testutils"
++	"github.com/keep-network/keep-core/pkg/chain"
++	"github.com/keep-network/keep-core/pkg/generator"
++	"github.com/keep-network/keep-core/pkg/net"
++	"github.com/keep-network/keep-core/pkg/protocol/group"
++)
++
++var rvProbeSeatOneLeader = os.Getenv("RV_B6_SEAT1") != ""
++var rvProbeNoDedup = os.Getenv("RV_B6_NODEDUP") != ""
++
++// RVProbeCoordinate runs base coordination for one FROST wallet.
++func RVProbeCoordinate(ctx context.Context, c Chain, provider net.Provider, label [20]byte, operators []chain.Address, proposals CoordinationProposalGenerator, onResult func(window uint64, p CoordinationProposal)) error {
++	_, pub, err := c.OperatorKeyPair()
++	if err != nil {
++		return err
++	}
++	self, err := c.Signing().PublicKeyToAddress(pub)
++	if err != nil {
++		return err
++	}
++	w := wallet{publicKey: &ecdsa.PublicKey{Curve: crypto.S256(), X: pub.X, Y: pub.Y}, signingGroupOperators: operators}
++	members := w.membersByOperator(self)
++	if len(members) == 0 {
++		return nil
++	}
++	ch, err := provider.BroadcastChannelFor(fmt.Sprintf("%s-%x-frost-coordination", ProtocolName, label))
++	if err != nil {
++		return err
++	}
++	ch.SetUnmarshaler(func() net.TaggedUnmarshaler { return &coordinationMessage{} })
++	mv := group.NewMembershipValidator(&testutils.MockLogger{}, operators, c.Signing())
++	if err := ch.SetFilter(mv.IsInGroup); err != nil {
++		return err
++	}
++	bc, err := c.BlockCounter()
++	if err != nil {
++		return err
++	}
++	wait := func(ctx context.Context, h uint64) error {
++		ch, err := bc.BlockHeightWaiter(h)
++		if err != nil {
++			return err
++		}
++		select {
++		case <-ch:
++		case <-ctx.Done():
++		}
++		return nil
++	}
++	ce := newCoordinationExecutor(c, w, members, self, proposals, ch, mv, generator.NewProtocolLatch(), wait)
++	l := label
++	ce.labelOverride = &l
++	go watchCoordinationWindows(ctx, bc.WatchBlocks, func(window *coordinationWindow) {
++		result, err := ce.coordinate(window)
++		if err != nil {
++			fmt.Fprintf(os.Stderr, "probe coordinate %d: %v\n", window.coordinationBlock, err)
++			return
++		}
++		onResult(window.coordinationBlock, result.proposal)
++	})
++	return nil
++}
+diff --git a/pkg/tbtc/frost_node_b6_binding_test.go b/pkg/tbtc/frost_node_b6_binding_test.go
+new file mode 100644
+index 0000000..55e0b0a
+--- /dev/null
++++ b/pkg/tbtc/frost_node_b6_binding_test.go
+@@ -0,0 +1,388 @@
++package tbtc_test
++
++// PROBE BINDING (scratch, never committed; not a fix): a correct-shaped
++// stand-in for the batch-6 fix, to run the tests' never-run steps. Today's
++// tbtc.Initialize, plus, in the binding:
++//   - the library FROST DKG for every epoch selecting a local seat;
++//   - base coordination (coordinate, getSeed, getLeader by unique operator,
++//     the real tbtcpg generator, #106's FROST MovedFundsSweep routing) for
++//     every ready FROST wallet, keyed by its 20-byte Bridge key;
++//   - on a validated MovedFundsSweep proposal, every member plans the K-07
++//     incoming sweep, signs it through movement.Mover in a round derived
++//     from the window, and broadcasts it through the node's Bitcoin chain.
++// Restart: the binding rebuilds everything from the chain and the store.
++
++import (
++	"context"
++	"fmt"
++	"os"
++	"sync"
++	"time"
++
++	"github.com/btcsuite/btcd/chaincfg"
++	"github.com/ethereum/go-ethereum/accounts/abi/bind"
++	"github.com/ethereum/go-ethereum/accounts/keystore"
++	"github.com/ethereum/go-ethereum/common"
++	"github.com/ethereum/go-ethereum/crypto"
++	"github.com/ethereum/go-ethereum/ethclient"
++	golog "github.com/ipfs/go-log/v2"
++
++	"github.com/keep-network/keep-core/internal/testutils"
++	"github.com/keep-network/keep-core/pkg/bitcoin"
++	"github.com/keep-network/keep-core/pkg/chain"
++	eth "github.com/keep-network/keep-core/pkg/chain/ethereum"
++	binding "github.com/keep-network/keep-core/pkg/chain/ethereum/frostabi"
++	"github.com/keep-network/keep-core/pkg/frost"
++	"github.com/keep-network/keep-core/pkg/frost/deposit"
++	"github.com/keep-network/keep-core/pkg/frost/dkg"
++	"github.com/keep-network/keep-core/pkg/frost/movement"
++	"github.com/keep-network/keep-core/pkg/frost/redemption"
++	"github.com/keep-network/keep-core/pkg/frost/signing"
++	"github.com/keep-network/keep-core/pkg/frost/snowfallengine"
++	"github.com/keep-network/keep-core/pkg/frost/store"
++	"github.com/keep-network/keep-core/pkg/frost/transport"
++	"github.com/keep-network/keep-core/pkg/operator"
++	"github.com/keep-network/keep-core/pkg/protocol/group"
++	"github.com/keep-network/keep-core/pkg/tbtc"
++)
++
++func probeLog(format string, args ...interface{}) {
++	fmt.Fprintf(os.Stderr, time.Now().Format("15:04:05.000")+" probe "+format+"\n", args...)
++}
++
++// probeBitcoin is signing.Bitcoin over the node's own Bitcoin chain, so a
++// broadcast goes through the node's recorder.
++type probeBitcoin struct{ chain *b6BitcoinRecorder }
++
++func (p probeBitcoin) Genesis(context.Context) ([32]byte, error) {
++	return [32]byte(*chaincfg.RegressionNetParams.GenesisHash), nil
++}
++func (p probeBitcoin) Transaction(_ context.Context, h bitcoin.Hash) ([]byte, error) {
++	tx, err := p.chain.GetTransaction(h)
++	if err != nil {
++		return nil, err
++	}
++	return tx.Serialize(bitcoin.Witness), nil
++}
++func (p probeBitcoin) Confirmations(ctx context.Context, h bitcoin.Hash) (uint, error) {
++	return p.chain.GetTransactionConfirmations(ctx, h)
++}
++func (p probeBitcoin) Unspent(_ context.Context, o bitcoin.TransactionOutpoint) (bool, error) {
++	live := p.chain.Chain.(*b6LiveBitcoin)
++	if err := live.refresh(); err != nil {
++		return false, err
++	}
++	c := live.inner
++	c.mutex.Lock()
++	defer c.mutex.Unlock()
++	tx := c.findLocked(o.TransactionHash)
++	return tx != nil && int(o.OutputIndex) < len(tx.Outputs) && !c.spentLocked(&o, true), nil
++}
++func (p probeBitcoin) Broadcast(_ context.Context, raw []byte) error {
++	tx := new(bitcoin.Transaction)
++	if err := tx.Deserialize(raw); err != nil {
++		return err
++	}
++	return p.chain.BroadcastTransaction(tx)
++}
++
++func init() {
++	frostNodeStart = func(ctx context.Context, h frostNodeHost) error {
++		if err := tbtc.Initialize(ctx, h.Chain, h.BitcoinChain, h.Network, h.KeyStore, h.Work, h.Scheduler, h.Proposals, h.Config, nil, nil, h.EthereumNetwork); err != nil {
++			return err
++		}
++		if h.FrostRegistry == (common.Address{}) {
++			return nil
++		}
++		raw, err := os.ReadFile(h.EthereumConfig.Account.KeyFile)
++		if err != nil {
++			return err
++		}
++		decrypted, err := keystore.DecryptKey(raw, h.EthereumConfig.Account.KeyFilePassword)
++		if err != nil {
++			return err
++		}
++		key := decrypted.PrivateKey
++		client, err := ethclient.Dial(h.EthereumConfig.URL)
++		if err != nil {
++			return err
++		}
++		registry, err := binding.NewFrostWalletRegistry(h.FrostRegistry, client)
++		if err != nil {
++			return err
++		}
++		bridge := common.HexToAddress(h.EthereumConfig.ContractAddresses["bridge"])
++		root, err := store.Open(ctx, h.Store)
++		if err != nil {
++			return err
++		}
++		chainID, err := client.ChainID(ctx)
++		if err != nil {
++			return err
++		}
++		var chainBytes [32]byte
++		chainID.FillBytes(chainBytes[:])
++		private := &operator.PrivateKey{PublicKey: operator.PublicKey{Curve: operator.Secp256k1, X: key.X, Y: key.Y}, D: key.D}
++		signer := h.Chain.Signing()
++		self := crypto.PubkeyToAddress(key.PublicKey)
++		frostChain, err := eth.NewFrostRedemptionChain(ctx, client, key, bridge)
++		if err != nil {
++			return err
++		}
++		view := &movement.View{Chain: frostChain, Policy: movement.Policy{FinalityBlocks: 2}}
++		btc := h.BitcoinChain.(*b6BitcoinRecorder)
++		domainFor := func(epoch uint64) frost.Domain {
++			return frost.Domain{Network: "batch-6/local-anvil", Chain: chainBytes, Registry: [20]byte(h.FrostRegistry), Epoch: epoch}
++		}
++		var scopes sync.Mutex
++		scoped := map[uint64]*store.Scoped{}
++		scope := func(epoch uint64) (*store.Scoped, error) {
++			scopes.Lock()
++			defer scopes.Unlock()
++			if s, ok := scoped[epoch]; ok {
++				return s, nil
++			}
++			s, err := root.Scope(domainFor(epoch))
++			if err == nil {
++				scoped[epoch] = s
++			}
++			return s, err
++		}
++
++		// Coordination and incoming sweeps for every ready wallet: restored
++		// once before the binding returns (as base loads its wallets in
++		// newNode), then for wallets made later.
++		coordinated := map[[32]byte]bool{}
++		var fatal error
++		var dkgLock sync.Mutex
++		discover := func(initial bool) {
++			approved, err := registry.FilterResultApproved(&bind.FilterOpts{Context: ctx}, nil, nil, nil)
++			if err != nil {
++				return
++			}
++			for approved.Next() {
++				e, id := approved.Event.Epoch, approved.Event.WalletId
++				if coordinated[id] {
++					continue
++				}
++				wallet, err := registry.Wallet(&bind.CallOpts{Context: ctx}, id)
++				if err != nil || wallet.State != 2 {
++					continue
++				}
++				coordinated[id] = true
++				if initial && os.Getenv("B6CTL_NORESTORE") != "" {
++					continue // CONTROL: no restore at startup
++				}
++				var label [20]byte
++				copy(label[:], id[:20])
++				var operators []chain.Address
++				var roster, locals []uint16
++				for i, o := range wallet.Descriptor.Operators {
++					operators = append(operators, chain.Address(o.Hex()))
++					roster = append(roster, uint16(i+1))
++					if o == self {
++						locals = append(locals, uint16(i+1))
++					}
++				}
++				if len(locals) == 0 {
++					continue
++				}
++				journal, err := scope(e)
++				if err != nil {
++					probeLog("scope %d: %v", e, err)
++					continue
++				}
++				desc := wallet.Descriptor
++				membership := group.NewMembershipValidator(&testutils.MockLogger{}, operators, signer)
++				base := signing.Config{Journal: journal, Bitcoin: probeBitcoin{btc}, Worker: h.Worker, MinimumConfirmations: 1, LocalRegtest: true, Transport: func(ctx context.Context, a frost.Attempt) (frost.Transport, func(), error) {
++					tr, err := transport.New(ctx, transport.Config{Domain: journal.Domain(), Attempt: a, ID: snowfallengine.AttemptID(a), LocalSeats: locals, Roster: roster, LocalPublicKey: operator.MarshalUncompressed(&private.PublicKey), Membership: membership, Network: h.Network})
++					if err != nil {
++						return nil, nil, err
++					}
++					return tr, tr.Close, nil
++				}}
++				planner := movement.Planner{View: view, Bitcoin: btc, Wallet: desc, Genesis: [32]byte(*chaincfg.RegressionNetParams.GenesisHash), FeeRate: 1, MaximumSatPerVByte: 10}
++				schedule := redemption.Schedule{FinalityBlocks: 2, RoundBlocks: 10}
++				mover := &movement.Mover{Chain: frostChain, Authority: &movement.Authority{View: view}, Lock: &deposit.MainLock{Journal: journal}, Ledger: redemption.Ledger{Journal: journal}, Schedule: schedule, Wallet: desc, Base: base}
++				var busy sync.Mutex
++				onResult := func(window uint64, p tbtc.CoordinationProposal) {
++					proposal, ok := p.(*tbtc.MovedFundsSweepProposal)
++					if !ok {
++						return
++					}
++					if window == 0 {
++						// CONTROL timer: no proposal to validate.
++					} else if err := tbtc.ValidateMovedFundsSweepProposal(golog.Logger("probe"), label, proposal, h.Chain.(interface {
++						ValidateMovedFundsSweepProposal([20]byte, *tbtc.MovedFundsSweepProposal) error
++					})); err != nil {
++						probeLog("window %d: proposal refused: %v", window, err)
++						return
++					}
++					if !busy.TryLock() {
++						return
++					}
++					go func() {
++						defer busy.Unlock()
++						if os.Getenv("B6CTL_DKG_LOCK") != "" {
++							dkgLock.Lock()
++							defer dkgLock.Unlock()
++						}
++						plan, err := planner.IncomingSweep(ctx)
++						if err != nil {
++							probeLog("window %d: plan: %v", window, err)
++							return
++						}
++						// Rounds derived from the window, as every member
++						// derives them; a few rounds for an absent operator.
++						first := (window + 80) / schedule.RoundBlocks
++						if window == 0 {
++							head, _ := client.BlockNumber(ctx)
++							first = head/schedule.RoundBlocks + 1
++						}
++						for number := first; number < first+12 && ctx.Err() == nil; number++ {
++							start := number*schedule.RoundBlocks + schedule.FinalityBlocks
++							for {
++								head, err := client.BlockNumber(ctx)
++								if err != nil || head >= start {
++									break
++								}
++								time.Sleep(20 * time.Millisecond)
++							}
++							eligible, err := mover.Eligible(ctx, number)
++							if err != nil {
++								probeLog("eligible: %v", err)
++								return
++							}
++							if !eligible {
++								continue
++							}
++							sctx, cancel := context.WithTimeout(ctx, 3*time.Second)
++							_, err = mover.Sign(sctx, plan, number)
++							cancel()
++							if err != nil {
++								probeLog("window %d round %d: sign: %v", window, number, err)
++								if ctx.Err() != nil {
++									return
++								}
++								continue
++							}
++							if err := mover.Broadcast(ctx, plan); err != nil {
++								probeLog("broadcast: %v", err)
++							}
++							return
++						}
++					}()
++				}
++				if initial && os.Getenv("B6CTL_FATAL_RECORD") != "" {
++					if record, err := journal.LoadWallet(ctx); err != nil || record.State != "ReadyUnfunded" {
++						fatal = fmt.Errorf("CONTROL: wallet %x local record not ready", id[:4])
++					}
++				}
++				if os.Getenv("B6CTL_TIMER") != "" {
++					// CONTROL: sweep on a timer, not from base windows.
++					go func() {
++						for ctx.Err() == nil {
++							time.Sleep(300 * time.Millisecond)
++							onResult(0, &tbtc.MovedFundsSweepProposal{})
++						}
++					}()
++					continue
++				}
++				if err := tbtc.RVProbeCoordinate(ctx, h.Chain, h.Network, label, operators, h.Proposals, onResult); err != nil {
++					probeLog("coordinate: %v", err)
++				}
++			}
++			approved.Close()
++		}
++		discover(true)
++		if fatal != nil {
++			return fatal
++		}
++		go func() {
++			for ctx.Err() == nil {
++				time.Sleep(100 * time.Millisecond)
++				discover(false)
++			}
++		}()
++
++		// The library DKG for every epoch selecting a local seat.
++		go func() {
++			done := map[uint64]bool{}
++			for ctx.Err() == nil {
++				time.Sleep(50 * time.Millisecond)
++				epoch, err := registry.Epoch(&bind.CallOpts{Context: ctx})
++				if err != nil || epoch == 0 || done[epoch] {
++					continue
++				}
++				done[epoch] = true
++				if id, err := registry.ApprovedWallet(&bind.CallOpts{Context: ctx}, epoch); err == nil && id != ([32]byte{}) {
++					continue // restored, not rerun
++				}
++				_, operators, err := registry.Selection(&bind.CallOpts{Context: ctx}, epoch)
++				if err != nil || len(operators) == 0 {
++					done[epoch] = false
++					continue
++				}
++				var roster, locals []uint16
++				addresses := make([]chain.Address, len(operators))
++				for i, a := range operators {
++					roster = append(roster, uint16(i+1))
++					if a == self {
++						locals = append(locals, uint16(i+1))
++					}
++					addresses[i] = chain.Address(a.Hex())
++				}
++				if len(locals) == 0 {
++					continue
++				}
++				dctx, cancel := context.WithTimeout(ctx, 60*time.Second)
++				domain := domainFor(epoch)
++				journal, err := scope(epoch)
++				if err != nil {
++					cancel()
++					continue
++				}
++				engine, err := snowfallengine.NewGuarded(h.Worker, journal)
++				if err != nil {
++					cancel()
++					continue
++				}
++				attempt, err := domain.NewAttempt("dkg", [32]byte{23}, epoch)
++				if err != nil {
++					cancel()
++					continue
++				}
++				membership := group.NewMembershipValidator(&testutils.MockLogger{}, addresses, signer)
++				tr, err := transport.New(dctx, transport.Config{Domain: domain, Attempt: attempt, ID: snowfallengine.AttemptID(attempt), LocalSeats: locals, Roster: roster, LocalPublicKey: operator.MarshalUncompressed(&private.PublicKey), Membership: membership, Network: h.Network})
++				if err != nil {
++					cancel()
++					continue
++				}
++				bus, err := dkg.NewNetworkBus(dctx, h.Network, membership, domain.ID(), domain.Epoch)
++				if err != nil {
++					cancel()
++					continue
++				}
++				fchain, err := eth.NewFrostChain(ctx, client, key, h.FrostRegistry, bridge)
++				if err != nil {
++					cancel()
++					continue
++				}
++				if os.Getenv("B6CTL_ONESEAT") != "" {
++					locals = locals[:1] // CONTROL: one seat per operator
++				}
++				executor := &dkg.Executor{Chain: fchain, Engine: engine, Journal: journal, Bus: bus, Signer: key, Request: frost.DKGRequest{Group: frost.Group{Roster: roster, Threshold: 2, Quorum: 3, Epoch: epoch}, LocalSeats: locals, Participants: roster, Attempt: attempt}, Providers: frost.Providers{Transport: tr, Store: journal}, FinalityBlocks: 2, PollInterval: 50 * time.Millisecond}
++				go func() {
++					defer cancel()
++					if os.Getenv("B6CTL_DKG_LOCK") != "" {
++						dkgLock.Lock() // CONTROL: signing waits for any DKG
++						defer dkgLock.Unlock()
++					}
++					_, err := tbtc.ExecuteFrostDKG(dctx, executor)
++					probeLog("dkg %d: %v", epoch, err)
++				}()
++			}
++		}()
++		return nil
++	}
++}
+diff --git a/pkg/tbtc/coordination.go b/pkg/tbtc/coordination.go
+index 2dd75e961..03ae7860e 100644
+--- a/pkg/tbtc/coordination.go
++++ b/pkg/tbtc/coordination.go
+@@ -304,6 +304,9 @@ type coordinationExecutor struct {
+ 
+ 	waitForBlockFn waitForBlockFn
+ 
++	// REVIEW PROBE (scratch): FROST wallet's 20-byte Bridge key.
++	labelOverride *[20]byte
++
+ 	// metricsRecorder is optional and used for recording performance metrics
+ 	metricsRecorder interface {
+ 		IncrementCounter(name string, value float64)
+@@ -342,6 +345,9 @@ func newCoordinationExecutor(
+ // walletPublicKeyHash returns the 20-byte public key hash of the
+ // coordinated wallet.
+ func (ce *coordinationExecutor) walletPublicKeyHash() [20]byte {
++	if ce.labelOverride != nil {
++		return *ce.labelOverride
++	}
+ 	return bitcoin.PublicKeyHash(ce.coordinatedWallet.publicKey)
+ }
+ 
+@@ -367,7 +373,7 @@ func (ce *coordinationExecutor) coordinate(
+ 	}
+ 
+ 	walletPublicKeyBytes, err := marshalPublicKey(ce.coordinatedWallet.publicKey)
+-	if err != nil {
++	if err != nil && ce.labelOverride == nil {
+ 		return nil, fmt.Errorf("cannot marshal wallet public key: [%v]", err)
+ 	}
+ 
+@@ -541,6 +547,9 @@ func (ce *coordinationExecutor) getSeed(
+ // getLeader returns the address of the coordination leader for the given
+ // coordination seed.
+ func (ce *coordinationExecutor) getLeader(seed [32]byte) chain.Address {
++	if ce.labelOverride != nil && rvProbeSeatOneLeader {
++		return ce.coordinatedWallet.signingGroupOperators[0]
++	}
+ 	// First, take all operators backing the wallet.
+ 	allOperators := chain.Addresses(ce.coordinatedWallet.signingGroupOperators)
+ 
+@@ -549,6 +558,9 @@ func (ce *coordinationExecutor) getLeader(seed [32]byte) chain.Address {
+ 	for operator := range allOperators.Set() {
+ 		uniqueOperators = append(uniqueOperators, operator)
+ 	}
++	if ce.labelOverride != nil && rvProbeNoDedup {
++		uniqueOperators = append([]chain.Address{}, allOperators...)
++	}
+ 
+ 	// Sort the list of unique operators in ascending order.
+ 	sort.Slice(

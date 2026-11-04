@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"reflect"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/keep-network/keep-common/pkg/cache"
@@ -89,6 +90,12 @@ type TbtcChain struct {
 	frostBridge *frostbridgeabi.FrostBridgeCaller
 	// frostBridgeEvents reads its events, which a pre-FROST Bridge never has.
 	frostBridgeEvents *frostbridgeabi.FrostBridgeFilterer
+
+	bridgeAddress common.Address
+	// frostRedemption reads FROST redemption requests for the proposal
+	// generator; it is bound on first use, by a FROST wallet only.
+	frostRedemptionMutex sync.Mutex
+	frostRedemption      *FrostRedemptionChain
 }
 
 // NewTbtcChain construct a new instance of the TBTC-specific Ethereum
@@ -299,6 +306,7 @@ func newTbtcChain(
 	return &TbtcChain{
 		frostBridge:              frostBridge,
 		frostBridgeEvents:        frostBridgeEvents,
+		bridgeAddress:            bridgeAddress,
 		baseChain:                baseChain,
 		bridge:                   bridge,
 		maintainerProxy:          maintainerProxy,

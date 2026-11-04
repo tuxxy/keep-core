@@ -109,6 +109,17 @@ func (c *Config) resolveNetworks(flagSet *pflag.FlagSet) (network.Type, error) {
 	return clientNetwork, err
 }
 
+// ValidateFrostNode is the FROST node gate over every FROST setting of the
+// client configuration: the [frost] switch and the node's FROST settings
+// ([tbtc.frost], tbtc.Config.Frost). Until a testnet decision the client
+// refuses both (D5); a FROST-configured node exists only in code.
+func (c *Config) ValidateFrostNode() error {
+	if viper.IsSet("tbtc.frost") || c.Tbtc.Frost.Configured() {
+		return frost.Config{Enabled: true}.ValidateNode()
+	}
+	return c.Frost.ValidateNode()
+}
+
 // ReadConfig reads in the configuration file at `configFilePath` and flags defined in
 // the `flagSet`.
 func (c *Config) ReadConfig(configFilePath string, flagSet *pflag.FlagSet, categories ...Category) error {
@@ -145,7 +156,7 @@ func (c *Config) ReadConfig(configFilePath string, flagSet *pflag.FlagSet, categ
 
 	// Refuse the local-only FROST switch before chain configuration or
 	// operator credentials are used.
-	if err := c.Frost.ValidateNode(); err != nil {
+	if err := c.ValidateFrostNode(); err != nil {
 		return err
 	}
 

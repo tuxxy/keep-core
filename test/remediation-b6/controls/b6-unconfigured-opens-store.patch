@@ -1,0 +1,28 @@
+diff --git a/pkg/tbtc/frost_node_b6_binding_test.go b/pkg/tbtc/frost_node_b6_binding_test.go
+new file mode 100644
+index 0000000..074ad8a
+--- /dev/null
++++ b/pkg/tbtc/frost_node_b6_binding_test.go
+@@ -0,0 +1,22 @@
++package tbtc_test
++
++// CONTROL b6-unconfigured-opens-store (rule 5): today's node initialisation,
++// then the FROST store is opened whether or not FROST is configured. Not a
++// fix.
++
++import (
++	"context"
++
++	"github.com/keep-network/keep-core/pkg/frost/store"
++	"github.com/keep-network/keep-core/pkg/tbtc"
++)
++
++func init() {
++	frostNodeStart = func(ctx context.Context, h frostNodeHost) error {
++		if err := tbtc.Initialize(ctx, h.Chain, h.BitcoinChain, h.Network, h.KeyStore, h.Work, h.Scheduler, h.Proposals, h.Config, nil, nil, h.EthereumNetwork); err != nil {
++			return err
++		}
++		_, err := store.Open(ctx, h.Store)
++		return err
++	}
++}

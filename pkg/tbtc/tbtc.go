@@ -96,6 +96,10 @@ type Config struct {
 	PreParamsGenerationConcurrency int
 	// Concurrency level for key-generation for tECDSA.
 	KeyGenerationConcurrency int
+	// Frost is the FROST configuration. Its zero value leaves FROST
+	// unconfigured: the node then runs the legacy duties only. It is never
+	// read from a configuration file: keep-client start refuses FROST (D5).
+	Frost FrostConfig `mapstructure:"-"`
 }
 
 // Initialize kicks off the TBTC by initializing internal state, ensuring
@@ -155,9 +159,23 @@ func Initialize(
 		return fmt.Errorf("cannot set up TBTC node: [%v]", err)
 	}
 
+	if config.Frost.Configured() {
+		node.frost, err = newFrostNode(ctx, node, config.Frost, ethereumNetwork.String())
+		if err != nil {
+			return fmt.Errorf("cannot set up FROST: [%w]", err)
+		}
+	}
+
 	err = node.runCoordinationLayer(ctx)
 	if err != nil {
 		return fmt.Errorf("cannot run coordination layer: [%w]", err)
+	}
+
+	if node.frost != nil {
+		err = node.frost.runDKGLoop(ctx)
+		if err != nil {
+			return fmt.Errorf("cannot run FROST DKG loop: [%w]", err)
+		}
 	}
 
 	deduplicator := newDeduplicator()

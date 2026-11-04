@@ -117,6 +117,9 @@ type node struct {
 	// transactionMonitor watches broadcast wallet transactions and alerts on
 	// ones that remain unconfirmed long enough to be considered stuck.
 	transactionMonitor *transactionMonitor
+
+	// frost holds the FROST duties when FROST is configured; nil otherwise.
+	frost *frostNode
 }
 
 func newNode(

@@ -30,6 +30,10 @@ type Planner struct {
 	// FeeRate sizes transactions; MaximumSatPerVByte is the ceiling. Both are
 	// D-09 inputs (local test values, OPEN).
 	FeeRate, MaximumSatPerVByte int64
+	// Fee, when set, is the exact incoming sweep fee: the coordinated
+	// proposal's, which every operator signs (D19). It replaces the FeeRate
+	// sizing and must stay within the caps.
+	Fee int64
 	boundary                    func(string) error
 }
 
@@ -287,6 +291,12 @@ func (p Planner) IncomingSweep(ctx context.Context) (*signing.Plan, error) {
 		return nil, err
 	}
 	fee := p.FeeRate * sizing.VirtualSize()
+	if p.Fee > 0 {
+		if uint64(p.Fee) > capFee {
+			return nil, fmt.Errorf("incoming sweep fee %d exceeds cap %d", p.Fee, capFee)
+		}
+		fee = p.Fee
+	}
 	if uint64(fee) > capFee {
 		fee = int64(capFee)
 	}

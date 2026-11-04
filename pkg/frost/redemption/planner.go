@@ -77,6 +77,10 @@ type Planner struct {
 	Wallet  dkg.Descriptor
 	Genesis [32]byte
 	Fees    FeePolicy
+	// Fee, when set, is the exact transaction fee: the coordinated
+	// proposal's, which every operator signs (D19). It replaces the FeeRate
+	// sizing and is checked against the same bounds.
+	Fee int64
 	// DeadlineMargin is the minimum number of seconds left before a request
 	// deadline for it to be planned or attested (a D-09 input).
 	DeadlineMargin uint64
@@ -238,6 +242,9 @@ func (p Planner) Build(ctx context.Context, at uint64, ids [][32]byte) (*signing
 		return nil, nil, ErrFeeDomain
 	}
 	fee := p.Fees.FeeRate * vsize
+	if p.Fee > 0 {
+		fee = p.Fee
+	}
 	maximum, err := p.Chain.MaximumTotalFee(ctx, at)
 	if err != nil {
 		return nil, nil, err

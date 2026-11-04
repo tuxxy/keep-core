@@ -20,6 +20,7 @@ import (
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
+	"github.com/keep-network/keep-core/pkg/frost/store"
 	"github.com/keep-network/keep-core/pkg/net"
 	"github.com/keep-network/keep-core/pkg/protocol/group"
 )
@@ -524,6 +525,15 @@ func (fw *frostWallet) resume(
 		return nil
 	}
 	plan, err := fw.loadPlan(ctx, reservation)
+	if errors.Is(err, store.ErrMissing) {
+		// This member did not attest the reservation (it was offline):
+		// the plan is rebuilt from chain state and accepted only if it is
+		// exactly the admitted one (ADV-D2).
+		plan, err = fw.rebuildPlan(ctx, intent)
+		if err == nil {
+			err = fw.retainPlan(ctx, reservation, plan)
+		}
+	}
 	if err != nil {
 		return fmt.Errorf(
 			"cannot resume FROST reservation [0x%x]: [%w]",
@@ -555,6 +565,32 @@ func (fw *frostWallet) resume(
 	)
 
 	return fw.pay(payCtx, actionLogger, plan, reservation, admission)
+}
+
+// rebuildPlan rebuilds the payment plan of an admitted reservation from
+// chain state with K-05's planner, which accepts it only if it is exactly
+// the admitted one (ADV-D2).
+func (fw *frostWallet) rebuildPlan(
+	ctx context.Context,
+	intent redemption.Intent,
+) (*signing.Plan, error) {
+	fn := fw.node
+	planner := redemption.Planner{
+		Chain:   fn.bridge,
+		Bitcoin: fn.bitcoin,
+		Wallet:  fw.descriptor,
+		Genesis: fn.genesis,
+		Fees: redemption.FeePolicy{
+			FeeRate:            1,
+			MaximumSatPerVByte: frostMaximumSatPerVByte,
+			Minimum:            frostMinimumFee,
+		},
+	}
+	plan, err := planner.Rebuild(ctx, intent)
+	if err != nil {
+		return nil, fmt.Errorf("cannot rebuild FROST redemption plan: [%w]", err)
+	}
+	return plan, nil
 }
 
 // frostPlanRecordID is the FROST store record of the plan attested for a
@@ -653,6 +689,9 @@ func (fw *frostWallet) pay(
 		Schedule: schedule,
 		Policy:   redemption.RebroadcastThenCancel,
 		Base:     fw.signingConfig(),
+		// Signers rotate over the certified seats, so a member that did
+		// not attest can help pay (ADV-D2).
+		Wallet: fw.descriptor,
 	}
 
 	first := admission.Block + schedule.FinalityBlocks

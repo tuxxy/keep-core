@@ -1,9 +1,17 @@
 package redemption
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"math/rand"
+	"slices"
+	"sort"
+
+	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/keep-network/keep-core/pkg/frost/dkg"
 )
 
 // Agreement is the executor configuration every operator must share
@@ -61,4 +69,53 @@ func AgreeRound(s Schedule, chainID uint64, bridge [20]byte, purpose string, res
 	raw = append(raw, admission.BlockHash[:]...)
 	raw = binary.BigEndian.AppendUint64(raw, round)
 	return Agreement{Session: sha256.Sum256(raw), StartBlock: base + round*s.RoundBlocks, Selected: append([]uint16(nil), seats...), Round: round}, nil
+}
+
+// SelectSeats is the signing seats of one payment round, chosen as base
+// keep-core chooses a signing attempt's participants (pkg/tbtc
+// signingRetryLoop, tecdsa/retry EvaluateRetryParticipantsForSigning) and as
+// movement rounds do: the operators holding readiness-certified seats,
+// sorted by address and shuffled with the wallet ID and the rotation cycle,
+// then whole operators (their certified seats) taken from the round's start
+// operator until the seats reach the threshold. Every operator derives the
+// same seats from chain state and the round alone. It returns nil when the
+// certified seats cannot reach the threshold.
+func SelectSeats(d dkg.Descriptor, certified []uint16, round uint64) []uint16 {
+	seatsOf := map[common.Address][]uint16{}
+	var operators []common.Address
+	for i, member := range d.Members {
+		seat := uint16(i + 1)
+		if member == 0 || i >= len(d.Operators) || !slices.Contains(certified, seat) {
+			continue
+		}
+		operator := d.Operators[i]
+		if _, ok := seatsOf[operator]; !ok {
+			operators = append(operators, operator)
+		}
+		seatsOf[operator] = append(seatsOf[operator], seat)
+	}
+	total := 0
+	for _, seats := range seatsOf {
+		total += len(seats)
+	}
+	if len(operators) == 0 || total < int(d.Threshold) {
+		return nil
+	}
+	sort.Slice(operators, func(i, j int) bool {
+		return bytes.Compare(operators[i][:], operators[j][:]) < 0
+	})
+	id := dkg.WalletID(d.OutputKey)
+	n := uint64(len(operators))
+	// #nosec G404 (insecure random number source (rand))
+	// As in base, shuffling operators for retries needs no secure randomness.
+	rng := rand.New(rand.NewSource(int64(binary.BigEndian.Uint64(id[:8])) + int64(round/n)))
+	rng.Shuffle(len(operators), func(i, j int) {
+		operators[i], operators[j] = operators[j], operators[i]
+	})
+	var out []uint16
+	for i := uint64(0); i < n && len(out) < int(d.Threshold); i++ {
+		out = append(out, seatsOf[operators[(round%n+i)%n]]...)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
 }

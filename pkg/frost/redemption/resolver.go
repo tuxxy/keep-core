@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/keep-network/keep-core/pkg/frost/dkg"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
 )
 
@@ -110,7 +111,14 @@ type Resolver struct {
 	// Base carries the operator's journal, Bitcoin view, worker, transport,
 	// confirmations and LocalRegtest. Plan, Reservation, Session, StartBlock,
 	// FinalityBlocks, Selected and Reservations are filled per attempt.
-	Base     signing.Config
+	Base signing.Config
+	// Wallet, when set, makes a payment's signers rotate per round over the
+	// wallet's readiness-certified seats (SelectSeats), as base rotates a
+	// signing attempt's participants over the operating group, so any
+	// threshold of certified seats online can pay an admitted reservation
+	// (DECISIONS.md, ADV-D2). Unset, the certificate's attesting seats sign.
+	// The payment content is fixed by the admission either way.
+	Wallet   dkg.Descriptor
 	boundary func(string) error
 }
 
@@ -175,6 +183,21 @@ func (r *Resolver) agreement(ctx context.Context, plan *signing.Plan, reservatio
 			return Agreement{}, err
 		}
 		seats = intent.Seats
+		if r.Wallet.OutputKey != ([32]byte{}) {
+			certified, err := r.Chain.CertifiedSeats(ctx, plan.WalletID())
+			if err != nil {
+				return Agreement{}, err
+			}
+			number := uint64(0)
+			if round != nil {
+				number = *round
+			} else if base := admission.Block + r.Schedule.FinalityBlocks; r.Schedule.RoundBlocks != 0 && head.Number >= base {
+				number = (head.Number - base) / r.Schedule.RoundBlocks
+			}
+			if seats = SelectSeats(r.Wallet, certified, number); len(seats) == 0 {
+				return Agreement{}, errors.New("no certified seats reach the threshold")
+			}
+		}
 	}
 	if round != nil {
 		return AgreeRound(r.Schedule, r.Chain.ChainID(), r.Chain.Bridge(), purpose, reservation, admission, seats, *round)

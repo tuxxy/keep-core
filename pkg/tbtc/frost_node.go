@@ -17,6 +17,7 @@ import (
 	"github.com/keep-network/keep-core/pkg/chain"
 	"github.com/keep-network/keep-core/pkg/frost"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
+	"github.com/keep-network/keep-core/pkg/frost/enforcement"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/frost/redemption"
 	"github.com/keep-network/keep-core/pkg/frost/signing"
@@ -98,11 +99,22 @@ type FrostRegistryChain interface {
 	Wallet(ctx context.Context, id [32]byte) (dkg.Wallet, error)
 }
 
-// FrostBridgeChain is the FROST extension of the Bridge: redemptions (C-04)
-// and movement (C-06).
+// FrostBridgeChain is the FROST extension of the Bridge: redemptions (C-04),
+// deposits (C-05, read through the movement seam), movement (C-06) and
+// heartbeat and inactivity enforcement (C-09).
 type FrostBridgeChain interface {
 	redemption.Chain
 	movement.Chain
+	enforcement.Chain
+}
+
+// FrostBridgeConnector is implemented by host chains that bind the FROST
+// extension of the Bridge for the proposal generator, which reads a FROST
+// wallet's deposits and movement through the same seams the members plan
+// from. Only a FROST wallet's proposal task binds it.
+type FrostBridgeConnector interface {
+	FrostTargetResolver
+	FrostBridge(ctx context.Context) (FrostBridgeChain, error)
 }
 
 // FrostChainConnector is implemented by host chains that can bind the FROST

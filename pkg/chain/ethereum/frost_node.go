@@ -69,6 +69,14 @@ func (tc *TbtcChain) ConnectFrost(
 
 var _ tbtc.FrostChainConnector = (*TbtcChain)(nil)
 
+// FrostBridge implements tbtc.FrostBridgeConnector: the FROST extension of
+// the Bridge, bound on first use by a FROST wallet's proposal task.
+func (tc *TbtcChain) FrostBridge(ctx context.Context) (tbtc.FrostBridgeChain, error) {
+	return tc.frostRedemptionChain(ctx)
+}
+
+var _ tbtc.FrostBridgeConnector = (*TbtcChain)(nil)
+
 // frostRedemptionChain binds the FROST extension of the Bridge once.
 func (tc *TbtcChain) frostRedemptionChain(ctx context.Context) (*FrostRedemptionChain, error) {
 	tc.frostRedemptionMutex.Lock()

@@ -19,7 +19,7 @@ C11B_TBTC=<dir>/tbtc-v2 test/c11b/run.sh
 C11B_TBTC=<dir>/tbtc-v2 test/c11b/controls/run-controls.sh all   # needs the implementation
 ```
 
-`run.sh` checks the tbtc-v2 tree (`b0b02e2c`), runs without the ECDSA
+`run.sh` checks the tbtc-v2 tree (`b0b02e2c`) and that the build came from it (`check-tbtc-build.js`: every build-info source equals the tree's blob or the installed dependency, and each artifact equals its build-info output; the world repeats the check for every artifact it loads), runs without the ECDSA
 stubs (the real WalletRegistry, EIP-170 enforced) and keeps temporary files
 in `.c11b-tmp/`. A plain `yarn test` without `C11B_TBTC` skips this suite;
 `run.sh` sets `C11B_RUN=1`, so the acceptance run never skips.
@@ -68,7 +68,7 @@ in `.c11b-tmp/`. A plain `yarn test` without `C11B_TBTC` skips this suite;
 | 7 window | after every builder transaction, every state-changing call of the stack ABI from an outsider is refused or changes nothing |
 | 8 line-up | the council installs the registry through the C-11a BridgeGovernance (`configureFrostRegistry`); with Bridge requests on, a request is refused at the registry; once the council opens the registry, the request passes both the registry gate and the beacon authorization |
 | 9 bytecode | runtime code equals the artifact with links substituted and immutables masked (metadata kept); each immutable holds its expected value; each size ≤ 24,576 |
-| 10 legacy | no legacy view, slot or authorization changes; the only events are ownership and chaosnet-role transfers on the stack and the beacon's `RequesterAuthorizationUpdated(registry, true)` |
+| 10 legacy | no legacy view, slot or authorization changes; the only events are ownership and chaosnet-role transfers on the stack, the beacon's `RequesterAuthorizationUpdated(registry, true)`, and a redundant `RequestsEnabled(false)` or `PermissionUpdated(x, false)` only when the same switch shows no `true` event in the bundle |
 
 Refusals are read with `eth_estimateGas` (never `eth_call`, REVIEW-FIX-C11
 N4). A call that does not revert is sent inside an EVM snapshot and counts
@@ -90,7 +90,16 @@ only if it changes the frame.
 
 `controls/run-controls.sh <name>|all` runs each `.wrong.ts` variant (via
 `C11B_BUILDER`) and passes when its target case fails at the named assertion.
+The `.right.ts` variant (a correct builder with a redundant "off") is a
+positive control: it passes when the whole suite passes.
 The variants wrap the real builder (`C11B_REAL_BUILDER` overrides it). A
 variant that must leave an end state the real builder cannot reach uses
 Hardhat impersonation of the role holder; it stands for a builder that left
 that state.
+
+## Activation runbook note (review N6)
+
+With chaosnet active (D24 pick b), the FROST pool's `insertOperator` admits
+only beta operators. Activation therefore needs the `chaosnetOwner` (the
+Council Safe on mainnet) to add beta operators or to call
+`deactivateChaosnet`, which is one-way.

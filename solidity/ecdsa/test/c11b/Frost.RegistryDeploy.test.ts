@@ -959,7 +959,21 @@ suite("C-11b FROST registry stack deploy (keep-core, KC-SF-V3 §7 C-11)", () => 
       contract: s.pool,
     }
     const beacon = await w.walletRegistry.randomBeacon()
-    const unexpected = (await logsSince(startBlock, named))
+    const logs = await logsSince(startBlock, named)
+    // A redundant "off" (RequestsEnabled(false), PermissionUpdated(x, false))
+    // is harmless unless the same switch was turned on during the bundle
+    // (review N1); an "on" is never allowed, so a deployer toggling a switch
+    // on and off inside the window still fails here (review W1, N2).
+    const turnedOn = new Set(
+      logs
+        .filter(
+          (l) =>
+            (l.event === "RequestsEnabled" && l.args?.enabled === true) ||
+            (l.event === "PermissionUpdated" && l.args?.allowed === true)
+        )
+        .map((l) => `${l.address}:${l.event}:${l.args?.operator ?? ""}`)
+    )
+    const unexpected = logs
       .filter((log) => {
         const stackLog = [
           bundle.registry,
@@ -971,6 +985,16 @@ suite("C-11b FROST registry stack deploy (keep-core, KC-SF-V3 §7 C-11)", () => 
           stackLog &&
           ["OwnershipTransferred", "ChaosnetOwnerRoleTransferred"].includes(
             log.event
+          )
+        )
+          return false
+        if (
+          stackLog &&
+          ((log.event === "RequestsEnabled" && log.args?.enabled === false) ||
+            (log.event === "PermissionUpdated" &&
+              log.args?.allowed === false)) &&
+          !turnedOn.has(
+            `${log.address}:${log.event}:${log.args?.operator ?? ""}`
           )
         )
           return false

@@ -6,8 +6,9 @@
 #
 # Every control needs the implementation, deploy/18_deploy_frost_registry.ts
 # (or C11B_REAL_BUILDER pointing at another builder). A control PASSES when
-# its target case FAILS at the expected named assertion. Each control swaps
-# the builder for a `.wrong.ts` variant through C11B_BUILDER.
+# its target case FAILS at the expected named assertion; a `.right.ts`
+# positive control PASSES when the whole suite passes with it. Each control
+# swaps the builder for its variant through C11B_BUILDER.
 set -euo pipefail
 cd "$(dirname "$0")/../../.."
 : "${C11B_TBTC:?Set C11B_TBTC (see test/c11b/README.md)}"
@@ -40,17 +41,31 @@ spec() {
   c11b-7-transient-admission-owner) echo "7 window|window: no outsider call changes FROST state during the bundle" ;;
   c11b-9-swapped-addresses) echo "9 bytecode|bytecode: runtime code of validator equals its artifact" ;;
   c11b-10-legacy-mutation) echo "10 legacy|legacy: every legacy view, slot and authorization is unchanged" ;;
+  c11b-10-window-toggle) echo "10 legacy|legacy: bundle and steps emit only the named events" ;;
+  c11b-10-unprobed-beta) echo "10 legacy|legacy: bundle and steps emit only the named events" ;;
+  c11b-10-redundant-off) echo "|PASSES" ;;
   *) return 1 ;;
   esac
 }
-ALL="c11b-1-registry-owner-deployer c11b-1-admission-owner-deployer c11b-1-pool-owner-council c11b-1-chaosnet-owner-deployer c11b-2-requests-on c11b-2-admits-operator c11b-3-no-beacon-step c11b-4-wrong-bridge c11b-4-wrong-bridge@8 c11b-4-wrong-beacon c11b-4-stake-source-token-staking c11b-4-swapped-periods c11b-4-legacy-pool c11b-4-reimbursement c11b-5-no-bridge-check c11b-6-mainnet-council c11b-7-transient-admission-owner c11b-9-swapped-addresses c11b-10-legacy-mutation"
+ALL="c11b-1-registry-owner-deployer c11b-1-admission-owner-deployer c11b-1-pool-owner-council c11b-1-chaosnet-owner-deployer c11b-2-requests-on c11b-2-admits-operator c11b-3-no-beacon-step c11b-4-wrong-bridge c11b-4-wrong-bridge@8 c11b-4-wrong-beacon c11b-4-stake-source-token-staking c11b-4-swapped-periods c11b-4-legacy-pool c11b-4-reimbursement c11b-5-no-bridge-check c11b-6-mainnet-council c11b-7-transient-admission-owner c11b-9-swapped-addresses c11b-10-legacy-mutation c11b-10-window-toggle c11b-10-unprobed-beta c11b-10-redundant-off"
 
+node test/c11b/check-tbtc-build.js "$C11B_TBTC" b0b02e2ccfcadaff05b15163120f503bc823cc82
 npx hardhat compile >/dev/null
 
 one() {
   local name="$1" file="${1%@*}" grep expected log
   IFS='|' read -r grep expected <<<"$(spec "$name")"
   log=".c11b-tmp/control-${name//@/-at-}.log"
+  if [ "$expected" = PASSES ]; then
+    C11B_BUILDER="$DIR/$file.right.ts" npx hardhat test --no-compile "$T" >"$log" 2>&1 || true
+    if grep -q " 13 passing" "$log" && ! grep -q " failing" "$log"; then
+      echo "PASS $name: the whole suite passes (positive control)"
+    else
+      echo "FAIL $name: a correct variant fails the suite (log $log)"
+      return 1
+    fi
+    return 0
+  fi
   C11B_BUILDER="$DIR/$file.wrong.ts" npx hardhat test --no-compile "$T" --grep "$grep" >"$log" 2>&1 || true
   if grep -q " failing" "$log" && grep -qF -- "$expected" "$log"; then
     echo "PASS $name: fails at \"$expected\""

@@ -1,0 +1,15 @@
+{
+  "comment": "TEST VALUES ONLY. D-02 OPEN: the production group size, threshold, readiness quorum, failure reserve and deadlines are not set. Values are pairwise distinct so that a swapped constructor argument shows in the wiring case.",
+  "policy": {
+    "groupSize": 100,
+    "threshold": 51,
+    "readySeats": 97,
+    "falseReadySeats": 3,
+    "unavailableSeats": 2,
+    "seedTimeout": 11521,
+    "resultTimeout": 17280,
+    "challengePeriod": 11520,
+    "readinessPeriod": 40320,
+    "maxPoolOperators": 150
+  }
+}

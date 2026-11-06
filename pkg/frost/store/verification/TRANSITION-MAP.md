@@ -136,3 +136,10 @@ Not modeled in this profile: the structural validation of the retained request
 covers it), the chain-derived fields of the wallet record beyond the receipt
 identity, keys and wallets in domain 1, and the executor that drives these
 calls (V-03).
+
+## Split dkg profiles (6 November 2026)
+
+`dkg-restore`, `dkg-host-crash` and `dkg-clone` add no transition: they offer
+the existing `RestoreStale`, `HostCrash` and `Clone` actions (section 2) in
+the dkg profile, one family each. Their correspondence is the one above;
+`HostCrash` stays simulated in replay (partial traces). See SCOPE.md §13.

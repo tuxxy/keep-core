@@ -377,3 +377,135 @@ S-K03-STORE-2. Their predecessors are marked superseded, and
 `check-freshness.py` reports superseded statements without citing them.
 Signing application records are not modeled. V-04 covers them with concrete
 tests.
+
+## 13. Re-pin at the integration head and split dkg profiles (6 November 2026)
+
+Recorded before the runs of this section. Agent `v0102` (KC-VER verification
+catch-up), self-review only, not independent review. Subject: keep-core
+`tuxxy/integration/snowfall-base` `925103a6c`, snowfall client `c1847ebdf133`.
+Issues: tuxxy/keep-core#75 (E2) and #76 (E3) from the self-review on
+tuxxy/keep-core#10 (comment 6169655265).
+
+### 13.1 Source change since §12
+
+The non-test Go files of `pkg/frost/store` and `pkg/frost` are byte-identical
+to K-05 `24e870e74` (K-05 is not an ancestor of the integration head after the
+restack; the comparison is by blob). In `pkg/frost/dkg`, `executor.go` changed
+(V-03 chain-side readiness and hooks); `types.go` is unchanged. In
+`pkg/frost/store` only test files changed (`replay_test.go`,
+`v04_guard_test.go`, `wallet_binding_test.go`). The store calls nothing in
+`executor.go`; the store model does not represent it (V-03 owns it).
+
+### 13.2 Package manifest pins (issue #75)
+
+From S-K02-HOST-4 and S-K03-STORE-3 on, a statement pins a **manifest** for
+each pinned package: the sorted list of every non-test `*.go` file directly in
+the directory with its git blob. Adding, deleting or renaming a file, not only
+changing one, makes the statement stale. The model crate's `src/` is pinned
+the same way (every `*.rs`). Single-file pins remain for the lockfile and the
+replay harness. Pinned packages: `pkg/frost/store`, and the two packages whose
+types it imports, `pkg/frost` and `pkg/frost/dkg` (both statements: the store
+package imports both). Further transitive imports outside `pkg/frost`
+(`frostabi`, `snowfallengine`, `net`, `chain`, `operator`, `protocol/group`,
+`internal/pb`) are not pinned: the store uses only `frost.Domain`,
+`frost.DKGRequest`, `frost.DKGStatus` and the `dkg` wallet and descriptor types
+from them. `--rev` and `--root` let the checker run against a revision or a
+plain copy. Negative controls, run on a scratch copy: an added non-test file,
+a deleted pinned file and a changed blob each make the statement stale; an
+added `_test.go` file does not.
+
+`signing.go` (K-04 signing application records) is in the manifest, so any
+change to it makes both statements stale, but its record semantics are **not
+in the V-01 model**: the model's claims carry no payload, so the identical or
+conflicting payload on `ErrClaimed`, the `syncCurrent` on an identical record,
+and `ReadSigningRecord` reading a claim's payload after release are not
+represented. The commit underneath (`Claim` through the fenced journal) is the
+modeled claim path. V-04 owns signing records (concrete tests).
+
+### 13.3 Split dkg profiles (issue #76)
+
+The §11.3 dkg profile omits clone, stale restore and host crash, while
+P-K03-NO-LATE-KEY names host crash, P-K03-SEATSLOST-TERMINAL names restore and
+a second process, and P-K03-RELOAD-ONLY-DURABLE names restore. Three
+profiles are added on the same kernel. Each is the §11.3 dkg profile plus
+exactly one fault family, with the same actions, properties and weakenings
+otherwise:
+
+| Profile | Added actions | Clauses it targets |
+| --- | --- | --- |
+| `dkg-restore` | `RestoreStale` on any existing image with a durable journal and no local lock (as in the store profile) | SEATSLOST-TERMINAL "restore"; RELOAD-ONLY-DURABLE "after restore" |
+| `dkg-host-crash` | `HostCrash` (as in the store profile) | NO-LATE-KEY "host crash"; RELOAD-ONLY-DURABLE and STATUS-DURABLE across the host-crash reopen |
+| `dkg-clone` | one `Clone` of image 0 to image 1 (as in the store profile) | SEATSLOST-TERMINAL "second process" on a cloned image |
+
+Combinations of fault families (for example restore after host crash) are
+not covered by these profiles; that is the full B1 action space, which
+exceeded the limits in tranche 2.
+
+The `dkg` profile and the `store` profile are unchanged: the new profiles add
+match arms and gates only, and the one new history field (`host_crashed`) is
+written only in `dkg-host-crash`. The re-run must reproduce the §12 counts
+(store 34,719,463; dkg 4,841,694) at three commits; that is the check that
+the model change did not alter them.
+
+**Witnesses.** Each split profile requires the §11.6 dkg witnesses. In
+addition, `dkg-restore` requires the existing `w_stale_restore_quarantine` and
+`dkg-clone` the existing `w_clone_busy`, so that each run shows its fault
+reaches the store. One witness is **proposed, not in KC-VER**:
+
+| ID | Profile | Supports | Definition |
+| --- | --- | --- | --- |
+| `w_key_loaded_after_host_crash` | `dkg-host-crash` | P-K03-RELOAD-ONLY-DURABLE | a host crash happened earlier on the path, and a handle that holds no live DKG claim then loaded the completed key (outcome `KeyLoaded`) |
+
+**Negative controls.** All six §11.5 weakenings are rerun in every split
+profile with early stopping; each must break its declared properties there.
+
+### 13.4 Bounds and limits
+
+Bounds: §11.3 plus the added fault family. Commits: KC-VER V-02 names four.
+Growth is measured first at two and three commits for each profile; a
+four-commit run is started only if the projection from the measured 2-to-3
+factor fits the limits, and a four-commit result is cited only if it
+completes. Limits per command (VER-BRIEF-COMMON, 6 November 2026): 900 s
+wall, 20 GiB resident set, 4 model threads; `GOMAXPROCS=4`. Anything
+projected above these is not started; a runbook is written instead.
+
+### 13.5 Current group-policy guard
+
+`validDKGRequest` (`dkg_status.go:71-76`) still rejects `Threshold <= n/2`,
+`n > 100` and `Quorum != n`, against KC-VER VD-05 (tuxxy/keep-core#77, open
+with the owner). This tranche does not change production code. The model
+does not represent request validation (assumption A-11: the retained request
+is well formed); the replay requests satisfy the current guard. The results
+of this section hold for the store with the current guard; a change to it
+changes `dkg_status.go`, which makes S-K03-STORE-3 stale.
+
+### 13.6 Revisions made during this section
+
+1. **Finding F-12, model defect (observer; assumption A-05 not applied).**
+   The first growth runs at two commits reported a `seatslost_terminal`
+   counterexample in the claim model of `dkg-restore` and of `dkg-clone`
+   (`dkg` and `dkg-host-crash` passed). Both paths lose both histories: a
+   status reported SeatsLost, the fence was reset to zero, and the image then
+   opened had no journal (a stale restore removed the only journal, or the
+   clone was taken before the journal was installed). The store opens empty,
+   a fresh claim reports InProgress. That is the A-05 boundary ("both
+   histories lost is excluded and shown reachable"): every other safety flag
+   is suppressed once `both_lost` is set, but the K-03 observers were not,
+   and the open observer did not count a reported SeatsLost status as an
+   acknowledged fact (so the clone path never set `both_lost`). Both
+   counterexamples replay on the real store with the claim model's
+   expectations (2/2 pass): the store does what the model says, so this is
+   not an implementation defect. Repair: a reported SeatsLost counts as a
+   fact at open; `seats_lost_regressed`, and the seats-lost clause of
+   `late_key`, are not raised after `both_lost`. The `late_key` clause for a
+   key saved without live ownership is unchanged. Neither change can alter
+   the `store` or `dkg` state spaces (no `DkgStatus` in `store`; no path to
+   a zero-head open without journals after a report in `dkg`); the rerun
+   checks that by the §12 counts. Counterexamples, results, the pre-repair
+   source and the replay are kept under `model-defect-observer-3/` in the
+   evidence directory. **Consequence for the predicate text:**
+   P-K03-SEATSLOST-TERMINAL "across any reopen, restore or second process"
+   holds under A-05 only; a restore or clone combined with a fence reset that
+   leaves no journal is excluded, as for the V-01 predicates. Open question
+   for the owner, not decided here.
+

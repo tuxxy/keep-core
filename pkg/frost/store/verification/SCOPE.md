@@ -509,3 +509,48 @@ changes `dkg_status.go`, which makes S-K03-STORE-3 stale.
    leaves no journal is excluded, as for the V-01 predicates. Open question
    for the owner, not decided here.
 
+### 13.7 Results (6 November 2026)
+
+Bounded model checking of the separate model plus concrete replay; not a
+proof of the Go source. Limits as §13.4 (4 threads, 900 s, 20 GiB); every run
+below completed before its deadline. Self-review only.
+
+| Profile | Commits | Claim-model states | Wall s | Peak RSS | Safety (10 properties) | Weakenings (6 or 7) | Witnesses |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `store` | 3 | 34,719,463 (= §12) | 108 | 7.0 GiB | 5/5 pass | 7/7 break declared | all |
+| `dkg` | 3 | 4,841,694 (= §12) | 20 | 1.2 GiB | 10/10 pass | 6/6 | all |
+| `dkg-restore` | 3 | 6,433,649 | 23 | 1.6 GiB | 10/10 pass | 6/6 | all, incl. `w_stale_restore_quarantine` |
+| `dkg-host-crash` | 3 | 9,688,473 | 41 | 2.9 GiB | 10/10 pass | 6/6 | all, incl. proposed `w_key_loaded_after_host_crash` |
+| `dkg-clone` | 2 | 3,194,973 | 40 | 0.9 GiB | 10/10 pass | 6/6 | all but `w_wallet_ready` (needs three commits), incl. `w_clone_busy` |
+
+The `store` and `dkg` counts equal §12, so the model change of this section
+did not alter those two state spaces. Replay: 208 traces (53 store, 50 dkg,
+35 dkg-restore, 36 dkg-host-crash, 34 dkg-clone), 179 full and 29 partial
+(host crash simulated, H-05), all pass, normally and under `-race`.
+
+Growth (claim model, unique states, 1 -> 2 -> 3 commits): dkg 6,810 ->
+194,767 -> 4,841,694 (x28.6, x24.9); dkg-restore 7,867 -> 289,461 ->
+6,433,649 (x36.8, x22.2); dkg-host-crash 13,619 -> 389,678 -> 9,688,473
+(x28.6, x24.9); dkg-clone 58,042 -> 3,194,973 (x55.0). Resident memory is
+260 to 320 bytes per state. Projections with the last measured factor:
+four commits dkg about 120 M states / 31 GiB, dkg-restore about 143 M /
+35 GiB, dkg-host-crash about 241 M / 72 GiB; dkg-clone at three commits
+80 M to 153 M / 21 to 41 GiB. None fits 20 GiB, so none was started (VD-02,
+R-09). The runbook is in the evidence directory (`RUNBOOK-4-COMMITS.md`).
+
+Per clause of the V-02 predicate text:
+
+| Predicate clause | Result |
+| --- | --- |
+| NO-LATE-KEY after release, process crash, restart | pass at 3 commits (`dkg`) |
+| NO-LATE-KEY after host crash | pass at 3 commits (`dkg-host-crash`) |
+| SEATSLOST-TERMINAL across reopen | pass at 3 commits (`dkg`) |
+| SEATSLOST-TERMINAL across restore | pass at 3 commits (`dkg-restore`), under A-05 (F-12) |
+| SEATSLOST-TERMINAL across a second process | pass at 3 commits for a second process on the same image (`dkg`); on a cloned image pass at **2 commits only** (`dkg-clone`), under A-05; 3 commits blocked |
+| STATUS-DURABLE, incl. uncertain key write and reopen | pass at 3 commits (`dkg`, `dkg-restore`, `dkg-host-crash`); 2 commits with clone |
+| STATUS-DURABLE "malformed durable request quarantines" | not modeled (A-11); unit tests only |
+| RELOAD-ONLY-DURABLE after restore | pass at 3 commits (`dkg-restore`) |
+| RELOAD-ONLY-DURABLE after reset | pass at 3 commits (`dkg`, one fence reset) |
+| RELOAD-ONLY-DURABLE after host crash | pass at 3 commits (`dkg-host-crash`) |
+| Any clause at the KC-VER bound of four commits | **blocked** (projected over 20 GiB) |
+| Fault families combined (for example restore after host crash) | not covered |

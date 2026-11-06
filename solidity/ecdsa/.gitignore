@@ -25,3 +25,6 @@ deployments/*
 
 # Migration results (may contain sensitive info)
 migration-results.json
+
+# C-11b test runs (test/c11b/run.sh)
+.c11b-tmp/

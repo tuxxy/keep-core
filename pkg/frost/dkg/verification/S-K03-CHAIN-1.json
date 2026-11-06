@@ -414,5 +414,7 @@
     "Provider subject/tooling/assumption change"
   ],
   "review": "review/independent-fourth.md",
-  "condition_closure": "evidence/independent-conditions-closure.json"
+  "condition_closure": "evidence/independent-conditions-closure.json",
+  "superseded_by": "S-K03-CHAIN-2",
+  "superseded_note": "Re-pinned 2026-11-06 at integration/snowfall-base 925103a6; the startup restore (Executor.Restore, 9e654b477) added behaviour this statement does not cover. Evidence retained at implementation/V-03/chain-verification-2026-10-15/ and in git history."
 }

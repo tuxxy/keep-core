@@ -14,10 +14,15 @@ import (
 // snapshots. Storage stages and crashes are not lockstep subprocess replay.
 // Every report is partial or none; no abstract contract action counts as Go.
 func TestV04TraceProjection(t *testing.T) {
-	dir := "verification/evidence/V-04-2026-10-13/traces"
+	// Traces of the 6 November 2026 model (#81). V04_SIGNING_TRACES selects
+	// another directory of the same model, for example a fresh run's output.
+	dir := "verification/evidence/V-04-2026-11-06/traces"
+	if env := os.Getenv("V04_SIGNING_TRACES"); env != "" {
+		dir = env
+	}
 	paths, err := filepath.Glob(filepath.Join(dir, "*.json"))
-	if err != nil || len(paths) != 23 {
-		t.Fatalf("expected ten witnesses and thirteen controls, got %d: %v", len(paths), err)
+	if err != nil || len(paths) != 25 {
+		t.Fatalf("expected eleven witnesses and fourteen controls, got %d: %v", len(paths), err)
 	}
 	for _, path := range paths {
 		t.Run(filepath.Base(path), func(t *testing.T) {
@@ -49,7 +54,9 @@ func TestV04TraceProjection(t *testing.T) {
 			ctx := context.Background()
 			switch trace.Weakening {
 			case "None":
-				if strings.Contains(trace.ID, "cancelled-return-retained") {
+				if strings.Contains(trace.ID, "done-only-late-refused") {
+					v04ProjectLateReconstruction(t)
+				} else if strings.Contains(trace.ID, "cancelled-return-retained") {
 					TestV04CancelledReturnedSignatureRetained(t)
 				} else if strings.Contains(trace.ID, "done-only-recovered") {
 					TestV04DoneOnlyRecovery(t)
@@ -207,6 +214,9 @@ func TestV04TraceProjection(t *testing.T) {
 				TestV04CancelledReturnedSignatureRetained(t)
 			case "AggregateOnlyRecovery":
 				TestV04DoneOnlyRecovery(t)
+			case "ReconstructWithoutReread":
+				// Claim-model expectation at the divergence: the reread refuses.
+				v04ProjectLateReconstruction(t)
 			case "EmptyAuthorizationStartsWorker", "ReuseAttempt":
 				// These exact discovered controls project to the real guarded engine/store
 				// test, not this executor stub. Do not count this as a successful replay.
@@ -217,5 +227,33 @@ func TestV04TraceProjection(t *testing.T) {
 			}
 			t.Logf("V04_REPLAY id=%s class=partial reason=executor-seam-projection-no-process-crash-or-storage-lockstep", trace.ID)
 		})
+	}
+}
+
+// v04ProjectLateReconstruction projects the #81 reconstruction refusal: a
+// Done record retained before the reservation timed out is never joined into
+// an aggregate by LoadResult; the refusal is late and Done stays retained.
+func v04ProjectLateReconstruction(t *testing.T) {
+	t.Helper()
+	e, r, _, _ := executorFixture(t)
+	ctx := context.Background()
+	e.boundary = func(name string) error {
+		if name == "after-signature" {
+			r.view.State = "TimeoutPending"
+		}
+		return nil
+	}
+	if _, err := e.Run(ctx); !errors.Is(err, ErrLateSignature) {
+		t.Fatal("late signature accepted", err)
+	}
+	e.boundary = nil
+	if _, err := e.LoadResult(ctx); !errors.Is(err, ErrLateSignature) {
+		t.Fatal("late Done-only set reconstructed", err)
+	}
+	if _, err := e.config.Journal.ReadSigningRecord(ctx, e.resultID()); err == nil {
+		t.Fatal("aggregate written for a late Done-only set")
+	}
+	if _, err := e.config.Journal.ReadSigningRecord(ctx, v04DoneID(e)); err != nil {
+		t.Fatal("Done not retained after the refusal", err)
 	}
 }

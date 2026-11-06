@@ -89,8 +89,54 @@ func (l *v04ProcessLease) Close() error { return l.lock.Close() }
 type v04ProcessConfig struct {
 	Root, Mode               string
 	Timeout, Reanchor, Fresh bool
+	// View, when set, is the abstract reservation of a generated model trace
+	// (v04_generated_replay_test.go); it replaces Timeout/Reanchor.
+	View *v04View
+	// Request selects the abstract request: one plan fixture, a distinct
+	// reservation ID per request.
+	Request uint8
 }
-type v04Decision struct{ Timeout, Reanchor, Cancel, Fail bool }
+type v04Decision struct {
+	Timeout, Reanchor, Cancel, Fail bool
+	View                            *v04View
+}
+
+// v04View is the model's request-0 reservation: reservation state (0 absent,
+// 1 unfinalized, 2 finalized, 3 timeout-pending, 4 paid, 5 cancelled,
+// 6 refunded), changed plan fields and read anchor (1 or 2).
+type v04View struct {
+	Reservation, Anchor uint8
+	Changed             bool
+}
+
+// apply sets the controlled provider's canonical snapshot to the abstract view.
+func (v v04View) apply(e *Executor, r *reservationStub) {
+	r.view.ID = e.config.Reservation
+	r.view.Commitment = e.Plan().Commitment()
+	if v.Changed {
+		r.view.Commitment[0] ^= 1
+	}
+	r.view.BlockHash = [32]byte{v.Anchor}
+	r.view.CanonicalBlockHash = r.view.BlockHash
+	r.view.Head = r.view.Block + e.config.FinalityBlocks
+	r.view.State = "Reserved"
+	switch v.Reservation {
+	case 0:
+		r.view.ID = [32]byte{}
+		r.view.State = "Missing"
+	case 1:
+		r.view.Head = r.view.Block
+	case 3:
+		r.view.State = "TimeoutPending"
+	case 4:
+		r.view.State = "Paid"
+	case 5:
+		r.view.State = "Cancelled"
+	case 6:
+		r.view.State = "Refunded"
+	}
+}
+
 type v04ProcessObservation struct {
 	Boundary                                              string
 	Receipt, Intent, Done, DoneValid, Aggregate, ClaimAck bool
@@ -131,12 +177,17 @@ func TestV04ProcessReplayChild(t *testing.T) {
 		e.config.Session[0]++
 		e.config.StartBlock++
 	}
+	e.config.Reservation[31] += config.Request
+	reservation.view.ID = e.config.Reservation
 	if config.Timeout {
 		reservation.view.State = "TimeoutPending"
 	}
 	if config.Reanchor {
 		reservation.view.BlockHash[0]++
 		reservation.view.CanonicalBlockHash = reservation.view.BlockHash
+	}
+	if config.View != nil {
+		config.View.apply(e, reservation)
 	}
 	c := store.Config{Keystore: filepath.Join(config.Root, "keys"), StorageID: [32]byte{91}, Key: [32]byte{92}, Fence: v04ProcessFence{filepath.Join(config.Root, "fence")}}
 	ledger, err := store.Open(context.Background(), c)
@@ -199,6 +250,9 @@ func TestV04ProcessReplayChild(t *testing.T) {
 		if d.Reanchor {
 			reservation.view.BlockHash[0]++
 			reservation.view.CanonicalBlockHash = reservation.view.BlockHash
+		}
+		if d.View != nil {
+			d.View.apply(e, reservation)
 		}
 		if d.Cancel {
 			cancel()

@@ -240,8 +240,13 @@ def run_checker(root, script, args):
 
 
 def find_statement(slot, repositories, evidence_root):
+    """The first search pattern that finds the record wins, so a statement
+    kept both in the repository and in its evidence folder is not ambiguous;
+    within that pattern the match must be unique."""
     matches = []
     for pattern in slot["statement"].get("search", []):
+        if matches:
+            break
         location, _, template = pattern.partition(":")
         relative_path(template.replace("{id}", "x"))
         if location == EVIDENCE_REPOSITORY:
@@ -259,6 +264,23 @@ def find_statement(slot, repositories, evidence_root):
     if record.get("id") != slot["id"]:
         raise ValueError("statement record %s does not carry its ID" % matches[0])
     return matches[0], record
+
+
+def checker_args(checker, repositories):
+    """Checker arguments; "{repo:NAME}" is replaced by that --repo checkout,
+    so a component checker that pins external files (tbtc-v2, the specs)
+    checks them against the same checkouts as the ledger."""
+    args = checker.get("args", [])
+    if not isinstance(args, list) or any(not isinstance(a, str) for a in args):
+        raise ValueError("checker args must be a list of strings")
+    out = []
+    for arg in args:
+        for name in re.findall(r"\{repo:([^}]+)\}", arg):
+            if name not in repositories:
+                raise ValueError("provide --repo %s=/path/to/checkout" % name)
+            arg = arg.replace("{repo:%s}" % name, str(repositories[name].resolve()))
+        out.append(arg)
+    return out
 
 
 def field(record, dotted):
@@ -289,13 +311,14 @@ def check_statement(slot, repositories, evidence_root):
         if slot["id"] not in statements:
             raise ValueError("statement %s is not in %s" % (slot["id"], slot["statement"]["file"]))
         record = statements[slot["id"]]
-        report.update(statement_record=slot["statement"]["file"], bound=record.get("scope"), evidence=record.get("evidence"))
-        result = run_checker(root, checker.get("path"), [])
-        if result.returncode not in (0, 1):
+        report.update(statement_record=slot["statement"]["file"], bound=record.get("bound", record.get("scope")), evidence=record.get("evidence"))
+        result = run_checker(root, checker.get("path"), checker_args(checker, repositories))
+        if result.returncode not in (0, 1, 2):
             raise ValueError("component checker %s failed: %s" % (checker.get("path"), result.stderr.strip()[-300:]))
         lines = {}
         for line in result.stdout.splitlines():
-            match = re.match(r"^(S-[A-Z0-9-]+): (fresh|stale|superseded by (\S+))", line)
+            # Any status other than "fresh" (stale, unchecked, ...) is not fresh.
+            match = re.match(r"^(S-[A-Z0-9-]+): (superseded by (\S+)|[a-z][a-z-]*)", line)
             if match:
                 lines[match.group(1)] = match.group(2)
         if slot["id"] not in lines:
@@ -316,7 +339,7 @@ def check_statement(slot, repositories, evidence_root):
             report.update(freshness="superseded", detail=["superseded by %s; update the slot ID" % record["superseded_by"]])
             return report
         args = []
-        for arg in checker.get("args", []):
+        for arg in checker_args(checker, repositories):
             if arg.startswith("{statement:") and arg.endswith("}"):
                 value = field(record, arg[len("{statement:"):-1])
                 if not nonempty_text(value):
@@ -334,6 +357,8 @@ def check_statement(slot, repositories, evidence_root):
             output = json.loads(result.stdout)
         except json.JSONDecodeError as error:
             raise ValueError("component checker %s output is not JSON: %s" % (checker.get("path"), result.stderr.strip()[-300:])) from error
+        if output.get("statement") not in (None, slot["id"]):
+            raise ValueError("component checker %s reports statement %s, not %s" % (checker.get("path"), output.get("statement"), slot["id"]))
         fresh = output.get("fresh") is True or output.get("status") == "fresh"
         if result.returncode not in (0, 1) or fresh != (result.returncode == 0):
             raise ValueError("component checker %s exit %d disagrees with its output" % (checker.get("path"), result.returncode))

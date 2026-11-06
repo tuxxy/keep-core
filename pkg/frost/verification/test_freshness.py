@@ -512,6 +512,45 @@ class FreshnessTests(unittest.TestCase):
         head = subprocess.check_output(["git", "-C", str(self.root), "rev-parse", "HEAD"], text=True).strip()
         return dict(self.reference, revision=head, blob=subprocess.check_output(["git", "-C", str(self.root), "rev-parse", "HEAD:source.txt"], text=True).strip())
 
+    def test_adapters_for_the_pending_component_checkers(self):
+        slots = self.statement_fixture()
+        root = self.root
+        # A store-style checker that pins an external file and needs --repo,
+        # printing "unchecked" without it (the V-07..V-09 checker shape).
+        (root / "ext").mkdir()
+        (root / "ext" / "check.py").write_text(
+            "import sys\n"
+            "repos=[a.split('=',1)[1] for a in sys.argv[1:] if '=' in a]\n"
+            "print('S-FIX-EXT-1: ' + ('fresh (fixture)' if repos else 'unchecked (fixture)'))\n"
+            "sys.exit(0 if repos else 2)\n")
+        (root / "ext" / "STATEMENTS.json").write_text(json.dumps({"S-FIX-EXT-1": {"bound": "fixture", "evidence": "x"}}))
+        ext = {"slot": "ext", "component": "V-09", "id": "S-FIX-EXT-1",
+               "checker": {"kind": "store-statements", "repository": "fixture", "path": "ext/check.py"},
+               "statement": {"file": "ext/STATEMENTS.json"}}
+        self.assertEqual(checker.check_statement(ext, self.repositories, None)["freshness"], "unchecked")
+        ext["checker"]["args"] = ["--repo", "tbtc-v2={repo:fixture}"]
+        self.assertEqual(checker.check_statement(ext, self.repositories, None)["freshness"], "fresh")
+        ext["checker"]["args"] = ["--repo", "x={repo:absent}"]
+        with self.assertRaisesRegex(ValueError, "--repo absent"):
+            checker.check_statement(ext, self.repositories, None)
+        # The first search pattern that finds the record wins (a record kept
+        # in the repository and in its evidence folder is not ambiguous).
+        evidence = root / "evidence-root" / "implementation" / "V-03" / "run"
+        evidence.mkdir(parents=True)
+        (evidence / "S-FIX-CHAIN-1.json").write_text(json.dumps({"id": "S-FIX-CHAIN-1"}))
+        chain = copy.deepcopy(slots[1])
+        chain["statement"]["search"].append("evidence:implementation/V-03/*/{id}.json")
+        self.assertEqual(checker.check_statement(chain, self.repositories, root / "evidence-root")["freshness"], "fresh")
+        chain["statement"]["search"] = ["fixture:chain/*.json"]
+        (root / "chain" / "S-FIX-CHAIN-9.json").write_text(json.dumps({"id": "S-FIX-CHAIN-9"}))
+        with self.assertRaisesRegex(ValueError, "exactly one"):
+            checker.check_statement(chain, self.repositories, None)
+        # A JSON checker that names a different statement refuses.
+        (root / "chain" / "S-FIX-CHAIN-9.json").unlink()
+        (root / "chain" / "check.py").write_text("import json\nprint(json.dumps({'statement': 'S-FIX-CHAIN-2', 'fresh': True}))\n")
+        with self.assertRaisesRegex(ValueError, "reports statement S-FIX-CHAIN-2"):
+            checker.check_statement(slots[1], self.repositories, None)
+
     # --- the committed ledger ----------------------------------------------
 
     def test_committed_ledger_shape(self):

@@ -1,7 +1,7 @@
 {
-  "format": 2,
-  "date": "2026-10-15",
-  "claim": "Open incremental records; selected pin matches are not complete correspondence or a model result",
+  "format": 3,
+  "date": "2026-11-06",
+  "claim": "Open incremental records; selected pin matches, fresh cited statements and pinned run records are not complete correspondence, a model result or a discharge",
   "rows": [
     {
       "id": 1,
@@ -10,7 +10,8 @@
       "consumer_precondition": "Host publishes the same candidate",
       "model_links": [
         "P-K03-ONE-DESCRIPTOR",
-        "P-K03-SUBMITTED-NOT-TERMINAL"
+        "P-K03-SUBMITTED-NOT-TERMINAL",
+        "A-XONLY-SINGLE-VALIDATION"
       ],
       "producer_sources": [
         {
@@ -70,7 +71,8 @@
           "revision": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
           "path": "test/frost/RESULTS-2026-10-07.md",
           "blob": "1b9d89c95c97084650793746a30b5deabb57dc3c",
-          "scope": "ROW-1: P-K03-ONE-DESCRIPTOR, P-K03-SUBMITTED-NOT-TERMINAL; K-03 local tests, not V-03 full replay"
+          "scope": "ROW-1: P-K03-ONE-DESCRIPTOR, P-K03-SUBMITTED-NOT-TERMINAL; K-03 local tests, not V-03 full replay",
+          "evidence_kind": "review"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -82,6 +84,37 @@
       "remaining": [
         "V-03 full boundary replay, source correspondence and independent review",
         "C7-3: Named P-C07-BIP340 evidence/specialist review must cover the pinned C-02 FrostDkgValidator/FrostCurve.validX precompile/range/square-root path and Bridge FrostCurve copy, alongside C-07 lift; no implementation migration or new DKG proof is adopted"
+      ],
+      "statements": [
+        "V-03-chain"
+      ],
+      "blockers": [
+        {
+          "gate": "V-03 model checked and V-03 replay",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870)",
+          "blocks": "K-03 merge and K-03 exit record",
+          "slot": "V-03-chain",
+          "owner": {
+            "role": "verification lead with the K-03 implementer and the C-02/C-03 owners",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "a fresh V-03 statement at 925103a6; S-K03-CHAIN-1 is stale (re-pin in progress, new ID expected)",
+          "package": "V-03"
+        },
+        {
+          "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-06",
+          "blocks": "C-02 exit where shared; C-05, C-08; G-F",
+          "slot": null,
+          "owner": {
+            "role": "cryptographic contract lead with independent specialist review",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
+          "package": "V-06"
+        }
       ]
     },
     {
@@ -152,7 +185,8 @@
           "revision": "cb36ee3b0c2a0e1cadb185ba4b27f9bb1f00c098",
           "path": "pkg/frost/store/verification/STATEMENTS.json",
           "blob": "e6077d85ad1dc3f94e9d63ce7a756bed37917141",
-          "scope": "ROW-2: P-K03-RELOAD-ONLY-DURABLE, P-K03-READY-ONLY-RELOADED, A-READY-FRESH-RELOAD; V-02 statement on verification branch; combined-head alignment pending"
+          "scope": "ROW-2: P-K03-RELOAD-ONLY-DURABLE, P-K03-READY-ONLY-RELOADED, A-READY-FRESH-RELOAD; V-02 statement on verification branch; combined-head alignment pending",
+          "evidence_kind": "model"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -164,6 +198,39 @@
       "remaining": [
         "Align #10 model/replay tooling and affected source pins",
         "V-03 readiness-counting join"
+      ],
+      "statements": [
+        "V-01-store",
+        "V-02-store",
+        "V-03-chain"
+      ],
+      "blockers": [
+        {
+          "gate": "V-02 model and replay at the spec bound on a VD-05 store",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-02 bound; VD-05",
+          "blocks": "K-03 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-03 implementer",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "S-K03-STORE-2 is cited at a reduced bound (three commits; clone, stale restore and host crash omitted for the P-K03 predicates, review E3); pkg/frost/store/dkg_status.go:74 at 925103a6 still rejects Threshold <= n/2, which VD-05 removes before V-02 runs (review E4)",
+          "package": "V-02"
+        },
+        {
+          "gate": "V-03 model checked and V-03 replay",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870)",
+          "blocks": "K-03 merge and K-03 exit record",
+          "slot": "V-03-chain",
+          "owner": {
+            "role": "verification lead with the K-03 implementer and the C-02/C-03 owners",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "a fresh V-03 statement at 925103a6; S-K03-CHAIN-1 is stale (re-pin in progress, new ID expected)",
+          "package": "V-03"
+        }
       ]
     },
     {
@@ -174,7 +241,8 @@
       "model_links": [
         "P-K03-ONE-DESCRIPTOR",
         "P-K03-EXPIRY-TOMBSTONE",
-        "A-CHAIN-FINALITY"
+        "A-CHAIN-FINALITY",
+        "A-XONLY-SINGLE-VALIDATION"
       ],
       "producer_sources": [
         {
@@ -234,7 +302,8 @@
           "revision": "a7406c13014372b0f6667be23e6561a5a64b8721",
           "path": "solidity/test/bridge/Frost.Identity.test.ts",
           "blob": "9e78a1878e775b475e28590788627289c55a7c1c",
-          "scope": "ROW-3: P-K03-ONE-DESCRIPTOR, P-K03-EXPIRY-TOMBSTONE, A-CHAIN-FINALITY; K-03 actual callback/upgrade tests, not V-03 closure"
+          "scope": "ROW-3: P-K03-ONE-DESCRIPTOR, P-K03-EXPIRY-TOMBSTONE, A-CHAIN-FINALITY; K-03 actual callback/upgrade tests, not V-03 closure",
+          "evidence_kind": "source"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -246,6 +315,51 @@
       "remaining": [
         "Finality, reorganization, expiry and readiness correspondence",
         "C7-3: Named P-C07-BIP340 evidence/specialist review must cover the pinned C-02 FrostDkgValidator/FrostCurve.validX precompile/range/square-root path and Bridge FrostCurve copy, alongside C-07 lift; no implementation migration or new DKG proof is adopted"
+      ],
+      "statements": [
+        "V-02-store",
+        "V-03-chain"
+      ],
+      "blockers": [
+        {
+          "gate": "V-02 model and replay at the spec bound on a VD-05 store",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-02 bound; VD-05",
+          "blocks": "K-03 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-03 implementer",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "S-K03-STORE-2 is cited at a reduced bound (three commits; clone, stale restore and host crash omitted for the P-K03 predicates, review E3); pkg/frost/store/dkg_status.go:74 at 925103a6 still rejects Threshold <= n/2, which VD-05 removes before V-02 runs (review E4)",
+          "package": "V-02"
+        },
+        {
+          "gate": "V-03 model checked and V-03 replay",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870)",
+          "blocks": "K-03 merge and K-03 exit record",
+          "slot": "V-03-chain",
+          "owner": {
+            "role": "verification lead with the K-03 implementer and the C-02/C-03 owners",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "a fresh V-03 statement at 925103a6; S-K03-CHAIN-1 is stale (re-pin in progress, new ID expected)",
+          "package": "V-03"
+        },
+        {
+          "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-06",
+          "blocks": "C-02 exit where shared; C-05, C-08; G-F",
+          "slot": null,
+          "owner": {
+            "role": "cryptographic contract lead with independent specialist review",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
+          "package": "V-06"
+        }
       ]
     },
     {
@@ -255,7 +369,8 @@
       "consumer_precondition": "Funded output is sweepable/refundable and recognized by reveal",
       "model_links": [
         "A-SPV-MAINTAINER-RELAY",
-        "A-K06-CANONICAL-SWEEP-BUILDER"
+        "A-K06-CANONICAL-SWEEP-BUILDER",
+        "A-TARGET-CHAIN-GAS-CAP"
       ],
       "producer_sources": [
         {
@@ -345,42 +460,48 @@
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/docs/frost/DEPOSIT-PROFILE-V1.md",
           "blob": "0d29f486ec2302f70a1dfdbfd52afc491186c3be",
-          "scope": "ROW-4: Exact proposed local D-04 receipt/scripts/control bytes and primary-source references; owner decision and production qualification pending"
+          "scope": "ROW-4: Exact proposed local D-04 receipt/scripts/control bytes and primary-source references; owner decision and production qualification pending",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/docs/frost/C05-LOCAL-BOUNDARIES.md",
           "blob": "dfb221a12ecf1ab7d26cb36d607de03aa73659a6",
-          "scope": "ROW-4: Implemented local reveal, code-pinned TapTweak and Core sweep/refund boundary; controlled readiness/known key/regtest work, not K-06 or G-F exit"
+          "scope": "ROW-4: Implemented local reveal, code-pinned TapTweak and Core sweep/refund boundary; controlled readiness/known key/regtest work, not K-06 or G-F exit",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.DepositProfile.test.ts",
           "blob": "b4b408269d6ee47c6f3618c31b4db0f71ae21c2d",
-          "scope": "ROW-4: Committed independent deposit-byte/vector and shape regression source; not an unpublished execution log"
+          "scope": "ROW-4: Committed independent deposit-byte/vector and shape regression source; not an unpublished execution log",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.DepositAdmission.test.ts",
           "blob": "6b275dc1aba8aab566bdbc7230be73674e07217d",
-          "scope": "ROW-4: Committed canonical reveal, domain/output/receipt/refund and rollback test source; full client/provider join remains open"
+          "scope": "ROW-4: Committed canonical reveal, domain/output/receipt/refund and rollback test source; full client/provider join remains open",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "12510a6fec33c12ad5437fdef44c19ae99d04d24",
           "path": "solidity/test/helpers/frost-bitcoin.ts",
           "blob": "d7e554fba836a3c0c03e8ef3183eddb13c723157",
-          "scope": "ROW-4: Committed actual Core known-key witness: same archived wallet spend admitted before independent refund and refused after; refund-phase wallet signing disabled. Not threshold signing or production finality."
+          "scope": "ROW-4: Committed actual Core known-key witness: same archived wallet spend admitted before independent refund and refused after; refund-phase wallet signing disabled. Not threshold signing or production finality.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "12510a6fec33c12ad5437fdef44c19ae99d04d24",
           "path": "solidity/test/bridge/Frost.DepositSweep.test.ts",
           "blob": "9b2bbd93954ec46897b74b69842e88faee7b99de",
-          "scope": "ROW-4: Committed refund-spent component refusal with real mined refund proof and unchanged financial frame; 8 producer checks pass, 11 integrated consumer checks pass. Controlled metadata, not K-06 or a universal theorem."
+          "scope": "ROW-4: Committed refund-spent component refusal with real mined refund proof and unchanged financial frame; 8 producer checks pass, 11 integrated consumer checks pass. Controlled metadata, not K-06 or a universal theorem.",
+          "evidence_kind": "source"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -397,6 +518,35 @@
         "C05 F2/F6: K-06 sweep builder must produce version2 canonical transactions, include existing main when unreserved under the selected main-input rule, and never consume reserved main. Deposit-only reserved credits preserve captured plan context; the main-input rule and focused regressions are implemented/published on C05; the K-06 host-builder and cross-purpose correspondence remain OPEN",
         "C05 F5: Joint maximum deposit-input and real Vault mint/callback gas must be measured and limits qualified with Bitcoin weight; Bank-only extrapolation and single-input witnesses do not establish this bound",
         "C05 F6: Reveal currently refuses nonzero rebateStaking; rebate ownership/activation disposition is unresolved C-11 release work. Verifier installation is once-only; replacement needs a reviewed Bridge upgrade. pendingReveals includes refunded/fabricated reveals and is not custody, outstanding rights or retirement evidence"
+      ],
+      "statements": [],
+      "blockers": [
+        {
+          "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-06",
+          "blocks": "C-02 exit where shared; C-05, C-08; G-F",
+          "slot": null,
+          "owner": {
+            "role": "cryptographic contract lead with independent specialist review",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
+          "package": "V-06"
+        },
+        {
+          "gate": "V-07 model checked; replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-06 merge and exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-06 implementer and the C-05 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-07 predicates defined in the rev 02 draft; no model or replay exists",
+          "package": "V-07"
+        }
       ]
     },
     {
@@ -413,7 +563,8 @@
         "A-READY-SEAT-ELIGIBILITY",
         "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION",
         "P-HOST-ONE-INTENT-ATTESTATION",
-        "P-HOST-REPLACEMENT-FINALIZED-ABSENCE"
+        "P-HOST-REPLACEMENT-FINALIZED-ABSENCE",
+        "A-TARGET-CHAIN-GAS-CAP"
       ],
       "producer_sources": [
         {
@@ -587,56 +738,64 @@
           "revision": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
           "path": "test/frost/K04-ADVERSARIAL-RESPONSE-2026-10-13.md",
           "blob": "41a5f1e8183f49c9fbb9230b0bdb28a3f7954b0a",
-          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION, A-STORED-DESCRIPTOR-ONLY, A-DUPLICATE-REQUEST-STATE-GUARD, A-READY-SEAT-ELIGIBILITY; Concrete recovery review; controlled reservation provider"
+          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION, A-STORED-DESCRIPTOR-ONLY, A-DUPLICATE-REQUEST-STATE-GUARD, A-READY-SEAT-ELIGIBILITY; Concrete recovery review; controlled reservation provider",
+          "evidence_kind": "review"
         },
         {
           "repository": "tbtc-v2",
           "revision": "a7406c13014372b0f6667be23e6561a5a64b8721",
           "path": "solidity/docs/frost/C04-CLAUDE-RESPONSE-2026-10-13.md",
           "blob": "486dea7c433b4eccb3de5c05db5ec025659ebf3d",
-          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION, A-STORED-DESCRIPTOR-ONLY, A-DUPLICATE-REQUEST-STATE-GUARD, A-READY-SEAT-ELIGIBILITY; Foundation APIs and vectors; no funded admission witness"
+          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION, A-STORED-DESCRIPTOR-ONLY, A-DUPLICATE-REQUEST-STATE-GUARD, A-READY-SEAT-ELIGIBILITY; Foundation APIs and vectors; no funded admission witness",
+          "evidence_kind": "review"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicReservation.test.ts",
           "blob": "3ea1d7d86695c4a72c84f14e26189093d1d86dd3",
-          "scope": "ROW-5: Committed public proof-funded request/reservation, nonce rollback, exact fees/counters/authority and duplicate refusal test source; controlled readiness and known key, not K-05/V-04 correspondence"
+          "scope": "ROW-5: Committed public proof-funded request/reservation, nonce rollback, exact fees/counters/authority and duplicate refusal test source; controlled readiness and known key, not K-05/V-04 correspondence",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicMaximumBatch.test.ts",
           "blob": "96aa49796124797e4da969cc6bbfefb3fce4ee04",
-          "scope": "ROW-5: Committed unchanged 255-request admission/256 refusal and Core/SPV settlement test source; one-input local gas witness, not full combined maxima or production budget"
+          "scope": "ROW-5: Committed unchanged 255-request admission/256 refusal and Core/SPV settlement test source; one-input local gas witness, not full combined maxima or production budget",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/contracts/frost/C04-BOUNDARIES.md",
           "blob": "e08fa005c827c5b1b0571470b5bdc01270847dff",
-          "scope": "ROW-5: Local escrow/counters/record APIs and honest-host eligibility/replacement obligations; K-05 providers, V-04, D-08 and release qualification remain open"
+          "scope": "ROW-5: Local escrow/counters/record APIs and honest-host eligibility/replacement obligations; K-05 providers, V-04, D-08 and release qualification remain open",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/integration/redemption_test.go",
           "blob": "e0c2bb020f64799ad99632266075e4904813eff1",
-          "scope": "ROW-5: K-05 named tests (real DKG, real worker, real C-04/C-05 on Anvil, Bitcoin Core regtest); concrete tests, local test values"
+          "scope": "ROW-5: K-05 named tests (real DKG, real worker, real C-04/C-05 on Anvil, Bitcoin Core regtest); concrete tests, local test values",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/redemption/v04_admission_replay_test.go",
           "blob": "b761c0a7c18af880dd58ce3297bbcd4bbb0050d7",
-          "scope": "ROW-5: P-HOST-ONE-INTENT-ATTESTATION, P-HOST-REPLACEMENT-FINALIZED-ABSENCE, A-ONE-INTENT-PER-STATE-VERSION; 22 admission traces replay on the real Attester.lock and store, controlled C-04 reader; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "ROW-5: P-HOST-ONE-INTENT-ATTESTATION, P-HOST-REPLACEMENT-FINALIZED-ABSENCE, A-ONE-INTENT-PER-STATE-VERSION; 22 admission traces replay on the real Attester.lock and store, controlled C-04 reader; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/signing/verification/RESULTS-K05.md",
           "blob": "cecb6dbd3823a963fc0767e934b0a0e7f6d2b6d6",
-          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "review"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -656,6 +815,24 @@
         "Published K04/C04 profile is64requests/32recognized inputs/65outputs, with up to100certificate seats. Historical255 and provisional128 profiles are superseded; exact target/watchtower/proof budgets and production gas qualification remain OPEN. Current published source pins do not turn local gas tests into qualification",
         "K-05 (15 Oct): the durable slot lock implements finalized-deadline plus finalized-custody replacement; V-04 admission replay passes 22/22 at the declared bound after model repair F-V04-K05-01. Planner.Validate, the Attest window check and key reload are not exercised by that replay; the lock trusts the finalized head that Attest derives as head - FinalityBlocks (A-CHAIN-FINALITY, D-09)",
         "K-05 cross-operator certificate transport is absent (A-K05-CERTIFICATE-TRANSPORT); certificates are collected in-process in the local fixture"
+      ],
+      "statements": [
+        "V-04-signing"
+      ],
+      "blockers": [
+        {
+          "gate": "V-04 model checked and V-04 replay with C-04",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged) V-04 rev 02 predicates",
+          "blocks": "K-04 merge and K-05 exit record",
+          "slot": "V-04-signing",
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "a fresh V-04 statement at 925103a6; S-K05-SIGN-3 is stale (re-pin in progress, new ID expected). The rev 02 V-04 predicates and the containment transition are not modelled (KC-VER rev 02 draft section 6)",
+          "package": "V-04"
+        }
       ]
     },
     {
@@ -727,28 +904,32 @@
           "revision": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
           "path": "test/frost/K04-ADVERSARIAL-RESPONSE-2026-10-13.md",
           "blob": "41a5f1e8183f49c9fbb9230b0bdb28a3f7954b0a",
-          "scope": "ROW-6: P-K05-LATE-SIGNATURE-QUARANTINE, P-K05-TERMINAL-ATTEMPT, A-BUILDER-FROZEN-BEFORE-SIGN; Local worker/Core/recovery tests; public SPV join pending"
+          "scope": "ROW-6: P-K05-LATE-SIGNATURE-QUARANTINE, P-K05-TERMINAL-ATTEMPT, A-BUILDER-FROZEN-BEFORE-SIGN; Local worker/Core/recovery tests; public SPV join pending",
+          "evidence_kind": "review"
         },
         {
           "repository": "tbtc-v2",
           "revision": "b20ed301786b714a0ec4dbd81ce0909fe9ff5619",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Core.test.ts",
           "blob": "8c7c58edf1bbc21eb8fefef1bd014bdb574dd19c",
-          "scope": "ROW-6: Committed controlled Core mixed key/script-path witness source; identical signed sweep before reservation and mined afterward, public SPV resolution and local canonical certificate calldata/receipt retrieval. Known scalar3/controlled registry/regtest work; not canonical K-05 provider, archive availability, finality or threshold qualification."
+          "scope": "ROW-6: Committed controlled Core mixed key/script-path witness source; identical signed sweep before reservation and mined afterward, public SPV resolution and local canonical certificate calldata/receipt retrieval. Known scalar3/controlled registry/regtest work; not canonical K-05 provider, archive availability, finality or threshold qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/integration/redemption_test.go",
           "blob": "e0c2bb020f64799ad99632266075e4904813eff1",
-          "scope": "ROW-6: P-K05-TERMINAL-ATTEMPT; K-05 lifecycle and late-signature named tests: same bytes broadcast, SPV payment proof by the K-05 maintainer path on regtest; concrete tests"
+          "scope": "ROW-6: P-K05-TERMINAL-ATTEMPT; K-05 lifecycle and late-signature named tests: same bytes broadcast, SPV payment proof by the K-05 maintainer path on regtest; concrete tests",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/signing/verification/RESULTS-K05.md",
           "blob": "cecb6dbd3823a963fc0767e934b0a0e7f6d2b6d6",
-          "scope": "ROW-6: P-K05-TERMINAL-ATTEMPT pass within bounds; P-K05-LATE-SIGNATURE-QUARANTINE blocked on tlabs-xyz/FROST-migration-spec#2; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "ROW-6: P-K05-TERMINAL-ATTEMPT pass within bounds; P-K05-LATE-SIGNATURE-QUARANTINE blocked on tlabs-xyz/FROST-migration-spec#2; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "review"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -762,6 +943,37 @@
         "Claude A5: P-K05-LATE-SIGNATURE-QUARANTINE wording needs owner/model disposition distinguishing a late host grant/release from SPV resolution of a previously authorized payment in TimeoutPending/Quarantined; normative specs are unchanged",
         "C05 F1 / A-SPV-MAINTAINER-RELAY: The broadcast-to-SPV join requires approved maintainer callers on all funding/payment/cancellation proof routes and qualified relay/work/canonical-chain/finality assumptions. Work alone does not prove canonical membership. Local gate review does not discharge K-05/K-07 provider/maintainer correspondence; selected sources are rebound to the published heads; qualified provider/relay/maintainer release evidence remains OPEN",
         "P-K05-LATE-SIGNATURE-QUARANTINE is BLOCKED on owner decision tlabs-xyz/FROST-migration-spec#2 (A5); V-04 claims neither reading (A-K05-LATE-SIGNATURE-SETTLEMENT)"
+      ],
+      "statements": [
+        "V-04-signing"
+      ],
+      "blockers": [
+        {
+          "gate": "V-04 model checked and V-04 replay with C-04",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged) V-04 rev 02 predicates",
+          "blocks": "K-04 merge and K-05 exit record",
+          "slot": "V-04-signing",
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "a fresh V-04 statement at 925103a6; S-K05-SIGN-3 is stale (re-pin in progress, new ID expected). The rev 02 V-04 predicates and the containment transition are not modelled (KC-VER rev 02 draft section 6)",
+          "package": "V-04"
+        },
+        {
+          "gate": "V-08 predicates, model, replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-07",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-08 predicates defined in the rev 02 draft; no model or replay exists",
+          "package": "V-08"
+        }
       ]
     },
     {
@@ -773,7 +985,8 @@
         "P-K05-NO-DOUBLE-OUTCOME",
         "A-FEE-INCLUSION-ESCALATION",
         "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION",
-        "A-SPV-MAINTAINER-RELAY"
+        "A-SPV-MAINTAINER-RELAY",
+        "A-TARGET-CHAIN-GAS-CAP"
       ],
       "producer_sources": [
         {
@@ -965,98 +1178,112 @@
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicFunding.test.ts",
           "blob": "da5c0d98d9d5b6a1dd61735f60c9ef839d9a836b",
-          "scope": "ROW-7: Committed public reveal/Core-SPV sweep/backed Bank credit/replay refusal test source; controlled readiness and regtest work, not full custody qualification"
+          "scope": "ROW-7: Committed public reveal/Core-SPV sweep/backed Bank credit/replay refusal test source; controlled readiness and regtest work, not full custody qualification",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicSettlement.test.ts",
           "blob": "a9e3d5783a7c5db06fc33f8aab7c8c57fe1fe0a7",
-          "scope": "ROW-7: Committed public Core/SPV payment/cancellation, quarantine recovery, single consumption, unreserved timeout/finality and request-deadline boundary test source at test-only successor2229c9cf; controlled readiness/known scalar3/regtest work, not K-05/V-04/D-08 closure"
+          "scope": "ROW-7: Committed public Core/SPV payment/cancellation, quarantine recovery, single consumption, unreserved timeout/finality and request-deadline boundary test source at test-only successor2229c9cf; controlled readiness/known scalar3/regtest work, not K-05/V-04/D-08 closure",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicVaultCallback.test.ts",
           "blob": "91fedca4814b12a13b9efbfe9b3001738c4c8893",
-          "scope": "ROW-7: Committed public Bank/Vault credit, shared callback guard, late-failure full frame and captured watchtower-policy test source; no generalized financial proof"
+          "scope": "ROW-7: Committed public Bank/Vault credit, shared callback guard, late-failure full frame and captured watchtower-policy test source; no generalized financial proof",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/docs/frost/CUSTODY-SCHEMA-V1.md",
           "blob": "b64b164ee6f27f88b0560201d3fcc516d901e75b",
-          "scope": "ROW-7: Shared custody owner/intent-counter and active additive-deposit accounting obligations; not a qualified storage/provider or proof claim"
+          "scope": "ROW-7: Shared custody owner/intent-counter and active additive-deposit accounting obligations; not a qualified storage/provider or proof claim",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/docs/frost/C05-LOCAL-BOUNDARIES.md",
           "blob": "dfb221a12ecf1ab7d26cb36d607de03aa73659a6",
-          "scope": "ROW-7: Local exact SPV/Bank/Vault and fee conservation implementation boundaries; full qualification/reconciliation remain open"
+          "scope": "ROW-7: Local exact SPV/Bank/Vault and fee conservation implementation boundaries; full qualification/reconciliation remain open",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "b20ed301786b714a0ec4dbd81ce0909fe9ff5619",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Core.test.ts",
           "blob": "8c7c58edf1bbc21eb8fefef1bd014bdb574dd19c",
-          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification."
+          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "b20ed301786b714a0ec4dbd81ce0909fe9ff5619",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Gas.test.ts",
           "blob": "c752496cc1efb5283598fcb24682fb0d24016ce8",
-          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification."
+          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "b20ed301786b714a0ec4dbd81ce0909fe9ff5619",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.test.ts",
           "blob": "4371561794cd62ddf25fe5aa674f313091c949d5",
-          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification."
+          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.CancellationAlternatives.test.ts",
           "blob": "242f76a6097ee5b43547415d0cc2323180295f98",
-          "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification."
+          "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.CancellationHistory.test.ts",
           "blob": "18ca8c5b920fa51360229b69f4244fb9708dcf30",
-          "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification."
+          "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "12510a6fec33c12ad5437fdef44c19ae99d04d24",
           "path": "solidity/test/helpers/frost-bitcoin.ts",
           "blob": "d7e554fba836a3c0c03e8ef3183eddb13c723157",
-          "scope": "ROW-7: Committed actual Core known-key witness: same archived wallet spend admitted before independent refund and refused after; refund-phase wallet signing disabled. Not threshold signing or production finality."
+          "scope": "ROW-7: Committed actual Core known-key witness: same archived wallet spend admitted before independent refund and refused after; refund-phase wallet signing disabled. Not threshold signing or production finality.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "12510a6fec33c12ad5437fdef44c19ae99d04d24",
           "path": "solidity/test/bridge/Frost.DepositSweep.test.ts",
           "blob": "9b2bbd93954ec46897b74b69842e88faee7b99de",
-          "scope": "ROW-7: Committed refund-spent component refusal with real mined refund proof and unchanged financial frame; 8 producer checks pass, 11 integrated consumer checks pass. Controlled metadata, not K-06 or a universal theorem."
+          "scope": "ROW-7: Committed refund-spent component refusal with real mined refund proof and unchanged financial frame; 8 producer checks pass, 11 integrated consumer checks pass. Controlled metadata, not K-06 or a universal theorem.",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/integration/v04_c04_replay_test.go",
           "blob": "992118278d8241bd956b4125f9952e9b60005ba3",
-          "scope": "ROW-7: P-K05-NO-DOUBLE-OUTCOME; C-04 projection replay of 8 signing traces on the real Bridge, host, worker and Core (partial); refund-on-elapsed-time and refund-on-certificate-expiry weakened expectations refused by the real Bridge; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "ROW-7: P-K05-NO-DOUBLE-OUTCOME; C-04 projection replay of 8 signing traces on the real Bridge, host, worker and Core (partial); refund-on-elapsed-time and refund-on-certificate-expiry weakened expectations refused by the real Bridge; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/integration/redemption_test.go",
           "blob": "e0c2bb020f64799ad99632266075e4904813eff1",
-          "scope": "ROW-7: P-K05-NO-DOUBLE-OUTCOME; K-05 reservation timeout race named test; concrete tests"
+          "scope": "ROW-7: P-K05-NO-DOUBLE-OUTCOME; K-05 reservation timeout race named test; concrete tests",
+          "evidence_kind": "source"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -1075,6 +1302,50 @@
         "C05 F1: All FROST funding/payment/cancellation SPV routes require authenticated maintainers plus qualified relay/work/finality assumptions; gates and real-dispatch negative tests are published on C04/C05; qualified relay/canonical-chain correspondence and maintainer availability remain OPEN, not discharged by relay difficulty or regtest proof acceptance",
         "C05 F2/F6: Shared spentMainUTXOs is the intentional cross-scheme replay boundary; retain shared tombstone and legacy-defense/accounting correspondence, without adopting a separate scheme-spent map. A3 Bank/Vault joint maximum is measured locally; alternate debt/proof/target qualification remains OPEN",
         "K-05 TimeoutPending host policy is an owner decision (tlabs-xyz/FROST-migration-spec#3, A-K05-TIMEOUT-POLICY); RebroadcastThenCancel and AlwaysCancel are both implemented, neither is a default"
+      ],
+      "statements": [
+        "V-04-signing"
+      ],
+      "blockers": [
+        {
+          "gate": "V-04 model checked and V-04 replay with C-04",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged) V-04 rev 02 predicates",
+          "blocks": "K-04 merge and K-05 exit record",
+          "slot": "V-04-signing",
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "a fresh V-04 statement at 925103a6; S-K05-SIGN-3 is stale (re-pin in progress, new ID expected). The rev 02 V-04 predicates and the containment transition are not modelled (KC-VER rev 02 draft section 6)",
+          "package": "V-04"
+        },
+        {
+          "gate": "V-07 model checked; replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-06 merge and exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-06 implementer and the C-05 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-07 predicates defined in the rev 02 draft; no model or replay exists",
+          "package": "V-07"
+        },
+        {
+          "gate": "V-08 predicates, model, replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-07",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-08 predicates defined in the rev 02 draft; no model or replay exists",
+          "package": "V-08"
+        }
       ]
     },
     {
@@ -1083,7 +1354,8 @@
       "producer_result": "Local C-07 verifier output and retained C-04 authorization/quarantine records; canonical challenge producer absent",
       "consumer_precondition": "Defense resolves the exact act",
       "model_links": [
-        "A-SPV-MAINTAINER-RELAY"
+        "A-SPV-MAINTAINER-RELAY",
+        "A-XONLY-SINGLE-VALIDATION"
       ],
       "producer_sources": [
         {
@@ -1160,21 +1432,24 @@
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/verification/frost-c07/README.md",
           "blob": "9401bd0acb0e109bc30673a3f89bd94596e1b14d",
-          "scope": "ROW-8: Draft BIP340/TapTweak runtime and partial arithmetic proof boundaries; complete Solidity/EVM correspondence and named V-06 predicates remain open"
+          "scope": "ROW-8: Draft BIP340/TapTweak runtime and partial arithmetic proof boundaries; complete Solidity/EVM correspondence and named V-06 predicates remain open",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.Verifier.test.ts",
           "blob": "fb71068f7c736ef1b1a488af5f32dcc8085bdd61",
-          "scope": "ROW-8: Committed official-vector/runtime verifier test source; not C-07 specialist or worst-case gas qualification"
+          "scope": "ROW-8: Committed official-vector/runtime verifier test source; not C-07 specialist or worst-case gas qualification",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/contracts/frost/C04-BOUNDARIES.md",
           "blob": "e08fa005c827c5b1b0571470b5bdc01270847dff",
-          "scope": "ROW-8: Retained admitted certificate/cancellation expiry and authenticated governance quarantine/recovery records; containment is not a canonical C-08 signature challenge or loss proof"
+          "scope": "ROW-8: Retained admitted certificate/cancellation expiry and authenticated governance quarantine/recovery records; containment is not a canonical C-08 signature challenge or loss proof",
+          "evidence_kind": "source"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -1190,6 +1465,35 @@
         "C7-3: Named P-C07-BIP340 evidence/specialist review must cover the pinned C-02 FrostDkgValidator/FrostCurve.validX precompile/range/square-root path and Bridge FrostCurve copy, alongside C-07 lift; no implementation migration or new DKG proof is adopted",
         "C05 F1: All FROST funding/payment/cancellation SPV routes require authenticated maintainers plus qualified relay/work/finality assumptions; gates and real-dispatch negative tests are published on C04/C05; qualified relay/canonical-chain correspondence and maintainer availability remain OPEN, not discharged by relay difficulty or regtest proof acceptance",
         "C05 F6: Shared spent identities also reach legacy fraud defense; verify the intended cross-scheme defense correspondence, not an invented scheme-separation production change"
+      ],
+      "statements": [],
+      "blockers": [
+        {
+          "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-06",
+          "blocks": "C-02 exit where shared; C-05, C-08; G-F",
+          "slot": null,
+          "owner": {
+            "role": "cryptographic contract lead with independent specialist review",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
+          "package": "V-06"
+        },
+        {
+          "gate": "V-09 predicates, model, replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-08",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-08 implementer and the C-08 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-09 predicates defined in the rev 02 draft; no model or replay exists (pkg/frost/enforcement/verification holds boundaries and pins only)",
+          "package": "V-09"
+        }
       ]
     },
     {
@@ -1214,6 +1518,35 @@
         "No V-01\u2013V-04 predicate discharges retirement",
         "C05 F1: All FROST funding/payment/cancellation SPV routes require authenticated maintainers plus qualified relay/work/finality assumptions; gates and real-dispatch negative tests are published on C04/C05; qualified relay/canonical-chain correspondence and maintainer availability remain OPEN, not discharged by relay difficulty or regtest proof acceptance",
         "C05 F6: pendingReveals is an unreconciled cumulative reveal count, not a live-rights or safe-retirement predicate; refunded/fabricated reveal and custody/authorization archives require explicit lifecycle inventory"
+      ],
+      "statements": [],
+      "blockers": [
+        {
+          "gate": "V-08 predicates, model, replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-07",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-08 predicates defined in the rev 02 draft; no model or replay exists",
+          "package": "V-08"
+        },
+        {
+          "gate": "V-10 model; replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-10, K-11, K-12",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the release commander and the C-10 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-10 predicates defined in the rev 02 draft; no model or replay exists",
+          "package": "V-10"
+        }
       ]
     },
     {
@@ -1235,6 +1568,22 @@
         "Exact release, layout, runtime/fence and deployed-state records absent",
         "No V-01\u2013V-04 predicate discharges deployment",
         "C05 F6: Nonzero rebateStaking blocks FROST reveal; rebate ownership/activation decision remains unresolved C-11. Install-once verifier replacement requires reviewed Bridge upgrade/configuration qualification; no ownership or upgrade policy adopted"
+      ],
+      "statements": [],
+      "blockers": [
+        {
+          "gate": "V-10 model; replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-10, K-11, K-12",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the release commander and the C-10 owner",
+            "person": null,
+            "assignment_status": "open"
+          },
+          "missing": "V-10 predicates defined in the rev 02 draft; no model or replay exists",
+          "package": "V-10"
+        }
       ]
     }
   ],
@@ -1260,10 +1609,12 @@
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/agreement.go",
           "blob": "1d67efba4c186e21bd6ec1cbf83255e92cfa5f66",
-          "scope": "A-K04-AGREED-EXECUTOR-CONFIG: local chain-derived agreement only; no cross-operator transport"
+          "scope": "A-K04-AGREED-EXECUTOR-CONFIG: local chain-derived agreement only; no cross-operator transport",
+          "evidence_kind": "source"
         }
       ],
-      "k05_disposition": "K-05 derives the agreed executor configuration from finalized chain state locally (redemption/agreement.go); cross-operator agreement transport is not implemented; stays open"
+      "k05_disposition": "K-05 derives the agreed executor configuration from finalized chain state locally (redemption/agreement.go); cross-operator agreement transport is not implemented; stays open",
+      "statements": []
     },
     {
       "id": "A-GUARDED-END-BEFORE-RELEASE",
@@ -1280,7 +1631,11 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": [
+        "V-01-store",
+        "V-04-signing"
+      ]
     },
     {
       "id": "A-READY-FRESH-RELOAD",
@@ -1297,7 +1652,11 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": [
+        "V-02-store",
+        "V-03-chain"
+      ]
     },
     {
       "id": "A-BUILDER-FROZEN-BEFORE-SIGN",
@@ -1314,7 +1673,10 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": [
+        "V-04-signing"
+      ]
     },
     {
       "id": "A-CHAIN-FINALITY",
@@ -1331,7 +1693,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-FENCE-STORAGE",
@@ -1348,7 +1711,10 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": [
+        "V-01-store"
+      ]
     },
     {
       "id": "A-OPERATOR-ATTEST-AFTER-VALIDATION",
@@ -1371,10 +1737,14 @@
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/attestation.go",
           "blob": "e0518e89635984cfad9d85b42cbea0e3913a4f8d",
-          "scope": "A-OPERATOR-ATTEST-AFTER-VALIDATION: Attest orders Validate, Reload, lock, sign"
+          "scope": "A-OPERATOR-ATTEST-AFTER-VALIDATION: Attest orders Validate, Reload, lock, sign",
+          "evidence_kind": "source"
         }
       ],
-      "k05_disposition": "K-05 Attester.Attest validates the plan against finalized chain state and reloads the completed key before the durable lock and any seat signature; covered by K-05 named tests, not by the V-04 admission replay; stays open"
+      "k05_disposition": "K-05 Attester.Attest validates the plan against finalized chain state and reloads the completed key before the durable lock and any seat signature; covered by K-05 named tests, not by the V-04 admission replay; stays open",
+      "statements": [
+        "V-04-signing"
+      ]
     },
     {
       "id": "A-ONE-INTENT-PER-STATE-VERSION",
@@ -1397,10 +1767,14 @@
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/redemption/v04_admission_replay_test.go",
           "blob": "b761c0a7c18af880dd58ce3297bbcd4bbb0050d7",
-          "scope": "A-ONE-INTENT-PER-STATE-VERSION: S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "A-ONE-INTENT-PER-STATE-VERSION: S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "source"
         }
       ],
-      "k05_disposition": "K-05 durable compare-and-insert slot lock implemented (Attester.lock); V-04 admission replay 22/22 at the declared bound; production finality depth and provider authentication remain assumptions; stays open"
+      "k05_disposition": "K-05 durable compare-and-insert slot lock implemented (Attester.lock); V-04 admission replay 22/22 at the declared bound; production finality depth and provider authentication remain assumptions; stays open",
+      "statements": [
+        "V-04-signing"
+      ]
     },
     {
       "id": "A-STORED-DESCRIPTOR-ONLY",
@@ -1417,7 +1791,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-FEE-INCLUSION-ESCALATION",
@@ -1434,7 +1809,25 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostCancellationHistory.sol",
+          "blob": "29fd9e62fdb49a11bba39e0b79be05cea73b777f",
+          "evidence_kind": "source",
+          "scope": "A-FEE-INCLUSION-ESCALATION: retained increasing-fee cancellation alternatives (52413cc6) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.CancellationAlternatives.test.ts",
+          "blob": "242f76a6097ee5b43547415d0cc2323180295f98",
+          "evidence_kind": "source",
+          "scope": "A-FEE-INCLUSION-ESCALATION: alternatives with independent budgets at the integration head; source only, not a qualification"
+        }
+      ],
+      "statements": []
     },
     {
       "id": "A-DUPLICATE-REQUEST-STATE-GUARD",
@@ -1451,7 +1844,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-READY-SEAT-ELIGIBILITY",
@@ -1468,7 +1862,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION",
@@ -1485,7 +1880,25 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostSweepResolutionCertificate.sol",
+          "blob": "4ca653f357cca0526f3fdd7644902c71ad9bb16e",
+          "evidence_kind": "source",
+          "scope": "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION: certified sweep conflict resolution (4ccbacf0) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.SweepConflictResolution.test.ts",
+          "blob": "eb0e14003f02ad2fd4c9f412d3a88a69f26af347",
+          "evidence_kind": "source",
+          "scope": "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION: sweep spends a reserved main; requests individually refundable at the integration head; source only, not a qualification"
+        }
+      ],
+      "statements": []
     },
     {
       "id": "A-SPV-MAINTAINER-RELAY",
@@ -1502,7 +1915,41 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostBridge.sol",
+          "blob": "0b0e69fcfa5cd8e1d520b5425f88a008f41da1d9",
+          "evidence_kind": "source",
+          "scope": "A-SPV-MAINTAINER-RELAY: isSpvMaintainer required for deposit sweep, sweep resolution, redemption and cancellation proofs (02baba9e, 4ccbacf0, 2b205b85) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostMovementDispatch.sol",
+          "blob": "35a836bdd7707e55996a3b79a39a0d9bc973b74a",
+          "evidence_kind": "source",
+          "scope": "A-SPV-MAINTAINER-RELAY: isSpvMaintainer required for moving-funds and moved-funds-sweep proofs (98f1e993) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.PublicSpvMaintainer.test.ts",
+          "blob": "ebea5781b04c5b81339fb1e31ca5f2d227444337",
+          "evidence_kind": "source",
+          "scope": "A-SPV-MAINTAINER-RELAY: refusal test through the funded Bridge at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.FundingDispatch.test.ts",
+          "blob": "d3f9e377b4abf3f8f97a44bd9132a2b74d360f67",
+          "evidence_kind": "source",
+          "scope": "A-SPV-MAINTAINER-RELAY: dispatch refusal test at the integration head; source only, not a qualification"
+        }
+      ],
+      "statements": []
     },
     {
       "id": "A-K06-CANONICAL-SWEEP-BUILDER",
@@ -1519,7 +1966,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-K05-TIMEOUT-POLICY",
@@ -1536,7 +1984,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-K05-LATE-SIGNATURE-SETTLEMENT",
@@ -1553,7 +2002,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-K05-CERTIFICATE-TRANSPORT",
@@ -1570,7 +2020,152 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
+    },
+    {
+      "id": "A-TARGET-CHAIN-GAS-CAP",
+      "evidence": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostSigningIntent.sol",
+          "blob": "e5ccc4c18e3a5ef6b47adc1caaced47c2f2b5939",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: MAX_REQUESTS 64, MAX_INPUTS 32 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostDepositSweep.sol",
+          "blob": "2a7230399533988352a5f064737023f5185a8484",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: MAX_SWEEP_INPUTS 128 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostMovement.sol",
+          "blob": "8a1dbd443c20465a26fb01e8fdfd62116a986f95",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: MAX_MOVEMENT_TARGETS 128 (28b35730, ADV-C1 tbtc-v2#49) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostFraud.sol",
+          "blob": "abb14e7839f2b049ae94ffe4d22789b984b1161e",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: MAX_INPUTS 128, MAX_OUTPUTS 252 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.PublicGasCap.test.ts",
+          "blob": "29c6dfa08ebb7ff150807a16c460eba89723e799",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: admission/payment/cancellation under the transaction cap at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.FullAdmissionGas.test.ts",
+          "blob": "07d2b8b0e2156114c8714430627f12b611e6fec1",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: complete admission gas at combined shapes at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.DepositSweep.Gas.test.ts",
+          "blob": "c735db1b231ad993ad7e5acc75190a4953a5058b",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: sweep credits under the explicit cap (synthetic SPV) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.SweepConflictResolution.Gas.test.ts",
+          "blob": "f72653bbd02bdaab18e2751d34427f34932437b0",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: resolution proof under 2^24 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/b8/B8.MovementTargetCap.test.ts",
+          "blob": "f9caa84348e1a3a6623415cb91b231a841a7f5e4",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: [ADV-C1 #49] 129 refused, 128 proves under 2^24 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.Fraud.MovementOutputCap.test.ts",
+          "blob": "b11b2112ef69ea7fbcfc332e0294f895a4aeaedb",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: fraud defense output cap at the integration head; source only, not a qualification"
+        }
+      ],
+      "requirement": "Every FROST admission, proof, resolution, movement and defense fits the target chain per-transaction gas cap (2^24, EIP-7825) at its declared maximum shape",
+      "status": "open",
+      "statements": [],
+      "owner": {
+        "role": "C-04/C-05/C-06/C-08 contract leads and C-11 release owners",
+        "person": null,
+        "assignment_status": "open"
+      },
+      "monitoring_escalation": {
+        "status": "proposed; approval pending",
+        "policy": "Refuse shapes above the declared caps; requalify gas on any change to a capped path or target chain",
+        "named_monitor": null,
+        "approved_deadline": null
+      },
+      "disposition": "Caps implemented: 64 requests / 32 inputs (FrostSigningIntent), 128 sweep inputs, 128 movement targets (28b35730, ADV-C1), fraud 128 inputs / 252 outputs. Gas tests exist as sources; no execution record at 39412825 is pinned here; production gas qualification on the target chain open (review L2 gas cap)"
+    },
+    {
+      "id": "A-XONLY-SINGLE-VALIDATION",
+      "evidence": [
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "solidity/ecdsa/contracts/frost/FrostCurve.sol",
+          "blob": "db089b5617b7c4af72248bc3ad93876bf992331c",
+          "evidence_kind": "source",
+          "scope": "A-XONLY-SINGLE-VALIDATION: C-02 validX used by FrostDkgValidator at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostCurve.sol",
+          "blob": "db089b5617b7c4af72248bc3ad93876bf992331c",
+          "evidence_kind": "source",
+          "scope": "A-XONLY-SINGLE-VALIDATION: byte-identical Bridge copy (blob db089b56) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostSecp256k1.sol",
+          "blob": "24987710b29cd9194ffc66c536819e6a63feeaec",
+          "evidence_kind": "source",
+          "scope": "A-XONLY-SINGLE-VALIDATION: C-07 lift, a separate x-only implementation at the integration head; source only, not a qualification"
+        }
+      ],
+      "requirement": "One x-only BIP340 key validation is qualified for C-02 and C-07, or both implementations are covered by P-C07-BIP340 evidence",
+      "status": "open",
+      "statements": [],
+      "owner": {
+        "role": "cryptographic contract lead (V-06) with the C-02 and C-07 owners",
+        "person": null,
+        "assignment_status": "open"
+      },
+      "monitoring_escalation": {
+        "status": "proposed; approval pending",
+        "policy": "Any change to either implementation re-opens V-06 evidence",
+        "named_monitor": null,
+        "approved_deadline": null
+      },
+      "disposition": "Unchanged since review L2: keep-core FrostCurve.validX (C-02) and its byte-identical Bridge copy, plus the separate FrostSecp256k1.lift (C-07). V-06 not started"
     }
   ],
   "specifications": [
@@ -1596,5 +2191,137 @@
     }
   ],
   "spec_integration_revision": "44f1356f5b292ad2e78b1d1fa303cd04018d1f8a",
-  "spec_verification_revision": "d45afdab9108cbd0156ad68cc5697ece737a7b1c"
+  "spec_verification_revision": "d45afdab9108cbd0156ad68cc5697ece737a7b1c",
+  "component_statements": [
+    {
+      "slot": "V-01-store",
+      "component": "V-01",
+      "id": "S-K02-HOST-3",
+      "predicates": [
+        "P-K02-OWNER",
+        "P-K02-TERMINAL",
+        "P-K02-IMMUTABLE",
+        "P-K02-DURABLE",
+        "P-K02-UNCERTAIN"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/store/verification/check-freshness.py"
+      },
+      "statement": {
+        "file": "pkg/frost/store/verification/STATEMENTS.json"
+      }
+    },
+    {
+      "slot": "V-02-store",
+      "component": "V-02",
+      "id": "S-K03-STORE-2",
+      "predicates": [
+        "P-K03-NO-LATE-KEY",
+        "P-K03-SEATSLOST-TERMINAL",
+        "P-K03-STATUS-DURABLE",
+        "P-K03-RELOAD-ONLY-DURABLE"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/store/verification/check-freshness.py"
+      },
+      "statement": {
+        "file": "pkg/frost/store/verification/STATEMENTS.json"
+      }
+    },
+    {
+      "slot": "V-03-chain",
+      "component": "V-03",
+      "id": "S-K03-CHAIN-1",
+      "predicates": [
+        "P-K03-ONE-DESCRIPTOR",
+        "P-K03-SUBMITTED-NOT-TERMINAL",
+        "P-K03-EXPIRY-TOMBSTONE",
+        "P-K03-READY-ONLY-RELOADED"
+      ],
+      "checker": {
+        "kind": "statement-file",
+        "repository": "keep-core",
+        "path": "pkg/frost/dkg/verification/check_freshness.py",
+        "args": []
+      },
+      "statement": {
+        "search": [
+          "keep-core:pkg/frost/dkg/verification/{id}.json",
+          "evidence:implementation/V-03/*/{id}.json"
+        ]
+      }
+    },
+    {
+      "slot": "V-04-signing",
+      "component": "V-04",
+      "id": "S-K05-SIGN-3",
+      "predicates": [
+        "P-K04-AUTHORIZED-ONLY",
+        "P-K05-TERMINAL-ATTEMPT",
+        "P-K05-NO-DOUBLE-OUTCOME",
+        "P-HOST-ONE-INTENT-ATTESTATION",
+        "P-HOST-REPLACEMENT-FINALIZED-ABSENCE"
+      ],
+      "checker": {
+        "kind": "statement-file",
+        "repository": "keep-core",
+        "path": "pkg/frost/signing/verification/check-freshness.py",
+        "args": [
+          "{statement:freshness.manifest}"
+        ]
+      },
+      "statement": {
+        "search": [
+          "evidence:implementation/V-04/*/{id}.json",
+          "keep-core:pkg/frost/signing/verification/{id}.json"
+        ]
+      }
+    }
+  ],
+  "review_items": [
+    {
+      "id": "L2-SPV-MAINTAINER",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-SPV-MAINTAINER-RELAY",
+      "item": "FROST SPV-proof entrypoints skip onlySpvMaintainer",
+      "status": "on-chain gate implemented; relay/canonical-chain qualification and maintainer availability open",
+      "current": "tbtc-v2 39412825 FrostBridge.sol requires isSpvMaintainer for deposit sweep (02baba9e), sweep resolution (4ccbacf0), redemption and cancellation proofs (2b205b85); FrostMovementDispatch.sol for moving-funds and moved-funds-sweep proofs (98f1e993). Refusal tests: Frost.PublicSpvMaintainer.test.ts, Frost.FundingDispatch.test.ts. K-09 b9-r2 stages 04/05/08/09 prove through the maintainer (positive path only)"
+    },
+    {
+      "id": "L2-GAS-CAP",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-TARGET-CHAIN-GAS-CAP",
+      "item": "2^24 per-transaction cap versus 255-request admission and 256-input sweep",
+      "status": "caps lowered and measured locally; target-chain qualification open",
+      "current": "MAX_REQUESTS 64 / MAX_INPUTS 32 (FrostSigningIntent.sol:11-12), MAX_SWEEP_INPUTS 128 (FrostDepositSweep.sol:18), MAX_MOVEMENT_TARGETS 128 (28b35730, B8.MovementTargetCap.test.ts, ADV-C1 tbtc-v2#49), FrostFraud 128/252. Measured in Frost.PublicGasCap / FullAdmissionGas / DepositSweep.Gas / SweepConflictResolution.Gas tests; Frost.PublicMaximumBatch.test.ts (255-request) remains a row-5 historical source"
+    },
+    {
+      "id": "L2-SWEEP-RESERVATION",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION",
+      "item": "main-spending sweep and reservation can lock each other",
+      "status": "on-chain recovery route implemented; canonical host serialization and V-04 interleaving open",
+      "current": "4ccbacf0 resolves reservations whose main a proven deposit sweep spent (FrostSweepResolutionCertificate.sol; Frost.SweepConflictResolution*.test.ts). No V-04 model covers the interleaving (V-04 blocker)"
+    },
+    {
+      "id": "L2-SINGLE-SHOT-CANCELLATION",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-FEE-INCLUSION-ESCALATION",
+      "item": "single-shot cancellation under fee pressure",
+      "status": "in-envelope alternatives implemented; above-envelope policy and D-09 fee caps open",
+      "current": "52413cc6 retains increasing-fee cancellation alternatives with independent budgets (FrostCancellationHistory.sol, Frost.CancellationAlternatives.test.ts, Frost.CancellationHistory.test.ts). KC-VER rev 02 draft records the BIP125 size argument for this obligation (owner: D-09 and redemption leads)"
+    },
+    {
+      "id": "L2-XONLY-DUPLICATE",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-XONLY-SINGLE-VALIDATION",
+      "item": "C-02 uses FrostCurve.validX, not the C-07 code",
+      "status": "unchanged; open (V-06 not started)",
+      "current": "keep-core solidity/ecdsa/contracts/frost/FrostCurve.sol and tbtc-v2 solidity/contracts/frost/FrostCurve.sol are the same blob db089b56; FrostSecp256k1.lift is separate"
+    }
+  ]
 }

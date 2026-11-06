@@ -365,8 +365,10 @@ func TestV04AdmissionTraceReplay(t *testing.T) {
 		Accepted, Refused                int
 		Control                          string `json:",omitempty"`
 	}
-	var report []row
-	for _, path := range paths {
+	// Each trace has its own harness and store, so the traces run in parallel;
+	// the report keeps trace order.
+	report := make([]*row, len(paths))
+	for i, path := range paths {
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			t.Fatal(err)
@@ -376,6 +378,7 @@ func TestV04AdmissionTraceReplay(t *testing.T) {
 			t.Fatal(path, err)
 		}
 		t.Run(trace.ID, func(t *testing.T) {
+			t.Parallel()
 			steps := trace.Steps
 			if trace.Weakening != "None" {
 				steps = trace.ClaimModelSteps
@@ -402,16 +405,25 @@ func TestV04AdmissionTraceReplay(t *testing.T) {
 				out.Control = "weakened expectations refused: " + err.Error()
 			}
 			t.Logf("V04_ADMISSION_REPLAY id=%s class=%s steps=%d compared=%d host=%d chain=%d accepted=%d refused=%d control=%q", out.ID, out.Class, out.Steps, out.Compared, out.Host, out.Chain, out.Accepted, out.Refused, out.Control)
-			report = append(report, out)
+			report[i] = &out
 		})
 	}
-	if path := os.Getenv("V04_ADMISSION_REPORT"); path != "" && !t.Failed() {
-		raw, _ := json.MarshalIndent(report, "", "  ")
-		if err := os.WriteFile(path, append(raw, '\n'), 0o644); err != nil {
-			t.Fatal(err)
+	// Parallel subtests finish after this function returns; cleanup runs after them.
+	t.Cleanup(func() {
+		if path := os.Getenv("V04_ADMISSION_REPORT"); path != "" && !t.Failed() {
+			ordered := []row{}
+			for _, r := range report {
+				if r != nil {
+					ordered = append(ordered, *r)
+				}
+			}
+			raw, _ := json.MarshalIndent(ordered, "", "  ")
+			if err := os.WriteFile(path, append(raw, '\n'), 0o644); err != nil {
+				t.Error(err)
+			}
 		}
-	}
-	if !strings.HasSuffix(dir, "admission-traces") {
-		t.Logf("trace directory %s", dir)
-	}
+		if !strings.HasSuffix(dir, "admission-traces") {
+			t.Logf("trace directory %s", dir)
+		}
+	})
 }

@@ -26,6 +26,8 @@ import { stake } from "../utils/operators"
 
 import type { Contract } from "ethers"
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { checkTbtcBuild } = require("./check-tbtc-build")
 
 // ---------------------------------------------------------------------------
 // The builder under test (the production deploy script, defined by these
@@ -136,7 +138,12 @@ type TbtcArtifact = {
   bytecode: string
   linkReferences: Record<string, Record<string, { start: number }[]>>
 }
+/// Every tbtc-v2 artifact the world reads, checked against the pinned tree
+/// (check-tbtc-build.js, review N4) once the world is built.
+const loadedTbtc: [string, string][] = []
 export function tbtcArtifact(source: string, name: string): TbtcArtifact {
+  if (!loadedTbtc.some(([s, n]) => s === source && n === name))
+    loadedTbtc.push([source, name])
   return JSON.parse(
     fs.readFileSync(
       path.join(tbtcRoot(), "solidity/build", source, `${name}.json`),
@@ -349,6 +356,9 @@ export async function buildWorld(): Promise<World> {
       .connect(council)
       .initializeWalletOwner(bridge.address)
   ).wait()
+
+  // FIXTURE provenance: the artifacts above come from the pinned tree.
+  checkTbtcBuild(tbtcRoot(), TBTC_PIN_TREE, loadedTbtc)
 
   return {
     deployer,

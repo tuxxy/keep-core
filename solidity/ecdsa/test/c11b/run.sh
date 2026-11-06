@@ -9,6 +9,9 @@ cd "$(dirname "$0")/../.."
 tree=$(git -C "$C11B_TBTC" rev-parse 'HEAD^{tree}')
 [ "$tree" = b0b02e2ccfcadaff05b15163120f503bc823cc82 ] || { echo "C11B_TBTC is not at the pinned tbtc-v2 tree (got $tree)"; exit 2; }
 [ -f "$C11B_TBTC/solidity/build/contracts/bridge/Bridge.sol/Bridge.json" ] || { echo "compile $C11B_TBTC/solidity first (npx hardhat compile)"; exit 2; }
+# The artifacts must come from that tree (review N4): build-info sources equal
+# the tree's blobs, and each artifact equals its build-info output.
+node test/c11b/check-tbtc-build.js "$C11B_TBTC" "$tree"
 mkdir -p .c11b-tmp
 export TMPDIR="$PWD/.c11b-tmp"
 export USE_EXTERNAL_DEPLOY=true C11B_RUN=1

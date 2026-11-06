@@ -26,8 +26,8 @@ Cited statements are checked by their own component checkers on every run.
 | 6 | open | Signature/frozen transaction → same broadcast/proof | match | 3/4/0/2 | S-K05-SIGN-3 **stale** | V-04, V-08 | fresh V-04; V-08; realistic-header SPV run |
 | 7 | open | Bitcoin custody → one credit/settlement | match | 15/6/0/0 | S-K05-SIGN-3 **stale** | V-04, V-07, V-08 | fresh V-04; V-07/V-08; adversarial double-outcome execution |
 | 8 | open | Signature/challenge → exact defense | match | 3/0/0/0 | none | V-06, V-09 | any execution: K-09 has no fraud stage; V-06; V-09 |
-| 9 | open | Cleared obligations → retirement | match | 4/1/0/0 | none | V-08, V-10 | K-12 archive inventory; tbtc-v2 K09 run record; V-10 |
-| 10 | open | Approved source/config → deployment claims | partial (no consumer) | 3/3/0/0 | none | V-10 | K-10 build and deployed-state records; V-10 |
+| 9 | open | Cleared obligations → retirement | match | 4/2/0/0 | none | V-08, V-10 | K-12 archive inventory; V-10 |
+| 10 | open | Approved source/config → deployment claims | partial (no consumer) | 3/4/0/0 | none | V-10 | K-10 build and deployed-state records; V-10 |
 
 Every row also needs an assigned owner and independent review before
 discharge. The checker run in the evidence directory exits 1 (drift: the two
@@ -121,14 +121,86 @@ reports the affected row pins: rows 4 (IFrostFundingBridge), 5 and 7
 | 10-inactivity, 12-no-inactivity | none | inactivity enforcement has no section 8.3 row; V-09 gate |
 
 Gaps against the K-09 "verification now" list: no fraud admission, defense or
-timeout stage (row 8 has no execution evidence); no realistic-header SPV run;
-the tbtc-v2 K09 contract tests (tbtc-v2#53: legacy obligation ledger,
-registry cutover, cutover invariants) are pinned as sources on rows 9 and 10
-but have no execution record at 39412825 (runbook in the evidence
-directory). These runs are concrete execution of honest paths; they do not
+timeout stage (row 8 has no execution evidence); no realistic-header SPV run.
+The tbtc-v2 K09 contract tests now have an execution record at 39412825
+(next section). These runs are concrete execution of honest paths; they do not
 discharge a row. Every row stays open, as KC-VER 2.7 and the V-05 exit
 require a checked guarantee or an owned assumption for every model
 assumption, fresh cited statements and independent review.
+
+## tbtc-v2 K09 contract run at 39412825 (6 November addendum)
+
+The tbtc-v2 K09 contract tests (tbtc-v2#53) ran at `integration/frost-base`
+39412825, clean tree, at the manager's request: 35 passing, 0 failing, 152.8 s
+wall including compilation, peak RSS 3.8 GB, one Node process on the
+in-process Hardhat network. The record is
+`implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/`
+(planned limits, actual result, log, manifest). Its log is pinned by SHA-256
+through the manifest as `execution` evidence on:
+
+- row 9: K09.LegacyObligations (every 40a11d1d obligation class carried
+  across upgrade, drain, cutover and containment and discharged through each
+  of 21 routes) and K09.CutoverInvariants (a direct FROST closure with an open
+  challenge reverts);
+- row 10: K09.RegistryCutover (cutover refused in every non-IDLE registry DKG
+  state with the storage frame unchanged) and K09.CutoverInvariants.
+
+The world uses the real ECDSA WalletRegistry stack and the 40a11d1d Bridge
+behind a real proxy; the beacon (smock) and the difficulty-0 relay are
+labelled adapters. These are concrete contract tests. They do not supply the
+K-12 Bitcoin/archive inventory (row 9) or K-10 deployed-state correspondence
+(row 10), so both rows stay open.
+
+The checker was rerun at `4a955b371` (`catchup-2026-11-06/checker-rerun/`):
+22 unit tests pass; normal and strict both exit 1, because S-K03-CHAIN-1 and
+S-K05-SIGN-3 are still the cited, stale statements. Row pins and both specs
+match.
+
+## Pending re-pins (not cited; drafts on unmerged branches)
+
+The slots below still cite the statements on this branch. None of the
+pending statements is cited as fresh here. Each was probed with this
+checker's adapters against its PR head (worktrees under
+`integration-worktrees/VER-v05/probe/`, `--repo tbtc-v2` at 39412825 and the
+KC-VER rev 02 draft checkout); "probe" is that result, not a citation.
+
+| Slot | Cited now | Pending | PR (head) | Change when it merges | Probe |
+| --- | --- | --- | --- | --- | --- |
+| V-01-store | S-K02-HOST-3 | S-K02-HOST-4 | #122 (`81de8f3a7`) | `id` | fresh |
+| V-02-store | S-K03-STORE-2 | S-K03-STORE-3 | #122 | `id`. The V-02 blocker stays: four commits blocked, clone at two commits, VD-05 open (#77) | fresh |
+| V-03-chain | S-K03-CHAIN-1 | S-K03-CHAIN-2 | #127 (`ba6faa031`) | `id` | fresh |
+| V-04-signing | S-K05-SIGN-3 | S-K05-SIGN-4, then S-K05-SIGN-5 (supersedes 4) | #123 (`2c94293d3`), #126 (`242ad3718`) | `id` (S-K05-SIGN-5 if #126 merges) | fresh only after the snowfall `clients/go` dependency source is extracted into `pkg/frost/signing/verification/dependency-source` (gitignored; command in the signing README); a clean checkout reads stale |
+| new V-07-deposit | none | S-K06-DEPOSIT-1 | #131 (`52e06b610`) | add the slot below; set the V-07 blocker's `slot` on rows 4 and 7 | fresh |
+| new V-08-movement | none | S-K07-MOVEMENT-1 | #132 (`2334b49ee`) | add the slot below; set the V-08 blocker's `slot` on rows 6, 7 and 9 | fresh |
+| new V-09-enforcement | none | S-K08-ENFORCE-1 | #130 (`75864443f`) | add the slot below; set the V-09 blocker's `slot` on row 8 | fresh with `--repo` args; "unchecked" without |
+
+The new slots need `--repo kc-ver-02=<FROST-migration-spec-kcver02 checkout>`
+on the V-05 command line:
+
+```json
+{"slot": "V-07-deposit", "component": "V-07", "id": "S-K06-DEPOSIT-1",
+ "checker": {"kind": "store-statements", "repository": "keep-core", "path": "pkg/frost/deposit/verification/check-freshness.py",
+             "args": ["--repo", "tbtc-v2={repo:tbtc-v2}", "--repo", "spec={repo:kc-ver-02}"]},
+ "statement": {"file": "pkg/frost/deposit/verification/STATEMENTS.json"}},
+{"slot": "V-08-movement", "component": "V-08", "id": "S-K07-MOVEMENT-1",
+ "checker": {"kind": "store-statements", "repository": "keep-core", "path": "pkg/frost/movement/verification/check-freshness.py",
+             "args": ["--repo", "tbtc-v2={repo:tbtc-v2}", "--repo", "spec-kcver02={repo:kc-ver-02}"]},
+ "statement": {"file": "pkg/frost/movement/verification/STATEMENTS.json"}},
+{"slot": "V-09-enforcement", "component": "V-09", "id": "S-K08-ENFORCE-1",
+ "checker": {"kind": "store-statements", "repository": "keep-core", "path": "pkg/frost/enforcement/verification/check-freshness.py",
+             "args": ["--repo", "tbtc-v2={repo:tbtc-v2}", "--repo", "kc-ver-02={repo:kc-ver-02}"]},
+ "statement": {"file": "pkg/frost/enforcement/verification/STATEMENTS.json"}}
+```
+
+Without `--repo spec-kcver02`, the V-08 checker falls back to the paths in its
+own statement (the main tbtc-v2 checkout), so pass it explicitly.
+
+#126 proposes discharging an A-STORE assumption in V-05 through clauses
+A-STORE-1..6 (`pkg/frost/signing/verification/SCOPE-2026-11-06.md` on that
+branch). This ledger has no A-STORE obligation; the nearest are
+A-FENCE-STORAGE and A-GUARDED-END-BEFORE-RELEASE. The proposal is not adopted
+here. Map its clauses to obligations after #126 merges, and keep each one
+open until its evidence is an `execution` or `model` record.
 
 ## Review L2 obligations: current status
 

@@ -961,15 +961,18 @@ func TestReplayTraces(t *testing.T) {
 	if mode == "" {
 		mode = "claim"
 	}
-	var reports []replayReport
-	for _, file := range files {
+	// Each trace has its own harness and directory, so the traces run in
+	// parallel; the report keeps trace order.
+	reports := make([]*replayReport, len(files))
+	for i, file := range files {
 		raw, e := os.ReadFile(file)
 		must(t, e)
 		var tr replayTrace
 		must(t, json.Unmarshal(raw, &tr))
 		t.Run(tr.ID, func(t *testing.T) {
+			t.Parallel()
 			rep := replayReport{Trace: tr.ID, Kind: tr.Kind, Mode: mode, Replay: tr.Replay}
-			defer func() { reports = append(reports, rep) }()
+			defer func() { reports[i] = &rep }()
 			steps := tr.Steps
 			if tr.Weakening != "None" {
 				if mode == "claim" {
@@ -994,9 +997,24 @@ func TestReplayTraces(t *testing.T) {
 			rep.Result = "pass"
 		})
 	}
-	if path := os.Getenv("FROST_REPLAY_REPORT"); path != "" {
-		b, e := json.MarshalIndent(reports, "", "  ")
-		must(t, e)
-		must(t, os.WriteFile(path, b, 0600))
-	}
+	// Parallel subtests finish after this function returns; cleanup runs after them.
+	t.Cleanup(func() {
+		path := os.Getenv("FROST_REPLAY_REPORT")
+		if path == "" {
+			return
+		}
+		ordered := []replayReport{}
+		for _, r := range reports {
+			if r != nil {
+				ordered = append(ordered, *r)
+			}
+		}
+		b, e := json.MarshalIndent(ordered, "", "  ")
+		if e == nil {
+			e = os.WriteFile(path, b, 0600)
+		}
+		if e != nil {
+			t.Error(e)
+		}
+	})
 }

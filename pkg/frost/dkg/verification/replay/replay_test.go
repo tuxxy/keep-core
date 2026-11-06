@@ -1565,8 +1565,10 @@ func TestV03SubprocessReplay(t *testing.T) {
 	if err != nil || len(files) == 0 {
 		t.Fatal("missing current traces", err)
 	}
-	var reports []map[string]any
-	for _, file := range files {
+	// Each trace has its own world, directory, server and child processes, so
+	// the traces run in parallel; the report keeps trace order.
+	reports := make([]map[string]any, len(files))
+	for i, file := range files {
 		var tr trace
 		raw, err := os.ReadFile(file)
 		if err != nil {
@@ -1575,15 +1577,27 @@ func TestV03SubprocessReplay(t *testing.T) {
 		if err = json.Unmarshal(raw, &tr); err != nil {
 			t.Fatal(err)
 		}
-		t.Run(tr.ID, func(t *testing.T) { reports = append(reports, play(t, tr)) })
+		t.Run(tr.ID, func(t *testing.T) {
+			t.Parallel()
+			reports[i] = play(t, tr)
+		})
 	}
-	if os.Getenv("V03_REPLAY_REPORT") != "" {
-		raw, _ := json.MarshalIndent(reports, "", "  ")
-		if err = os.WriteFile(os.Getenv("V03_REPLAY_REPORT"), append(raw, '\n'), 0600); err != nil {
-			t.Fatal(err)
+	// Parallel subtests finish after this function returns; cleanup runs after them.
+	t.Cleanup(func() {
+		matched := []map[string]any{}
+		for _, r := range reports {
+			if r != nil {
+				matched = append(matched, r)
+			}
 		}
-	}
-	t.Logf("matched traces=%d", len(reports))
+		if os.Getenv("V03_REPLAY_REPORT") != "" {
+			raw, _ := json.MarshalIndent(matched, "", "  ")
+			if err := os.WriteFile(os.Getenv("V03_REPLAY_REPORT"), append(raw, '\n'), 0600); err != nil {
+				t.Error(err)
+			}
+		}
+		t.Logf("matched traces=%d", len(matched))
+	})
 }
 
 func compareWallet(t *testing.T, w dkg.WalletRecord, s abstract, n int) {

@@ -38,7 +38,8 @@ first. `admission-replay` replays the admission traces on the real K-05
 and its negative control on the real Bridge. `k05` runs the K-05 named tests.
 See RESULTS-K05.md (statement S-K05-SIGN-1).
 
-`process` runs the twelve declared subprocess application traces, including
+`generated` drives every generated model trace through the same subprocess
+child (#82; see SCOPE-2026-11-06.md and LIMITATIONS.md). `process` runs the twelve declared subprocess application traces, including
 actual process kills and store reopens. It is a distinct trace set from the
 generated model's storage-stage projections. `admission.rs` checks the
 C-04/host-certificate join in ADMISSION-SEMANTICS.md. Since K-05, its traces

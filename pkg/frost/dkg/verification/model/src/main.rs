@@ -68,6 +68,13 @@ struct S {
     monitor_pending: u8,
     monitor_used: u8,
     monitor_overlap: u8,
+    // restore path (node startup, Executor.Restore); RESTORE-SCOPE-2026-11-06.md
+    restarted: u8,
+    restored: u8,
+    restore_cert: u8,
+    restore_reloaded: u8,
+    restore_attest: u8,
+    heard: [u8; 2],
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 enum A {
@@ -108,6 +115,7 @@ enum A {
     Fund,
     ProcessCrash(u8),
     HostCrash(u8),
+    Restart(u8),
 }
 #[derive(Clone)]
 struct M {
@@ -199,13 +207,19 @@ impl Model for M {
                 }
                 16 => a.push(A::Reload(n)),
                 17 => a.push(A::BeginReadiness(n)),
+                // A restore that read the wallet certified skips collection.
+                6 if s.restore_cert & (1 << n) != 0 => a.push(A::Postcondition(n)),
                 6 => a.push(A::Attest(n)),
+                // Bound: one restart in total, in the first epoch.
+                9 if s.restarted == 0 && s.epoch == 0 => a.push(A::Restart(n)),
                 7 => {
                     a.push(A::CollectionRead(n));
-                    if s.attest.count_ones() >= 3 {
+                    // A restored process hears only statements sent after its start.
+                    let pool = if s.restored & (1 << n) != 0 { s.heard[n as usize] } else { s.attest };
+                    if pool.count_ones() >= 3 {
                         for remote in 0..4 {
                             let mask = seats(n) | (1 << remote);
-                            if mask.count_ones() == 3 && mask & !s.attest == 0 {
+                            if mask.count_ones() == 3 && mask & !pool == 0 {
                                 a.push(A::BeforeCertificate {
                                     proc: n,
                                     seats: mask,
@@ -222,7 +236,12 @@ impl Model for M {
             };
             if active(s.phase[n as usize]) && s.monitor_pending & (1 << n) == 0 {
                 if s.phase[n as usize] == 1 && s.chain == 0 && s.submitted == 1 && s.pre_tick < 3 && s.monitor_used & (1 << n) == 0 { a.push(A::BeginWatch(n)); }
-                a.extend([A::Watch(n), A::ProcessCrash(n), A::HostCrash(n)]);
+                // Bound (F-V03-R2): a restored monitor's read of a removed
+                // approval at or after the result-deadline height is not modeled.
+                if !(s.restored & (1 << n) != 0 && s.chain == 2 && s.pre_tick + s.tick >= 3) {
+                    a.push(A::Watch(n));
+                }
+                a.extend([A::ProcessCrash(n), A::HostCrash(n)]);
             }
         }
         for n in 0..2 { if active(s.phase[n as usize]) && s.monitor_pending & (1 << n) != 0 { a.push(A::FinishWatch(n)); } }
@@ -377,9 +396,21 @@ impl Model for M {
             A::Attest(n) => {
                 t.phase[n as usize] = 7;
                 t.attest |= seats(n);
+                if t.restored & (1 << n) != 0 {
+                    t.restore_attest |= seats(n);
+                }
+                for k in 0..2 {
+                    if t.restored & (1 << k) != 0 {
+                        t.heard[k] |= seats(n);
+                    }
+                }
             }
             A::CollectionRead(n) => {
-                check_read(&mut t, n);
+                // Restored collection stops when it reads the wallet certified
+                // (errCertifiedElsewhere) and goes to the postcondition read.
+                if check_read(&mut t, n) && t.restored & (1 << n) != 0 && t.certified {
+                    t.phase[n as usize] = 19;
+                }
             }
             A::BeforeCertificate {
                 proc: n,
@@ -445,6 +476,11 @@ impl Model for M {
                         if !(self.weak == 5 && t.chain == 2) {
                             quarantine(&mut t, n);
                         }
+                    } else if t.chain == 2 && t.restored & (1 << n) != 0 {
+                        // Restored monitor: the durable record knows the approval
+                        // (observation), but the Go guard uses only in-memory
+                        // knowledge, which starts empty: no quarantine.
+                        t.inconsistency |= 1 << n;
                     } else if t.chain == 1 && !valid(s) {
                         t.closed = true;
                         expire_local(&mut t, n);
@@ -488,6 +524,31 @@ impl Model for M {
                 t.phase[n as usize] = 9;
                 t.termination[n as usize] = 4;
             }
+            A::Restart(n) => {
+                let b = 1 << n;
+                t.restarted |= b;
+                // Without a durable key Restore reports the seats lost and stops.
+                if t.key & b != 0 {
+                    t.restored |= b;
+                    t.seen &= !b;
+                    t.watched &= !b;
+                    t.monitor_pending &= !b;
+                    t.termination[n as usize] = 0;
+                    t.heard[n as usize] = 0;
+                    if check_read(&mut t, n) {
+                        if self.weak == 10 {
+                            t.phase[n as usize] = 6;
+                        } else {
+                            t.phase[n as usize] = 17;
+                            t.reloaded |= seats(n);
+                            t.restore_reloaded |= seats(n);
+                        }
+                        if t.certified {
+                            t.restore_cert |= b;
+                        }
+                    }
+                }
+            }
         };
         if &t == s {
             None
@@ -511,6 +572,7 @@ impl Model for M {
             Property::<Self>::always(P[1], |_, s| !s.funded || s.certified),
             Property::<Self>::always(P[2], |_, s| {
                 s.attest & !s.reloaded == 0
+                    && s.restore_attest & !s.restore_reloaded == 0
                     && (!s.certified
                         || (s.cert_seats & !s.reloaded == 0
                             && s.cert_count == s.cert_seats.count_ones() as u8
@@ -564,6 +626,21 @@ impl Model for M {
                 }),
                 Property::<Self>::sometimes("W-CERTIFICATE-BEFORE-DURABLE-READY", |_, s| {
                     s.certified && s.ready == 0
+                }),
+                Property::<Self>::sometimes("W-RESTORED-READY", |_, s| {
+                    s.phase == [8, 8] && (0..2u8).any(|n| s.restored & (1 << n) != 0 && s.restore_attest & seats(n) != 0)
+                }),
+                Property::<Self>::sometimes("W-RESTORED-CERTIFIED-ELSEWHERE", |_, s| {
+                    (0..2u8).any(|n| s.restored & (1 << n) != 0 && s.phase[n as usize] == 8 && s.restore_attest & seats(n) == 0)
+                }),
+                Property::<Self>::sometimes("W-RESTART-LOST-EXPIRED", |_, s| {
+                    s.closed && !s.certified && (0..2u8).any(|n| s.restarted & (1 << n) != 0 && s.key & (1 << n) == 0 && s.phase[n as usize] == 9)
+                }),
+                Property::<Self>::sometimes("W-RESTORED-QUARANTINED", |_, s| {
+                    (0..2u8).any(|n| s.restored & (1 << n) != 0 && s.phase[n as usize] == 10)
+                }),
+                Property::<Self>::sometimes("W-RESTORED-EXPIRED", |_, s| {
+                    (0..2u8).any(|n| s.restored & (1 << n) != 0 && s.phase[n as usize] == 13)
                 }),
             ]);
         }
@@ -641,7 +718,8 @@ fn trace(out: &str, id: &str, kind: &str, property: &str, m: &M, actions: &[A]) 
             | A::FinishWatch(n)
             | A::Watch(n)
             | A::ProcessCrash(n)
-            | A::HostCrash(n) => Some(*n),
+            | A::HostCrash(n)
+            | A::Restart(n) => Some(*n),
             A::BeforePublish | A::Publish | A::AfterPublish => Some(0),
             _ => None,
         };
@@ -666,12 +744,15 @@ fn main() {
     fs::create_dir_all(format!("{out}/traces")).unwrap();
     let mut runs = vec![];
     let mut ok = true;
-    for weak in 0..=9 {
+    // Claim-model counterexamples are reported as predicate results; a weakened
+    // run may rediscover them without failing its own control.
+    let mut claim_failures: Vec<&str> = vec![];
+    for weak in 0..=10 {
         let m = M { weak };
         let target = match weak {
             1 | 8 => 0,
             2 => 1,
-            3 | 4 => 2,
+            3 | 4 | 10 => 2,
             5 => 3,
             6 => 4,
             7 => 5,
@@ -695,10 +776,15 @@ fn main() {
         for p in m.properties() {
             if let Some(path) = c.discovery(p.name) {
                 let actions = path.into_actions();
+                let claim_cex = weak == 0 && !p.name.starts_with("W-");
                 trace(
                     &out,
-                    &format!("{}-control-{weak}", p.name),
-                    if weak == 0 {
+                    &if claim_cex {
+                        format!("{}-claim", p.name)
+                    } else {
+                        format!("{}-control-{weak}", p.name)
+                    },
+                    if weak == 0 && !claim_cex {
                         "witness"
                     } else {
                         "counterexample"
@@ -712,9 +798,11 @@ fn main() {
         }
         let pass = completed
             && if weak == 0 {
-                found.len() == 10 && found.iter().all(|x| x.starts_with("W-"))
+                claim_failures = found.iter().copied().filter(|x| !x.starts_with("W-")).collect();
+                found.iter().filter(|x| x.starts_with("W-")).count() == 15
             } else {
-                found == vec![P[target]]
+                found.contains(&P[target])
+                    && found.iter().all(|x| *x == P[target] || claim_failures.contains(x))
             };
         ok &= pass;
         runs.push(serde_json::json!({"weakening":weak,"target":if weak==0{"all"}else{P[target]},"completed_before_deadline":completed,"unique":c.unique_state_count(),"generated":c.state_count(),"seconds":start.elapsed().as_secs_f64(),"discoveries":found,"check_pass":pass}));
@@ -838,7 +926,85 @@ fn main() {
             s = M { weak: 0 }.next_state(&s, *a).unwrap();
         }
     }
-    fs::write(format!("{out}/results.json"),serde_json::to_vec_pretty(&serde_json::json!({"tool":"Stateright 0.31.0","bounds":"EXIT-SCOPE.md","timeout_seconds_per_run":120,"runs":runs,"checks_pass":ok})).unwrap()).unwrap();
+    // Restart after a process kill at every hook of node 0 on the main path.
+    {
+        let mut s = initial();
+        let mut prefix = vec![];
+        let mut done = BTreeSet::new();
+        for a in &path {
+            if let Some(h) = boundary(s.phase[0], 0) {
+                if done.insert(h) {
+                    let mut x = prefix.clone();
+                    x.extend([A::ProcessCrash(0), A::Restart(0)]);
+                    trace(&out, &format!("B-RESTART-0-{h}"), "boundary", P[2], &M { weak: 0 }, &x);
+                }
+            }
+            prefix.push(*a);
+            s = M { weak: 0 }.next_state(&s, *a).unwrap();
+        }
+    }
+    // A restored process through every restore-path hook, a kill at each of
+    // them, and the restored return after a removed approval.
+    let restore = vec![
+        A::Candidate(0),
+        A::Candidate(1),
+        A::BeforePublish,
+        A::Publish,
+        A::AfterPublish,
+        A::Approve,
+        A::Observe(0),
+        A::Observe(1),
+        A::Tick,
+        A::Tick,
+        A::BeforeFinality(0),
+        A::BeforeFinality(1),
+        A::Reread(0),
+        A::Reread(1),
+        A::WorkerReady(0),
+        A::WorkerReady(1),
+        A::Key(0),
+        A::Key(1),
+        A::ProcessCrash(0),
+        A::PostKeyRead(1),
+        A::Reload(1),
+        A::BeginReadiness(1),
+        A::Restart(0),
+        A::BeginReadiness(0),
+        A::Attest(0),
+        A::Attest(1),
+        A::BeforeCertificate { proc: 0, seats: 7 },
+        A::Certify(0),
+        A::Postcondition(0),
+        A::PersistReady(0),
+        A::Complete(0),
+        A::BeforeCertificate { proc: 1, seats: 13 },
+        A::Certify(1),
+        A::Postcondition(1),
+        A::PersistReady(1),
+        A::Complete(1),
+    ];
+    trace(&out, "B-RESTORE-ALL-HOOKS", "boundary", P[2], &M { weak: 0 }, &restore);
+    {
+        let mut s = initial();
+        let mut done = BTreeSet::new();
+        for (i, a) in restore.iter().enumerate() {
+            if s.restored & 1 != 0 {
+                if let Some(h) = boundary(s.phase[0], 0) {
+                    if done.insert(h) {
+                        let mut x = restore[..i].to_vec();
+                        x.push(A::ProcessCrash(0));
+                        trace(&out, &format!("B-RESTORE-PROCESS-0-{h}"), "boundary", P[2], &M { weak: 0 }, &x);
+                    }
+                }
+            }
+            s = M { weak: 0 }.next_state(&s, *a).unwrap();
+        }
+    }
+    let mut removal = restore[..30].to_vec();
+    removal.extend([A::Remove, A::Watch(0), A::Complete(0)]);
+    trace(&out, "B-RESTORE-READY-RETURN-REMOVAL", "boundary", P[3], &M { weak: 0 }, &removal);
+    let predicates: Vec<_> = P.iter().map(|p| serde_json::json!({"id":p,"claim_counterexample":claim_failures.contains(p)})).collect();
+    fs::write(format!("{out}/results.json"),serde_json::to_vec_pretty(&serde_json::json!({"tool":"Stateright 0.31.0","bounds":"EXIT-SCOPE.md + RESTORE-SCOPE-2026-11-06.md","timeout_seconds_per_run":120,"runs":runs,"checks_pass":ok,"claim_predicates":predicates})).unwrap()).unwrap();
     if !ok {
         std::process::exit(1);
     }

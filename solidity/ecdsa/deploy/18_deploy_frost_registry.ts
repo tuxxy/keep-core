@@ -30,7 +30,7 @@
 import fs from "fs"
 
 import type { HardhatRuntimeEnvironment } from "hardhat/types"
-import type { DeployFunction } from "hardhat-deploy/types"
+import type { DeployFunction, DeployOptions } from "hardhat-deploy/types"
 
 export type FrostRegistryPolicy = {
   groupSize: number
@@ -336,20 +336,128 @@ export async function deployFrostRegistry(
     policy.maxPoolOperators,
   ])
 
+  // --- Existing records: reuse all or refuse (REVIEW-FIX-C11B F1). --------
+  // Like base 02's fetchIfDifferent guard: every existing Frost* record must
+  // match these inputs exactly and be in a state this script can finish from,
+  // or nothing is sent. Old and new contracts are never mixed (a changed
+  // policy over a finished stack would otherwise deploy a second registry
+  // wired to the first registry's pool and admission).
+  const poolOptions = {
+    from: deployer,
+    contract: "SortitionPool",
+    args: [rewardToken, poolWeightDivisor],
+  }
+  const validatorOptions = { from: deployer, args: validatorArgs }
+  const admissionOptions = { from: deployer, args: [walletRegistry] }
+  const existing = {
+    pool: await deployments.getOrNull("FrostSortitionPool"),
+    validator: await deployments.getOrNull("FrostDkgValidator"),
+    admission: await deployments.getOrNull("FrostAdmission"),
+    registry: await deployments.getOrNull("FrostWalletRegistry"),
+  }
+  const mustMatch = async (name: string, options: DeployOptions) => {
+    const { differences } = await deployments.fetchIfDifferent(name, options)
+    if (differences) {
+      refuse(
+        `the existing ${name} record differs from these inputs; wipe the ` +
+          "Frost* records and redeploy the whole stack, or rerun with the " +
+          "inputs it was deployed with"
+      )
+    }
+  }
+  const ownerOf = (at: string) =>
+    new ethers.Contract(
+      at,
+      ["function owner() view returns (address)"],
+      provider
+    ).owner()
+  const oneOf = async (label: string, actual: string, allowed: string[]) => {
+    if (!allowed.some((a) => same(a, actual))) {
+      refuse(
+        `existing ${label} is ${actual}, not one of ${allowed.join(", ")}; ` +
+          "this stack was changed after deployment"
+      )
+    }
+  }
+  if (existing.pool) {
+    await mustMatch("FrostSortitionPool", poolOptions)
+    await oneOf(
+      "FrostSortitionPool owner",
+      await ownerOf(existing.pool.address),
+      existing.registry ? [deployer, existing.registry.address] : [deployer]
+    )
+    await oneOf(
+      "FrostSortitionPool chaosnet owner",
+      await new ethers.Contract(
+        existing.pool.address,
+        ["function chaosnetOwner() view returns (address)"],
+        provider
+      ).chaosnetOwner(),
+      [deployer, chaosnetOwner]
+    )
+  }
+  if (existing.validator) {
+    await mustMatch("FrostDkgValidator", validatorOptions)
+  }
+  if (existing.admission) {
+    await mustMatch("FrostAdmission", admissionOptions)
+    await oneOf(
+      "FrostAdmission owner",
+      await ownerOf(existing.admission.address),
+      [deployer, council]
+    )
+  }
+  if (existing.registry) {
+    if (!existing.pool || !existing.validator || !existing.admission) {
+      refuse(
+        "a FrostWalletRegistry record exists without its pool, validator " +
+          "and admission records; wipe the Frost* records and redeploy"
+      )
+    }
+    await mustMatch("FrostWalletRegistry", {
+      from: deployer,
+      args: [
+        existing.pool.address,
+        existing.validator.address,
+        existing.admission.address,
+        beacon,
+        bridge,
+        periods,
+        policy.maxPoolOperators,
+      ],
+    })
+    await oneOf(
+      "FrostWalletRegistry owner",
+      await ownerOf(existing.registry.address),
+      [deployer, council]
+    )
+    if (
+      await new ethers.Contract(
+        existing.registry.address,
+        ["function requestsEnabled() view returns (bool)"],
+        provider
+      ).requestsEnabled()
+    ) {
+      refuse(
+        `the existing FrostWalletRegistry ${existing.registry.address} has ` +
+          "requests enabled; the stack is already active"
+      )
+    }
+  }
+
   // --- Deploy (base 01, 02, 03). ------------------------------------------
   const opts = { from: deployer, log: true, waitConfirmations: 1 }
   const sortitionPool = await deployments.deploy("FrostSortitionPool", {
     ...opts,
-    contract: "SortitionPool",
-    args: [rewardToken, poolWeightDivisor],
+    ...poolOptions,
   })
   const validator = await deployments.deploy("FrostDkgValidator", {
     ...opts,
-    args: validatorArgs,
+    ...validatorOptions,
   })
   const admission = await deployments.deploy("FrostAdmission", {
     ...opts,
-    args: [walletRegistry],
+    ...admissionOptions,
   })
   const registry = await deployments.deploy("FrostWalletRegistry", {
     ...opts,
@@ -391,6 +499,42 @@ export async function deployFrostRegistry(
     deployer
   )
 
+  // --- The end state, read back (REVIEW-FIX-C11B F2). ---------------------
+  // Owners as D24 and requests off; a rerun never reports a stack in any
+  // other state as deployed disabled.
+  const expectEnd = async (label: string, actual: string, wanted: string) => {
+    if (!same(actual, wanted)) {
+      throw new Error(
+        `DeployFrostRegistry: end state: ${label} is ${actual}, not ${wanted}`
+      )
+    }
+  }
+  await expectEnd(
+    "FrostSortitionPool owner",
+    await deployments.read("FrostSortitionPool", "owner"),
+    registry.address
+  )
+  await expectEnd(
+    "FrostSortitionPool chaosnet owner",
+    await deployments.read("FrostSortitionPool", "chaosnetOwner"),
+    chaosnetOwner
+  )
+  await expectEnd(
+    "FrostAdmission owner",
+    await deployments.read("FrostAdmission", "owner"),
+    council
+  )
+  await expectEnd(
+    "FrostWalletRegistry owner",
+    await deployments.read("FrostWalletRegistry", "owner"),
+    council
+  )
+  if (await deployments.read("FrostWalletRegistry", "requestsEnabled")) {
+    throw new Error(
+      "DeployFrostRegistry: end state: FrostWalletRegistry requests are enabled"
+    )
+  }
+
   // --- Council steps (base 05/13). -----------------------------------------
   const steps: FrostRegistryStep[] = [
     {
@@ -401,10 +545,16 @@ export async function deployFrostRegistry(
         "setRequesterAuthorization",
         [registry.address, true]
       ),
-      description: `${
+      description:
         `authorize FrostWalletRegistry ${registry.address} as a requester ` +
-        `of the legacy registry's beacon ${beacon}`
-      }${beaconTarget === beacon ? "" : ` through ${beaconTarget}`}`,
+        `of the legacy registry's beacon ${beacon}` +
+        `${beaconTarget === beacon ? "" : ` through ${beaconTarget}`}` +
+        `${
+          same(beaconAuthority, council)
+            ? ""
+            : `; sender: the beacon's authority ${beaconAuthority}, ` +
+              `not the council ${council}`
+        }`,
     },
   ]
 

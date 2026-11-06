@@ -1906,7 +1906,7 @@
           "path": "solidity/test/k09/K09.LegacyObligations.test.ts",
           "blob": "7f47120619a97a5fb048476d51e506116860b092",
           "evidence_kind": "source",
-          "scope": "ROW-9: tbtc-v2 K09 contract test source (tbtc-v2#53); no retained execution record at 39412825"
+          "scope": "ROW-9: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
         },
         {
           "repository": "tbtc-v2",
@@ -1914,7 +1914,7 @@
           "path": "solidity/test/k09/obligation-ledger.ts",
           "blob": "6b0e47f23080ab1cbc47f0950038b7a20a01993d",
           "evidence_kind": "source",
-          "scope": "ROW-9: tbtc-v2 K09 contract test source (tbtc-v2#53); no retained execution record at 39412825"
+          "scope": "ROW-9: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
         },
         {
           "repository": "tbtc-v2",
@@ -1922,7 +1922,22 @@
           "path": "solidity/test/k09/K09.CutoverInvariants.test.ts",
           "blob": "cac709d95980ec2159c511b85fe6ad8fb3edda4b",
           "evidence_kind": "source",
-          "scope": "ROW-9: tbtc-v2 K09 contract test source (tbtc-v2#53); no retained execution record at 39412825"
+          "scope": "ROW-9: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/k09-contract.log",
+          "sha256": "e83851674c70d75bcf95c1bf6300a7e18d79d9db61d67bac1c21390654607b05",
+          "manifest": {
+            "path": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/manifest.json",
+            "sha256": "e5f7aa861b4bb9182f5dc3b8364b07865594d56c607f75bbd0856ba2a85795bd",
+            "stage": "k09-contract"
+          },
+          "subject": {
+            "tbtc-v2": "39412825454ae9d7d56811ce48cd826c92b821c2"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-9: tbtc-v2 K09 contract tests at 39412825, 35 passing (concrete tests, real ECDSA WalletRegistry stack and 40a11d1d Bridge behind a real proxy; smock beacon and difficulty-0 relay are labelled adapters): K09.LegacyObligations (every 40a11d1d obligation class carried across upgrade, drain, cutover and containment and discharged by each of 21 routes; uncovered class fails) and K09.CutoverInvariants (direct FROST closure with an open challenge reverts \"FROST closure obligations\"). Not a model result or a discharge"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -1936,7 +1951,8 @@
         "No V-01\u2013V-04 predicate discharges retirement",
         "C05 F1: All FROST funding/payment/cancellation SPV routes require authenticated maintainers plus qualified relay/work/finality assumptions; gates and real-dispatch negative tests are published on C04/C05; qualified relay/canonical-chain correspondence and maintainer availability remain OPEN, not discharged by relay difficulty or regtest proof acceptance",
         "C05 F6: pendingReveals is an unreconciled cumulative reveal count, not a live-rights or safe-retirement predicate; refunded/fabricated reveal and custody/authorization archives require explicit lifecycle inventory",
-        "K-09 b9-r2 11-cutover-closure executes closure of a legacy source and an empty FROST wallet; tbtc-v2 K09 LegacyObligations/CutoverInvariants are sources without a retained run at 39412825; K-12 Bitcoin/archive inventory absent"
+        "K-09 b9-r2 11-cutover-closure executes closure of a legacy source and an empty FROST wallet; tbtc-v2 K09 LegacyObligations/CutoverInvariants are sources without a retained run at 39412825; K-12 Bitcoin/archive inventory absent",
+        "6 November addendum: tbtc-v2 K09 contract tests executed at 39412825 (35 passing) and pinned as execution evidence; this is concrete testing of the contracts, not the K-12 Bitcoin/archive inventory or deployed-state correspondence"
       ],
       "statements": [],
       "blockers": [
@@ -2052,7 +2068,7 @@
           "path": "solidity/test/k09/K09.CutoverInvariants.test.ts",
           "blob": "cac709d95980ec2159c511b85fe6ad8fb3edda4b",
           "evidence_kind": "source",
-          "scope": "ROW-10: tbtc-v2 K09 contract test source (tbtc-v2#53); no retained execution record at 39412825"
+          "scope": "ROW-10: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
         },
         {
           "repository": "tbtc-v2",
@@ -2060,7 +2076,22 @@
           "path": "solidity/test/k09/K09.RegistryCutover.test.ts",
           "blob": "5e23baf0bdf19c697c99d0a86ffbfe4ab41e45fa",
           "evidence_kind": "source",
-          "scope": "ROW-10: tbtc-v2 K09 contract test source (tbtc-v2#53); no retained execution record at 39412825"
+          "scope": "ROW-10: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/k09-contract.log",
+          "sha256": "e83851674c70d75bcf95c1bf6300a7e18d79d9db61d67bac1c21390654607b05",
+          "manifest": {
+            "path": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/manifest.json",
+            "sha256": "e5f7aa861b4bb9182f5dc3b8364b07865594d56c607f75bbd0856ba2a85795bd",
+            "stage": "k09-contract"
+          },
+          "subject": {
+            "tbtc-v2": "39412825454ae9d7d56811ce48cd826c92b821c2"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-10: tbtc-v2 K09 contract tests at 39412825, 35 passing (concrete tests, real ECDSA WalletRegistry stack and 40a11d1d Bridge behind a real proxy; smock beacon and difficulty-0 relay are labelled adapters): K09.RegistryCutover (cutover refused in every non-IDLE registry DKG state with the full storage frame unchanged; no ECDSA wallet after FrostOnly) and K09.CutoverInvariants (FROST-only creation, cutover and containment refusals with positive twins). Not a model result or a discharge"
         }
       ],
       "dependency_coverage": "selected; incomplete",
@@ -2073,7 +2104,8 @@
         "Exact release, layout, runtime/fence and deployed-state records absent",
         "No V-01\u2013V-04 predicate discharges deployment",
         "C05 F6: Nonzero rebateStaking blocks FROST reveal; rebate ownership/activation decision remains unresolved C-11. Install-once verifier replacement requires reviewed Bridge upgrade/configuration qualification; no ownership or upgrade policy adopted",
-        "K-09 b9-r2 02-upgrade and 11-cutover-closure are local upgrade/cutover witnesses; C-11a/C-11b deploy scripts now pinned as producers; K-10 reproducible build and deployed-state correspondence absent"
+        "K-09 b9-r2 02-upgrade and 11-cutover-closure are local upgrade/cutover witnesses; C-11a/C-11b deploy scripts now pinned as producers; K-10 reproducible build and deployed-state correspondence absent",
+        "6 November addendum: tbtc-v2 K09 contract tests executed at 39412825 (35 passing) and pinned as execution evidence; K-10 reproducible build and deployed-state correspondence remain absent"
       ],
       "statements": [],
       "blockers": [
@@ -2892,9 +2924,21 @@
     },
     "k09_verification_now_not_run": [
       "fraud admission/defense/timeout (row 8): no b9-r2 stage",
-      "realistic-header SPV run (KC-SF-V3 K-09 scope): absent",
-      "tbtc-v2 K09 contract tests (tbtc-v2#53): sources pinned; no execution record at 39412825"
-    ]
+      "realistic-header SPV run (KC-SF-V3 K-09 scope): absent"
+    ],
+    "tbtc_v2_k09_contract_run": {
+      "record": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run",
+      "subject": {
+        "tbtc-v2": "39412825454ae9d7d56811ce48cd826c92b821c2"
+      },
+      "passing": 35,
+      "failing": 0,
+      "rows": [
+        9,
+        10
+      ],
+      "seconds": 152.8
+    }
   },
   "review_items": [
     {

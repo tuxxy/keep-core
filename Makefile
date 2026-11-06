@@ -146,4 +146,12 @@ cmd-help: build
 	@echo '$$ $(app_name) start --help' > docs/resources/client-start-help
 	./$(app_name) start --help >> docs/resources/client-start-help
 
-.PHONY: all development sepolia download_artifacts generate gen_proto build cmd-help release build_multi
+# Unit tests need no external program; end-to-end tests (test/suites/e2e.txt)
+# need the environment their runbooks set up. See test/suites/run.sh.
+test-unit:
+	test/suites/run.sh unit -count=1 -timeout 25m
+
+test-e2e:
+	test/suites/run.sh e2e -count=1 -timeout 60m
+
+.PHONY: all development sepolia download_artifacts generate gen_proto build cmd-help release build_multi test-unit test-e2e

@@ -1,0 +1,119 @@
+# End-to-end tests: everything that needs an external program, a chain or a
+# pinned build (Anvil, Bitcoin Core, the snowfall worker, deployed contracts),
+# or that starts a process. Every other test is a unit test.
+#
+# One test per line: <package> <TestName> [helper]  # what it needs. A helper
+# is a subprocess entry point started by another test; neither suite runs it
+# directly.
+# test/suites/run.sh reads this file; `run.sh check` verifies it.
+
+pkg/chain/ethereum TestFrostSendDoesNotHoldTheLockWhileMining  # Anvil
+pkg/chain/ethereum TestFrostSendIsResubmittedAfterAFeeSpike  # Anvil
+pkg/chain/ethereum TestFrostSendSharesTheOperatorNonceWithBaseSends  # Anvil
+pkg/frost/dkg/verification/replay TestV03Node helper # subprocess entry point of an end-to-end test
+pkg/frost/dkg/verification/replay TestV03SubprocessReplay  # starts the test binary as a separate process
+pkg/frost/integration TestAdmittedCancellationNeedsDirectiveAfterContainment  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestApprovalReorg  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestApprovalRequiresChallengeWindow  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestBusRejectsSeatClaimFromAnotherSender  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestCloseWithPendingObligations  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestContainedReservationNeedsDirective  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestCrossSchemeDrainAndSweep  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestDepositTemplateCrossLanguage  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestDepositorRefundWithoutOperators  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestForeignResultIsChallenged  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestFrostDKGCandidateCrashRequiresFreshEpoch  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestFrostDKGPublicApprovalAndReadiness  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestFrostDepositSweepAndCredit  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestFrostExpiryAtExactDeadline  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestFrostFraudPublicAdmissionDefenseTimeout  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestFrostReadinessDeadlineEdges  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestFrostReadinessRejectsInvalidCertificate  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestFrostRedemptionLifecycle  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestFrostSweepWithinExposureBudget  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestHeartbeatDomainAndDefense  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestInactivityMemberRouting  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestLateDepositRecovery  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestLateSignatureQuarantine  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestLedgerRecoveryHeadroom  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestLostSeatAfterReadinessCertifiesUnderPolicy  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestLostSeatBeforeReadinessExpiresWallet  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestMainPurposeLockAndResolution  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestMovementCommittedFeeCap  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestMovementTargetStateRace  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestNoSecondSweepBeforeTheFirstIsProven  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestNoTargetAndDustRecovery  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestPendingWalletExpiryThenFreshEpoch  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestReadinessCannotFundEarly  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestRegistryRejectsDuplicateOutputKeyAcrossEpochs  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestReloadRequiresEveryDurableLocalSeat  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestReservationTimeoutRace  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestResolutionSweepNeedsDirectiveAfterContainment  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestRestartHostProcess helper # subprocess entry point of an end-to-end test
+pkg/frost/integration TestSeatRestartAfterKill  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestSignedConflictingResultQuarantinesAttempt  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestSignedResultRecoveredWithoutLedgerMarker  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestSubmittedDoesNotCancelAcceptance  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestSweepTransientReadAfterSignatureRetries  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestTaprootExactAuthorization  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestTransientReadAfterSignatureDoesNotStrandPayment  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestUnbroadcastRevealDoesNotBlockSweeps  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestUncertifiedSeatDoesNotAttest  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestUncertifiedSeatDoesNotSign  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestV04C04ProjectionReplay  # Anvil, deployed contracts and the pinned worker
+pkg/frost/integration TestV04C04WeakenedExpectationsFail  # Anvil, deployed contracts and the pinned worker
+pkg/frost/movement TestIncomingSweepAfterMainSpent  # the pinned snowfall worker
+pkg/frost/movement TestIncomingSweepAfterMainSpentNoRestart  # the pinned snowfall worker
+pkg/frost/movement TestIncomingSweepNextWindowAfterAbortedWindow  # the pinned snowfall worker
+pkg/frost/movement TestIncomingSweepNextWindowAfterFailedWindow  # the pinned snowfall worker
+pkg/frost/movement TestIncomingSweepSettles  # the pinned snowfall worker
+pkg/frost/movement TestIncomingSweepSignsWithOperatorDown  # the pinned snowfall worker
+pkg/frost/signing TestPossibleReleaseAfterGrantWithoutDone  # starts the test binary as a separate process
+pkg/frost/signing TestPossibleReleaseHelper helper # subprocess entry point of an end-to-end test
+pkg/frost/signing TestV04ProcessBoundaryReplay  # starts the test binary as a separate process
+pkg/frost/signing TestV04ProcessReplayChild helper # subprocess entry point of an end-to-end test
+pkg/frost/snowfallengine TestMalformedInput  # starts the test binary as a separate process
+pkg/frost/snowfallengine TestRealWorkerCancellation  # the pinned snowfall worker
+pkg/frost/snowfallengine TestRealWorkerDKGAndSign  # the pinned snowfall worker
+pkg/frost/snowfallengine TestRealWorkerFalseAcceptance  # the pinned snowfall worker
+pkg/frost/snowfallengine TestRealWorkerMultipleLocalSeats  # the pinned snowfall worker
+pkg/frost/snowfallengine TestWorkerPinAndEnvironment  # starts the test binary as a separate process
+pkg/frost/store TestCrashEveryStoreBoundary  # starts the test binary as a separate process
+pkg/frost/store TestDKGCrashProcessHelper helper # subprocess entry point of an end-to-end test
+pkg/frost/store TestExclusiveAttemptOwner  # starts the test binary as a separate process
+pkg/frost/store TestReplayTraces  # starts the test binary as a separate process
+pkg/frost/store TestStoreProcessHelper helper # subprocess entry point of an end-to-end test
+pkg/frost/store TestStoreReplayHelper helper # subprocess entry point of an end-to-end test
+pkg/frost/transport TestCrashedDKGNeedsFreshEpoch  # the pinned snowfall worker
+pkg/frost/transport TestRealWorkerDurableAuthenticatedReload  # the pinned snowfall worker
+pkg/maintainer/spv TestFrostProofDepthFollowsBridgeFactor  # Anvil
+pkg/tbtc TestAdvLegacy_MovedFundsSweepUnregisteredWallet  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestB6NodeProcess helper # subprocess entry point of an end-to-end test
+pkg/tbtc TestDrainProducer_BelowDust  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestDrainProducer_BridgeUpgradedAfterStartup  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestDrainProducer_Drains  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestDrainProducer_LegacyFallbackBeforeCutover  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestDrainProducer_NoRouteRecovery  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestDrainProducer_PreFrostUnchanged  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestDrainProducer_ShortIndex  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostIncomingSweepDivergentLocalFees  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostIncomingSweepFollowerValidation  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostIncomingSweepProposedEveryWindow  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostNodeDispatch_DKG  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostNodeDispatch_IncomingSweepByLeader  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostNodeDispatch_RestoreAtStartup  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostNodeIsolation_CrashPoints  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostNodeIsolation_FailedDKGDoesNotBlockSweep  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostNodeIsolation_ReservationOnOtherWallet  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostNodeResume_ReservationPaidAfterRestart  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostUnconfigured_NodeUnchanged  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestK07DrainSigner helper # subprocess entry point of an end-to-end test
+pkg/tbtc TestK09Lifecycle  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestLegacyUnchanged_EmptyRevertEncodings  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestLegacyUnchanged_MovingFunds  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestLegacyUnchanged_NonLiveTargets  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestLegacyUnchanged_Startup  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestLegacyUnchanged_SurfaceOracle  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestLegacyUnchanged_UpgradedBridgeDrain  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestLegacyUnchanged_UpgradedBridgeDrainTransient  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestRV116_LaggingLogIndexKeepsFrostTarget  # legacy world: Anvil, Bitcoin Core, upgraded Bridge

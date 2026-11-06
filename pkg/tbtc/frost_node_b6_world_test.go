@@ -185,6 +185,11 @@ type frostNodeWorld struct {
 	began      time.Time
 	// lastStart is when the last node start completed.
 	lastStart time.Time
+
+	// extraContracts are contract addresses the nodes get beside the legacy
+	// client configuration (K-09: the EcdsaDkgValidator FIXTURE the legacy
+	// tECDSA group's parameters are read from). Nil adds none.
+	extraContracts map[string]string
 }
 
 // phase logs the time since the world was built began (budget tracing).
@@ -514,6 +519,9 @@ func (w *frostNodeWorld) nodeConfig(i int) b6NodeConfig {
 	contracts := map[string]string{}
 	config := w.clientConfig("")
 	for name, address := range config.ContractAddresses {
+		contracts[name] = address
+	}
+	for name, address := range w.extraContracts {
 		contracts[name] = address
 	}
 	var allow []string
@@ -1279,6 +1287,12 @@ func (f *b6StakingFixture) OperatorToStakingProvider() (chain.Address, bool, err
 }
 func (f *b6StakingFixture) IsOperatorInPool() (bool, error)   { return true, nil }
 func (f *b6StakingFixture) IsOperatorUpToDate() (bool, error) { return true, nil }
+
+// IsWalletRegistered answers base's startup check of the ECDSA wallets a
+// node holds signers for (archiveClosedWallets), which the legacy registry
+// fixture does not serve: the fixture never closes a wallet, so every
+// published wallet stays registered (K-09 seeds legacy signers, #40).
+func (f *b6StakingFixture) IsWalletRegistered([32]byte) (bool, error) { return true, nil }
 
 // b6Recorder appends events to the node's record file.
 type b6Recorder struct {

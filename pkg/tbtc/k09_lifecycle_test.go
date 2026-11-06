@@ -194,15 +194,23 @@ func k09DKG(t *testing.T, w *k09World) {
 
 // --- 04: ECDSA-to-FROST drain and incoming sweep (SC-01, SC-06) -------------
 
-// k09Drain: the legacy source owes its main; it commits the drain to the
-// node-made FROST wallet and moves it (FIXTURE: the source's test key signs;
-// legacy tECDSA signers are not in the nodes), the SPV maintainer proves it,
-// and the source closes. The nodes then sweep the pending incoming output in
-// a base coordination window, and the maintainer proves the sweep: the
-// sweep's output is the wallet's main.
+// k09Drain: the legacy source (legacy tECDSA group 0, whose signers are in
+// the nodes) owes its main. In a base moving-funds window the nodes commit
+// the drain to the node-made FROST wallet and sign and broadcast it through
+// base's MovingFunds path (#40); the SPV maintainer proves it, and the source
+// closes. In a later base window the nodes sweep the pending incoming output,
+// and the maintainer proves the sweep: the sweep's output is the wallet's
+// main.
 func k09Drain(t *testing.T, w *k09World) {
-	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, nil)
-	drain := w.drainInto(w.wallet)
+	began, err := w.admin.BlockNumber(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, w.legacyLeader(w.source))
+	w.seedLegacySigners(0)
+	w.startNodes()
+	w.enterECDSASigning(window)
+	drain := w.nodesDrain("04-drain", w.source, w.main, w.wallet, window, began)
 	source, err := w.legacy.Wallets(&bind.CallOpts{}, w.source.pkh)
 	if err != nil {
 		t.Fatal(err)
@@ -210,8 +218,7 @@ func k09Drain(t *testing.T, w *k09World) {
 	if source.State != 3 {
 		t.Fatalf("K-09 04-drain: after the proven drain the legacy source is in state %d, want Closing", source.State)
 	}
-	w.startNodes()
-	w.enterSigning(window)
+	window = w.nextSigningWindow(4 * tbtc.B6CoordinationFrequencyBlocks)
 	sweep, ok := w.settleIncoming(w.wallet, drain, k09Action)
 	if !ok {
 		t.Fatalf("K-09 04-drain: no node swept the FROST wallet's pending incoming output in coordination window %d (exited: %v)%s", window, w.exitedNodes(), w.debugLogs())
@@ -300,12 +307,14 @@ func k09Redemption(t *testing.T, w *k09World) {
 
 // --- 06: restart and restore at startup, mid-lifecycle (SC-08) ---------------
 
-// k09Restart: a second legacy source drains into the wallet; the nodes start,
-// and every node process is killed (SIGKILL) right after startup, before any
-// action (the crash matrix during actions is batch 4's), and restarted on its
-// storage.
-// The restarted nodes sweep the new incoming output with the restored keys
-// (Core accepts only the wallet's signature) and no new DKG runs.
+// k09Restart: a second legacy source (legacy tECDSA group 1) owes its main;
+// the nodes start, and every node process is killed (SIGKILL) right after
+// startup, before any action (the crash matrix during actions is batch 4's),
+// and restarted on its storage.
+// The restarted nodes drain the second source into the wallet with the
+// restored legacy signers (#40), then sweep the new incoming output with the
+// restored FROST keys (Core accepts only the wallets' signatures), and no new
+// DKG runs.
 func k09Restart(t *testing.T, w *k09World) {
 	epoch, err := w.registry.Epoch(&bind.CallOpts{})
 	if err != nil {
@@ -315,13 +324,15 @@ func k09Restart(t *testing.T, w *k09World) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	source, main := w.secondSource()
-	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, nil)
-	drain := w.drainFrom(source, main, w.wallet)
+	source, main := w.secondLegacySource()
+	window := w.chooseWindow(4*tbtc.B6CoordinationFrequencyBlocks, w.legacyLeader(source))
+	w.seedLegacySigners(1)
 	w.startNodes()
 	w.killAll()
 	w.startNodes()
-	w.enterSigning(window)
+	w.enterECDSASigning(window)
+	drain := w.nodesDrain("06-restart", source, main, w.wallet, window, began)
+	window = w.nextSigningWindow(4 * tbtc.B6CoordinationFrequencyBlocks)
 	sweep, ok := w.settleIncoming(w.wallet, drain, k09Action)
 	if !ok {
 		t.Fatalf("K-09 06-restart: after every node was killed and restarted, the wallet's incoming output was not swept in window %d: the FROST signers were not restored at startup (exited: %v)%s", window, w.exitedNodes(), w.debugLogs())

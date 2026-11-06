@@ -7,8 +7,17 @@
 # Required environment (no defaults; a missing variable is a failure, not a
 # skip): SNOWFALL_WORKER, SNOWFALL_WORKER_SHA256 (the pinned worker), the
 # LEGACY_* environment of test/legacy/run.sh including LEGACY_UPGRADED_DIR and
-# LEGACY_UPGRADED_COMMIT, and keep-core's solidity/ecdsa/build (the FROST
-# registry stack).
+# LEGACY_UPGRADED_COMMIT, and K09_ECDSA_NODE_MODULES / K09_ECDSA_NODE_LOCK:
+# solidity/ecdsa node_modules and the yarn.lock they were installed from,
+# which must be the head's (as test/legacy/build-baseline.sh checks its own).
+#
+# The run builds from HEAD only (tuxxy/keep-core#22): it exports HEAD with
+# git archive, compiles keep-core's solidity/ecdsa (the FROST registry stack
+# the world deploys) into a fresh directory of that export, and builds the
+# test binary from the same export, so the world reads exactly that build.
+# The manifest records the build (dependencies.ecdsaBuild) and hashes every
+# node log (nodeLogs, #41). test/k09/evidence checks both, and the drain
+# record of #40, on the evidence directory.
 #
 # Every stage runs in its own process of one test binary. A stage starts from
 # the snapshot its predecessor left in this run (K09_RUN_ID), so a stage
@@ -21,7 +30,7 @@
 set -euo pipefail
 umask 077
 : "${SNOWFALL_WORKER:?pinned worker required}" "${SNOWFALL_WORKER_SHA256:?pinned worker hash required}"
-for v in LEGACY_BASELINE_DIR LEGACY_TBTC_REPO LEGACY_ANVIL LEGACY_BITCOIND LEGACY_BITCOIND_SHA256 LEGACY_UPGRADED_DIR LEGACY_UPGRADED_COMMIT; do
+for v in LEGACY_BASELINE_DIR LEGACY_TBTC_REPO LEGACY_ANVIL LEGACY_BITCOIND LEGACY_BITCOIND_SHA256 LEGACY_UPGRADED_DIR LEGACY_UPGRADED_COMMIT K09_ECDSA_NODE_MODULES K09_ECDSA_NODE_LOCK; do
   [ -n "${!v:-}" ] || { echo "$v required" >&2; exit 2; }
 done
 evidence=${1:?evidence directory required}
@@ -33,7 +42,9 @@ mkdir -p "$evidence"
 evidence=$(cd "$evidence" && pwd)
 kc_root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$kc_root"
-[ -d solidity/ecdsa/build ] || { echo "solidity/ecdsa/build required" >&2; exit 2; }
+head_lock=$(git show HEAD:solidity/ecdsa/yarn.lock | shasum -a 256 | cut -d' ' -f1)
+given_lock=$(shasum -a 256 < "$K09_ECDSA_NODE_LOCK" | cut -d' ' -f1)
+[ "$head_lock" = "$given_lock" ] || { echo "K09_ECDSA_NODE_LOCK is not HEAD's solidity/ecdsa/yarn.lock" >&2; exit 2; }
 
 run_id="$(date +%Y%m%d%H%M%S)-$$"
 # Node directories (stores included) stay outside the evidence and go at
@@ -49,7 +60,17 @@ cleanup() {
 }
 trap cleanup EXIT
 
-go test -c -o "$evidence/tbtc.test" ./pkg/tbtc
+# HEAD only: the export the ECDSA build and the test binary both come from.
+# go.mod replaces the SNOWFALL Go client with ../snowfall, so the export
+# gets the checkout's sibling.
+src="$scratch/src"
+mkdir -p "$src/keep-core"
+git archive --format=tar HEAD | tar -x -C "$src/keep-core"
+ln -s "$(cd "$kc_root/../snowfall" && pwd)" "$src/snowfall"
+ln -s "$K09_ECDSA_NODE_MODULES" "$src/keep-core/solidity/ecdsa/node_modules"
+(cd "$src/keep-core/solidity/ecdsa" && NODE_OPTIONS=--max-old-space-size=8192 npx hardhat compile) > "$evidence/ecdsa-build.log" 2>&1 \
+  || { echo "solidity/ecdsa build failed (ecdsa-build.log)" >&2; exit 2; }
+(cd "$src/keep-core" && go test -c -o "$evidence/tbtc.test" ./pkg/tbtc)
 
 results="$evidence/cases.tsv"
 : > "$results"
@@ -105,9 +126,9 @@ grep -rlF -f test/k09/secret-patterns.txt --exclude=tbtc.test "$evidence" > "$sc
 [ ! -s "$scratch/secret-hits" ] || secrets=$(wc -l < "$scratch/secret-hits" | tr -d ' ')
 cp "$scratch/secret-hits" "$evidence/secret-scan-hits.txt"
 
-python3 - "$evidence" "$kc_root" "$wall" "$secrets" "${leftover:-}" <<'EOF'
+python3 - "$evidence" "$kc_root" "$wall" "$secrets" "${leftover:-}" "$src/keep-core" <<'EOF'
 import hashlib, json, os, re, subprocess, sys
-evidence, root, wall, secrets, leftover = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]
+evidence, root, wall, secrets, leftover, src = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5], sys.argv[6]
 env = os.environ
 def sha(path):
     with open(path, "rb") as f:
@@ -131,6 +152,27 @@ if baseline["manifest"].get("tbtcCommit") != "40a11d1dcdcf82d3962e430067cfe3f97b
     problems.append("the baseline build is not tbtc-v2 40a11d1d")
 if upgraded["manifest"].get("tbtcCommit") != env["LEGACY_UPGRADED_COMMIT"]:
     problems.append("the upgraded build is not LEGACY_UPGRADED_COMMIT")
+def ecdsa_build():
+    # The artifacts the world deploys (every b6Deploy call in the K-09 files
+    # of the export), each with its build-info and that build-info's compiled
+    # sources, as test/k09/evidence/README.md specifies (#22).
+    build = os.path.join(src, "solidity/ecdsa/build")
+    names = set()
+    for f in os.listdir(os.path.join(src, "pkg/tbtc")):
+        if f.startswith("k09_") and f.endswith(".go"):
+            names.update(m.group(1) + ":" + m.group(2) for m in re.finditer(r'b6Deploy\(\s*"([^"]+)",\s*"([^"]+)"', open(os.path.join(src, "pkg/tbtc", f)).read()))
+    artifacts, infos = {}, {}
+    for name in sorted(names):
+        source, contract = name.rsplit(":", 1)
+        base = os.path.join(build, source, contract)
+        info_path = os.path.normpath(os.path.join(os.path.dirname(base), json.load(open(base + ".dbg.json"))["buildInfo"]))
+        info_id = os.path.basename(info_path)[:-len(".json")]
+        artifacts[name] = {"sha256": sha(base + ".json"), "buildInfo": info_id}
+        if info_id not in infos:
+            data = json.load(open(info_path))
+            infos[info_id] = {"sha256": sha(info_path),
+                              "sources": {p: hashlib.sha256(v["content"].encode()).hexdigest() for p, v in data["input"]["sources"].items()}}
+    return {"builtFrom": head, "yarnLockSha256": sha(env["K09_ECDSA_NODE_LOCK"]), "artifacts": artifacts, "buildInfos": infos}
 stages = []
 order = ["01-legacy", "02-upgrade", "03-dkg", "04-drain", "05-redemption", "06-restart", "07-reservation-timeout",
          "08-deposit-refund", "09-movement", "10-inactivity", "11-cutover-closure", "12-no-inactivity"]
@@ -172,9 +214,13 @@ manifest = {
         "anvil": {"path": env["LEGACY_ANVIL"], "sha256": sha(env["LEGACY_ANVIL"]),
                   "version": subprocess.run([env["LEGACY_ANVIL"], "--version"], capture_output=True, text=True).stdout.splitlines()[0]},
         "go": subprocess.run(["go", "version"], capture_output=True, text=True).stdout.strip(),
+        "ecdsaBuild": ecdsa_build(),
     },
     "wallSeconds": wall, "intendedStages": len(stages), "passed": passed, "skipped": skips, "stages": stages,
     "secretScan": {"patterns": "test/k09/secret-patterns.txt", "filesMatched": secrets},
+    # Every node log, hashed after the copy (#41).
+    "nodeLogs": {os.path.relpath(os.path.join(d, f), evidence): sha(os.path.join(d, f))
+                 for d, _, files in os.walk(os.path.join(evidence, "nodes")) for f in sorted(files)},
     "leftoverProcesses": leftover or None,
     "problems": problems, "accepted": not problems,
 }

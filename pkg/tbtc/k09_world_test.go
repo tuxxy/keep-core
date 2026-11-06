@@ -22,9 +22,10 @@ package tbtc_test
 //
 // Actors (D17): the harness is depositor, redeemer, SPV maintainer, keeper
 // and governance, each through public calls with the admin key, never with an
-// operator's key. FIXTURES are those batch 6 labels, plus the legacy source's
-// test key that signs the ECDSA-to-FROST drain transaction (legacy tECDSA
-// signers are not seeded into the nodes; see K09-RUN.md "not covered").
+// operator's key. FIXTURES are those batch 6 labels, plus the legacy ECDSA
+// side of k09_ecdsa_test.go: the legacy sources are tECDSA groups made from
+// base's tecdsatest shares, seeded into the nodes, so the nodes themselves
+// commit and sign the ECDSA-to-FROST drain (tuxxy/keep-core#40).
 
 import (
 	"bytes"
@@ -199,12 +200,14 @@ func (w *k09World) save(stage string, quiet time.Duration) {
 
 // k09BuildLegacy is stage 01's world: the pre-FROST 40a11d1d Bridge (D1)
 // with the legacy wallets of the legacy-unchanged suite (a MovingFunds source
-// with a proven main, a Live target), and the operators' keys and ports.
+// with a proven main, a Live target; the source is legacy tECDSA group 0,
+// k09NewLegacyWorld), and the operators' keys and ports.
 func k09BuildLegacy(t *testing.T) *k09World {
 	t.Helper()
 	env := b6Environment(t)
 	w := &k09World{frostNodeWorld: newFrostNodeWorldShell(t)}
-	w.legacyWorld = newLegacyWorldOn(t, env, openLegacyBaseline(t, env), nil)
+	w.legacyWorld = k09NewLegacyWorld(t, env, openLegacyBaseline(t, env))
+	w.extraContracts = k09ValidatorContracts()
 	w.finish()
 	return w
 }
@@ -652,7 +655,8 @@ func k09LoadStage(t *testing.T, env legacyEnvironment, root, stage string) *fros
 		t.Fatal(err)
 	}
 	lw.fixture = bind.NewBoundContract(lw.registry, lw.registryABI, lw.admin, lw.admin, lw.admin)
-	lw.source, lw.target = newLegacyWallet(t, 11), newLegacyWallet(t, 12)
+	lw.source, lw.target = k09LegacySource(t, 0), newLegacyWallet(t, 12)
+	w.extraContracts = k09ValidatorContracts()
 	mainHash, err := bitcoin.NewHashFromString(facts.MainHash, bitcoin.ReversedByteOrder)
 	if err != nil {
 		t.Fatal(err)

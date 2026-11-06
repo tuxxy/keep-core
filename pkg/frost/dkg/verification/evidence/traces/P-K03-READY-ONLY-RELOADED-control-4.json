@@ -25,6 +25,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -78,6 +82,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -134,6 +143,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -187,6 +200,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -241,6 +259,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -294,6 +316,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -348,6 +375,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -401,6 +432,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -455,6 +491,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -508,6 +548,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -562,6 +607,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -615,6 +664,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -671,6 +725,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -724,6 +782,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 1,
@@ -780,6 +843,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -833,6 +900,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -887,6 +959,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -940,6 +1016,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -994,6 +1075,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1047,6 +1132,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -1103,6 +1193,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1156,6 +1250,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -1212,6 +1311,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1265,6 +1368,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -1321,6 +1429,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1374,6 +1486,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -1430,6 +1547,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1483,6 +1604,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -1539,6 +1665,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1592,6 +1722,11 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -1648,6 +1783,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1701,6 +1840,11 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -1734,7 +1878,7 @@
     },
     {
       "action": {
-        "Key": 1
+        "Key": 0
       },
       "claim_available": true,
       "diverges": false,
@@ -1757,6 +1901,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1764,10 +1912,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -1789,8 +1937,8 @@
           0
         ],
         "phase": [
-          21,
-          5
+          5,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -1810,6 +1958,11 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -1839,11 +1992,11 @@
       "n": 17,
       "pause": "after-key-ready",
       "pause_before": "before-key-ready-save",
-      "proc": 1
+      "proc": 0
     },
     {
       "action": {
-        "PostKeyRead": 1
+        "ProcessCrash": 0
       },
       "claim_available": true,
       "diverges": false,
@@ -1866,6 +2019,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1873,10 +2030,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -1898,8 +2055,8 @@
           0
         ],
         "phase": [
-          21,
-          16
+          9,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -1919,12 +2076,17 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
         "submitted": 0,
         "termination": [
-          0,
+          4,
           0
         ],
         "tick": 2,
@@ -1946,13 +2108,13 @@
         "worker_ready": 15
       },
       "n": 18,
-      "pause": "after-post-key-read",
+      "pause": null,
       "pause_before": "after-key-ready",
-      "proc": 1
+      "proc": 0
     },
     {
       "action": {
-        "Reload": 1
+        "Restart": 0
       },
       "claim_available": true,
       "diverges": false,
@@ -1975,6 +2137,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1982,10 +2148,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -2007,8 +2173,8 @@
           0
         ],
         "phase": [
-          21,
-          17
+          17,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2027,10 +2193,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -2056,12 +2227,12 @@
       },
       "n": 19,
       "pause": "after-key-reload",
-      "pause_before": "after-post-key-read",
-      "proc": 1
+      "pause_before": null,
+      "proc": 0
     },
     {
       "action": {
-        "BeginReadiness": 1
+        "BeginReadiness": 0
       },
       "claim_available": true,
       "diverges": false,
@@ -2084,6 +2255,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2091,10 +2266,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -2116,8 +2291,8 @@
           0
         ],
         "phase": [
-          21,
-          6
+          6,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2136,10 +2311,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -2166,17 +2346,17 @@
       "n": 20,
       "pause": "before-readiness-collect",
       "pause_before": "after-key-reload",
-      "proc": 1
+      "proc": 0
     },
     {
       "action": {
-        "Attest": 1
+        "Attest": 0
       },
       "claim_available": true,
       "diverges": false,
       "expect_state": {
         "anchor": 3,
-        "attest": 12,
+        "attest": 3,
         "cert_count": 0,
         "cert_desc": 0,
         "cert_seats": 0,
@@ -2193,6 +2373,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          3,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2200,10 +2384,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -2225,8 +2409,8 @@
           0
         ],
         "phase": [
-          21,
-          7
+          7,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2245,10 +2429,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 3,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -2275,7 +2464,7 @@
       "n": 21,
       "pause": null,
       "pause_before": "before-readiness-collect",
-      "proc": 1
+      "proc": 0
     },
     {
       "action": "Duplicate",
@@ -2283,7 +2472,7 @@
       "diverges": true,
       "expect_state": {
         "anchor": 3,
-        "attest": 12,
+        "attest": 3,
         "cert_count": 0,
         "cert_desc": 0,
         "cert_seats": 0,
@@ -2300,6 +2489,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          3,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2307,10 +2500,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -2332,8 +2525,8 @@
           0
         ],
         "phase": [
-          21,
-          7
+          7,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2352,10 +2545,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 3,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -2416,6 +2614,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2469,6 +2671,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -2516,6 +2723,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2569,6 +2780,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -2624,6 +2840,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2677,6 +2897,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -2724,6 +2949,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2777,6 +3006,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -2830,6 +3064,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2883,6 +3121,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -2930,6 +3173,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2983,6 +3230,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -3036,6 +3288,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3089,6 +3345,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -3136,6 +3397,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3189,6 +3454,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -3242,6 +3512,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3295,6 +3569,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -3342,6 +3621,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3395,6 +3678,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -3448,6 +3736,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3501,6 +3793,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -3548,6 +3845,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3601,6 +3902,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -3656,6 +3962,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3709,6 +4019,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 1,
@@ -3756,6 +4071,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3809,6 +4128,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 1,
@@ -3864,6 +4188,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3917,6 +4245,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -3964,6 +4297,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4017,6 +4354,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -4070,6 +4412,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4123,6 +4469,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -4170,6 +4521,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4223,6 +4578,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -4276,6 +4636,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4329,6 +4693,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -4376,6 +4745,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4429,6 +4802,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -4484,6 +4862,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4537,6 +4919,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -4584,6 +4971,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4637,6 +5028,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -4692,6 +5088,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4745,6 +5145,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -4792,6 +5197,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4845,6 +5254,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -4900,6 +5314,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -4953,6 +5371,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5000,6 +5423,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5053,6 +5480,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5108,6 +5540,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5161,6 +5597,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5208,6 +5649,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5261,6 +5706,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5316,6 +5766,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5369,6 +5823,11 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5416,6 +5875,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5469,6 +5932,11 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5524,6 +5992,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5577,6 +6049,11 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5624,6 +6101,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5677,6 +6158,11 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5710,7 +6196,7 @@
     },
     {
       "action": {
-        "Key": 1
+        "Key": 0
       },
       "claim_available": true,
       "claim_state": {
@@ -5732,6 +6218,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5739,10 +6229,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -5764,8 +6254,8 @@
           0
         ],
         "phase": [
-          21,
-          5
+          5,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -5785,6 +6275,11 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5832,6 +6327,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5839,10 +6338,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -5864,8 +6363,8 @@
           0
         ],
         "phase": [
-          21,
-          5
+          5,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -5885,6 +6384,11 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
@@ -5914,11 +6418,11 @@
       "n": 17,
       "pause": "after-key-ready",
       "pause_before": "before-key-ready-save",
-      "proc": 1
+      "proc": 0
     },
     {
       "action": {
-        "PostKeyRead": 1
+        "ProcessCrash": 0
       },
       "claim_available": true,
       "claim_state": {
@@ -5940,6 +6444,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -5947,10 +6455,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -5972,8 +6480,8 @@
           0
         ],
         "phase": [
-          21,
-          16
+          9,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -5993,12 +6501,17 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
         "submitted": 0,
         "termination": [
-          0,
+          4,
           0
         ],
         "tick": 2,
@@ -6020,7 +6533,7 @@
         "worker_ready": 15
       },
       "diverges": false,
-      "expect": "paused",
+      "expect": "dead",
       "expect_state": {
         "anchor": 3,
         "attest": 0,
@@ -6040,6 +6553,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -6047,10 +6564,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -6072,8 +6589,8 @@
           0
         ],
         "phase": [
-          21,
-          16
+          9,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -6093,12 +6610,17 @@
           1
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 3,
         "submitted": 0,
         "termination": [
-          0,
+          4,
           0
         ],
         "tick": 2,
@@ -6120,13 +6642,13 @@
         "worker_ready": 15
       },
       "n": 18,
-      "pause": "after-post-key-read",
+      "pause": null,
       "pause_before": "after-key-ready",
-      "proc": 1
+      "proc": 0
     },
     {
       "action": {
-        "Reload": 1
+        "Restart": 0
       },
       "claim_available": true,
       "claim_state": {
@@ -6148,6 +6670,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -6155,10 +6681,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -6180,8 +6706,8 @@
           0
         ],
         "phase": [
-          21,
-          17
+          17,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -6200,10 +6726,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -6248,6 +6779,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -6255,10 +6790,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -6280,8 +6815,8 @@
           0
         ],
         "phase": [
-          21,
-          17
+          17,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -6300,10 +6835,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -6329,12 +6869,12 @@
       },
       "n": 19,
       "pause": "after-key-reload",
-      "pause_before": "after-post-key-read",
-      "proc": 1
+      "pause_before": null,
+      "proc": 0
     },
     {
       "action": {
-        "BeginReadiness": 1
+        "BeginReadiness": 0
       },
       "claim_available": true,
       "claim_state": {
@@ -6356,6 +6896,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -6363,10 +6907,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -6388,8 +6932,8 @@
           0
         ],
         "phase": [
-          21,
-          6
+          6,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -6408,10 +6952,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -6456,6 +7005,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -6463,10 +7016,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -6488,8 +7041,8 @@
           0
         ],
         "phase": [
-          21,
-          6
+          6,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -6508,10 +7061,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -6538,16 +7096,16 @@
       "n": 20,
       "pause": "before-readiness-collect",
       "pause_before": "after-key-reload",
-      "proc": 1
+      "proc": 0
     },
     {
       "action": {
-        "Attest": 1
+        "Attest": 0
       },
       "claim_available": true,
       "claim_state": {
         "anchor": 3,
-        "attest": 12,
+        "attest": 3,
         "cert_count": 0,
         "cert_desc": 0,
         "cert_seats": 0,
@@ -6564,6 +7122,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          3,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -6571,10 +7133,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -6596,8 +7158,8 @@
           0
         ],
         "phase": [
-          21,
-          7
+          7,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -6616,10 +7178,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 3,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -6647,7 +7214,7 @@
       "expect": "paused",
       "expect_state": {
         "anchor": 3,
-        "attest": 12,
+        "attest": 3,
         "cert_count": 0,
         "cert_desc": 0,
         "cert_seats": 0,
@@ -6664,6 +7231,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          3,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -6671,10 +7242,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -6696,8 +7267,8 @@
           0
         ],
         "phase": [
-          21,
-          7
+          7,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -6716,10 +7287,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 3,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -6746,14 +7322,14 @@
       "n": 21,
       "pause": null,
       "pause_before": "before-readiness-collect",
-      "proc": 1
+      "proc": 0
     },
     {
       "action": "Duplicate",
       "claim_available": false,
       "claim_state": {
         "anchor": 3,
-        "attest": 12,
+        "attest": 3,
         "cert_count": 0,
         "cert_desc": 0,
         "cert_seats": 0,
@@ -6770,6 +7346,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          3,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -6777,10 +7357,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -6802,8 +7382,8 @@
           0
         ],
         "phase": [
-          21,
-          7
+          7,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -6822,10 +7402,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 3,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
@@ -6853,10 +7438,10 @@
       "expect": "environment",
       "expect_state": {
         "anchor": 3,
-        "attest": 12,
+        "attest": 3,
         "cert_count": 4,
         "cert_desc": 1,
-        "cert_seats": 12,
+        "cert_seats": 3,
         "cert_tick": 2,
         "certified": true,
         "chain": 1,
@@ -6870,6 +7455,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          3,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -6877,10 +7466,10 @@
           1
         ],
         "inconsistency": 0,
-        "key": 2,
+        "key": 1,
         "key_desc": [
-          0,
-          1
+          1,
+          0
         ],
         "monitor_overlap": 0,
         "monitor_pending": 0,
@@ -6902,8 +7491,8 @@
           0
         ],
         "phase": [
-          21,
-          7
+          7,
+          21
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -6922,10 +7511,15 @@
           1,
           1
         ],
-        "reloaded": 12,
+        "reloaded": 3,
+        "restarted": 1,
+        "restore_attest": 3,
+        "restore_cert": 0,
+        "restore_reloaded": 3,
+        "restored": 1,
         "result_closed": false,
         "retry": false,
-        "seen": 3,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,

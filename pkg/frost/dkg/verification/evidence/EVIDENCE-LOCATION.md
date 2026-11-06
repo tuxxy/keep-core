@@ -11,3 +11,13 @@ the implementation evidence tree, as KC-VER VD-03 requires:
 Paths there mirror `pkg/frost/dkg/verification/`, and `SHA256SUMS` covers
 every file. Every moved file that `manifest.json` lists matches its
 recorded hash.
+
+The 6 November 2026 re-pin (S-K03-CHAIN-2) keeps its full run evidence at
+
+    implementation/V-03/repin-2026-11-06/
+
+with its own `SHA256SUMS`. In this directory, `traces/` and `results.json`
+are now the re-pin's model output (the S-K03-CHAIN-1 versions are in git
+history at 925103a6), and `source-pins-2026-11-06.json` and
+`freshness-2026-11-06.json` are its pins and freshness result. The other
+files here belong to S-K03-CHAIN-1.

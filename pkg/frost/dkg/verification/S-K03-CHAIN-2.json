@@ -1,0 +1,58 @@
+{
+  "id": "S-K03-CHAIN-2",
+  "supersedes": "S-K03-CHAIN-1",
+  "subject": {
+    "base": "keep-core tuxxy/integration/snowfall-base 925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+    "tooling": "this branch: model, replay harness, run.py, check_freshness.py (verification/v03-repin-2026-11-06)",
+    "client_revision": "snowfall c1847ebdf133d0570643ff968539dd498069f69f (go.mod replace ../snowfall/clients/go)",
+    "contracts": "keep-core solidity/ecdsa at the base; tbtc-v2 39412825 solidity/contracts; compiled builds checked source-identical",
+    "worker_sha256": "d775dc36c508559f1bd997ab2552cea3aed94587540f6307352fec4628400765",
+    "pins": "evidence/source-pins-2026-11-06.json (keep-core files by SHA-256 and blob; client, spec and tbtc-v2 by git blob at a revision)"
+  },
+  "evidence_class": [
+    "finite exhaustive independent model (bounded model checking)",
+    "real source subprocess trace replay (concrete replay)",
+    "real pinned worker/contract Go suites"
+  ],
+  "results": {
+    "P-K03-ONE-DESCRIPTOR": "pass within bound",
+    "P-K03-NO-EARLY-FUNDING": "pass within bound; positive funded witness still excluded (later capability)",
+    "P-K03-READY-ONLY-RELOADED": "pass within bound, including the proposed restore clause (RESTORE-SCOPE section 3)",
+    "P-K03-INCONSISTENCY-QUARANTINE": "pass on the Run path; fail on the restore path under the proposed restore clause (F-V03-R1, implementation defect, reported not repaired; counterexample replays)",
+    "P-K03-EXPIRY-TOMBSTONE": "pass within bound",
+    "P-K03-FRESH-EPOCH-DISJOINT": "pass within bound",
+    "P-K03-SUBMITTED-NOT-TERMINAL": "pass within bound"
+  },
+  "guarantees": [
+    "Claim model 11,149,753 unique / 47,261,734 generated states, exhaustive before its 120 s deadline (19.3 s); one claim counterexample (P-K03-INCONSISTENCY-QUARANTINE, restore path)",
+    "15 witnesses discovered (10 original, 5 restore); 10 weakenings each break their target (weakening 10 new: restore without reload)",
+    "108 traces replay with matching outcomes normally and under -race: 80 full, 28 partial host-loss; 5 weakened traces cut at claim divergence",
+    "Run path behaviour-preserving at the base: the 77 S-K03-CHAIN-1 traces replay unchanged before any tooling change",
+    "Real-contract suites (lost seat, expiry/fresh epoch, nine TestSeatRestartAfterKill cases), executor seam units and chain adapter send tests pass normally and under -race"
+  ],
+  "bound": "EXIT-SCOPE.md plus RESTORE-SCOPE-2026-11-06.md section 2.2 (one restart in total, first epoch; restored-monitor removal read at or after result-deadline height excluded, F-V03-R2)",
+  "assumptions": [
+    "As S-K03-CHAIN-1: atomic canonical chain views and finality after the configured delay; authenticated honest selected-seat readiness; V-02 provider interface conditional; collision freedom",
+    "Restore read plus local reload is one step (RESTORE-SCOPE 2.3); the authenticated bus is not durable across a process restart",
+    "Proposed restore clauses (not in KC-VER): a restored host's durable wallet record counts as approval knowledge; a restored process reloads before any readiness statement"
+  ],
+  "correspondence": "CORRESPONDENCE.md plus RESTORE-SCOPE-2026-11-06.md section 2.1",
+  "excluded": [
+    "Positive certified-funded witness and later funding/movement/deposit capability",
+    "Restore of an older epoch's journal after a fresh epoch; a second restart",
+    "Restored monitor reading a removed approval at or after the result-deadline height",
+    "Go or crypto proof; unbounded liveness; physical power/cache loss",
+    "Production policy and qualification"
+  ],
+  "findings": {
+    "F-V03-R1": "implementation defect: Restore does not seed the monitor's approval knowledge from the saved record, so a removed approval read by the restored monitor is not quarantined and the restored host can return ReadyUnfunded (traces P-K03-INCONSISTENCY-QUARANTINE-claim, B-RESTORE-READY-RETURN-REMOVAL; failing reproduction kept outside the repository)",
+    "F-V03-R2": "model defect: wrong outcome for the restored monitor's removal read at result-deadline height; repaired by excluding it from the bound"
+  },
+  "invalidated_by": [
+    "Any pinned source, tooling, client, worker, contract or specification change",
+    "Chain/finality or readiness policy change",
+    "Owner rejecting a proposed restore clause"
+  ],
+  "evidence": "/Users/tux/threshold/Research/SNOWFALL/integration-spec-v2/implementation/V-03/repin-2026-11-06/",
+  "review": "none yet; independent review not run in this re-pin"
+}

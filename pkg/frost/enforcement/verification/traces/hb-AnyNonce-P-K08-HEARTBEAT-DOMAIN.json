@@ -1,0 +1,549 @@
+{
+  "bound": "nonces 1..3, 2 heartbeat starts, 2 transaction starts, 2 crashes, 1 misroute",
+  "claim_model_steps": [
+    {
+      "action": "Start",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": false,
+        "bad_reuse": false,
+        "claims": 0,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 1,
+            "phase": 1
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 0,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": 0,
+      "n": 1,
+      "offered": true
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": false,
+        "bad_reuse": false,
+        "claims": 0,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 1,
+            "phase": 1
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 1,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": null,
+      "n": 2,
+      "offered": true
+    },
+    {
+      "action": "Step",
+      "diverges": true,
+      "expect": "refused-or-different-state",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": false,
+        "bad_reuse": false,
+        "claims": 0,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 1,
+            "phase": 8
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 1,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": 0,
+      "n": 3,
+      "offered": true
+    }
+  ],
+  "id": "hb-AnyNonce-P-K08-HEARTBEAT-DOMAIN",
+  "init": {
+    "bad_cross": false,
+    "bad_nonce": false,
+    "bad_reuse": false,
+    "claims": 0,
+    "crashed_attempt": 0,
+    "crashes": 0,
+    "grants": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "hb_crashed_n": 0,
+    "misroutes": 0,
+    "procs": [
+      {
+        "attempt": 0,
+        "msg": 0,
+        "n": 0,
+        "phase": 0
+      },
+      {
+        "attempt": 0,
+        "msg": 0,
+        "n": 0,
+        "phase": 0
+      }
+    ],
+    "starts": [
+      0,
+      0
+    ],
+    "tick": 0,
+    "w_after_crash": false,
+    "w_granted_current": false,
+    "w_tx_granted": false
+  },
+  "kind": "counterexample",
+  "profile": "hb",
+  "property": "P-K08-HEARTBEAT-DOMAIN",
+  "replay": "pending",
+  "replay_note": "set by the Go replay report",
+  "steps": [
+    {
+      "action": "Start",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": false,
+        "bad_reuse": false,
+        "claims": 0,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 1,
+            "phase": 1
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 0,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": 0,
+      "n": 1
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": false,
+        "bad_reuse": false,
+        "claims": 0,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 1,
+            "phase": 1
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 1,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": null,
+      "n": 2
+    },
+    {
+      "action": "Step",
+      "diverges": true,
+      "expect": "transition",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": false,
+        "bad_reuse": false,
+        "claims": 0,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 1,
+            "phase": 2
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 1,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": 0,
+      "n": 3
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": false,
+        "bad_reuse": false,
+        "claims": 0,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 1,
+            "phase": 3
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 1,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": 0,
+      "n": 4
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": false,
+        "bad_reuse": false,
+        "claims": 0,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 1,
+            "phase": 4
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 1,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": 0,
+      "n": 5
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": false,
+        "bad_reuse": false,
+        "claims": 2,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 1,
+            "msg": 1,
+            "n": 1,
+            "phase": 5
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 1,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": 0,
+      "n": 6
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "bad_cross": false,
+        "bad_nonce": true,
+        "bad_reuse": false,
+        "claims": 2,
+        "crashed_attempt": 0,
+        "crashes": 0,
+        "grants": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "hb_crashed_n": 0,
+        "misroutes": 0,
+        "procs": [
+          {
+            "attempt": 1,
+            "msg": 1,
+            "n": 1,
+            "phase": 6
+          },
+          {
+            "attempt": 0,
+            "msg": 0,
+            "n": 0,
+            "phase": 0
+          }
+        ],
+        "starts": [
+          1,
+          0
+        ],
+        "tick": 1,
+        "w_after_crash": false,
+        "w_granted_current": false,
+        "w_tx_granted": false
+      },
+      "fields": 0,
+      "n": 7
+    }
+  ],
+  "weakening": "AnyNonce"
+}

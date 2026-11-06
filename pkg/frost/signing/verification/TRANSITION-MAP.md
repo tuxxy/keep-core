@@ -13,7 +13,8 @@
 | Done stages 21–26 | Verified per-input Done retention, `after-signature` | Caller cancellation must not prevent the bounded persistence attempt. Actual I/O uncertainty stays fail closed. |
 | Post-done stage 27 | `before-done-accept` and reservation reread | Late signature is retained and quarantined. |
 | Aggregate stages 27–32 | exact transaction assembly/result retention | Complete inputs required; result is not Bitcoin settlement. |
-| Recover | `LoadResult` joining immutable Done records after aggregate absence | Parent fix required. No signing engine call, no claim recycling. |
+| Recover, aggregate present | `LoadResult`: decode, `ValidateResult`, `checkResultReceipt` | No reservation reread, no write; Deliver still rereads. |
+| Recover, aggregate absent | `recoverCompletedResult`: intent, receipt and every Done read and verified, then `reservation(ctx,false)` | Model re-enters phase 27 (`recovering`). The reread refuses a late set (`ErrLateSignature`, Done kept; a read failure is the stage-27 IoError). Otherwise the aggregate commit runs stages 27–32 (`RetainSigningRecord(resultID)`). No signing engine call, no claim recycling. Since 2026-11-06 (#81). |
 | Deliver(foreign) | `Done.Verify`, `ValidateResult`, `Broadcast` | Foreign context and stale reservation refuse even if crypto is valid. |
 | Crash/process or host; I/O error | exposed boundaries, store suite, restart regressions | Control-flow interruption + real store reopen is partial replay, not OS kill or power loss. |
 | Pay/cancel/refund | abstract C-04 consumer transitions | No Go or Solidity ledger replay claim; K-05 gate. |
@@ -22,7 +23,8 @@
 
 ReleaseBeforeFinality, OmitExactPlan, OmitFinalGuard,
 EmptyAuthorizationStartsWorker and ForgetDurableReceipt target AUTHORIZED-ONLY.
-ReuseAttempt targets TERMINAL-ATTEMPT. RefundOnElapsedTime and
+ReuseAttempt targets TERMINAL-ATTEMPT. ReconstructWithoutReread (recovery
+skips the reservation reread) targets DURABLE-SIGNATURE-RECOVERY. RefundOnElapsedTime and
 RefundOnCertificateExpiry target NO-DOUBLE-OUTCOME. AllowConcurrentReservations
 targets ONE-ACTIVE-CUSTODY-RESERVATION. AcceptLateSignature and ForeignDoneContext target
 LATE-SIGNATURE-QUARANTINE. CancelledRetention and AggregateOnlyRecovery target

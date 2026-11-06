@@ -48,6 +48,13 @@ struct Attempt {
     delivered: bool,
     quarantined: bool,
     accepted: bool,
+    // Recover of an absent aggregate (LoadResult -> recoverCompletedResult) runs
+    // the phase-27 reservation reread and the aggregate commit (27-32) again.
+    recovering: bool,
+    // The aggregate was written by Done-only reconstruction, not by Run.
+    reconstructed: bool,
+    // Done-only reconstruction refused at its reservation reread (late).
+    late_refused: bool,
 }
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize)]
 struct State {
@@ -89,7 +96,7 @@ impl SigningModel {
         match self.control {
             "AllowConcurrentReservations" => ACTIVE,
             "ReuseAttempt" => TERMINAL,
-            "CancelledRetention" | "AggregateOnlyRecovery" => RECOVERY,
+            "CancelledRetention" | "AggregateOnlyRecovery" | "ReconstructWithoutReread" => RECOVERY,
             "RefundOnElapsedTime" | "RefundOnCertificateExpiry" => DOUBLE,
             "AcceptLateSignature" | "ForeignDoneContext" => LATE,
             _ => AUTH,
@@ -178,7 +185,7 @@ impl Model for SigningModel {
                 o.push(Action::Crash(i, true));
                 o.push(Action::IoError(i));
             }
-            if a.phase >= 20 && !a.terminal && !a.cancelled {
+            if a.phase >= 20 && !a.terminal && !a.cancelled && !a.recovering {
                 o.push(Action::CancelCaller(i));
             }
             if a.terminal && a.retained && !a.recovered {
@@ -312,12 +319,27 @@ impl Model for SigningModel {
                 if a.phase == 26 {
                     a.retained = true;
                 }
-                if a.phase == 27 && (a.cancelled || !self.authorized(s, a)) {
-                    a.terminal = true;
+                if a.phase == 27 {
+                    // Run: before-done-accept reread. Recover: the reread in
+                    // recoverCompletedResult; a new call, so Run's cancelled
+                    // caller context does not apply to it.
+                    let valid = self.authorized(s, a);
+                    let bypass = a.recovering && self.control == "ReconstructWithoutReread";
+                    if a.recovering && !valid {
+                        n.bad_recovery |= bypass;
+                        a.late_refused |= !bypass;
+                    }
+                    if (a.cancelled && !a.recovering) || (!valid && !bypass) {
+                        a.terminal = true;
+                    }
                 }
                 if a.phase == 32 {
                     a.aggregate = true;
                     a.terminal = true;
+                    if a.recovering {
+                        a.recovered = true;
+                        a.reconstructed = true;
+                    }
                 }
                 a.phase += 1;
                 if a.terminal && n.journal_owner == Some(i) {
@@ -347,10 +369,18 @@ impl Model for SigningModel {
             }
             Action::CancelCaller(i) => n.attempts[i as usize].cancelled = true,
             Action::Recover(i) => {
-                if self.control == "AggregateOnlyRecovery" && !n.attempts[i as usize].aggregate {
-                    n.bad_recovery = true;
+                let a = &mut n.attempts[i as usize];
+                if a.aggregate {
+                    // LoadResult of a durable aggregate: record and receipt
+                    // checks only; Deliver still rereads the reservation.
+                    a.recovered = true;
+                } else if self.control == "AggregateOnlyRecovery" {
+                    // Refuses Done-only reconstruction even when authorized.
+                    n.bad_recovery |= self.authorized(s, *a);
                 } else {
-                    n.attempts[i as usize].recovered = true;
+                    a.terminal = false;
+                    a.phase = 27;
+                    a.recovering = true;
                 }
             }
             Action::Retry(i) => {
@@ -404,6 +434,16 @@ impl Model for SigningModel {
         for a in &mut n.attempts {
             if a.terminal {
                 a.phase = 33;
+                a.recovering = false;
+                // Dead after retention: only the RECOVERY property reads these,
+                // and only for an attempt without retained Done; no action reads
+                // them once the attempt is terminal (recovery ignores Run's
+                // cancellation).
+                if a.retained {
+                    a.died = false;
+                    a.io_failed = false;
+                    a.cancelled = false;
+                }
                 if !a.claimed && !a.released {
                     a.request = 0;
                     a.mode = 0;
@@ -481,7 +521,15 @@ impl Model for SigningModel {
             Property::<Self>::sometimes("W-done-only-recovered", |_, s| {
                 s.attempts
                     .iter()
-                    .any(|a| a.recovered && !a.aggregate && a.retained)
+                    .any(|a| a.reconstructed && a.aggregate && a.retained)
+            }),
+            Property::<Self>::sometimes("W-done-only-late-refused", |_, s| {
+                s.attempts.iter().any(|a| {
+                    a.late_refused
+                        && a.retained
+                        && !a.aggregate
+                        && s.requests[a.request as usize].reservation == 3
+                })
             }),
             Property::<Self>::sometimes("W-unreserved-refund", |_, s| {
                 s.requests.iter().any(|r| r.refund && !r.was_reserved)
@@ -508,11 +556,12 @@ fn main() {
         "ForeignDoneContext",
         "CancelledRetention",
         "AggregateOnlyRecovery",
+        "ReconstructWithoutReread",
         "AllowConcurrentReservations",
     ] {
         let m = SigningModel { control };
         let start = Instant::now();
-        let mut b = m.checker().threads(4).timeout(Duration::from_secs(1800));
+        let mut b = m.checker().threads(4).timeout(Duration::from_secs(900));
         if control != "None" {
             b = b.finish_when(stateright::HasDiscoveries::AllOf(BTreeSet::from([
                 m.target()
@@ -520,7 +569,7 @@ fn main() {
         }
         let c = b.spawn_bfs().join();
         let elapsed = start.elapsed().as_secs_f64();
-        let complete = c.is_done() && elapsed < 1800.;
+        let complete = c.is_done() && elapsed < 900.;
         let mut found = std::collections::BTreeMap::new();
         for p in m.properties() {
             let path = c.discovery(p.name);

@@ -38,7 +38,7 @@
       "n": 2,
       "action": "put",
       "proc": 0,
-      "slot": 1,
+      "slot": 0,
       "value": 0,
       "pause": "before-write"
     },
@@ -88,7 +88,7 @@
       "n": 9,
       "action": "put",
       "proc": 0,
-      "slot": 1,
+      "slot": 0,
       "value": 1,
       "pause": "before-write"
     },
@@ -166,7 +166,7 @@
       "n": 2,
       "action": "put",
       "proc": 0,
-      "slot": 1,
+      "slot": 0,
       "value": 0,
       "pause": "before-write"
     },
@@ -216,7 +216,7 @@
       "n": 9,
       "action": "put",
       "proc": 0,
-      "slot": 1,
+      "slot": 0,
       "value": 1,
       "expect": "conflict",
       "diverges": true

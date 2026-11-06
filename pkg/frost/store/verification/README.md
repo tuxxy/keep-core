@@ -20,6 +20,22 @@ cargo build --release --offline
 ./target/release/k02-host-model --out /tmp/k02-host-model --threads 12 --timeout-secs 600 --max-commits 3
 ```
 
+`--profile` selects `store` (default, V-01), `dkg` (V-02, SCOPE.md §11.3) or
+one of the split V-02 profiles `dkg-restore`, `dkg-host-crash`, `dkg-clone`
+(the dkg profile plus one fault family each, SCOPE.md §13.3).
+`--claim-only` skips the weakenings (used for growth measurement).
+
+## Check freshness
+
+```sh
+python3 pkg/frost/store/verification/check-freshness.py
+python3 pkg/frost/store/verification/check-freshness.py --print-manifest pkg/frost/store go-package
+```
+
+Statements from S-K02-HOST-4 and S-K03-STORE-3 on pin package manifests: an
+added, deleted or changed non-test Go file in a pinned package makes them
+stale (SCOPE.md §13.2).
+
 The runner checks the claim model (five `always` properties and the
 witnesses), then each weakening. It writes `results.json` and `traces/*.json`.
 Exit code 0 means: every run completed within its limits, no claim-model safety

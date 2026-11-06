@@ -40,10 +40,10 @@
       "proc": 0,
       "domain": 0,
       "wallet": {
-        "rank": 1,
-        "quarantined": true,
+        "rank": 4,
+        "quarantined": false,
         "identity": 0,
-        "approval": null
+        "approval": 0
       },
       "pause": "before-write"
     },
@@ -142,15 +142,45 @@
     },
     {
       "n": 16,
-      "action": "release",
+      "action": "process_crash",
       "proc": 0,
-      "domain": 0,
-      "kind": "dkg"
+      "expect": "crashed"
     },
     {
       "n": 17,
+      "action": "open",
+      "proc": 1,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 2,
+        "dkg": [
+          true,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          {
+            "rank": 4,
+            "quarantined": false,
+            "identity": 0,
+            "approval": 0
+          },
+          null
+        ]
+      }
+    },
+    {
+      "n": 18,
       "action": "save_key",
-      "proc": 0,
+      "proc": 1,
       "domain": 0,
       "key": "1",
       "pause": "before-write"
@@ -189,10 +219,10 @@
       "proc": 0,
       "domain": 0,
       "wallet": {
-        "rank": 1,
-        "quarantined": true,
+        "rank": 4,
+        "quarantined": false,
         "identity": 0,
-        "approval": null
+        "approval": 0
       },
       "pause": "before-write"
     },
@@ -291,15 +321,45 @@
     },
     {
       "n": 16,
-      "action": "release",
+      "action": "process_crash",
       "proc": 0,
-      "domain": 0,
-      "kind": "dkg"
+      "expect": "crashed"
     },
     {
       "n": 17,
+      "action": "open",
+      "proc": 1,
+      "image": 0,
+      "expect": "opened",
+      "expect_state": {
+        "claims": 2,
+        "dkg": [
+          true,
+          false
+        ],
+        "slots": [
+          null,
+          null
+        ],
+        "keys": [
+          null,
+          null
+        ],
+        "wallet": [
+          {
+            "rank": 4,
+            "quarantined": false,
+            "identity": 0,
+            "approval": 0
+          },
+          null
+        ]
+      }
+    },
+    {
+      "n": 18,
       "action": "save_key",
-      "proc": 0,
+      "proc": 1,
       "domain": 0,
       "key": "1",
       "expect": "dkg_lost",

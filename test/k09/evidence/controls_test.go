@@ -56,7 +56,17 @@ func broadcastLine(wallet, action, tx string) string {
 }
 
 func drainRecordLine(pkh, committer, tx string) string {
-	return fmt.Sprintf("    k09_lifecycle_test.go:230: K09DRAIN source=0x%s committer=%s drain=%s\n", pkh, committer, tx)
+	return fmt.Sprintf("    k09_lifecycle_test.go:230: K09DRAIN source=0x%s committer=%s commitTx=%s drain=%s\n", pkh, committer, commitTx(tx), tx)
+}
+
+// commitTx is a made-up Ethereum transaction hash for a drain's commitment.
+func commitTx(drain string) string { return "0x" + sha256Hex([]byte("synthetic commitment "+drain)) }
+
+// commitmentLines are a base node's log lines for its own commitment: the
+// chain client's submission and MovingFundsTask's confirmation.
+func commitmentLines(pkh, tx string) string {
+	return fmt.Sprintf("2026-11-06T10:00:00.000+0100\tINFO\tkeep-contract-Bridge\tcontract/Bridge.go:4013\tsubmitted transaction submitMovingFundsCommitment with id: [%s] and nonce [2]\n", tx) +
+		fmt.Sprintf("2026-11-06T10:00:00.000+0100\tINFO\tkeep-tbtcpg\ttbtcpg/moving_funds.go:685\tthe moving funds commitment transaction successfully confirmed at block: [3601]\t{\"task\": \"MovingFunds\", \"walletPKH\": \"0x%s\"}\n", pkh)
 }
 
 // correctFixture is what a correct run leaves: the ECDSA build recorded from
@@ -112,6 +122,7 @@ func correctFixture(t *testing.T, repo string) *fixture {
 			BuildInfo string `json:"buildInfo"`
 		}{sha256Hex([]byte("artifact " + name)), id}
 	}
+	b.BuiltFrom = f.manifest.Candidate.KeepCoreHead
 	f.manifest.Dependencies.EcdsaBuild = b
 	wallet, pkh := fixtureWallet(0xb9)
 	for _, stage := range fixtureStages {
@@ -125,6 +136,9 @@ func correctFixture(t *testing.T, repo string) *fixture {
 		}
 		for op := 1; op <= 3; op++ {
 			node := fmt.Sprintf("2026-11-06T10:00:00.000+0100\tINFO\tkeep-tbtc\ttbtc/registry.go:95\tsynthetic node %d\n", op)
+			if (stage == "04-drain" || stage == "06-restart") && op == 1 {
+				node += commitmentLines(pkh, commitTx(drainTx(stage)))
+			}
 			if (stage == "04-drain" || stage == "06-restart") && op == 2 {
 				node += broadcastLine(wallet, "MovingFunds", drainTx(stage))
 			}
@@ -261,6 +275,10 @@ var controls = []control{
 		before: func(f *fixture) {
 			editArtifact(f, registryArtifact, func(_, id string) (string, string) { return "", id })
 		}},
+	{name: "c22-built-from-other", check: "22", assertion: "the build's builtFrom",
+		before: func(f *fixture) {
+			f.manifest.Dependencies.EcdsaBuild.BuiltFrom = "b0d496ba631c4d85d6bb5ace205307f3f4960ee1"
+		}},
 	{name: "c22-other-yarn-lock", check: "22", assertion: "yarnLockSha256",
 		before: func(f *fixture) { f.manifest.Dependencies.EcdsaBuild.YarnLockSha256 = sha256Hex([]byte("other lock")) }},
 
@@ -307,6 +325,27 @@ var controls = []control{
 		before: func(f *fixture) {
 			_, pkh := fixtureWallet(0xb9)
 			f.files["04-drain.log"] = "=== RUN   TestK09Lifecycle/04-drain\n" + drainRecordLine(pkh, legacyOperatorAddress, drainTx("04-drain"))
+		}},
+	{name: "c40-harness-commit", check: "40", assertion: "does not record base's own commitment",
+		// Review B1: the harness sends the commitment from operator 1's
+		// public test key; the nodes only sign and broadcast (base skips
+		// the submission when a commitment exists), so the committer's log
+		// has no submission or confirmation.
+		before: func(f *fixture) {
+			f.files["nodes/04-drain/operator-1.log"] = "2026-11-06T10:00:00.000+0100\tINFO\tkeep-tbtcpg\ttbtcpg/moving_funds.go:521\tcommitment already submitted; retrieving committed target wallets\n"
+		}},
+	{name: "c40-commit-logged-elsewhere", check: "40", assertion: "does not record base's own commitment",
+		// The submission is in another operator's log, not the committer's.
+		before: func(f *fixture) {
+			_, pkh := fixtureWallet(0xb9)
+			f.files["nodes/06-restart/operator-1.log"] = "2026-11-06T10:00:00.000+0100\tINFO\tkeep-tbtc\ttbtc/registry.go:95\tsynthetic node 1\n"
+			f.files["nodes/06-restart/operator-3.log"] += commitmentLines(pkh, commitTx(drainTx("06-restart")))
+		}},
+	{name: "c40-other-commit-tx", check: "40", assertion: "does not record base's own commitment",
+		// The committer submitted some other commitment transaction.
+		before: func(f *fixture) {
+			_, pkh := fixtureWallet(0xb9)
+			f.files["nodes/04-drain/operator-1.log"] = commitmentLines(pkh, commitTx("another"))
 		}},
 	{name: "c40-harness-signed", check: "40", assertion: "records a completed MovingFunds broadcast of the drain",
 		// The record is written, but no node's MovingFunds action broadcast

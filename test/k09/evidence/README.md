@@ -15,9 +15,9 @@ keep-core checkout the evidence names: the #22 check compares against
 
 | Subtest | Issue | Invariant |
 | --- | --- | --- |
-| `22-ecdsa-build` | tuxxy/keep-core#22 (K09-1) | The manifest records keep-core's `solidity/ecdsa` build, and that build was compiled from `keepCoreHead`: every artifact the world deploys (every `b6Deploy("<source>", "<contract>"` call in the head's `pkg/tbtc/k09_*.go`) is hashed and names a recorded build-info that compiled its source; every keep-core source (`contracts/`, except Hardhat's generated `contracts/hardhat-dependency-compiler/` shims) in every recorded build-info is byte-identical to the file at `keepCoreHead`; the npm dependencies come from the head's `solidity/ecdsa/yarn.lock`. |
+| `22-ecdsa-build` | tuxxy/keep-core#22 (K09-1) | The manifest records keep-core's `solidity/ecdsa` build, and that build was compiled from `keepCoreHead`: every artifact the world deploys (every `b6Deploy("<source>", "<contract>"` call in the head's `pkg/tbtc/k09_*.go`) is hashed and names a recorded build-info that compiled its source; every keep-core source (`contracts/`, except Hardhat's generated `contracts/hardhat-dependency-compiler/` shims) in every recorded build-info is byte-identical to the file at `keepCoreHead`; `builtFrom` is `keepCoreHead`; the npm dependencies come from the head's `solidity/ecdsa/yarn.lock`. |
 | `41-node-log-hashes` | tuxxy/keep-core#41 (K09-24) | The files under `nodes/` are exactly the keys of `manifest.nodeLogs`, each with its SHA-256, and every stage that starts nodes (all but 01 and 02) left at least one node log. |
-| `40-drain-signers` | tuxxy/keep-core#40 (K09-23) | In `04-drain` and `06-restart`: the stage log is the one the manifest hashed; it shows no harness FIXTURE drain (`b6 phase drain proven`, from `drainFrom`); it records exactly one drain (`K09DRAIN`); the commitment's sender is one of the stage's node operators; and a node log of that stage records base's completed MovingFunds broadcast of exactly that transaction for exactly that source wallet. |
+| `40-drain-signers` | tuxxy/keep-core#40 (K09-23) | In `04-drain` and `06-restart`: the stage log is the one the manifest hashed; it shows no harness FIXTURE drain (`b6 phase drain proven`, from `drainFrom`); it records exactly one drain (`K09DRAIN`); the commitment's sender is one of the stage's node operators; the committer's own node log records base's submission of exactly that commitment transaction and MovingFundsTask's confirmation for the source (so the node's task produced it, not a harness with an operator's public test key: review B1); and a node log of that stage records base's completed MovingFunds broadcast of exactly that transaction for exactly that source wallet. |
 
 The composition ledger named in #40 (producer results against consumer
 assumptions) is KC-VER V-05 verification work and is not checked here.
@@ -30,6 +30,7 @@ unchanged.
 
 ```json
 {
+  "builtFrom": "<the commit the build was compiled from: keepCoreHead>",
   "yarnLockSha256": "<sha256 of solidity/ecdsa/yarn.lock the node_modules came from>",
   "artifacts": {
     "<source>:<contract>": {"sha256": "<sha256 of the artifact JSON>", "buildInfo": "<build-info ID>"}
@@ -55,19 +56,27 @@ one entry per node log file in the evidence, hashed after the copy.
 Bridge accepted the drain's commitment and its proof, it logs one line:
 
 ```
-K09DRAIN source=0x<20-byte legacy source PKH> committer=0x<sender of submitMovingFundsCommitment> drain=<drain txid, display byte order>
+K09DRAIN source=0x<20-byte legacy source PKH> committer=0x<sender of submitMovingFundsCommitment> commitTx=0x<that Ethereum transaction> drain=<drain txid, display byte order>
 ```
+
+The stage requires the commitment to be mined at or after the drain's
+coordination window (base's leader commits inside the window).
 
 The check matches it against the node logs: operator N's address is the
 address of the test scalar N (the K-09 world's operator keys), and base's
 `pkg/tbtc/wallet.go` logs `broadcasting completed` with the fields `wallet`
 (uncompressed public key), `action` (`MovingFunds`) and `movingFundsTxHash`.
+The committer's log must hold base's
+`submitted transaction submitMovingFundsCommitment with id: [<commitTx>]`
+and `the moving funds commitment transaction successfully confirmed` with
+`"walletPKH": "0x<source>"` (`pkg/tbtcpg/moving_funds.go`); base skips both
+when a commitment already exists.
 
 ## Controls
 `TestK09EvidenceControls` writes SYNTHETIC evidence (FIXTURE, no run made
 it): one correct directory, which must pass all three checks, and one per
 wrong implementation below, which must fail its own check at the named text
-and pass the other two.
+and pass the other two (26 wrong implementations).
 
 | Control | Wrong implementation | Fails at |
 | --- | --- | --- |
@@ -78,6 +87,7 @@ and pass the other two.
 | `c22-unrecorded-build-info` | an artifact names a build-info the record lacks | "which dependencies.ecdsaBuild.buildInfos does not record" |
 | `c22-foreign-build-info` | an artifact credited to a build-info that never compiled it | "which did not compile its source" |
 | `c22-unhashed-artifact` | an artifact recorded without its hash | "has no SHA-256" |
+| `c22-built-from-other` | the build record names another commit (review N3) | "the build's builtFrom" |
 | `c22-other-yarn-lock` | node_modules from another yarn.lock | "yarnLockSha256" |
 | `c41-stage-logs-only` | only stage logs hashed (b7-r1) | "the manifest has no nodeLogs" |
 | `c41-one-log-unhashed` | one node log left out | "is not hashed in manifest.nodeLogs" |
@@ -88,6 +98,9 @@ and pass the other two.
 | `c40-no-record` | no drain record (b7-r1) | "records 0 drains" |
 | `c40-two-records` | two drain records in one stage | "records 2 drains" |
 | `c40-harness-committer` | the legacy operator FIXTURE commits the drain | "which is not one of the stage's node operators" |
+| `c40-harness-commit` | the harness commits from operator 1's public test key; the nodes only sign (review B1) | "does not record base's own commitment" |
+| `c40-commit-logged-elsewhere` | the submission is in another operator's log, not the committer's | "does not record base's own commitment" |
+| `c40-other-commit-tx` | the committer submitted a different commitment transaction | "does not record base's own commitment" |
 | `c40-harness-signed` | the record is written but no node broadcast the drain | "records a completed MovingFunds broadcast of the drain" |
 | `c40-other-action` | the txid appears only under another action | "records a completed MovingFunds broadcast of the drain" |
 | `c40-other-wallet` | a node broadcast that txid for another wallet | "not for the legacy source" |

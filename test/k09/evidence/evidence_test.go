@@ -61,6 +61,9 @@ type manifest struct {
 
 // ecdsaBuild is the record of keep-core's solidity/ecdsa build (#22).
 type ecdsaBuild struct {
+	// BuiltFrom is the commit the build was compiled from; it must be
+	// candidate.keepCoreHead (review N3).
+	BuiltFrom string `json:"builtFrom"`
 	// YarnLockSha256 is the SHA-256 of the solidity/ecdsa/yarn.lock the
 	// build's node_modules were installed from.
 	YarnLockSha256 string `json:"yarnLockSha256"`
@@ -178,6 +181,9 @@ func checkEcdsaBuild(m *manifest, repo string) []string {
 		return []string{tag + ": the manifest has no dependencies.ecdsaBuild: keep-core's solidity/ecdsa build (the FROST registry stack the world deploys) is not hashed or tied to keepCoreHead " + head}
 	}
 	var problems []string
+	if b.BuiltFrom != head {
+		problems = append(problems, fmt.Sprintf("%s: the build's builtFrom %q is not keepCoreHead %s", tag, b.BuiltFrom, head))
+	}
 	required, err := requiredArtifacts(repo, head)
 	if err != nil {
 		return []string{fmt.Sprintf("%s: cannot list the artifacts the world at %s deploys: %v", tag, head, err)}
@@ -330,8 +336,32 @@ const fixtureDrainMarker = "b6 phase drain proven"
 // that the Bridge accepted the commitment and the proof of the drain:
 //
 //	K09DRAIN source=0x<20-byte wallet PKH> committer=0x<address that sent
-//	submitMovingFundsCommitment> drain=<drain txid, display byte order>
-var drainRecord = regexp.MustCompile(`K09DRAIN source=0x([0-9a-f]{40}) committer=(0x[0-9a-fA-F]{40}) drain=([0-9a-f]{64})\s*$`)
+//	submitMovingFundsCommitment> commitTx=0x<that Ethereum transaction>
+//	drain=<drain txid, display byte order>
+var drainRecord = regexp.MustCompile(`K09DRAIN source=0x([0-9a-f]{40}) committer=(0x[0-9a-fA-F]{40}) commitTx=(0x[0-9a-f]{64}) drain=([0-9a-f]{64})\s*$`)
+
+// commitmentProduced reports whether a node log records base's own
+// production of the commitment (review B1): the chain client's submission
+// of exactly that transaction (pkg/chain/ethereum/tbtc/gen/contract
+// Bridge.go) and MovingFundsTask's confirmation for the source wallet
+// (pkg/tbtcpg/moving_funds.go). base skips both when a commitment already
+// exists, as when a harness sent it.
+func commitmentProduced(path, commitTx, source string) (submitted, confirmed bool, err error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return false, false, err
+	}
+	for _, line := range strings.Split(string(raw), "\n") {
+		if strings.Contains(line, "submitted transaction submitMovingFundsCommitment with id: ["+commitTx+"]") {
+			submitted = true
+		}
+		if strings.Contains(line, "the moving funds commitment transaction successfully confirmed") &&
+			strings.Contains(line, `"walletPKH": "0x`+source+`"`) {
+			confirmed = true
+		}
+	}
+	return submitted, confirmed, nil
+}
 
 // operatorAddress is node operator N's address: the K-09 world gives
 // operator N the scalar N as its key (frost_node_b6_world_test.go
@@ -403,7 +433,10 @@ func walletPKH(logged string) (string, error) {
 // manifest hashed; it shows no harness FIXTURE drain; it records exactly one
 // drain (K09DRAIN); the commitment's sender is one of the stage's node
 // operators; and a node log of that stage records a completed MovingFunds
-// broadcast of exactly that transaction for exactly that source wallet.
+// broadcast of exactly that transaction for exactly that source wallet; and
+// the committer's own node log records base's submission of exactly that
+// commitment transaction and MovingFundsTask's confirmation for the source
+// (review B1).
 func checkDrainSigners(m *manifest, evidence string) []string {
 	const tag = "K-09 #40 (K09-23)"
 	var problems []string
@@ -441,12 +474,12 @@ func checkDrainSigners(m *manifest, evidence string) []string {
 			}
 		}
 		if len(records) != 1 {
-			problem("the stage log records %d drains (K09DRAIN source=... committer=... drain=...), want exactly 1: nothing shows who committed and signed the drain", len(records))
+			problem("the stage log records %d drains (K09DRAIN source=... committer=... commitTx=... drain=...), want exactly 1: nothing shows who committed and signed the drain", len(records))
 			continue
 		}
-		source, committer, drain := records[0][1], common.HexToAddress(records[0][2]), records[0][3]
+		source, committer, commitTx, drain := records[0][1], common.HexToAddress(records[0][2]), records[0][3], records[0][4]
 		entries, _ := os.ReadDir(filepath.Join(evidence, "nodes", stage))
-		committed := false
+		committed, committerLog := false, ""
 		var operators []string
 		for _, e := range entries {
 			n := operatorLog.FindStringSubmatch(e.Name())
@@ -457,11 +490,19 @@ func checkDrainSigners(m *manifest, evidence string) []string {
 			fmt.Sscanf(n[1], "%d", &i)
 			operators = append(operators, operatorAddress(i).Hex())
 			if operatorAddress(i) == committer {
-				committed = true
+				committed, committerLog = true, e.Name()
 			}
 		}
 		if !committed {
 			problem("the drain commitment for source 0x%s was sent by %s, which is not one of the stage's node operators %v", source, committer.Hex(), operators)
+		} else {
+			submitted, confirmed, err := commitmentProduced(filepath.Join(evidence, "nodes", stage, committerLog), commitTx, source)
+			switch {
+			case err != nil:
+				problem("%v", err)
+			case !submitted || !confirmed:
+				problem("the committer's node log nodes/%s/%s does not record base's own commitment (submitted %s: %v; MovingFundsTask confirmation for 0x%s: %v): the commitment was not produced by the node's MovingFunds task", stage, committerLog, commitTx, submitted, source, confirmed)
+			}
 		}
 		signed, other := false, ""
 		for _, e := range entries {

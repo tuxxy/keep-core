@@ -1,0 +1,628 @@
+{
+  "bound": "1 wallet, A + U, 2 challenges, deadline tick 3, 2 crashes, 1 restore, 1 lost reply",
+  "claim_model_steps": [
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 0,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": false,
+        "tick": 1,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": null,
+      "n": 1,
+      "offered": true
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 0,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": false,
+        "tick": 2,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": null,
+      "n": 2,
+      "offered": true
+    },
+    {
+      "action": "Challenge",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": true,
+            "order": 0,
+            "status": 0
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 1,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": false,
+        "tick": 2,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": 1,
+      "n": 3,
+      "offered": true
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": true,
+            "order": 0,
+            "status": 0
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 1,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": false,
+        "tick": 3,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": null,
+      "n": 4,
+      "offered": true
+    },
+    {
+      "action": "Timeout",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": true,
+            "order": 0,
+            "status": 2
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 1,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": true,
+        "tick": 3,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": 1,
+      "n": 5,
+      "offered": true
+    }
+  ],
+  "id": "enf-None-W-unauthorized-timed-out-terminated",
+  "init": {
+    "blocked": false,
+    "ch": [
+      {
+        "admitted": false,
+        "order": 0,
+        "status": 0
+      },
+      {
+        "admitted": false,
+        "order": 0,
+        "status": 0
+      }
+    ],
+    "crashes": 0,
+    "def_idx": 0,
+    "def_len": 0,
+    "def_list": [
+      9,
+      9
+    ],
+    "def_phase": 0,
+    "def_resolved": [
+      false,
+      false
+    ],
+    "exec": 0,
+    "kind": 1,
+    "lost": 0,
+    "next_order": 0,
+    "quarantined": false,
+    "rec": [
+      0,
+      0,
+      0
+    ],
+    "recovered": false,
+    "released": false,
+    "restarted": false,
+    "restores": 0,
+    "settled": false,
+    "terminated": false,
+    "tick": 0,
+    "up": true,
+    "w_after_restart": false,
+    "w_after_settle": false,
+    "w_lost_reply": false,
+    "w_second": false
+  },
+  "kind": "witness",
+  "profile": "enf",
+  "property": "W-unauthorized-timed-out-terminated",
+  "replay": "pending",
+  "replay_note": "set by the Go replay report",
+  "steps": [
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 0,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": false,
+        "tick": 1,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": null,
+      "n": 1
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 0,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": false,
+        "tick": 2,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": null,
+      "n": 2
+    },
+    {
+      "action": "Challenge",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": true,
+            "order": 0,
+            "status": 0
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 1,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": false,
+        "tick": 2,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": 1,
+      "n": 3
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": true,
+            "order": 0,
+            "status": 0
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 1,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": false,
+        "tick": 3,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": null,
+      "n": 4
+    },
+    {
+      "action": "Timeout",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "blocked": false,
+        "ch": [
+          {
+            "admitted": false,
+            "order": 0,
+            "status": 0
+          },
+          {
+            "admitted": true,
+            "order": 0,
+            "status": 2
+          }
+        ],
+        "crashes": 0,
+        "def_idx": 0,
+        "def_len": 0,
+        "def_list": [
+          9,
+          9
+        ],
+        "def_phase": 0,
+        "def_resolved": [
+          false,
+          false
+        ],
+        "exec": 0,
+        "kind": 1,
+        "lost": 0,
+        "next_order": 1,
+        "quarantined": false,
+        "rec": [
+          0,
+          0,
+          0
+        ],
+        "recovered": false,
+        "released": false,
+        "restarted": false,
+        "restores": 0,
+        "settled": false,
+        "terminated": true,
+        "tick": 3,
+        "up": true,
+        "w_after_restart": false,
+        "w_after_settle": false,
+        "w_lost_reply": false,
+        "w_second": false
+      },
+      "fields": 1,
+      "n": 5
+    }
+  ],
+  "weakening": "None"
+}

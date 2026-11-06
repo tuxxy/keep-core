@@ -36,11 +36,10 @@
     },
     {
       "n": 2,
-      "action": "claim",
+      "action": "put",
       "proc": 1,
-      "attempt": 1,
-      "purpose": "dkg",
-      "domain": 0,
+      "slot": 1,
+      "value": 0,
       "pause": "before-write"
     },
     {
@@ -73,18 +72,18 @@
     },
     {
       "n": 7,
-      "action": "fence_reset"
-    },
-    {
-      "n": 8,
-      "action": "clone"
-    },
-    {
-      "n": 9,
       "action": "step",
       "proc": 1,
       "step": "ack",
-      "expect": "claim_ok"
+      "expect": "durable"
+    },
+    {
+      "n": 8,
+      "action": "put",
+      "proc": 1,
+      "slot": 1,
+      "value": 0,
+      "expect": "identical"
     }
   ],
   "claim_model_steps": [
@@ -116,11 +115,10 @@
     },
     {
       "n": 2,
-      "action": "claim",
+      "action": "put",
       "proc": 1,
-      "attempt": 1,
-      "purpose": "dkg",
-      "domain": 0,
+      "slot": 1,
+      "value": 0,
       "pause": "before-write"
     },
     {

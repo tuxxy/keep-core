@@ -38,7 +38,7 @@
       "n": 2,
       "action": "claim",
       "proc": 1,
-      "attempt": 0,
+      "attempt": 1,
       "purpose": "dkg",
       "domain": 0,
       "pause": "before-write"
@@ -95,10 +95,10 @@
       "proc": 1,
       "domain": 0,
       "wallet": {
-        "rank": 4,
+        "rank": 1,
         "quarantined": true,
         "identity": 0,
-        "approval": 0
+        "approval": null
       },
       "pause": "before-write"
     },
@@ -132,18 +132,25 @@
     },
     {
       "n": 15,
+      "action": "step",
+      "proc": 1,
+      "step": "fence",
+      "pause": "before-acknowledgement"
+    },
+    {
+      "n": 16,
       "action": "process_crash",
       "proc": 1,
       "expect": "crashed"
     },
     {
-      "n": 16,
+      "n": 17,
       "action": "open",
       "proc": 0,
       "image": 0,
       "expect": "opened",
       "expect_state": {
-        "claims": 1,
+        "claims": 2,
         "dkg": [
           true,
           false
@@ -157,17 +164,15 @@
           null
         ],
         "wallet": [
-          null,
+          {
+            "rank": 1,
+            "quarantined": true,
+            "identity": 0,
+            "approval": null
+          },
           null
         ]
       }
-    },
-    {
-      "n": 17,
-      "action": "dkg_status",
-      "proc": 0,
-      "domain": 0,
-      "expect": "status_seats_lost"
     },
     {
       "n": 18,
@@ -176,9 +181,9 @@
       "domain": 0,
       "wallet": {
         "rank": 4,
-        "quarantined": false,
-        "identity": 1,
-        "approval": 0
+        "quarantined": true,
+        "identity": 0,
+        "approval": 1
       },
       "pause": "before-write"
     },
@@ -230,7 +235,7 @@
       "image": 0,
       "expect": "opened",
       "expect_state": {
-        "claims": 1,
+        "claims": 2,
         "dkg": [
           true,
           false
@@ -246,9 +251,9 @@
         "wallet": [
           {
             "rank": 4,
-            "quarantined": false,
-            "identity": 1,
-            "approval": 0
+            "quarantined": true,
+            "identity": 0,
+            "approval": 1
           },
           null
         ]
@@ -256,9 +261,16 @@
     },
     {
       "n": 26,
+      "action": "dkg_status",
+      "proc": 1,
+      "domain": 0,
+      "expect": "status_seats_lost"
+    },
+    {
+      "n": 27,
       "action": "claim",
       "proc": 1,
-      "attempt": 1,
+      "attempt": 0,
       "purpose": "dkg",
       "domain": 0,
       "expect": "dkg_pending"

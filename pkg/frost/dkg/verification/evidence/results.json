@@ -1,11 +1,42 @@
 {
-  "bounds": "EXIT-SCOPE.md",
+  "bounds": "EXIT-SCOPE.md + RESTORE-SCOPE-2026-11-06.md",
   "checks_pass": true,
+  "claim_predicates": [
+    {
+      "claim_counterexample": false,
+      "id": "P-K03-ONE-DESCRIPTOR"
+    },
+    {
+      "claim_counterexample": false,
+      "id": "P-K03-NO-EARLY-FUNDING"
+    },
+    {
+      "claim_counterexample": false,
+      "id": "P-K03-READY-ONLY-RELOADED"
+    },
+    {
+      "claim_counterexample": true,
+      "id": "P-K03-INCONSISTENCY-QUARANTINE"
+    },
+    {
+      "claim_counterexample": false,
+      "id": "P-K03-EXPIRY-TOMBSTONE"
+    },
+    {
+      "claim_counterexample": false,
+      "id": "P-K03-FRESH-EPOCH-DISJOINT"
+    },
+    {
+      "claim_counterexample": false,
+      "id": "P-K03-SUBMITTED-NOT-TERMINAL"
+    }
+  ],
   "runs": [
     {
       "check_pass": true,
       "completed_before_deadline": true,
       "discoveries": [
+        "P-K03-INCONSISTENCY-QUARANTINE",
         "W-CANDIDATE-LOSS-FRESH-READY",
         "W-DELAYED-PREAPPROVAL-RECONCILED",
         "W-READY-UNFUNDED",
@@ -15,12 +46,17 @@
         "W-FOREIGN-SUBMITTED-ACCEPTANCE",
         "W-KEY-AFTER-REMOVAL-QUARANTINED",
         "W-LOST-BEFORE-READINESS-EXPIRED",
-        "W-CERTIFICATE-BEFORE-DURABLE-READY"
+        "W-CERTIFICATE-BEFORE-DURABLE-READY",
+        "W-RESTORED-READY",
+        "W-RESTORED-CERTIFIED-ELSEWHERE",
+        "W-RESTART-LOST-EXPIRED",
+        "W-RESTORED-QUARANTINED",
+        "W-RESTORED-EXPIRED"
       ],
-      "generated": 20994202,
-      "seconds": 7.898546584,
+      "generated": 47261734,
+      "seconds": 19.305667291,
       "target": "all",
-      "unique": 5409590,
+      "unique": 11149753,
       "weakening": 0
     },
     {
@@ -29,10 +65,10 @@
       "discoveries": [
         "P-K03-ONE-DESCRIPTOR"
       ],
-      "generated": 9610,
-      "seconds": 0.002852791,
+      "generated": 9461,
+      "seconds": 0.0031165,
       "target": "P-K03-ONE-DESCRIPTOR",
-      "unique": 3545,
+      "unique": 3427,
       "weakening": 1
     },
     {
@@ -41,10 +77,10 @@
       "discoveries": [
         "P-K03-NO-EARLY-FUNDING"
       ],
-      "generated": 9925,
-      "seconds": 0.002617958,
+      "generated": 9547,
+      "seconds": 0.002548375,
       "target": "P-K03-NO-EARLY-FUNDING",
-      "unique": 3390,
+      "unique": 3314,
       "weakening": 2
     },
     {
@@ -53,22 +89,23 @@
       "discoveries": [
         "P-K03-READY-ONLY-RELOADED"
       ],
-      "generated": 466370,
-      "seconds": 0.113917375,
+      "generated": 646374,
+      "seconds": 0.152768417,
       "target": "P-K03-READY-ONLY-RELOADED",
-      "unique": 130508,
+      "unique": 181543,
       "weakening": 3
     },
     {
       "check_pass": true,
       "completed_before_deadline": true,
       "discoveries": [
-        "P-K03-READY-ONLY-RELOADED"
+        "P-K03-READY-ONLY-RELOADED",
+        "P-K03-INCONSISTENCY-QUARANTINE"
       ],
-      "generated": 1160357,
-      "seconds": 0.289582291,
+      "generated": 1589818,
+      "seconds": 0.40371375,
       "target": "P-K03-READY-ONLY-RELOADED",
-      "unique": 320665,
+      "unique": 438759,
       "weakening": 4
     },
     {
@@ -77,10 +114,10 @@
       "discoveries": [
         "P-K03-INCONSISTENCY-QUARANTINE"
       ],
-      "generated": 8783,
-      "seconds": 0.002514542,
+      "generated": 8991,
+      "seconds": 0.003174,
       "target": "P-K03-INCONSISTENCY-QUARANTINE",
-      "unique": 3093,
+      "unique": 3038,
       "weakening": 5
     },
     {
@@ -89,10 +126,10 @@
       "discoveries": [
         "P-K03-EXPIRY-TOMBSTONE"
       ],
-      "generated": 8781,
-      "seconds": 0.002711875,
+      "generated": 8979,
+      "seconds": 0.002743583,
       "target": "P-K03-EXPIRY-TOMBSTONE",
-      "unique": 3057,
+      "unique": 3015,
       "weakening": 6
     },
     {
@@ -101,10 +138,10 @@
       "discoveries": [
         "P-K03-FRESH-EPOCH-DISJOINT"
       ],
-      "generated": 8784,
-      "seconds": 0.002501958,
+      "generated": 8980,
+      "seconds": 0.002511292,
       "target": "P-K03-FRESH-EPOCH-DISJOINT",
-      "unique": 3064,
+      "unique": 3018,
       "weakening": 7
     },
     {
@@ -113,10 +150,10 @@
       "discoveries": [
         "P-K03-ONE-DESCRIPTOR"
       ],
-      "generated": 26280,
-      "seconds": 0.007042875,
+      "generated": 35741,
+      "seconds": 0.008370709,
       "target": "P-K03-ONE-DESCRIPTOR",
-      "unique": 8265,
+      "unique": 11189,
       "weakening": 8
     },
     {
@@ -125,11 +162,23 @@
       "discoveries": [
         "P-K03-SUBMITTED-NOT-TERMINAL"
       ],
-      "generated": 8929,
-      "seconds": 0.002734625,
+      "generated": 8664,
+      "seconds": 0.002499334,
       "target": "P-K03-SUBMITTED-NOT-TERMINAL",
-      "unique": 3043,
+      "unique": 2967,
       "weakening": 9
+    },
+    {
+      "check_pass": true,
+      "completed_before_deadline": true,
+      "discoveries": [
+        "P-K03-READY-ONLY-RELOADED"
+      ],
+      "generated": 1069278,
+      "seconds": 0.265313958,
+      "target": "P-K03-READY-ONLY-RELOADED",
+      "unique": 296203,
+      "weakening": 10
     }
   ],
   "timeout_seconds_per_run": 120,

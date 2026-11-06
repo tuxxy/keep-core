@@ -25,6 +25,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -78,6 +82,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -134,6 +143,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -187,6 +200,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -219,115 +237,6 @@
       "proc": 1
     },
     {
-      "action": {
-        "ProcessCrash": 1
-      },
-      "claim_available": true,
-      "diverges": false,
-      "expect_state": {
-        "anchor": 3,
-        "attest": 0,
-        "cert_count": 0,
-        "cert_desc": 0,
-        "cert_seats": 0,
-        "cert_tick": 0,
-        "certified": false,
-        "chain": 0,
-        "changed": false,
-        "closed": false,
-        "collect": [
-          0,
-          0
-        ],
-        "deadline": 3,
-        "epoch": 0,
-        "foreign": false,
-        "funded": false,
-        "identities": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "inconsistency": 0,
-        "key": 0,
-        "key_desc": [
-          0,
-          0
-        ],
-        "monitor_overlap": 0,
-        "monitor_pending": 0,
-        "monitor_used": 0,
-        "old": false,
-        "old_closed": false,
-        "old_ids": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "old_quarantine": false,
-        "old_result_closed": false,
-        "old_tombstones": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "phase": [
-          1,
-          9
-        ],
-        "pre_tick": 0,
-        "quarantine": 0,
-        "ready": 0,
-        "receipt": 0,
-        "recognized": 0,
-        "recognized_desc": [
-          0,
-          0
-        ],
-        "recognized_tick": [
-          0,
-          0
-        ],
-        "recognized_view": [
-          0,
-          0
-        ],
-        "reloaded": 0,
-        "result_closed": false,
-        "retry": false,
-        "seen": 0,
-        "submitted": 0,
-        "termination": [
-          0,
-          4
-        ],
-        "tick": 0,
-        "tombstones": [
-          1,
-          0,
-          0,
-          0
-        ],
-        "wallet_desc": [
-          1,
-          1
-        ],
-        "wallet_state": [
-          1,
-          1
-        ],
-        "watched": 0,
-        "worker_ready": 0
-      },
-      "n": 3,
-      "pause": null,
-      "pause_before": null,
-      "proc": 1
-    },
-    {
       "action": "BeforePublish",
       "claim_available": true,
       "diverges": false,
@@ -350,6 +259,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -383,7 +296,7 @@
         ],
         "phase": [
           11,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -403,13 +316,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -429,7 +347,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 4,
+      "n": 3,
       "pause": "before-publish",
       "pause_before": null,
       "proc": 0
@@ -457,6 +375,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -490,7 +412,7 @@
         ],
         "phase": [
           12,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -510,13 +432,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 1,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -536,7 +463,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 5,
+      "n": 4,
       "pause": "after-publish",
       "pause_before": "before-publish",
       "proc": 0
@@ -564,6 +491,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -597,7 +528,7 @@
         ],
         "phase": [
           1,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -617,13 +548,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 1,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -643,7 +579,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 6,
+      "n": 5,
       "pause": null,
       "pause_before": "after-publish",
       "proc": 0
@@ -671,6 +607,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -704,7 +644,7 @@
         ],
         "phase": [
           1,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -724,13 +664,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -750,14 +695,14 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 7,
+      "n": 6,
       "pause": null,
       "pause_before": null,
       "proc": null
     },
     {
       "action": {
-        "Observe": 0
+        "Observe": 1
       },
       "claim_available": true,
       "diverges": false,
@@ -780,6 +725,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -812,8 +761,8 @@
           0
         ],
         "phase": [
-          2,
-          9
+          1,
+          2
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -833,13 +782,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -859,10 +813,10 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 8,
+      "n": 7,
       "pause": "approval-seen",
       "pause_before": null,
-      "proc": 0
+      "proc": 1
     },
     {
       "action": "Fund",
@@ -887,6 +841,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -919,8 +877,8 @@
           0
         ],
         "phase": [
-          2,
-          9
+          1,
+          2
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -940,13 +898,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -966,7 +929,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 9,
+      "n": 8,
       "pause": null,
       "pause_before": null,
       "proc": null
@@ -994,6 +957,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1026,8 +993,8 @@
           0
         ],
         "phase": [
-          2,
-          9
+          1,
+          2
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -1047,13 +1014,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -1073,7 +1045,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 10,
+      "n": 9,
       "pause": null,
       "pause_before": null,
       "proc": null
@@ -1110,6 +1082,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1163,6 +1139,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -1210,6 +1191,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1263,6 +1248,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -1318,6 +1308,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1371,6 +1365,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -1418,6 +1417,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1471,6 +1474,11 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
@@ -1503,214 +1511,6 @@
       "proc": 1
     },
     {
-      "action": {
-        "ProcessCrash": 1
-      },
-      "claim_available": true,
-      "claim_state": {
-        "anchor": 3,
-        "attest": 0,
-        "cert_count": 0,
-        "cert_desc": 0,
-        "cert_seats": 0,
-        "cert_tick": 0,
-        "certified": false,
-        "chain": 0,
-        "changed": false,
-        "closed": false,
-        "collect": [
-          0,
-          0
-        ],
-        "deadline": 3,
-        "epoch": 0,
-        "foreign": false,
-        "funded": false,
-        "identities": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "inconsistency": 0,
-        "key": 0,
-        "key_desc": [
-          0,
-          0
-        ],
-        "monitor_overlap": 0,
-        "monitor_pending": 0,
-        "monitor_used": 0,
-        "old": false,
-        "old_closed": false,
-        "old_ids": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "old_quarantine": false,
-        "old_result_closed": false,
-        "old_tombstones": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "phase": [
-          1,
-          9
-        ],
-        "pre_tick": 0,
-        "quarantine": 0,
-        "ready": 0,
-        "receipt": 0,
-        "recognized": 0,
-        "recognized_desc": [
-          0,
-          0
-        ],
-        "recognized_tick": [
-          0,
-          0
-        ],
-        "recognized_view": [
-          0,
-          0
-        ],
-        "reloaded": 0,
-        "result_closed": false,
-        "retry": false,
-        "seen": 0,
-        "submitted": 0,
-        "termination": [
-          0,
-          4
-        ],
-        "tick": 0,
-        "tombstones": [
-          1,
-          0,
-          0,
-          0
-        ],
-        "wallet_desc": [
-          1,
-          1
-        ],
-        "wallet_state": [
-          1,
-          1
-        ],
-        "watched": 0,
-        "worker_ready": 0
-      },
-      "diverges": false,
-      "expect": "dead",
-      "expect_state": {
-        "anchor": 3,
-        "attest": 0,
-        "cert_count": 0,
-        "cert_desc": 0,
-        "cert_seats": 0,
-        "cert_tick": 0,
-        "certified": false,
-        "chain": 0,
-        "changed": false,
-        "closed": false,
-        "collect": [
-          0,
-          0
-        ],
-        "deadline": 3,
-        "epoch": 0,
-        "foreign": false,
-        "funded": false,
-        "identities": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "inconsistency": 0,
-        "key": 0,
-        "key_desc": [
-          0,
-          0
-        ],
-        "monitor_overlap": 0,
-        "monitor_pending": 0,
-        "monitor_used": 0,
-        "old": false,
-        "old_closed": false,
-        "old_ids": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "old_quarantine": false,
-        "old_result_closed": false,
-        "old_tombstones": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "phase": [
-          1,
-          9
-        ],
-        "pre_tick": 0,
-        "quarantine": 0,
-        "ready": 0,
-        "receipt": 0,
-        "recognized": 0,
-        "recognized_desc": [
-          0,
-          0
-        ],
-        "recognized_tick": [
-          0,
-          0
-        ],
-        "recognized_view": [
-          0,
-          0
-        ],
-        "reloaded": 0,
-        "result_closed": false,
-        "retry": false,
-        "seen": 0,
-        "submitted": 0,
-        "termination": [
-          0,
-          4
-        ],
-        "tick": 0,
-        "tombstones": [
-          1,
-          0,
-          0,
-          0
-        ],
-        "wallet_desc": [
-          1,
-          1
-        ],
-        "wallet_state": [
-          1,
-          1
-        ],
-        "watched": 0,
-        "worker_ready": 0
-      },
-      "n": 3,
-      "pause": null,
-      "pause_before": null,
-      "proc": 1
-    },
-    {
       "action": "BeforePublish",
       "claim_available": true,
       "claim_state": {
@@ -1732,6 +1532,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1765,7 +1569,7 @@
         ],
         "phase": [
           11,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -1785,13 +1589,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -1832,6 +1641,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1865,7 +1678,7 @@
         ],
         "phase": [
           11,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -1885,13 +1698,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -1911,7 +1729,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 4,
+      "n": 3,
       "pause": "before-publish",
       "pause_before": null,
       "proc": 0
@@ -1938,6 +1756,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -1971,7 +1793,7 @@
         ],
         "phase": [
           12,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -1991,13 +1813,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 1,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2038,6 +1865,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2071,7 +1902,7 @@
         ],
         "phase": [
           12,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2091,13 +1922,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 1,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2117,7 +1953,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 5,
+      "n": 4,
       "pause": "after-publish",
       "pause_before": "before-publish",
       "proc": 0
@@ -2144,6 +1980,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2177,7 +2017,7 @@
         ],
         "phase": [
           1,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2197,13 +2037,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 1,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2244,6 +2089,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2277,7 +2126,7 @@
         ],
         "phase": [
           1,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2297,13 +2146,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 1,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2323,7 +2177,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 6,
+      "n": 5,
       "pause": null,
       "pause_before": "after-publish",
       "proc": 0
@@ -2350,6 +2204,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2383,7 +2241,7 @@
         ],
         "phase": [
           1,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2403,13 +2261,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2450,6 +2313,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2483,7 +2350,7 @@
         ],
         "phase": [
           1,
-          9
+          1
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2503,13 +2370,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
         "seen": 0,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2529,14 +2401,14 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 7,
+      "n": 6,
       "pause": null,
       "pause_before": null,
       "proc": null
     },
     {
       "action": {
-        "Observe": 0
+        "Observe": 1
       },
       "claim_available": true,
       "claim_state": {
@@ -2558,6 +2430,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2590,8 +2466,8 @@
           0
         ],
         "phase": [
-          2,
-          9
+          1,
+          2
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2611,13 +2487,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2658,6 +2539,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2690,8 +2575,8 @@
           0
         ],
         "phase": [
-          2,
-          9
+          1,
+          2
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2711,13 +2596,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2737,10 +2627,10 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 8,
+      "n": 7,
       "pause": "approval-seen",
       "pause_before": null,
-      "proc": 0
+      "proc": 1
     },
     {
       "action": "Fund",
@@ -2764,6 +2654,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2796,8 +2690,8 @@
           0
         ],
         "phase": [
-          2,
-          9
+          1,
+          2
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2817,13 +2711,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2864,6 +2763,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": true,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -2896,8 +2799,8 @@
           0
         ],
         "phase": [
-          2,
-          9
+          1,
+          2
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -2917,13 +2820,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -2943,7 +2851,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 9,
+      "n": 8,
       "pause": null,
       "pause_before": null,
       "proc": null
@@ -2970,6 +2878,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": false,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3002,8 +2914,8 @@
           0
         ],
         "phase": [
-          2,
-          9
+          1,
+          2
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -3023,13 +2935,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -3070,6 +2987,10 @@
         "epoch": 0,
         "foreign": false,
         "funded": true,
+        "heard": [
+          0,
+          0
+        ],
         "identities": [
           1,
           1,
@@ -3102,8 +3023,8 @@
           0
         ],
         "phase": [
-          2,
-          9
+          1,
+          2
         ],
         "pre_tick": 0,
         "quarantine": 0,
@@ -3123,13 +3044,18 @@
           0
         ],
         "reloaded": 0,
+        "restarted": 0,
+        "restore_attest": 0,
+        "restore_cert": 0,
+        "restore_reloaded": 0,
+        "restored": 0,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 2,
         "submitted": 0,
         "termination": [
           0,
-          4
+          0
         ],
         "tick": 0,
         "tombstones": [
@@ -3149,7 +3075,7 @@
         "watched": 0,
         "worker_ready": 0
       },
-      "n": 10,
+      "n": 9,
       "pause": null,
       "pause_before": null,
       "proc": null

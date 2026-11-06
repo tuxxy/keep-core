@@ -424,10 +424,11 @@ func (w *k09World) enterECDSASigning(window uint64) {
 // ECDSA signers sign and broadcast the movement (movingFundsAction). The
 // harness, as SPV maintainer, then mines and proves it. It checks on chain
 // that the commitment names the FROST wallet as the one target and was sent
-// by a node operator, that the drain spends the source's main and pays the
-// wallet's key, and that the Bridge accepted the proof (a pending FROST
-// incoming output). It then logs the K09DRAIN record
-// (test/k09/evidence/README.md) and returns the drain.
+// by a node operator inside the window, that the drain spends the source's
+// main and pays the wallet's key, and that the Bridge accepted the proof (a
+// pending FROST incoming output). It then logs the K09DRAIN record, with the
+// commitment's transaction (test/k09/evidence/README.md), and returns the
+// drain.
 func (w *k09World) nodesDrain(stage string, source legacyWallet, main *bitcoin.UnspentTransactionOutput, wallet b6Wallet, window, began uint64) *bitcoin.Transaction {
 	t := w.t
 	t.Helper()
@@ -465,6 +466,12 @@ func (w *k09World) nodesDrain(stage string, source legacyWallet, main *bitcoin.U
 	if !operator {
 		t.Fatalf("K-09 %s (#40): the drain commitment was sent by %s, not by a node operator", stage, committer.Hex())
 	}
+	// Base's leader commits inside the coordination window (MovingFundsTask
+	// during proposal generation), never before it (review B1: a harness
+	// commitment from an operator's public test key before the window).
+	if commitment.Raw.BlockNumber < window {
+		t.Fatalf("K-09 %s (#40): the drain commitment %s was mined in block %d, before coordination window %d: not base's leader committing in the window", stage, commitment.Raw.TxHash.Hex(), commitment.Raw.BlockNumber, window)
+	}
 	drain, err := w.nodeTransaction(spenders[0])
 	if err != nil {
 		t.Fatalf("K-09 %s (#40): Core does not hold the nodes' drain %s: %v", stage, spenders[0], err)
@@ -484,7 +491,7 @@ func (w *k09World) nodesDrain(stage string, source legacyWallet, main *bitcoin.U
 		t.Fatalf("K-09 %s (#40): after the proven drain %s the Bridge holds no pending FROST incoming output (state %d)", stage, spenders[0], state)
 	}
 	w.phase("node-signed drain mined and its proof accepted")
-	t.Logf("K09DRAIN source=0x%x committer=%s drain=%s", source.pkh, committer.Hex(), drain.Hash().Hex(bitcoin.ReversedByteOrder))
+	t.Logf("K09DRAIN source=0x%x committer=%s commitTx=%s drain=%s", source.pkh, committer.Hex(), commitment.Raw.TxHash.Hex(), drain.Hash().Hex(bitcoin.ReversedByteOrder))
 	return drain
 }
 

@@ -30,14 +30,23 @@ package dkg_test
 // FIXTURES (labelled, test-only): the controlled chain adapter on the K-03
 // chain seam (dkg.Chain, KC-VER VD-06), the authenticated bus, the reload-only
 // engine, the in-memory store fence, and the remote seat's readiness vote.
-// The controlled chain holds the restored monitor's first registry read until
-// the case changes the approval at its boundary. This is an outstanding RPC,
-// not a stale answer (as the V-03 replay harness models a monitor read):
-// nothing in Restore orders the main path after the monitor's first read, so
-// a removal between the restore-time reads and the monitor's first read is a
-// reachable interleaving. Only reads issued from the monitor goroutine
-// ((*Executor).monitor) are held; any other read, including one an
-// implementation makes synchronously in Restore, is answered at once.
+// The controlled chain holds every background registry read (any View call
+// whose stack does not include Executor.Restore, so the monitor's reads
+// whatever its private name) until the case changes the approval at its
+// boundary. This is an outstanding RPC, not a stale answer (as the V-03
+// replay harness models a monitor read): nothing in Restore orders the main
+// path after the monitor's first read, so a removal between the restore-time
+// reads and the monitor's first read is a reachable interleaving. Every read
+// made synchronously under Restore is answered at once.
+//
+// Fallback (review B1, 2026-11-06): an implementation may make Restore's
+// main path wait for the monitor's first read. If a background read is held,
+// the boundary is not yet reached, and the main path has made no chain or bus
+// call for b10Grace, the harness applies the change there instead
+// ("before-first-main-read"), releases the read, and records the fallback.
+// A change case may then end with ErrQuarantined before its boundary; the
+// same assertions 1-4 decide it. Unchanged cases are released without a
+// change and stay strict.
 //
 // A call made with a cancelled context is refused by the fixtures and not
 // counted as an attestation or certificate: a real transactor or libp2p
@@ -104,24 +113,26 @@ func TestRestoredHostQuarantinesOnApprovalChange(t *testing.T) {
 				saved, boundary, change := saved, boundary, change
 				t.Run(fmt.Sprintf("%s/%s/%s", saved, boundary, change), func(t *testing.T) {
 					t.Parallel()
-					got, stored, w := b10Restore(t, saved, boundary, change)
+					r := b10Restore(t, saved, boundary, change)
+					got, stored, w, at := r.outcome, r.stored, r.world, r.at
 					if !errors.Is(got.err, dkg.ErrQuarantined) {
 						t.Errorf("%s: restored host from saved %s did not quarantine after its monitor read the approval %s at %s: Restore returned err=%v, record state=%s quarantined=%t (want ErrQuarantined)",
-							b10Invariant, saved, change, boundary, got.err, got.record.State, got.record.Quarantined)
+							b10Invariant, saved, change, at, got.err, got.record.State, got.record.Quarantined)
 					}
 					if !stored.Quarantined {
 						t.Errorf("%s: saved wallet not quarantined after the approval %s at %s: durable state=%s quarantined=%t",
-							b10Invariant, change, boundary, stored.State, stored.Quarantined)
+							b10Invariant, change, at, stored.State, stored.Quarantined)
 					}
 					read, attestations, certificates := w.chain.after()
 					if len(attestations) != 0 {
 						t.Errorf("%s: restored host sent %d readiness attestation(s) after reading the approval %s at %s (read #%d, sends %v)",
-							b10Invariant, len(attestations), change, boundary, read, attestations)
+							b10Invariant, len(attestations), change, at, read, attestations)
 					}
 					if len(certificates) != 0 {
 						t.Errorf("%s: restored host submitted %d readiness certificate(s) after reading the approval %s at %s (read #%d, submissions %v)",
-							b10Invariant, len(certificates), change, boundary, read, certificates)
+							b10Invariant, len(certificates), change, at, read, certificates)
 					}
+					r.reportHarness(t)
 				})
 			}
 		}
@@ -140,7 +151,8 @@ func TestRestoredHostWithUnchangedApprovalBecomesReady(t *testing.T) {
 			saved, boundary := saved, boundary
 			t.Run(fmt.Sprintf("%s/%s", saved, boundary), func(t *testing.T) {
 				t.Parallel()
-				got, stored, w := b10Restore(t, saved, boundary, b10Unchanged)
+				r := b10Restore(t, saved, boundary, b10Unchanged)
+				got, stored, w := r.outcome, r.stored, r.world
 				if got.err != nil || got.record.State != "ReadyUnfunded" || got.record.Quarantined {
 					t.Errorf("%s: restored host from saved %s with an unchanged approval must reach ReadyUnfunded (monitor released at %s): Restore returned err=%v, record state=%s quarantined=%t",
 						b10Invariant, saved, boundary, got.err, got.record.State, got.record.Quarantined)
@@ -156,6 +168,7 @@ func TestRestoredHostWithUnchangedApprovalBecomesReady(t *testing.T) {
 				if n := w.chain.submissionCount(); n != want {
 					t.Errorf("%s: restored host from saved %s submitted %d readiness certificate(s), want %d", b10Invariant, saved, n, want)
 				}
+				r.reportHarness(t)
 			})
 		}
 	}
@@ -167,11 +180,34 @@ type b10Outcome struct {
 	err    error
 }
 
+// b10Grace is how long the main path may stay silent, with a background read
+// held and the boundary not reached, before the harness falls back to
+// applying the change there (review B1).
+const b10Grace = time.Second
+
+type b10Result struct {
+	outcome b10Outcome
+	stored  dkg.WalletRecord
+	world   *b10World
+	at      string   // where the change was applied
+	harness []string // harness problems, reported after the property checks
+}
+
+// reportHarness reports harness preconditions after the property assertions
+// (review N2), so a wrong implementation fails at a named assertion first.
+func (r b10Result) reportHarness(t *testing.T) {
+	t.Helper()
+	for _, problem := range r.harness {
+		t.Errorf("harness: %s", problem)
+	}
+}
+
 // b10Restore runs the real Executor.Restore from a saved state. At boundary
-// it applies change on the controlled chain, releases the monitor's held read
-// and waits until the monitor has inspected the new view, then lets Restore
-// continue. It returns Restore's outcome and the durable wallet afterwards.
-func b10Restore(t *testing.T, saved, boundary string, change b10Change) (b10Outcome, dkg.WalletRecord, *b10World) {
+// (or at the fallback point, see the file comment) it applies change on the
+// controlled chain, releases the held background reads and waits until the
+// monitor has classified the new view, then lets Restore continue. It returns
+// Restore's outcome, the durable wallet afterwards and any harness problems.
+func b10Restore(t *testing.T, saved, boundary string, change b10Change) b10Result {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
@@ -179,18 +215,18 @@ func b10Restore(t *testing.T, saved, boundary string, change b10Change) (b10Outc
 	journal := w.persist(ctx, t, saved)
 
 	var (
-		harnessMu  sync.Mutex
-		harnessErr error
+		problemsMu sync.Mutex
+		problems   []string
 		reached    atomic.Bool
-		inspected  = make(chan struct{}, 64)
+		fellBack   atomic.Bool
+		applyOnce  sync.Once
 	)
-	harnessFail := func(err error) {
-		harnessMu.Lock()
-		defer harnessMu.Unlock()
-		if harnessErr == nil {
-			harnessErr = err
-		}
+	problem := func(format string, args ...any) {
+		problemsMu.Lock()
+		defer problemsMu.Unlock()
+		problems = append(problems, fmt.Sprintf(format, args...))
 	}
+	apply := func() { applyOnce.Do(func() { w.chain.apply(change) }) }
 	engine := &b10Engine{journal: journal}
 	e := &dkg.Executor{
 		Chain:        w.chain,
@@ -206,24 +242,21 @@ func b10Restore(t *testing.T, saved, boundary string, change b10Change) (b10Outc
 			return nil
 		case "after-monitor-inspect":
 			if w.chain.monitorReadsAfterRelease() > 0 {
-				select {
-				case inspected <- struct{}{}:
-				default:
-				}
+				w.chain.signalClassified()
 			}
 			return nil
-		case boundary:
-			if !reached.CompareAndSwap(false, true) {
-				return nil
-			}
-			// Change the approval, then let the monitor's outstanding read
-			// complete and wait until the monitor has classified it.
-			w.chain.apply(change)
-			select {
-			case <-inspected:
-			case <-time.After(3 * time.Second):
-				harnessFail(fmt.Errorf("harness: the restored monitor did not inspect the %s view within 3 s", change))
-			}
+		}
+		w.chain.touch()
+		if name != boundary || !reached.CompareAndSwap(false, true) {
+			return nil
+		}
+		// Change the approval (once; the fallback may already have), then let
+		// the held read complete and wait until the monitor has classified it.
+		apply()
+		select {
+		case <-w.chain.classified:
+		case <-time.After(3 * time.Second):
+			problem("the restored monitor did not classify the %s view within 3 s", change)
 		}
 		return nil
 	}
@@ -234,35 +267,49 @@ func b10Restore(t *testing.T, saved, boundary string, change b10Change) (b10Outc
 		done <- b10Outcome{status, record, err}
 	}()
 	var got b10Outcome
-	select {
-	case got = <-done:
-	case <-time.After(9 * time.Second):
-		t.Fatalf("harness: Restore did not return within 9 s (boundary %s reached=%t)", boundary, reached.Load())
+	watchdog := time.NewTicker(20 * time.Millisecond)
+	defer watchdog.Stop()
+	deadline := time.After(9 * time.Second)
+wait:
+	for {
+		select {
+		case got = <-done:
+			break wait
+		case <-watchdog.C:
+			if !reached.Load() && !fellBack.Load() && w.chain.heldNow() > 0 && w.chain.silentFor() >= b10Grace {
+				fellBack.Store(true)
+				apply()
+			}
+		case <-deadline:
+			t.Fatalf("harness: Restore did not return within 9 s (boundary %s reached=%t fallback=%t)", boundary, reached.Load(), fellBack.Load())
+		}
 	}
 
-	// Harness preconditions: these are not the property under test.
-	harnessMu.Lock()
-	if harnessErr != nil {
-		t.Fatal(harnessErr)
-	}
-	harnessMu.Unlock()
-	if got.status.State != frost.DKGKeyStored {
-		t.Fatalf("harness: restore status %s, want %s", got.status.State, frost.DKGKeyStored)
-	}
-	if !reached.Load() {
-		t.Fatalf("harness: Restore returned before boundary %s (err=%v)", boundary, got.err)
-	}
-	if w.chain.monitorReadsAfterRelease() == 0 {
-		t.Fatalf("harness: the restored monitor never read the %s view", change)
-	}
-	if engine.reloads.Load() != 1 {
-		t.Fatalf("harness: %d key reloads, want 1", engine.reloads.Load())
+	at := boundary
+	if fellBack.Load() {
+		at = "before-first-main-read (fallback: the main path waited on a held background read)"
 	}
 	stored, err := journal.LoadWallet(context.Background())
 	if err != nil {
 		t.Fatalf("harness: reading the saved wallet: %v", err)
 	}
-	return got, stored, w
+	// Harness preconditions: not the property under test. The caller reports
+	// them after its assertions.
+	if got.status.State != frost.DKGKeyStored {
+		problem("restore status %s, want %s", got.status.State, frost.DKGKeyStored)
+	}
+	if !reached.Load() && (!fellBack.Load() || change == b10Unchanged) {
+		problem("Restore returned before boundary %s (fallback=%t, err=%v)", boundary, fellBack.Load(), got.err)
+	}
+	if w.chain.monitorReadsAfterRelease() == 0 {
+		problem("no background registry read saw the %s view", change)
+	}
+	if reached.Load() && engine.reloads.Load() != 1 {
+		problem("%d key reloads, want 1", engine.reloads.Load())
+	}
+	problemsMu.Lock()
+	defer problemsMu.Unlock()
+	return b10Result{outcome: got, stored: stored, world: w, at: at, harness: append([]string(nil), problems...)}
 }
 
 // ---------------------------------------------------------------------------
@@ -330,7 +377,9 @@ func newB10World(t *testing.T) *b10World {
 			b10Reapproved:         b10Approval(t, w.desc, 12, common.Hash{0xa2}, 1),
 			b10OtherWallet:        b10Approval(t, other, 12, common.Hash{0xa3}, 1),
 		},
-		release: make(chan struct{}),
+		release:    make(chan struct{}),
+		classified: make(chan struct{}),
+		lastMain:   time.Now(),
 	}
 	w.bus = &b10Bus{chain: w.chain, incoming: make(chan dkg.Attestation, 4)}
 	return w
@@ -442,7 +491,11 @@ type b10Chain struct {
 	release      chan struct{}
 	seq          int64
 	changeRead   int64 // sequence of the first read returning the changed view
-	monitorAfter int   // monitor reads after the held read was released
+	monitorAfter int   // background reads after the held reads were released
+	held         int   // background reads currently held
+	lastMain     time.Time
+	classified   chan struct{}
+	classifyOnce sync.Once
 	sends        []int64
 	submissions  []int64
 }
@@ -461,6 +514,30 @@ func (c *b10Chain) apply(change b10Change) {
 	c.released = true
 	close(c.release)
 }
+
+// touch records main-path activity (any call made under Restore).
+func (c *b10Chain) touch() {
+	c.mu.Lock()
+	c.lastMain = time.Now()
+	c.mu.Unlock()
+}
+
+func (c *b10Chain) silentFor() time.Duration {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return time.Since(c.lastMain)
+}
+
+func (c *b10Chain) heldNow() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.held
+}
+
+// signalClassified marks that the monitor has classified a released read: it
+// fired after-monitor-inspect, came back for a second read, or its context
+// was cancelled (it quarantined and aborted Restore).
+func (c *b10Chain) signalClassified() { c.classifyOnce.Do(func() { close(c.classified) }) }
 
 func (c *b10Chain) monitorReadsAfterRelease() int {
 	c.mu.Lock()
@@ -496,21 +573,27 @@ func (c *b10Chain) after() (int64, []int64, []int64) {
 	return c.changeRead, sends, submissions
 }
 
-func calledFromMonitor() bool {
-	pc := make([]uintptr, 32)
+// inBackground reports a registry read made outside Restore's own call stack
+// (the monitor goroutine, whatever its private name). Executor.Restore is the
+// exported entry point under test.
+func inBackground() bool {
+	pc := make([]uintptr, 64)
 	frames := runtime.CallersFrames(pc[:runtime.Callers(2, pc)])
 	for {
 		f, more := frames.Next()
-		if strings.HasSuffix(f.Function, "/pkg/frost/dkg.(*Executor).monitor") {
-			return true
+		if strings.HasSuffix(f.Function, "/pkg/frost/dkg.(*Executor).Restore") {
+			return false
 		}
 		if !more {
-			return false
+			return true
 		}
 	}
 }
 
-func (c *b10Chain) Parameters(context.Context) (dkg.Parameters, error) { return c.params, nil }
+func (c *b10Chain) Parameters(context.Context) (dkg.Parameters, error) {
+	c.touch()
+	return c.params, nil
+}
 func (c *b10Chain) Selection(_ context.Context, epoch uint64) (dkg.Selection, error) {
 	if epoch != c.sel.Epoch {
 		return dkg.Selection{}, errors.New("FIXTURE registry: unknown epoch")
@@ -519,22 +602,37 @@ func (c *b10Chain) Selection(_ context.Context, epoch uint64) (dkg.Selection, er
 }
 
 func (c *b10Chain) View(ctx context.Context, _ uint64) (dkg.View, error) {
-	monitor := calledFromMonitor()
-	if monitor {
+	background := inBackground()
+	if !background {
+		c.touch()
+	} else {
 		c.mu.Lock()
 		release := c.release
+		c.held++
 		c.mu.Unlock()
 		select {
 		case <-release:
 		case <-ctx.Done():
-			return dkg.View{}, ctx.Err()
+		}
+		c.mu.Lock()
+		c.held--
+		c.mu.Unlock()
+		if err := ctx.Err(); err != nil {
+			return dkg.View{}, err
 		}
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	v := c.view
-	if monitor && c.released {
+	if background && c.released {
 		c.monitorAfter++
+		if c.monitorAfter > 1 {
+			go c.signalClassified()
+		}
+		go func() {
+			<-ctx.Done()
+			c.signalClassified()
+		}()
 	}
 	if c.changed {
 		c.seq++
@@ -556,6 +654,7 @@ func (c *b10Chain) Validate(context.Context, uint64, dkg.Result) (bool, error) {
 }
 
 func (c *b10Chain) Ready(ctx context.Context, id [32]byte, seats []uint16, _ [][32]byte, _ []byte) error {
+	c.touch()
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -598,6 +697,7 @@ type b10Bus struct {
 }
 
 func (b *b10Bus) Send(ctx context.Context, a dkg.Attestation) error {
+	b.chain.touch()
 	if err := ctx.Err(); err != nil {
 		return err
 	}

@@ -1,0 +1,59 @@
+{
+  "id": "S-K03-CHAIN-3",
+  "supersedes": "S-K03-CHAIN-2",
+  "subject": {
+    "base": "keep-core tuxxy/integration/snowfall-base 31ab213f39f87085abd812c9e934fabc8ec4a9df (includes #135, fix for #128 / F-V03-R1)",
+    "tooling": "this branch: model (restore seeds approval knowledge; weakening 11; two restore removal boundary traces), replay harness (after-key-reload pass-through on a monitor outcome), check_freshness.py default pins (verification/followup-2026-11-09)",
+    "client_revision": "snowfall c1847ebdf133d0570643ff968539dd498069f69f (go.mod replace ../snowfall/clients/go)",
+    "contracts": "keep-core solidity/ecdsa and test/frost unchanged since 925103a6; tbtc-v2 39412825 solidity/contracts; compiled builds are copies of the S-K03-CHAIN-2 builds of byte-identical sources",
+    "worker_sha256": "d775dc36c508559f1bd997ab2552cea3aed94587540f6307352fec4628400765",
+    "pins": "evidence/source-pins-2026-11-09.json"
+  },
+  "evidence_class": [
+    "finite exhaustive independent model (bounded model checking)",
+    "real source subprocess trace replay (concrete replay)",
+    "real pinned worker/contract Go suites"
+  ],
+  "results": {
+    "P-K03-ONE-DESCRIPTOR": "pass within bound",
+    "P-K03-NO-EARLY-FUNDING": "pass within bound; positive funded witness still excluded (later capability)",
+    "P-K03-READY-ONLY-RELOADED": "pass within bound, including the restore clause (adopted, D29)",
+    "P-K03-INCONSISTENCY-QUARANTINE": "pass within bound on the Run and the restore path (restore clause adopted, D25 (a) and D29); F-V03-R1 fixed by #135; weakening 11 (restore without seeding) breaks it",
+    "P-K03-EXPIRY-TOMBSTONE": "pass within bound",
+    "P-K03-FRESH-EPOCH-DISJOINT": "pass within bound",
+    "P-K03-SUBMITTED-NOT-TERMINAL": "pass within bound"
+  },
+  "guarantees": [
+    "Claim model 10,599,673 unique / 44,895,526 generated states, exhaustive before its 120 s deadline (18.5 s), no claim counterexample",
+    "15 witnesses discovered; 11 weakenings each break their target and nothing else (weakening 11 new: restore without seeding)",
+    "108 traces replay with matching outcomes normally and under -race: 80 full, 28 partial host-loss; 5 weakened traces cut at claim divergence",
+    "Before any tooling change the 108 S-K03-CHAIN-2 traces replayed on 31ab213f: 104 match, 4 diverge, exactly the traces where a restored, non-terminal monitor reads a removed approval (Go now quarantines)",
+    "Real-contract suites (lost seat, expiry/fresh epoch, nine TestSeatRestartAfterKill cases), executor seam units and chain adapter tests pass normally and under -race"
+  ],
+  "bound": "As S-K03-CHAIN-2: EXIT-SCOPE.md plus RESTORE-SCOPE-2026-11-06.md section 2.2 (one restart in total, first epoch; restored-monitor removal read at or after result-deadline height excluded, F-V03-R2); REPIN-2026-11-09.md",
+  "assumptions": [
+    "As S-K03-CHAIN-1: atomic canonical chain views and finality after the configured delay; authenticated honest selected-seat readiness; V-02 provider interface conditional; collision freedom",
+    "Restore read plus local reload is one step (RESTORE-SCOPE 2.3); the authenticated bus is not durable across a process restart",
+    "A monitor outcome reached while the main goroutine is paused at after-key-reload passes before-readiness-collect with durable state unchanged (REPIN-2026-11-09 section 3; checked by the harness)",
+    "Restore clauses adopted by the owner (D25, D29) into the local KC-VER rev 02 amendment; spec pins stay at d45afda"
+  ],
+  "correspondence": "CORRESPONDENCE.md, RESTORE-SCOPE-2026-11-06.md section 2.1 and REPIN-2026-11-09.md section 3",
+  "excluded": [
+    "Positive certified-funded witness and later funding/movement/deposit capability",
+    "Restore of an older epoch's journal after a fresh epoch; a second restart",
+    "Restored monitor reading a removed approval at or after the result-deadline height",
+    "Go or crypto proof; unbounded liveness; physical power/cache loss",
+    "Production policy and qualification"
+  ],
+  "findings": {
+    "F-V03-R1": "fixed by #135 (3a317910); the restore-path claim now passes and its counterexample traces now replay as quarantine",
+    "F-V03-R3": "replay harness correspondence gap (not an implementation or model defect): after-key-reload is followed by before-readiness-collect with no step between; harness now passes that one hook with durable state checked unchanged"
+  },
+  "invalidated_by": [
+    "Any pinned source, tooling, client, worker, contract or specification change",
+    "Chain/finality or readiness policy change",
+    "Owner withdrawing a restore clause"
+  ],
+  "evidence": "/Users/tux/threshold/Research/SNOWFALL/integration-spec-v2/implementation/V-03/repin-2026-11-09/",
+  "review": "none; self-review only"
+}

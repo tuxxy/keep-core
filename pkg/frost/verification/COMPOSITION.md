@@ -1,6 +1,6 @@
 # V-05 incremental composition ledger
 
-Date: 6 November 2026. Basis: KC-SF-V3 revision 01 section 8.3 and KC-VER
+Date: 9 November 2026 (first written 6 November). Basis: KC-SF-V3 revision 01 section 8.3 and KC-VER
 revision 01 V-05, with the section 4 gates of the KC-VER revision 02 draft
 recorded as blockers. This is an open ledger, not a composition safety
 statement. No row is discharged and no production gate is closed. The
@@ -11,7 +11,51 @@ Subject: keep-core `integration/snowfall-base` 925103a6, tbtc-v2
 `integration/frost-base` 39412825, snowfall c1847ebd. Evidence for this
 catch-up: `implementation/V-05/catchup-2026-11-06/`.
 
-## Rows at 925103a6 / 39412825
+## 9 November 2026 update (keep-core 31ab213f)
+
+Subject: keep-core `integration/snowfall-base` `31ab213f` (all eight
+verification PRs and the #128 fix #135 merged on 9 November), tbtc-v2
+`integration/frost-base` 39412825 (unchanged), snowfall c1847ebd. Evidence:
+`implementation/V-05/followup-2026-11-09/`. All rows stay open.
+
+**Slots.** The slots now cite the merged or re-pinned statements, and three
+slots are added (the "pending re-pins" table below is done):
+
+| Slot | Cites | Notes |
+| --- | --- | --- |
+| V-01-store | S-K02-HOST-5 | re-pin of S-K02-HOST-4 at 31ab213f: only `pkg/frost/dkg/executor.go` changed in its manifest (#135, no store call); model results carry over (store SCOPE.md section 14) |
+| V-02-store | S-K03-STORE-4 | re-pin of S-K03-STORE-3, same reason |
+| V-03-chain | S-K03-CHAIN-3 | 7/7 P-K03 pass, including the restore clause of P-K03-INCONSISTENCY-QUARANTINE (F-V03-R1 fixed by #135) |
+| V-04-signing | S-K05-SIGN-5 | supersedes S-K05-SIGN-4; fresh only with the snowfall dependency source extracted (signing README) |
+| V-07-deposit (new) | S-K06-DEPOSIT-1 | needs `--repo kc-ver-02` |
+| V-08-movement (new) | S-K07-MOVEMENT-1 | needs `--repo kc-ver-02` |
+| V-09-enforcement (new) | S-K08-ENFORCE-1 | needs `--repo kc-ver-02` |
+
+**Decisions recorded (tux, 2026-11-09).**
+- V-02 bound: 3 commits (2 with clone). The V-02 gate on rows 2 and 3 is now
+  tied to the V-02 slot; the four-commit runbook is kept.
+- D26: the store keeps its `validDKGRequest` group-policy guard as defence in
+  depth; KC-VER rev 02 overrides VD-05 and V-02 holds with the guard (#77
+  closed).
+- D28: P-K08-DEFENSE-BEFORE-DEADLINE is owned by a separate (future) defender
+  process, as the D17 keeper; the V-09 component result (S-K08-ENFORCE-1) is
+  its evidence. Recorded as the new caller obligation A-K08-DEFENDER-PROCESS.
+- V-07 weakening matrix: skipped for now (30-60 GiB per run); runbook kept
+  (`implementation/K-06/v07-model-2026-11-06/RUNBOOK-exactness.md`). The V-07
+  gate on rows 4 and 7 is tied to the V-07 slot.
+
+**Blockers kept active (no slot).** The V-04 rev 02 predicates and
+containment transition (rows 5, 6, 7); F-V07-1, the D13 side sweep
+(tbtc-v2#24; rows 4, 7); F-V08-1, the escalated incoming output (keep-core#133,
+D27, batch 11; rows 6, 7, 9); V-06 and V-10 as before.
+
+**Row pins.** `pkg/frost/dkg/executor.go` (rows 1 and 2) re-pinned to blob
+`b61a34a8` at 31ab213f; no other row pin changed.
+
+The V-05 command line now also needs
+`--repo kc-ver-02=<FROST-migration-spec-kcver02 checkout at kc-ver-02>`.
+
+## Rows at 925103a6 / 39412825 (6 November; superseded by the 9 November update above)
 
 "Execution" counts pinned run records; "model" counts pinned model records.
 Cited statements are checked by their own component checkers on every run.
@@ -742,3 +786,10 @@ K-04 `e865fd83c`, which carry V-03's executor repairs F-V03-01/02. The changed
 selected blobs are `pkg/frost/dkg/executor.go` (rows 1–3) and the K-05
 redemption sources and named tests (rows 5–7). This commit is rebased onto
 K-04 `e865fd83c`.
+
+## Owners (tux, 2026-11-09)
+
+tux owns all V-05 ledger rows and gate blockers: every row and blocker
+`owner.person` is `tux` with `assignment_status` `assigned` (DECISIONS.md,
+"V-05 owners"). Caller-obligation owners are unchanged (that decision names
+rows and gate blockers only).

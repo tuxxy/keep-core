@@ -54,5 +54,6 @@
     "Owner rejecting a proposed restore clause"
   ],
   "evidence": "/Users/tux/threshold/Research/SNOWFALL/integration-spec-v2/implementation/V-03/repin-2026-11-06/",
-  "review": "none yet; independent review not run in this re-pin"
+  "review": "none yet; independent review not run in this re-pin",
+  "superseded_by": "S-K03-CHAIN-3"
 }

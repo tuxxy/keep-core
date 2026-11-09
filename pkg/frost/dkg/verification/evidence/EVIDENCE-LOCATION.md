@@ -21,3 +21,13 @@ are now the re-pin's model output (the S-K03-CHAIN-1 versions are in git
 history at 925103a6), and `source-pins-2026-11-06.json` and
 `freshness-2026-11-06.json` are its pins and freshness result. The other
 files here belong to S-K03-CHAIN-1.
+
+The 9 November 2026 re-pin (S-K03-CHAIN-3) keeps its full run evidence at
+
+    implementation/V-03/repin-2026-11-09/
+
+`traces/` and `results.json` here are now its model output (the
+S-K03-CHAIN-2 versions are in git history at 31ab213f and retained in
+`implementation/V-03/repin-2026-11-06/traces/`). `source-pins-2026-11-09.json`
+is its pin file; `source-pins-2026-11-06.json` and `freshness-2026-11-06.json`
+stay as S-K03-CHAIN-2 recorded them.

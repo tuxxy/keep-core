@@ -1463,10 +1463,32 @@ func play(t *testing.T, tr trace) map[string]any {
 			w.mu.Unlock()
 			permit <- struct{}{}
 			children[n].wait(t, "monitor-complete", "")
-			if s.Phase[n] == 10 {
-				complete(n, "quarantined")
-			} else if s.Phase[n] == 13 {
-				complete(n, "expired")
+			if s.Phase[n] == 10 || s.Phase[n] == 13 {
+				// The monitor cancels the executor while its main goroutine
+				// is paused; Go reaches the outcome at its next
+				// context-aware step. after-key-reload is followed directly
+				// by before-readiness-collect with no step between, so a
+				// node paused there passes that one hook first, with its
+				// durable state unchanged (REPIN-2026-11-09.md section 3).
+				if c := children[n]; c.last == "after-key-reload" {
+					var paused event
+					for _, e := range c.observed {
+						if e.Kind == "boundary" && e.Boundary == "after-key-reload" {
+							paused = e
+						}
+					}
+					c.goOn(t)
+					e := c.wait(t, "boundary", "before-readiness-collect")
+					hooks["before-readiness-collect"]++
+					if e.Key != paused.Key || e.Reloaded != paused.Reloaded || !reflect.DeepEqual(e.Wallet, paused.Wallet) || !reflect.DeepEqual(e.Status, paused.Status) {
+						t.Fatalf("durable state changed between after-key-reload and before-readiness-collect")
+					}
+				}
+				if s.Phase[n] == 10 {
+					complete(n, "quarantined")
+				} else {
+					complete(n, "expired")
+				}
 			}
 		case "Restart":
 			// Node startup after a kill: fresh per-process gates; bus

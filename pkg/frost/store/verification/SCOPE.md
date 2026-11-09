@@ -554,3 +554,39 @@ Per clause of the V-02 predicate text:
 | RELOAD-ONLY-DURABLE after host crash | pass at 3 commits (`dkg-host-crash`) |
 | Any clause at the KC-VER bound of four commits | **blocked** (projected over 20 GiB) |
 | Fault families combined (for example restore after host crash) | not covered |
+
+## 14. Re-pin at 31ab213f (9 November 2026)
+
+Recorded before the runs of this section. Self-review only. Subject: keep-core
+`tuxxy/integration/snowfall-base` `31ab213f3`, snowfall client `c1847ebdf133`.
+
+### 14.1 Source change since §13
+
+`check-freshness.py` at `31ab213f3` reports S-K02-HOST-4 and S-K03-STORE-3
+stale on one manifest entry only: `pkg/frost/dkg/executor.go` (blob
+`e3242c01b` -> `b61a34a81`, #135, fix for #128). The change adds nine lines
+to `Executor.Restore`: under `e.mu` it increments `approvalGeneration` and
+sets `approvalSeen`, `observedApprovalID` and `observedApprovalHash` from the
+loaded wallet record. These are in-memory monitor fields; the change makes
+no store call and changes no store input. Every other manifest entry, the
+model sources, `Cargo.lock`, the toolchain file and `replay_test.go` are
+unchanged, so the §13 model results carry over unchanged (re-pin rule: model
+sources and toolchain byte-identical). No model or store replay is rerun.
+
+### 14.2 Runs (only what changed)
+
+`go test ./pkg/frost/dkg`, normally and under `-race` (`GOMAXPROCS=4`,
+`-p 1`, 900 s wall), which exercises `Restore` on the real store, including
+the batch 10 tests of #135 (`restore_removal_test.go`). Evidence:
+`implementation/K-03/host-verification-repin-2026-11-09/`.
+
+### 14.3 Decisions recorded (tux, 2026-11-09)
+
+- V-02 bound: 3 commits (2 with clone) is the recorded V-02 bound; the
+  four-commit jobs (31-72 GiB) are not run; `RUNBOOK-4-COMMITS.md` is kept.
+- D26: the `validDKGRequest` group-policy guard stays as defence in depth;
+  KC-VER rev 02 overrides VD-05 (local amendment, D29) and V-02 holds with
+  the guard in place. keep-core#77 is closed.
+
+Statements: S-K02-HOST-5 and S-K03-STORE-4 supersede S-K02-HOST-4 and
+S-K03-STORE-3 with the same results, scope and bound, and the new manifest.

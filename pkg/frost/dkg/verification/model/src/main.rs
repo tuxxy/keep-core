@@ -477,9 +477,10 @@ impl Model for M {
                             quarantine(&mut t, n);
                         }
                     } else if t.chain == 2 && t.restored & (1 << n) != 0 {
-                        // Restored monitor: the durable record knows the approval
-                        // (observation), but the Go guard uses only in-memory
-                        // knowledge, which starts empty: no quarantine.
+                        // Reached only under weakening 11 (restore without
+                        // seeding, the pre-#135 behaviour): the durable record
+                        // knows the approval (observation), but the guard sees
+                        // empty in-memory knowledge: no quarantine.
                         t.inconsistency |= 1 << n;
                     } else if t.chain == 1 && !valid(s) {
                         t.closed = true;
@@ -530,7 +531,13 @@ impl Model for M {
                 // Without a durable key Restore reports the seats lost and stops.
                 if t.key & b != 0 {
                     t.restored |= b;
-                    t.seen &= !b;
+                    // #135: Restore seeds the approval knowledge from the saved
+                    // record before the monitor starts (REPIN-2026-11-09.md).
+                    if self.weak == 11 {
+                        t.seen &= !b;
+                    } else {
+                        t.seen |= b;
+                    }
                     t.watched &= !b;
                     t.monitor_pending &= !b;
                     t.termination[n as usize] = 0;
@@ -747,13 +754,13 @@ fn main() {
     // Claim-model counterexamples are reported as predicate results; a weakened
     // run may rediscover them without failing its own control.
     let mut claim_failures: Vec<&str> = vec![];
-    for weak in 0..=10 {
+    for weak in 0..=11 {
         let m = M { weak };
         let target = match weak {
             1 | 8 => 0,
             2 => 1,
             3 | 4 | 10 => 2,
-            5 => 3,
+            5 | 11 => 3,
             6 => 4,
             7 => 5,
             9 => 6,
@@ -1000,11 +1007,18 @@ fn main() {
             s = M { weak: 0 }.next_state(&s, *a).unwrap();
         }
     }
+    // #135: a restored node paused right after its reload quarantines on a
+    // removed approval (Go passes before-readiness-collect first).
+    let mut reload_removal = restore[..23].to_vec();
+    reload_removal.extend([A::Remove, A::Watch(0)]);
+    trace(&out, "B-RESTORE-RELOAD-REMOVAL", "boundary", P[3], &M { weak: 0 }, &reload_removal);
     let mut removal = restore[..30].to_vec();
-    removal.extend([A::Remove, A::Watch(0), A::Complete(0)]);
+    // #135: the restored node now quarantines on the removal (the restore
+    // counterpart of B-READY-RETURN-MONITOR-QUARANTINE), so it never completes.
+    removal.extend([A::Remove, A::Watch(0)]);
     trace(&out, "B-RESTORE-READY-RETURN-REMOVAL", "boundary", P[3], &M { weak: 0 }, &removal);
     let predicates: Vec<_> = P.iter().map(|p| serde_json::json!({"id":p,"claim_counterexample":claim_failures.contains(p)})).collect();
-    fs::write(format!("{out}/results.json"),serde_json::to_vec_pretty(&serde_json::json!({"tool":"Stateright 0.31.0","bounds":"EXIT-SCOPE.md + RESTORE-SCOPE-2026-11-06.md","timeout_seconds_per_run":120,"runs":runs,"checks_pass":ok,"claim_predicates":predicates})).unwrap()).unwrap();
+    fs::write(format!("{out}/results.json"),serde_json::to_vec_pretty(&serde_json::json!({"tool":"Stateright 0.31.0","bounds":"EXIT-SCOPE.md + RESTORE-SCOPE-2026-11-06.md + REPIN-2026-11-09.md","timeout_seconds_per_run":120,"runs":runs,"checks_pass":ok,"claim_predicates":predicates})).unwrap()).unwrap();
     if !ok {
         std::process::exit(1);
     }

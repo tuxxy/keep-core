@@ -1,6 +1,6 @@
 {
   "format": 3,
-  "date": "2026-11-06",
+  "date": "2026-11-09",
   "claim": "Open incremental records; selected pin matches, fresh cited statements and pinned run records are not complete correspondence, a model result or a discharge",
   "rows": [
     {
@@ -36,9 +36,9 @@
       "consumer_sources": [
         {
           "repository": "keep-core",
-          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "revision": "31ab213f39f87085abd812c9e934fabc8ec4a9df",
           "path": "pkg/frost/dkg/executor.go",
-          "blob": "e3242c01ba1da91bc52062099d5da23298ab75bb"
+          "blob": "b61a34a8125cd8a89f78748ec5a727351b933a96"
         },
         {
           "repository": "keep-core",
@@ -102,8 +102,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "K-03/SF-01 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "V-03 full boundary replay, source correspondence and independent review",
@@ -121,10 +121,10 @@
           "slot": "V-03-chain",
           "owner": {
             "role": "verification lead with the K-03 implementer and the C-02/C-03 owners",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "a fresh V-03 statement at 925103a6; S-K03-CHAIN-1 is stale (re-pin in progress, new ID expected)",
+          "missing": "Clears while S-K03-CHAIN-3 is fresh. At 31ab213f all seven V-03 predicates pass within the bound, including the restore clause of P-K03-INCONSISTENCY-QUARANTINE (F-V03-R1 fixed by #135; D25)",
           "package": "V-03"
         },
         {
@@ -134,8 +134,8 @@
           "slot": null,
           "owner": {
             "role": "cryptographic contract lead with independent specialist review",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
           "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
           "package": "V-06"
@@ -193,9 +193,9 @@
         },
         {
           "repository": "keep-core",
-          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "revision": "31ab213f39f87085abd812c9e934fabc8ec4a9df",
           "path": "pkg/frost/dkg/executor.go",
-          "blob": "e3242c01ba1da91bc52062099d5da23298ab75bb"
+          "blob": "b61a34a8125cd8a89f78748ec5a727351b933a96"
         },
         {
           "repository": "keep-core",
@@ -257,8 +257,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "Storage/K-03/C-03 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Align #10 model/replay tooling and affected source pins",
@@ -272,16 +272,16 @@
       ],
       "blockers": [
         {
-          "gate": "V-02 model and replay at the spec bound on a VD-05 store",
-          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-02 bound; VD-05",
+          "gate": "V-02 model and replay at the recorded V-02 bound",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-02 bound and VD-05 as amended locally for rev 02 (D26, D29; tux 2026-11-09; not pushed)",
           "blocks": "K-03 exit",
-          "slot": null,
+          "slot": "V-02-store",
           "owner": {
             "role": "verification lead with the K-03 implementer",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "S-K03-STORE-2 is cited at a reduced bound (three commits; clone, stale restore and host crash omitted for the P-K03 predicates, review E3); pkg/frost/store/dkg_status.go:74 at 925103a6 still rejects Threshold <= n/2, which VD-05 removes before V-02 runs (review E4)",
+          "missing": "Clears while S-K03-STORE-4 is fresh. Bound: 3 commits (2 with clone), recorded by tux on 2026-11-09 instead of running the 31-72 GiB four-commit jobs (runbook kept: implementation/K-03/host-verification-repin-2026-11-06/RUNBOOK-4-COMMITS.md). D26: the store keeps its validDKGRequest group-policy guard (pkg/frost/store/dkg_status.go) as defence in depth; KC-VER rev 02 overrides VD-05 and V-02 holds with the guard in place (keep-core#77 closed). Fault families stay split, never combined.",
           "package": "V-02"
         },
         {
@@ -291,10 +291,10 @@
           "slot": "V-03-chain",
           "owner": {
             "role": "verification lead with the K-03 implementer and the C-02/C-03 owners",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "a fresh V-03 statement at 925103a6; S-K03-CHAIN-1 is stale (re-pin in progress, new ID expected)",
+          "missing": "Clears while S-K03-CHAIN-3 is fresh. At 31ab213f all seven V-03 predicates pass within the bound, including the restore clause of P-K03-INCONSISTENCY-QUARANTINE (F-V03-R1 fixed by #135; D25)",
           "package": "V-03"
         }
       ]
@@ -399,8 +399,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-01/C-02/C-03 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Finality, reorganization, expiry and readiness correspondence",
@@ -413,16 +413,16 @@
       ],
       "blockers": [
         {
-          "gate": "V-02 model and replay at the spec bound on a VD-05 store",
-          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-02 bound; VD-05",
+          "gate": "V-02 model and replay at the recorded V-02 bound",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-02 bound and VD-05 as amended locally for rev 02 (D26, D29; tux 2026-11-09; not pushed)",
           "blocks": "K-03 exit",
-          "slot": null,
+          "slot": "V-02-store",
           "owner": {
             "role": "verification lead with the K-03 implementer",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "S-K03-STORE-2 is cited at a reduced bound (three commits; clone, stale restore and host crash omitted for the P-K03 predicates, review E3); pkg/frost/store/dkg_status.go:74 at 925103a6 still rejects Threshold <= n/2, which VD-05 removes before V-02 runs (review E4)",
+          "missing": "Clears while S-K03-STORE-4 is fresh. Bound: 3 commits (2 with clone), recorded by tux on 2026-11-09 instead of running the 31-72 GiB four-commit jobs (runbook kept: implementation/K-03/host-verification-repin-2026-11-06/RUNBOOK-4-COMMITS.md). D26: the store keeps its validDKGRequest group-policy guard (pkg/frost/store/dkg_status.go) as defence in depth; KC-VER rev 02 overrides VD-05 and V-02 holds with the guard in place (keep-core#77 closed). Fault families stay split, never combined.",
           "package": "V-02"
         },
         {
@@ -432,10 +432,10 @@
           "slot": "V-03-chain",
           "owner": {
             "role": "verification lead with the K-03 implementer and the C-02/C-03 owners",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "a fresh V-03 statement at 925103a6; S-K03-CHAIN-1 is stale (re-pin in progress, new ID expected)",
+          "missing": "Clears while S-K03-CHAIN-3 is fresh. At 31ab213f all seven V-03 predicates pass within the bound, including the restore clause of P-K03-INCONSISTENCY-QUARANTINE (F-V03-R1 fixed by #135; D25)",
           "package": "V-03"
         },
         {
@@ -445,8 +445,8 @@
           "slot": null,
           "owner": {
             "role": "cryptographic contract lead with independent specialist review",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
           "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
           "package": "V-06"
@@ -622,8 +622,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "Deposit/C-05/C-07/K-06 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "D-04 owner approval and C-07 named P-C07-BIP340/P-C07-TAPTWEAK evidence, exact implementation/bytecode correspondence and specialist qualification remain open",
@@ -635,7 +635,9 @@
         "C05 F6: Reveal currently refuses nonzero rebateStaking; rebate ownership/activation disposition is unresolved C-11 release work. Verifier installation is once-only; replacement needs a reviewed Bridge upgrade. pendingReveals includes refunded/fabricated reveals and is not custody, outstanding rights or retirement evidence",
         "K-09 b9-r2 08-deposit-refund executes sweep and independent refund at tbtc-v2 8a9e9e5a; IFrostFundingBridge.sol changed since (batch 8). V-07 model absent; V-06 named proofs absent"
       ],
-      "statements": [],
+      "statements": [
+        "V-07-deposit"
+      ],
       "blockers": [
         {
           "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
@@ -644,8 +646,8 @@
           "slot": null,
           "owner": {
             "role": "cryptographic contract lead with independent specialist review",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
           "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
           "package": "V-06"
@@ -654,13 +656,26 @@
           "gate": "V-07 model checked; replay",
           "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
           "blocks": "K-06 merge and exit",
+          "slot": "V-07-deposit",
+          "owner": {
+            "role": "verification lead with the K-06 implementer and the C-05 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K06-DEPOSIT-1 is fresh (5/5 P-K06 at the V-07 bound). The \"exactly that predicate\" weakening matrix is skipped for now (tux 2026-11-09, 30-60 GiB per run); its runbook is kept: implementation/K-06/v07-model-2026-11-06/RUNBOOK-exactness.md",
+          "package": "V-07"
+        },
+        {
+          "gate": "P-K06-D13-NO-SIDE-SWEEP (F-V07-1)",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D13; proposed predicate adopted by D29",
+          "blocks": "K-06 exit",
           "slot": null,
           "owner": {
             "role": "verification lead with the K-06 implementer and the C-05 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "V-07 predicates defined in the rev 02 draft; no model or replay exists",
+          "missing": "F-V07-1: the D13 side sweep is still allowed by pkg/frost/deposit and C-05 (the node refuses it); tracked by tbtc-v2#24, tests tbtc-v2#52 and keep-core#105 await review",
           "package": "V-07"
         }
       ]
@@ -957,8 +972,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-04/K-04/K-05 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Local Bridge escrow, admission records, stored-descriptor binding, uint64 intent counters/stateVersion and duplicate-state guard are implemented; canonical finalized Go K-05 provider and full signing correspondence remain open",
@@ -984,10 +999,23 @@
           "slot": "V-04-signing",
           "owner": {
             "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "a fresh V-04 statement at 925103a6; S-K05-SIGN-3 is stale (re-pin in progress, new ID expected). The rev 02 V-04 predicates and the containment transition are not modelled (KC-VER rev 02 draft section 6)",
+          "missing": "Clears while S-K05-SIGN-5 (supersedes S-K05-SIGN-4) is fresh; the rev 02 V-04 predicates are a separate blocker below",
+          "package": "V-04"
+        },
+        {
+          "gate": "V-04 rev 02 predicates and the containment transition",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-05 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "The rev 02 V-04 predicates and the containment transition are not modelled; P-K05-LATE-SIGNATURE-QUARANTINE not cited; A-STORE (#80) not discharged",
           "package": "V-04"
         }
       ]
@@ -1164,8 +1192,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "Signing/Bitcoin/maintainer leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Public K-05/K-07 SPV and maintainer witnesses",
@@ -1175,7 +1203,8 @@
         "K-09 b9-r2 stages 04/05/06/09 execute signed transaction to maintainer proof; realistic-header SPV run absent; V-04 statement stale; V-08 model absent"
       ],
       "statements": [
-        "V-04-signing"
+        "V-04-signing",
+        "V-08-movement"
       ],
       "blockers": [
         {
@@ -1185,23 +1214,49 @@
           "slot": "V-04-signing",
           "owner": {
             "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "a fresh V-04 statement at 925103a6; S-K05-SIGN-3 is stale (re-pin in progress, new ID expected). The rev 02 V-04 predicates and the containment transition are not modelled (KC-VER rev 02 draft section 6)",
+          "missing": "Clears while S-K05-SIGN-5 (supersedes S-K05-SIGN-4) is fresh; the rev 02 V-04 predicates are a separate blocker below",
           "package": "V-04"
         },
         {
           "gate": "V-08 predicates, model, replay",
           "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
           "blocks": "K-07",
+          "slot": "V-08-movement",
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K07-MOVEMENT-1 is fresh (5/5 P-K07, movement and closure profiles separate; no combined profile)",
+          "package": "V-08"
+        },
+        {
+          "gate": "V-04 rev 02 predicates and the containment transition",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-05 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "The rev 02 V-04 predicates and the containment transition are not modelled; P-K05-LATE-SIGNATURE-QUARANTINE not cited; A-STORE (#80) not discharged",
+          "package": "V-04"
+        },
+        {
+          "gate": "F-V08-1 escalated incoming output never swept",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D27",
+          "blocks": "K-07 exit",
           "slot": null,
           "owner": {
             "role": "verification lead with the K-07 implementer and the C-06 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "V-08 predicates defined in the rev 02 draft; no model or replay exists",
+          "missing": "keep-core#133, confirmed P2 defect (D27: nodes sweep an Escalated incoming output as a Pending one); tests-first batch 11, then a V-08 replay of the recovery path",
           "package": "V-08"
         }
       ]
@@ -1623,8 +1678,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-04/C-05/C-06 accounting leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Local funding credit, escrow, captured-input payment/cancellation, shared tombstones, additive deposits and governance quarantine are implemented; required full financial-frame tests/review and source/model correspondence, including V-04 named predicate evidence and combined-provider correspondence, remain open",
@@ -1639,7 +1694,9 @@
         "K-09 b9-r2 stages 04-09 execute credit/settlement once on the happy and timeout paths; no adversarial double-outcome execution; V-04 stale, V-07/V-08 absent"
       ],
       "statements": [
-        "V-04-signing"
+        "V-04-signing",
+        "V-07-deposit",
+        "V-08-movement"
       ],
       "blockers": [
         {
@@ -1649,36 +1706,75 @@
           "slot": "V-04-signing",
           "owner": {
             "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "a fresh V-04 statement at 925103a6; S-K05-SIGN-3 is stale (re-pin in progress, new ID expected). The rev 02 V-04 predicates and the containment transition are not modelled (KC-VER rev 02 draft section 6)",
+          "missing": "Clears while S-K05-SIGN-5 (supersedes S-K05-SIGN-4) is fresh; the rev 02 V-04 predicates are a separate blocker below",
           "package": "V-04"
         },
         {
           "gate": "V-07 model checked; replay",
           "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
           "blocks": "K-06 merge and exit",
-          "slot": null,
+          "slot": "V-07-deposit",
           "owner": {
             "role": "verification lead with the K-06 implementer and the C-05 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "V-07 predicates defined in the rev 02 draft; no model or replay exists",
+          "missing": "Clears while S-K06-DEPOSIT-1 is fresh (5/5 P-K06 at the V-07 bound). The \"exactly that predicate\" weakening matrix is skipped for now (tux 2026-11-09, 30-60 GiB per run); its runbook is kept: implementation/K-06/v07-model-2026-11-06/RUNBOOK-exactness.md",
           "package": "V-07"
         },
         {
           "gate": "V-08 predicates, model, replay",
           "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
           "blocks": "K-07",
+          "slot": "V-08-movement",
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K07-MOVEMENT-1 is fresh (5/5 P-K07, movement and closure profiles separate; no combined profile)",
+          "package": "V-08"
+        },
+        {
+          "gate": "V-04 rev 02 predicates and the containment transition",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-05 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "The rev 02 V-04 predicates and the containment transition are not modelled; P-K05-LATE-SIGNATURE-QUARANTINE not cited; A-STORE (#80) not discharged",
+          "package": "V-04"
+        },
+        {
+          "gate": "P-K06-D13-NO-SIDE-SWEEP (F-V07-1)",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D13; proposed predicate adopted by D29",
+          "blocks": "K-06 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-06 implementer and the C-05 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "F-V07-1: the D13 side sweep is still allowed by pkg/frost/deposit and C-05 (the node refuses it); tracked by tbtc-v2#24, tests tbtc-v2#52 and keep-core#105 await review",
+          "package": "V-07"
+        },
+        {
+          "gate": "F-V08-1 escalated incoming output never swept",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D27",
+          "blocks": "K-07 exit",
           "slot": null,
           "owner": {
             "role": "verification lead with the K-07 implementer and the C-06 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "V-08 predicates defined in the rev 02 draft; no model or replay exists",
+          "missing": "keep-core#133, confirmed P2 defect (D27: nodes sweep an Escalated incoming output as a Pending one); tests-first batch 11, then a V-08 replay of the recovery path",
           "package": "V-08"
         }
       ]
@@ -1809,8 +1905,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-07/C-08 enforcement leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Draft C-07 verifier and retained local C-04 authorization/quarantine records are implemented; canonical C-08 public challenge/defense/timeout consumer remains absent (superseded 2026-11-06: C-08 FrostFraud/FrostFraudDispatch and the K-08 defender are now pinned consumers; their qualification remains open)",
@@ -1821,7 +1917,9 @@
         "C05 F6: Shared spent identities also reach legacy fraud defense; verify the intended cross-scheme defense correspondence, not an invented scheme-separation production change",
         "C-08 FrostFraud admission/defense and the K-08 defender exist and are now pinned; K-09 b9-r2 has no fraud admission/defense/timeout stage; V-06 and V-09 absent"
       ],
-      "statements": [],
+      "statements": [
+        "V-09-enforcement"
+      ],
       "blockers": [
         {
           "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
@@ -1830,8 +1928,8 @@
           "slot": null,
           "owner": {
             "role": "cryptographic contract lead with independent specialist review",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
           "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
           "package": "V-06"
@@ -1840,13 +1938,13 @@
           "gate": "V-09 predicates, model, replay",
           "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
           "blocks": "K-08",
-          "slot": null,
+          "slot": "V-09-enforcement",
           "owner": {
             "role": "verification lead with the K-08 implementer and the C-08 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "V-09 predicates defined in the rev 02 draft; no model or replay exists (pkg/frost/enforcement/verification holds boundaries and pins only)",
+          "missing": "Clears while S-K08-ENFORCE-1 is fresh (HEARTBEAT-DOMAIN, EVIDENCE-RETAINED, NO-SUSPECT-SANCTION pass). P-K08-DEFENSE-BEFORE-DEADLINE is owned by a separate (future) defender process (D28), recorded as caller obligation A-K08-DEFENDER-PROCESS with the V-09 component result as its evidence",
           "package": "V-09"
         }
       ]
@@ -1943,8 +2041,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-09/K-12 lifecycle/operations leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Funded closure, Bitcoin custody and archive inventory absent",
@@ -1954,19 +2052,21 @@
         "K-09 b9-r2 11-cutover-closure executes closure of a legacy source and an empty FROST wallet; tbtc-v2 K09 LegacyObligations/CutoverInvariants are sources without a retained run at 39412825; K-12 Bitcoin/archive inventory absent",
         "6 November addendum: tbtc-v2 K09 contract tests executed at 39412825 (35 passing) and pinned as execution evidence; this is concrete testing of the contracts, not the K-12 Bitcoin/archive inventory or deployed-state correspondence"
       ],
-      "statements": [],
+      "statements": [
+        "V-08-movement"
+      ],
       "blockers": [
         {
           "gate": "V-08 predicates, model, replay",
           "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
           "blocks": "K-07",
-          "slot": null,
+          "slot": "V-08-movement",
           "owner": {
             "role": "verification lead with the K-07 implementer and the C-06 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
-          "missing": "V-08 predicates defined in the rev 02 draft; no model or replay exists",
+          "missing": "Clears while S-K07-MOVEMENT-1 is fresh (5/5 P-K07, movement and closure profiles separate; no combined profile)",
           "package": "V-08"
         },
         {
@@ -1976,11 +2076,24 @@
           "slot": null,
           "owner": {
             "role": "verification lead with the release commander and the C-10 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
           "missing": "V-10 predicates defined in the rev 02 draft; no model or replay exists",
           "package": "V-10"
+        },
+        {
+          "gate": "F-V08-1 escalated incoming output never swept",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D27",
+          "blocks": "K-07 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "keep-core#133, confirmed P2 defect (D27: nodes sweep an Escalated incoming output as a Pending one); tests-first batch 11, then a V-08 replay of the recovery path",
+          "package": "V-08"
         }
       ]
     },
@@ -2097,8 +2210,8 @@
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-11/K-10 release/governance leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Exact release, layout, runtime/fence and deployed-state records absent",
@@ -2116,8 +2229,8 @@
           "slot": null,
           "owner": {
             "role": "verification lead with the release commander and the C-10 owner",
-            "person": null,
-            "assignment_status": "open"
+            "person": "tux",
+            "assignment_status": "assigned"
           },
           "missing": "V-10 predicates defined in the rev 02 draft; no model or replay exists",
           "package": "V-10"
@@ -2704,6 +2817,36 @@
         "approved_deadline": null
       },
       "disposition": "Unchanged since review L2: keep-core FrostCurve.validX (C-02) and its byte-identical Bridge copy, plus the separate FrostSecp256k1.lift (C-07). V-06 not started"
+    },
+    {
+      "id": "A-K08-DEFENDER-PROCESS",
+      "evidence": [
+        {
+          "repository": "keep-core",
+          "revision": "31ab213f39f87085abd812c9e934fabc8ec4a9df",
+          "path": "pkg/frost/enforcement/verification/STATEMENTS.json",
+          "blob": "cfdf9ce0bf5afc4e5f6b7876ccdeeb8b6cbf9e6e",
+          "evidence_kind": "source",
+          "scope": "A-K08-DEFENDER-PROCESS: S-K08-ENFORCE-1, the V-09 component model and replay of enforcement.Defender (P-K08-DEFENSE-BEFORE-DEADLINE passes at component scope; no node path calls the defender)"
+        }
+      ],
+      "requirement": "A separate defender process, as the D17 keeper, submits the exact FROST fraud defense before the challenge deadline (P-K08-DEFENSE-BEFORE-DEADLINE); the node stays as base and has no defense duty (F4)",
+      "status": "open",
+      "statements": [
+        "V-09-enforcement"
+      ],
+      "owner": {
+        "role": "operator of the separate (future) defender process, as the D17 keeper (D28)",
+        "person": null,
+        "assignment_status": "open"
+      },
+      "monitoring_escalation": {
+        "status": "proposed; approval pending",
+        "policy": "Process not built; until it runs, an unanswered challenge is a missed defense; the V-09 component result is its evidence and must stay fresh",
+        "named_monitor": null,
+        "approved_deadline": null
+      },
+      "disposition": "D28 (tux 2026-11-09): P-K08-DEFENSE-BEFORE-DEADLINE stays in KC-VER rev 02, owned by a separate future defender process; no dev change; V-09 component result (S-K08-ENFORCE-1) is the evidence"
     }
   ],
   "specifications": [
@@ -2733,7 +2876,7 @@
   "subject_heads": {
     "keep-core": {
       "branch": "integration/snowfall-base",
-      "head": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f"
+      "head": "31ab213f39f87085abd812c9e934fabc8ec4a9df"
     },
     "tbtc-v2": {
       "branch": "integration/frost-base",
@@ -2748,7 +2891,7 @@
     {
       "slot": "V-01-store",
       "component": "V-01",
-      "id": "S-K02-HOST-3",
+      "id": "S-K02-HOST-5",
       "predicates": [
         "P-K02-OWNER",
         "P-K02-TERMINAL",
@@ -2768,7 +2911,7 @@
     {
       "slot": "V-02-store",
       "component": "V-02",
-      "id": "S-K03-STORE-2",
+      "id": "S-K03-STORE-4",
       "predicates": [
         "P-K03-NO-LATE-KEY",
         "P-K03-SEATSLOST-TERMINAL",
@@ -2787,12 +2930,13 @@
     {
       "slot": "V-03-chain",
       "component": "V-03",
-      "id": "S-K03-CHAIN-1",
+      "id": "S-K03-CHAIN-3",
       "predicates": [
         "P-K03-ONE-DESCRIPTOR",
         "P-K03-SUBMITTED-NOT-TERMINAL",
         "P-K03-EXPIRY-TOMBSTONE",
-        "P-K03-READY-ONLY-RELOADED"
+        "P-K03-READY-ONLY-RELOADED",
+        "P-K03-INCONSISTENCY-QUARANTINE"
       ],
       "checker": {
         "kind": "statement-file",
@@ -2810,7 +2954,7 @@
     {
       "slot": "V-04-signing",
       "component": "V-04",
-      "id": "S-K05-SIGN-3",
+      "id": "S-K05-SIGN-5",
       "predicates": [
         "P-K04-AUTHORIZED-ONLY",
         "P-K05-TERMINAL-ATTEMPT",
@@ -2831,6 +2975,83 @@
           "evidence:implementation/V-04/*/{id}.json",
           "keep-core:pkg/frost/signing/verification/{id}.json"
         ]
+      }
+    },
+    {
+      "slot": "V-07-deposit",
+      "component": "V-07",
+      "id": "S-K06-DEPOSIT-1",
+      "predicates": [
+        "P-K06-SWEEP-AUTHORIZED-ONLY",
+        "P-K06-ONE-MAIN-PURPOSE",
+        "P-K06-REFUND-RACE",
+        "P-K06-CREDIT-ONCE",
+        "P-K06-TERMINAL-SWEEP-ATTEMPT"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/deposit/verification/check-freshness.py",
+        "args": [
+          "--repo",
+          "tbtc-v2={repo:tbtc-v2}",
+          "--repo",
+          "spec={repo:kc-ver-02}"
+        ]
+      },
+      "statement": {
+        "file": "pkg/frost/deposit/verification/STATEMENTS.json"
+      }
+    },
+    {
+      "slot": "V-08-movement",
+      "component": "V-08",
+      "id": "S-K07-MOVEMENT-1",
+      "predicates": [
+        "P-K07-COMMITTED-TARGET-ONLY",
+        "P-K07-INCOMING-ONCE",
+        "P-K07-NO-STRANDED-MOVEMENT",
+        "P-K07-CLOSE-ONLY-WHEN-CLEAR",
+        "P-K07-SIGNER-RETENTION"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/movement/verification/check-freshness.py",
+        "args": [
+          "--repo",
+          "tbtc-v2={repo:tbtc-v2}",
+          "--repo",
+          "spec-kcver02={repo:kc-ver-02}"
+        ]
+      },
+      "statement": {
+        "file": "pkg/frost/movement/verification/STATEMENTS.json"
+      }
+    },
+    {
+      "slot": "V-09-enforcement",
+      "component": "V-09",
+      "id": "S-K08-ENFORCE-1",
+      "predicates": [
+        "P-K08-HEARTBEAT-DOMAIN",
+        "P-K08-EVIDENCE-RETAINED",
+        "P-K08-NO-SUSPECT-SANCTION",
+        "P-K08-DEFENSE-BEFORE-DEADLINE"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/enforcement/verification/check-freshness.py",
+        "args": [
+          "--repo",
+          "tbtc-v2={repo:tbtc-v2}",
+          "--repo",
+          "kc-ver-02={repo:kc-ver-02}"
+        ]
+      },
+      "statement": {
+        "file": "pkg/frost/enforcement/verification/STATEMENTS.json"
       }
     }
   ],

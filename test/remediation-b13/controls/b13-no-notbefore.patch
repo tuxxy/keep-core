@@ -1,0 +1,20 @@
+diff --git a/pkg/chain/ethereum/frost_node.go b/pkg/chain/ethereum/frost_node.go
+index bd5f7e97f..a97db06bd 100644
+--- a/pkg/chain/ethereum/frost_node.go
++++ b/pkg/chain/ethereum/frost_node.go
+@@ -153,6 +153,15 @@ func (tc *TbtcChain) PendingFrostRedemptions(
+ 			request.WalletID != wallet {
+ 			continue
+ 		}
++		// CONTROL b13-no-notbefore (wrong): the deadline and the members'
++		// margin at the head's timestamp, but not NotBefore.
++		now, err := bridge.Timestamp(ctx, head)
++		if err != nil {
++			return nil, err
++		}
++		if request.Deadline <= now || request.Deadline-now < 600 {
++			continue
++		}
+ 		scripts = append(scripts, bitcoin.Script(request.Script))
+ 	}
+ 	return scripts, nil

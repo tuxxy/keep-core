@@ -1,0 +1,16 @@
+diff --git a/pkg/frost/redemption/planner.go b/pkg/frost/redemption/planner.go
+index f698114c0..fd6f1e1f0 100644
+--- a/pkg/frost/redemption/planner.go
++++ b/pkg/frost/redemption/planner.go
+@@ -151,7 +151,10 @@ func (p Planner) redeemable(ctx context.Context, at uint64, id [32]byte) (Reques
+ 	if err != nil {
+ 		return r, err
+ 	}
+-	if r.State != RequestRequested || r.ReservationID != ([32]byte{}) || r.WalletID != walletID || r.DescriptorHash != descriptorHash || bytes.Equal(r.Script, change) || now < r.NotBefore || r.Deadline <= now || r.Deadline-now < p.DeadlineMargin {
++	if r.State != RequestRequested || r.ReservationID != ([32]byte{}) || r.WalletID != walletID || r.DescriptorHash != descriptorHash || bytes.Equal(r.Script, change) {
++		// CONTROL b13-follower-weakened (wrong direction): the follower drops
++		// NotBefore and the deadline checks to match the base leader.
++		_ = now
+ 		return r, ErrNotRedeemable
+ 	}
+ 	return r, nil

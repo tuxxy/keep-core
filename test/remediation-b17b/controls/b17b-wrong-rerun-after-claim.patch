@@ -1,0 +1,49 @@
+diff --git a/pkg/tbtc/frost_node.go b/pkg/tbtc/frost_node.go
+index cdd977db9..f98a018db 100644
+--- a/pkg/tbtc/frost_node.go
++++ b/pkg/tbtc/frost_node.go
+@@ -656,9 +656,9 @@ func (fn *frostNode) executeDKG(
+ 	epoch := selection.Epoch
+ 	epochLogger := logger.With(zap.Uint64("frostEpoch", epoch))
+ 
+-	started := false
++	succeeded := false
+ 	defer func() {
+-		if !started {
++		if !succeeded {
+ 			fn.unclaimEpoch(epoch)
+ 		}
+ 	}()
+@@ -707,7 +707,6 @@ func (fn *frostNode) executeDKG(
+ 
+ 	epochLogger.Infof("joining FROST DKG with seats [%v]", locals)
+ 
+-	started = true
+ 	record, err := ExecuteFrostDKG(dkgCtx, &dkg.Executor{
+ 		Chain:   fn.registry,
+ 		Engine:  engine,
+@@ -731,8 +730,12 @@ func (fn *frostNode) executeDKG(
+ 	})
+ 	if err != nil {
+ 		epochLogger.Errorf("FROST DKG failed: [%v]", err)
++		if _, again := frostRerun.LoadOrStore(frostRerunKey{fn, epoch}, true); !again {
++			go fn.executeDKG(ctx, selection, locals, journal)
++		}
+ 		return
+ 	}
++	succeeded = true
+ 
+ 	fn.addWallet(epoch, journal, record)
+ }
+@@ -1007,3 +1010,11 @@ func (fsb *frostSigningBitcoin) Broadcast(_ context.Context, raw []byte) error {
+ 	}
+ 	return fsb.chain.BroadcastTransaction(transaction)
+ }
++
++// frostRerun: CONTROL ONLY (wrong fix), the epochs already rerun once.
++var frostRerun sync.Map
++
++type frostRerunKey struct {
++	fn    *frostNode
++	epoch uint64
++}

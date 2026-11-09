@@ -15,7 +15,14 @@ package evidence
 //     GOMODCACHE, GOPATH, GOFLAGS, GOTOOLCHAIN, GOWORK);
 //   - repos.snowfall (#35): is absent, or is not environment.SNOWFALL_COMMIT;
 //   - stages[].leftoverKilled (#30): is absent from any stage;
-// and accepts the evidence a correct run leaves (positive case).
+// and accepts the evidence a correct run leaves (positive case). An error
+// line of the check must name the field (or the file or variable at fault)
+// on its first line, the line go test prefixes with "<file>_test.go:<n>: ".
+//
+// Where the fix goes (coordinator decision 1, 2026-11-10): a new file,
+// test/k09/evidence/runrecords_test.go, as TestK09EvidenceRunRecords; the
+// frozen evidence_test.go stays unchanged. Any TestK09Evidence<...> function
+// but TestK09EvidenceControls is run, so that shape passes.
 //
 // Kind: e2e of the checker (each case re-runs this package's test binary as a
 // subprocess on a SYNTHETIC evidence directory: FIXTURE, no K-09 run made it;
@@ -205,6 +212,17 @@ var b17cCases = []b17cCase{
 		edit: func(m map[string]any, _ string) {
 			m["files"].(map[string]any)["ghost.log"] = sha256Hex([]byte("ghost"))
 		}},
+	// A file the inventory does not hash outside the top level and outside
+	// nodes/, which #41 already covers (review N-n7a).
+	{name: "files-unlisted-subdir", words: []string{"extra/stray.txt"},
+		edit: func(m map[string]any, dir string) {
+			if err := os.MkdirAll(filepath.Join(dir, "extra"), 0o755); err != nil {
+				panic(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "extra", "stray.txt"), []byte("FIXTURE stray\n"), 0o644); err != nil {
+				panic(err)
+			}
+		}},
 	// tbtc-v2#19: manifest.environment.
 	{name: "environment-absent", words: []string{"environment"},
 		edit: func(m map[string]any, _ string) { delete(m, "environment") }},
@@ -215,6 +233,10 @@ var b17cCases = []b17cCase{
 		edit: func(m map[string]any, _ string) {
 			m["environment"].(map[string]any)["DYLD_INSERT_LIBRARIES"] = "/fixture/inject.dylib"
 		}},
+	// A Go setting run.sh does not pass: the allowlist is by name, not by
+	// prefix (review N-n7a).
+	{name: "environment-extra-go-variable", words: []string{"GODEBUG"},
+		edit: func(m map[string]any, _ string) { m["environment"].(map[string]any)["GODEBUG"] = "asyncpreemptoff=1" }},
 	// #35: manifest.repos.snowfall.
 	{name: "repos-absent", words: []string{"snowfall"},
 		edit: func(m map[string]any, _ string) { delete(m, "repos") }},

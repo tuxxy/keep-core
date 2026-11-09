@@ -1,11 +1,24 @@
-diff --git a/test/k09/evidence/evidence_test.go b/test/k09/evidence/evidence_test.go
-index 4ec9554a5..4bafb365e 100644
---- a/test/k09/evidence/evidence_test.go
-+++ b/test/k09/evidence/evidence_test.go
-@@ -540,6 +540,87 @@ func checkDrainSigners(m *manifest, evidence string) []string {
- 	return problems
- }
- 
+diff --git a/test/k09/evidence/runrecords_test.go b/test/k09/evidence/runrecords_test.go
+new file mode 100644
+index 000000000..c67f50c8f
+--- /dev/null
++++ b/test/k09/evidence/runrecords_test.go
+@@ -0,0 +1,104 @@
++package evidence
++
++// REFERENCE FIX (batch 17c control n7-fix, not for merge): the run.sh records
++// of #30, #35, #36 and tbtc-v2#19 are present and true of the evidence
++// (review N7). Decision 1: a new file and TestK09EvidenceRunRecords;
++// evidence_test.go is untouched.
++
++import (
++	"encoding/json"
++	"fmt"
++	"os"
++	"path/filepath"
++	"testing"
++)
++
 +// runAllowlist is run.sh's environment allowlist (tbtc-v2#19): its inputs,
 +// PATH, HOME, TMPDIR, the Go caches and the Go settings it fixes.
 +var runAllowlist = map[string]bool{
@@ -16,8 +29,6 @@ index 4ec9554a5..4bafb365e 100644
 +	"GOCACHE": true, "GOMODCACHE": true, "GOPATH": true, "GOFLAGS": true, "GOTOOLCHAIN": true, "GOWORK": true,
 +}
 +
-+// checkRunRecords (review N7): the run.sh records of #30, #35, #36 and
-+// tbtc-v2#19 are present and true of the evidence.
 +func checkRunRecords(evidence string) []string {
 +	const tag = "K-09 N7"
 +	raw, err := os.ReadFile(filepath.Join(evidence, "manifest.json"))
@@ -87,12 +98,13 @@ index 4ec9554a5..4bafb365e 100644
 +	return problems
 +}
 +
- // TestK09Evidence checks a finished K-09 run's evidence directory
- // (K09_EVIDENCE) for the three batch-9 gaps. A missing variable is a
- // failure, not a skip (as test/k09/run.sh treats its inputs).
-@@ -565,4 +646,5 @@ func TestK09Evidence(t *testing.T) {
- 	t.Run("22-ecdsa-build", func(t *testing.T) { report(t, checkEcdsaBuild(m, repo)) })
- 	t.Run("41-node-log-hashes", func(t *testing.T) { report(t, checkNodeLogs(m, evidence)) })
- 	t.Run("40-drain-signers", func(t *testing.T) { report(t, checkDrainSigners(m, evidence)) })
-+	t.Run("n7-run-records", func(t *testing.T) { report(t, checkRunRecords(evidence)) })
- }
++// TestK09EvidenceRunRecords checks K09_EVIDENCE's run.sh records (review N7).
++func TestK09EvidenceRunRecords(t *testing.T) {
++	evidence := os.Getenv("K09_EVIDENCE")
++	if evidence == "" {
++		t.Fatal("K09_EVIDENCE (a K-09 run's evidence directory) is required")
++	}
++	for _, p := range checkRunRecords(evidence) {
++		t.Error(p)
++	}
++}

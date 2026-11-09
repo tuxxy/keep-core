@@ -1,9 +1,9 @@
 diff --git a/test/k09/controls/run-probe.sh b/test/k09/controls/run-probe.sh
-new file mode 100755
-index 000000000..974db39d4
+new file mode 100644
+index 000000000..cea1cbe21
 --- /dev/null
 +++ b/test/k09/controls/run-probe.sh
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,100 @@
 +#!/usr/bin/env bash
 +# K-09 wrong-behaviour probe, bound to a head (tuxxy/keep-core#60). Runs one
 +# probe patch (README.md here) on an export of HEAD, never on the checkout,
@@ -18,9 +18,10 @@ index 000000000..974db39d4
 +# settings.
 +#
 +# The record (<dir>/probe.json): head and clean; patch {path, sha256};
-+# testFiles (SHA-256 of every pkg/tbtc/k09_* file at head); stage; log and
-+# logSha256 (<dir>/probe.log); exit; failure (the stage's failing test-file
-+# lines). A probe that does not fail at <stage> records no failure and exits 1.
++# testFiles (SHA-256 of every pkg/tbtc/k09_* file at head); repos.snowfall
++# (the exported SNOWFALL_COMMIT); stage; log and logSha256 (<dir>/probe.log);
++# exit; failure (the stage's failing test-file lines). The patch is copied
++# into the record (<dir>/probe.patch). A probe that does not fail at <stage> records no failure and exits 1.
 +set -euo pipefail
 +patch_arg=${1:?patch required}
 +stage=${2:?stage required}
@@ -33,7 +34,7 @@ index 000000000..974db39d4
 +  echo "$record exists: probe records are never overwritten" >&2
 +  exit 2
 +fi
-+: "${SNOWFALL_COMMIT:?SNOWFALL_COMMIT required}"
++: "${SNOWFALL_COMMIT:?SNOWFALL_COMMIT required}" "${K09_ECDSA_NODE_MODULES:?K09_ECDSA_NODE_MODULES required}"
 +kc_root=$(cd "$(dirname "$0")/../../.." && pwd)
 +cd "$kc_root"
 +head=$(git rev-parse HEAD)
@@ -43,7 +44,7 @@ index 000000000..974db39d4
 +[ -n "$snowfall_commit" ] || { echo "../snowfall has no SNOWFALL_COMMIT $SNOWFALL_COMMIT" >&2; exit 2; }
 +
 +run_env=(PATH="$PATH" HOME="$HOME")
-+for v in TMPDIR SNOWFALL_WORKER SNOWFALL_WORKER_SHA256 SNOWFALL_COMMIT LEGACY_BASELINE_DIR LEGACY_TBTC_REPO LEGACY_ANVIL LEGACY_BITCOIND LEGACY_BITCOIND_SHA256 LEGACY_UPGRADED_DIR LEGACY_UPGRADED_COMMIT GOCACHE GOMODCACHE GOPATH; do
++for v in TMPDIR SNOWFALL_WORKER SNOWFALL_WORKER_SHA256 SNOWFALL_COMMIT LEGACY_BASELINE_DIR LEGACY_TBTC_REPO LEGACY_ANVIL LEGACY_BITCOIND LEGACY_BITCOIND_SHA256 LEGACY_UPGRADED_DIR LEGACY_UPGRADED_COMMIT K09_ECDSA_NODE_MODULES GOCACHE GOMODCACHE GOPATH; do
 +  [ -z "${!v:-}" ] || run_env+=("$v=${!v}")
 +done
 +run_env+=(GOFLAGS= GOTOOLCHAIN=local GOWORK=off GOMAXPROCS=2)
@@ -54,17 +55,23 @@ index 000000000..974db39d4
 +git archive --format=tar HEAD | tar -x -C "$scratch/keep-core"
 +git -C "$snowfall" archive --format=tar "$snowfall_commit" | tar -x -C "$scratch/snowfall"
 +(cd "$scratch/keep-core" && git apply "$patch") || { echo "the patch does not apply at $head" >&2; exit 2; }
++# The world reads solidity/ecdsa/build next to its source: build it in the
++# export, as run.sh does.
++ln -s "$K09_ECDSA_NODE_MODULES" "$scratch/keep-core/solidity/ecdsa/node_modules"
++(cd "$scratch/keep-core/solidity/ecdsa" && env -i "${run_env[@]}" NODE_OPTIONS=--max-old-space-size=8192 npx hardhat compile) > "$scratch/ecdsa-build.log" 2>&1 \
++  || { echo "solidity/ecdsa build failed" >&2; tail -20 "$scratch/ecdsa-build.log" >&2; exit 2; }
 +
 +mkdir -p "$record"
 +record=$(cd "$record" && pwd)
++cp "$patch" "$record/probe.patch"
 +num=${stage%%-*}
 +status=0
 +(cd "$scratch/keep-core" && env -i "${run_env[@]}" go test -count=1 -timeout 14m -v \
 +  -run "^TestK09Lifecycle\$/^(0[1-6]|$num)-" ./pkg/tbtc) > "$record/probe.log" 2>&1 || status=$?
 +
-+python3 - "$record" "$kc_root" "$head" "$patch" "$stage" "$status" <<'EOF'
++python3 - "$record" "$kc_root" "$head" "$patch" "$stage" "$status" "$snowfall_commit" <<'EOF'
 +import hashlib, json, os, re, subprocess, sys
-+record, root, head, patch, stage, status = sys.argv[1:7]
++record, root, head, patch, stage, status, snowfall = sys.argv[1:8]
 +def sha(b):
 +    return hashlib.sha256(b).hexdigest()
 +def git(*args):
@@ -84,7 +91,8 @@ index 000000000..974db39d4
 +rel = os.path.relpath(patch, root)
 +out = {
 +    "head": head, "clean": True,
-+    "patch": {"path": rel if not rel.startswith("..") else patch, "sha256": sha(open(patch, "rb").read())},
++    "patch": {"path": rel if not rel.startswith("..") else patch, "sha256": sha(open(patch, "rb").read()), "copy": "probe.patch"},
++    "repos": {"snowfall": snowfall},
 +    "testFiles": {os.path.basename(n): sha(git("cat-file", "blob", head + ":" + n)) for n in sorted(names)},
 +    "stage": stage, "log": "probe.log", "logSha256": sha(log), "exit": int(status),
 +    "failure": failure,

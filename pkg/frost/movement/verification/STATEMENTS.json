@@ -1,0 +1,123 @@
+{
+  "S-K07-MOVEMENT-1": {
+    "scope": "KC-VER rev 02 V-08 (P-K07-COMMITTED-TARGET-ONLY, -INCOMING-ONCE, -NO-STRANDED-MOVEMENT, -CLOSE-ONLY-WHEN-CLEAR, -SIGNER-RETENTION) at keep-core 925103a6 and tbtc-v2 39412825: bounded model checking in two profiles at the full V-08 bound (S, T plus alternative A; two moved outputs; three ticks): movement 1,805,412 states, closure 14,341,294 states, both exhaustive before the deadline, no safety counterexample, every KC-VER witness found, every declared weakening breaks its predicate. Concrete replay of 17 traces on the real K-07 host code (5 full, 12 partial, 1 probe skipped), normal and -race. Cross-profile interleavings are not explored. The proposed witness W-escalated-only-recovered is unreachable (finding F-V08-1, implementation defect candidate). Self-review only.",
+    "evidence": "implementation/K-07/v08-model-2026-11-06/",
+    "class": "bounded model checking plus concrete replay/tests",
+    "bound": {
+      "wallets": "source S, committed target T, alternative target A",
+      "moved_outputs": 2,
+      "ticks": 3,
+      "host_processes": 1,
+      "faults": "process crash, host crash, stale restore (quarantine) at every host boundary"
+    },
+    "assumptions": [
+      "A-V08-1 every K-07 durable write is a V-01 store commit (synced before acknowledgement); a host crash loses only volatile state (V-01 S-K02-HOST-4)",
+      "A-V08-2 a stale store image is detected by the V-01 fence and quarantines until operator reconciliation (V-01 P-K02-DURABLE, A-09)",
+      "A-K07-MOVEMENT-VIEW one consistent C-06 snapshot per read (BOUNDARIES.md)",
+      "A-K07-CLOSURE-LEDGER C-09 exposes every closure row at one head (BOUNDARIES.md)",
+      "C-01 descriptors immutable per label",
+      "Bitcoin admits at most one spend of an output; no mempool eviction",
+      "the C-06 sweep main-input rule is not modeled (over-approximation)"
+    ],
+    "not_covered": [
+      "cross-profile interleavings of closure steps with movement signing internals",
+      "redemption rows 32 and 64",
+      "dust and notifyBelowDust (D8/D17 keeper)",
+      "main purpose lock and the supersede rule (V-07)",
+      "reorganization of proofs and incoming records",
+      "quarantined targets and directives",
+      "coordination leader and seat selection (D2)",
+      "the proposal trigger, executor, worker, store and maintainer steps in replay (modeled only)"
+    ],
+    "invalidated_by": "any pinned file, package manifest or external pin below; the model, the replay harness, the toolchain",
+    "repositories": {
+      "tbtc-v2": "/Users/tux/threshold/tbtc-v2",
+      "spec-kcver02": "/Users/tux/threshold/Research/SNOWFALL/FROST-migration-spec-kcver02"
+    },
+    "pins": {
+      "pkg/frost/movement/verification/model/Cargo.toml": "72cf280b5bf9261b4c712125a605bee99b275381",
+      "pkg/frost/movement/verification/model/Cargo.lock": "5cb3e51962115f893ec779d2e337ad4379c1b197",
+      "pkg/frost/movement/verification/model/rust-toolchain.toml": "16ad9a6d2dfdc94bf74c7887eec54fca2a3abfc9",
+      "pkg/frost/movement/verification/run.py": "e1f70f7aacfe9f8a4fbe6563dd3ffe74620b4282",
+      "pkg/frost/movement/verification/SCOPE-2026-11-06.md": "588295397be7e9937a09dcf60d20fca3599592f6",
+      "pkg/frost/movement/v08_replay_test.go": "478a6300e7553395ee1dcf2cb5f6b1021d158ab6",
+      "pkg/frost/movement/movement_test.go": "8d648e53d0c8ead1164c94b7d778347406fc1f70",
+      "pkg/tbtc/frost_node_duties.go": "24645e2fd45a155149425d522cb675d32895aefd",
+      "pkg/tbtc/frost_node_actions.go": "5b0013145e5b64c7c26557ae65a2c9a8dd767cd6",
+      "pkg/tbtc/moving_funds.go": "b18da5920790345c0adebd469be30f4b4c1f23d6",
+      "pkg/tbtc/moved_funds_sweep.go": "af05b81f8deb304efa696a0cd0ac45e6510bdce9",
+      "pkg/tbtc/node_wallet_closure.go": "25b5f68c7114950f27fcb546d277148753c12970",
+      "pkg/tbtcpg/frost_moving_funds.go": "c287d75d5f414c039b4698d754a16628676cd9eb",
+      "pkg/tbtcpg/moved_funds_sweep.go": "38d71b8d26f1b5bc2a0b5de6466fc206ee46a5fa",
+      "pkg/chain/ethereum/frost_movement.go": "7bb9721fd59223aa819b1c7d8e94d441d10236ad",
+      "pkg/maintainer/spv/frost_movement.go": "af82565ba686dddb51e3d44bc4203b331f1b4776",
+      "pkg/frost/signing/executor.go": "02f2877d7acc7dc049b48d7989260d5bdbfbaaff",
+      "pkg/frost/signing/movement.go": "d63d7ad31540b48ed7a49017629247c04d774568",
+      "pkg/frost/deposit/lock.go": "ef2696fbd5f877de26dfeb0203a414803deed9db",
+      "pkg/frost/redemption/ledger.go": "0ba6e89dd37d59543c77471d1203880e6b5bbfb3"
+    },
+    "manifests": {
+      "pkg/frost/movement": {
+        "kind": "go-package",
+        "files": {
+          "authority.go": "e0016d5d24f6ed637476970649198462692d47c2",
+          "chain.go": "5dab38256d7398ba8bce6ef554bcf94320b8f472",
+          "closure.go": "e2c017aa7834c0da1447aefb5bdca1a18ccc0b6a",
+          "mover.go": "df9a5924fbabdef312961cff33df78dfcb65ba95",
+          "planner.go": "41436ed3b70e10539f5335c6aff2fd33bad68da4",
+          "view.go": "0e0498e631d10528a3955e0e044c206942dbde13"
+        }
+      },
+      "pkg/frost/movement/verification/model/src": {
+        "kind": "rust-src",
+        "files": {
+          "main.rs": "d471831746583fff948cef3e51f7d67fad878084"
+        }
+      }
+    },
+    "external": [
+      {
+        "repository": "tbtc-v2",
+        "ref": "tuxxy/integration/frost-base",
+        "path": "solidity/contracts/frost/FrostMovement.sol",
+        "blob": "8a1dbd443c20465a26fb01e8fdfd62116a986f95",
+        "pinned_at": "39412825"
+      },
+      {
+        "repository": "tbtc-v2",
+        "ref": "tuxxy/integration/frost-base",
+        "path": "solidity/contracts/frost/FrostMovementState.sol",
+        "blob": "c8302cb8fe6af4809f72725dfe5867edb9b15650",
+        "pinned_at": "39412825"
+      },
+      {
+        "repository": "tbtc-v2",
+        "ref": "tuxxy/integration/frost-base",
+        "path": "solidity/contracts/frost/FrostLifecycle.sol",
+        "blob": "7db6ca7ba712e2048eb4d5c79cce9f74ec152a5a",
+        "pinned_at": "39412825"
+      },
+      {
+        "repository": "tbtc-v2",
+        "ref": "tuxxy/integration/frost-base",
+        "path": "solidity/contracts/frost/FrostWallets.sol",
+        "blob": "c91a8941d059ccf694dc815763214e46527a88c7",
+        "pinned_at": "39412825"
+      },
+      {
+        "repository": "spec-kcver02",
+        "ref": "kc-ver-02",
+        "path": "keep-core-verification-spec.md",
+        "blob": "ab1815f31cf311ca5b3b7d04e7a70dd37dfa1d3d",
+        "pinned_at": "51b9a168"
+      },
+      {
+        "repository": "spec-kcver02",
+        "ref": "kc-ver-02",
+        "path": "keep-core-integration-spec.md",
+        "blob": "98f8589a48ab95d065d5b95307734d66b93618f1",
+        "pinned_at": "51b9a168"
+      }
+    ]
+  }
+}

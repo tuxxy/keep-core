@@ -1,0 +1,98 @@
+diff --git a/test/k09/evidence/evidence_test.go b/test/k09/evidence/evidence_test.go
+index 4ec9554a5..66f7f2b2a 100644
+--- a/test/k09/evidence/evidence_test.go
++++ b/test/k09/evidence/evidence_test.go
+@@ -540,6 +540,87 @@ func checkDrainSigners(m *manifest, evidence string) []string {
+ 	return problems
+ }
+ 
++// runAllowlist is run.sh's environment allowlist (tbtc-v2#19): its inputs,
++// PATH, HOME, TMPDIR, the Go caches and the Go settings it fixes.
++var runAllowlist = map[string]bool{
++	"PATH": true, "HOME": true, "TMPDIR": true, "SNOWFALL_WORKER": true, "SNOWFALL_WORKER_SHA256": true,
++	"SNOWFALL_COMMIT": true, "LEGACY_BASELINE_DIR": true, "LEGACY_TBTC_REPO": true, "LEGACY_ANVIL": true,
++	"LEGACY_BITCOIND": true, "LEGACY_BITCOIND_SHA256": true, "LEGACY_UPGRADED_DIR": true,
++	"LEGACY_UPGRADED_COMMIT": true, "K09_ECDSA_NODE_MODULES": true, "K09_ECDSA_NODE_LOCK": true,
++	"GOCACHE": true, "GOMODCACHE": true, "GOPATH": true, "GOFLAGS": true, "GOTOOLCHAIN": true, "GOWORK": true,
++}
++
++// checkRunRecords (review N7): the run.sh records of #30, #35, #36 and
++// tbtc-v2#19 are present and true of the evidence.
++func checkRunRecords(evidence string) []string {
++	const tag = "K-09 N7"
++	raw, err := os.ReadFile(filepath.Join(evidence, "manifest.json"))
++	if err != nil {
++		return []string{tag + ": " + err.Error()}
++	}
++	var m struct {
++		Files       map[string]string            `json:"files"`
++		Environment map[string]*string           `json:"environment"`
++		Repos       map[string]string            `json:"repos"`
++		Stages      []map[string]json.RawMessage `json:"stages"`
++	}
++	if err := json.Unmarshal(raw, &m); err != nil {
++		return []string{tag + ": manifest.json: " + err.Error()}
++	}
++	var problems []string
++	if m.Files == nil {
++		problems = append(problems, tag+" #36: the manifest has no files inventory")
++	} else {
++		onDisk := map[string]bool{}
++		_ = filepath.Walk(evidence, func(path string, info os.FileInfo, err error) error {
++			if err == nil && !info.IsDir() {
++				rel, _ := filepath.Rel(evidence, path)
++				if rel = filepath.ToSlash(rel); rel != "manifest.json" {
++					onDisk[rel] = true
++				}
++			}
++			return nil
++		})
++		for p := range onDisk {
++			want, ok := m.Files[p]
++			if !ok {
++				problems = append(problems, fmt.Sprintf("%s #36: %s is in the evidence but not in manifest.files", tag, p))
++				continue
++			}
++			content, _ := os.ReadFile(filepath.Join(evidence, filepath.FromSlash(p)))
++			if got := sha256Hex(content); got != want {
++				problems = append(problems, fmt.Sprintf("%s #36: %s has SHA-256 %s, but manifest.files records %s", tag, p, got, want))
++			}
++		}
++		for p := range m.Files {
++			if !onDisk[p] {
++				problems = append(problems, fmt.Sprintf("%s #36: manifest.files lists %s, which the evidence does not have", tag, p))
++			}
++		}
++	}
++	if m.Environment == nil {
++		problems = append(problems, tag+" tbtc-v2#19: the manifest has no environment record")
++	}
++	for name := range m.Environment {
++		if !runAllowlist[name] {
++			problems = append(problems, fmt.Sprintf("%s tbtc-v2#19: manifest.environment names %s, which run.sh's allowlist does not", tag, name))
++		}
++	}
++	want := ""
++	if v := m.Environment["SNOWFALL_COMMIT"]; v != nil {
++		want = *v
++	}
++	if got := m.Repos["snowfall"]; got == "" || got != want {
++		problems = append(problems, fmt.Sprintf("%s #35: repos.snowfall %q is not environment.SNOWFALL_COMMIT %q", tag, got, want))
++	}
++	for i, s := range m.Stages[:1] {
++		if _, ok := s["leftoverKilled"]; !ok {
++			problems = append(problems, fmt.Sprintf("%s #30: stage %d (%s) has no leftoverKilled record", tag, i, s["stage"]))
++		}
++	}
++	return problems
++}
++
+ // TestK09Evidence checks a finished K-09 run's evidence directory
+ // (K09_EVIDENCE) for the three batch-9 gaps. A missing variable is a
+ // failure, not a skip (as test/k09/run.sh treats its inputs).
+@@ -565,4 +646,5 @@ func TestK09Evidence(t *testing.T) {
+ 	t.Run("22-ecdsa-build", func(t *testing.T) { report(t, checkEcdsaBuild(m, repo)) })
+ 	t.Run("41-node-log-hashes", func(t *testing.T) { report(t, checkNodeLogs(m, evidence)) })
+ 	t.Run("40-drain-signers", func(t *testing.T) { report(t, checkDrainSigners(m, evidence)) })
++	t.Run("n7-run-records", func(t *testing.T) { report(t, checkRunRecords(evidence)) })
+ }

@@ -1,0 +1,98 @@
+diff --git a/test/k09/controls/run-probe.sh b/test/k09/controls/run-probe.sh
+new file mode 100755
+index 000000000..cc352cc3b
+--- /dev/null
++++ b/test/k09/controls/run-probe.sh
+@@ -0,0 +1,92 @@
++#!/usr/bin/env bash
++# K-09 wrong-behaviour probe, bound to a head (tuxxy/keep-core#60). Runs one
++# probe patch (README.md here) on an export of HEAD, never on the checkout,
++# and writes a probe record that ties the result to the head, the patch, the
++# K-09 test files and the log.
++#
++# Usage: run-probe.sh <patch> <stage> <new record directory>
++# <stage> is the full stage name (for example 08-deposit-refund); the probe
++# runs stages 01-06 and <stage>. The record directory must not exist.
++# Environment: as test/k09/run.sh (SNOWFALL_COMMIT, the pinned worker and the
++# LEGACY_* inputs); the probe sees only those, the Go caches and fixed Go
++# settings.
++#
++# The record (<dir>/probe.json): head and clean; patch {path, sha256};
++# testFiles (SHA-256 of every pkg/tbtc/k09_* file at head); stage; log and
++# logSha256 (<dir>/probe.log); exit; failure (the stage's failing test-file
++# lines). A probe that does not fail at <stage> records no failure and exits 1.
++set -euo pipefail
++patch_arg=${1:?patch required}
++stage=${2:?stage required}
++record=${3:?record directory required}
++stages="01-legacy 02-upgrade 03-dkg 04-drain 05-redemption 06-restart 07-reservation-timeout 08-deposit-refund 09-movement 10-inactivity 11-cutover-closure 12-no-inactivity"
++case " $stages " in *" $stage "*) ;; *) echo "unknown stage $stage" >&2; exit 2 ;; esac
++[ -f "$patch_arg" ] || { echo "no patch $patch_arg" >&2; exit 2; }
++patch=$(cd "$(dirname "$patch_arg")" && pwd)/$(basename "$patch_arg")
++if [ -e "$record" ]; then
++  echo "$record exists: probe records are never overwritten" >&2
++  exit 2
++fi
++: "${SNOWFALL_COMMIT:?SNOWFALL_COMMIT required}"
++kc_root=$(cd "$(dirname "$0")/../../.." && pwd)
++cd "$kc_root"
++head=$(git rev-parse HEAD)
++[ -z "$(git status --porcelain)" ] || { echo "the keep-core tree has uncommitted changes: a probe record binds a clean head" >&2; exit 2; }
++snowfall=$(cd "$kc_root/../snowfall" && pwd)
++snowfall_commit=$(git -C "$snowfall" rev-parse --verify --quiet "$SNOWFALL_COMMIT^{commit}" || true)
++[ -n "$snowfall_commit" ] || { echo "../snowfall has no SNOWFALL_COMMIT $SNOWFALL_COMMIT" >&2; exit 2; }
++
++run_env=(PATH="$PATH" HOME="$HOME")
++for v in TMPDIR SNOWFALL_WORKER SNOWFALL_WORKER_SHA256 SNOWFALL_COMMIT LEGACY_BASELINE_DIR LEGACY_TBTC_REPO LEGACY_ANVIL LEGACY_BITCOIND LEGACY_BITCOIND_SHA256 LEGACY_UPGRADED_DIR LEGACY_UPGRADED_COMMIT GOCACHE GOMODCACHE GOPATH; do
++  [ -z "${!v:-}" ] || run_env+=("$v=${!v}")
++done
++run_env+=(GOFLAGS= GOTOOLCHAIN=local GOWORK=off GOMAXPROCS=2)
++
++scratch=$(mktemp -d)
++trap 'rm -rf "$scratch"' EXIT
++mkdir -p "$scratch/keep-core" "$scratch/snowfall"
++git archive --format=tar HEAD | tar -x -C "$scratch/keep-core"
++git -C "$snowfall" archive --format=tar "$snowfall_commit" | tar -x -C "$scratch/snowfall"
++(cd "$scratch/keep-core" && git apply "$patch") || { echo "the patch does not apply at $head" >&2; exit 2; }
++
++mkdir -p "$record"
++record=$(cd "$record" && pwd)
++num=${stage%%-*}
++status=0
++(cd "$scratch/keep-core" && env -i "${run_env[@]}" go test -count=1 -timeout 14m -v \
++  -run "^TestK09Lifecycle\$/^(0[1-6]|$num)-" ./pkg/tbtc) > "$record/probe.log" 2>&1 || status=$?
++
++python3 - "$record" "$kc_root" "$head" "$patch" "$stage" "$status" <<'EOF'
++import hashlib, json, os, re, subprocess, sys
++record, root, head, patch, stage, status = sys.argv[1:7]
++def sha(b):
++    return hashlib.sha256(b).hexdigest()
++def git(*args):
++    return subprocess.run(["git", "-C", root, *args], capture_output=True, check=True).stdout
++names = [n for n in git("ls-tree", "--name-only", head, "pkg/tbtc/").decode().split() if os.path.basename(n).startswith("k09_")]
++log = open(os.path.join(record, "probe.log"), "rb").read()
++text = log.decode(errors="replace")
++failed = re.search(r"--- FAIL: TestK09Lifecycle/" + re.escape(stage) + r" ", text) is not None
++failure = []
++if failed:
++    inside = False
++    for line in text.splitlines():
++        if line.startswith("=== RUN   TestK09Lifecycle/"):
++            inside = line.strip() == "=== RUN   TestK09Lifecycle/" + stage
++        if inside and re.search(r"_test\.go:\d+: ", line) and not re.search(r"K09TIME|b6 phase", line):
++            failure.append(line.strip())
++rel = os.path.relpath(patch, root)
++out = {
++    "head": head, "clean": True,
++    "patch": {"path": rel if not rel.startswith("..") else patch, "sha256": sha(open(patch, "rb").read())},
++    "testFiles": {os.path.basename(n): sha(git("cat-file", "blob", head + ":" + n)) for n in sorted(names)},
++    "stage": stage, "log": "probe.log", "logSha256": sha(b""), "exit": int(status),
++    "failure": failure,
++}
++with open(os.path.join(record, "probe.json"), "w") as f:
++    json.dump(out, f, indent=2)
++if not failure:
++    print("the probe did not fail at %s: no failure recorded" % stage, file=sys.stderr)
++    sys.exit(1)
++print("probe %s failed at: %s" % (stage, failure[0]))
++EOF

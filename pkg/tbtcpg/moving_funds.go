@@ -79,6 +79,10 @@ func (mft *MovingFundsTask) Run(request *tbtc.CoordinationProposalRequest) (
 		zap.String("walletPKH", fmt.Sprintf("0x%x", walletPublicKeyHash)),
 	)
 
+	if request.FrostWallet {
+		return mft.runFrost(taskLogger, request)
+	}
+
 	// Check if the wallet is eligible for moving funds.
 	walletChainData, err := mft.chain.GetWallet(walletPublicKeyHash)
 	if err != nil {

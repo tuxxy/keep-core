@@ -1,0 +1,20 @@
+diff --git a/pkg/chain/ethereum/frost_node.go b/pkg/chain/ethereum/frost_node.go
+index bd5f7e97f..f7a90d44a 100644
+--- a/pkg/chain/ethereum/frost_node.go
++++ b/pkg/chain/ethereum/frost_node.go
+@@ -153,6 +153,15 @@ func (tc *TbtcChain) PendingFrostRedemptions(
+ 			request.WalletID != wallet {
+ 			continue
+ 		}
++		// CONTROL b13-margin-strict (wrong boundary): the members' conditions at
++		// the head's timestamp, except that the margin is treated as exclusive (more than 600 s must be left).
++		now, err := bridge.Timestamp(ctx, head)
++		if err != nil {
++			return nil, err
++		}
++		if now < request.NotBefore || request.Deadline <= now || request.Deadline-now <= 600 {
++			continue
++		}
+ 		scripts = append(scripts, bitcoin.Script(request.Script))
+ 	}
+ 	return scripts, nil

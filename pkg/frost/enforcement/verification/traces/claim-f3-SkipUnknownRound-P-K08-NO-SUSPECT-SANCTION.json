@@ -1,0 +1,877 @@
+{
+  "bound": "3 seats, threshold 2, 4 rounds, F = 3",
+  "claim_model_steps": [
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              1,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 1,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          1,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      "n": 1,
+      "offered": true
+    },
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              1,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 2,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          1,
+          1
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": true,
+        "suspect": false
+      },
+      "n": 2,
+      "offered": true
+    },
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              1,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              2,
+              1
+            ],
+            "sig": [
+              false,
+              true
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 3,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          2,
+          1
+        ],
+        "sig": [
+          false,
+          true
+        ],
+        "signed": true,
+        "suspect": false
+      },
+      "n": 3,
+      "offered": true
+    },
+    {
+      "action": "Round",
+      "diverges": true,
+      "expect": "refused-or-different-state",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          4
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              1,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              2,
+              1
+            ],
+            "sig": [
+              false,
+              true
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              true,
+              true
+            ],
+            "signed": true,
+            "suspect": false
+          }
+        ],
+        "rounds": 4,
+        "w_real": false,
+        "w_unknown_ends": true,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          1,
+          1
+        ],
+        "sig": [
+          true,
+          true
+        ],
+        "signed": true,
+        "suspect": false
+      },
+      "n": 4,
+      "offered": true
+    }
+  ],
+  "id": "claim-f3-SkipUnknownRound-P-K08-NO-SUSPECT-SANCTION",
+  "init": {
+    "accepted": false,
+    "bad": false,
+    "claimed": 0,
+    "derived": [
+      0,
+      0
+    ],
+    "rec": [
+      {
+        "live3": false,
+        "s": [
+          0,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      {
+        "live3": false,
+        "s": [
+          0,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      {
+        "live3": false,
+        "s": [
+          0,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      {
+        "live3": false,
+        "s": [
+          0,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      }
+    ],
+    "rounds": 0,
+    "w_real": false,
+    "w_unknown_ends": false,
+    "windows": [
+      0,
+      0
+    ]
+  },
+  "kind": "counterexample",
+  "profile": "claim-f3",
+  "property": "P-K08-NO-SUSPECT-SANCTION",
+  "replay": "pending",
+  "replay_note": "set by the Go replay report",
+  "steps": [
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              1,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 1,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          1,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      "n": 1
+    },
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              1,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 2,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          1,
+          1
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": true,
+        "suspect": false
+      },
+      "n": 2
+    },
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              1,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              2,
+              1
+            ],
+            "sig": [
+              false,
+              true
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 3,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          2,
+          1
+        ],
+        "sig": [
+          false,
+          true
+        ],
+        "signed": true,
+        "suspect": false
+      },
+      "n": 3
+    },
+    {
+      "action": "Round",
+      "diverges": true,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          4,
+          4
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              1,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              2,
+              1
+            ],
+            "sig": [
+              false,
+              true
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              true,
+              true
+            ],
+            "signed": true,
+            "suspect": false
+          }
+        ],
+        "rounds": 4,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          1,
+          1
+        ],
+        "sig": [
+          true,
+          true
+        ],
+        "signed": true,
+        "suspect": false
+      },
+      "n": 4
+    },
+    {
+      "action": "Claim",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": true,
+        "bad": true,
+        "claimed": 4,
+        "derived": [
+          4,
+          4
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              1,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              2,
+              1
+            ],
+            "sig": [
+              false,
+              true
+            ],
+            "signed": true,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              1,
+              1
+            ],
+            "sig": [
+              true,
+              true
+            ],
+            "signed": true,
+            "suspect": false
+          }
+        ],
+        "rounds": 4,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          11,
+          14
+        ]
+      },
+      "fields": null,
+      "n": 5
+    }
+  ],
+  "weakening": "SkipUnknownRound"
+}

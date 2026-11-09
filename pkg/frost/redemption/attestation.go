@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"slices"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -22,6 +23,10 @@ import (
 // for an attested (wallet, generation, stateVersion) slot that may still be,
 // or has been, admitted.
 var ErrConflictingAttestation = errors.New("conflicting FROST intent attestation refused")
+
+// ErrUncertifiedSeat refuses an attestation or signature from a host none of
+// whose seats is in the wallet's accepted readiness certificate.
+var ErrUncertifiedSeat = errors.New("FROST seat is not in the readiness-certified set")
 
 // ErrContained refuses a new cancellation for a Quarantined reservation
 // without a governance directive to cancel.
@@ -271,6 +276,10 @@ func (a *Attester) Attest(ctx context.Context, plan *signing.Plan, validUntil ui
 	if err = a.Planner.Validate(ctx, head.Number, plan); err != nil {
 		return nil, fmt.Errorf("plan refused: %w", err)
 	}
+	signers, err := CertifiedLocalSeats(ctx, a.Planner.Chain, plan.WalletID(), a.Seats)
+	if err != nil {
+		return nil, err
+	}
 	if a.Reload != nil {
 		if err = a.Reload(ctx); err != nil {
 			return nil, fmt.Errorf("completed key reload: %w", err)
@@ -297,10 +306,32 @@ func (a *Attester) Attest(ctx context.Context, plan *signing.Plan, validUntil ui
 	}
 	digest := ReservationDigest(a.Planner.Chain.ChainID(), a.Planner.Chain.Bridge(), certificate)
 	out := map[uint16][]byte{}
-	for _, seat := range a.Seats {
+	for _, seat := range signers {
 		if out[seat], err = SignDigest(a.Key, digest); err != nil {
 			return nil, err
 		}
+	}
+	return out, nil
+}
+
+// CertifiedLocalSeats returns the local seats that are in the wallet's
+// accepted readiness certificate, in local order. A seat outside it never
+// attests or signs for the wallet, as base keep-core builds the final signing
+// group from the operating members only (KC-SF-V3 4.2, C-03). It refuses with
+// ErrUncertifiedSeat when no local seat is certified.
+func CertifiedLocalSeats(ctx context.Context, chain Reader, wallet [32]byte, local []uint16) ([]uint16, error) {
+	certified, err := chain.CertifiedSeats(ctx, wallet)
+	if err != nil {
+		return nil, fmt.Errorf("readiness-certified seats: %w", err)
+	}
+	var out []uint16
+	for _, seat := range local {
+		if slices.Contains(certified, seat) {
+			out = append(out, seat)
+		}
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("%w: local seats %v, certified %v", ErrUncertifiedSeat, local, certified)
 	}
 	return out, nil
 }
@@ -352,6 +383,10 @@ func (a *Attester) AttestCancellation(ctx context.Context, payment, cancellation
 	if validUntil < head.Number {
 		return nil, none, errors.New("cancellation deadline passed")
 	}
+	signers, err := CertifiedLocalSeats(ctx, a.Planner.Chain, intent.Certificate.WalletID, a.Seats)
+	if err != nil {
+		return nil, none, err
+	}
 	if err = a.step("before-cancel-attest"); err != nil {
 		return nil, none, err
 	}
@@ -361,7 +396,7 @@ func (a *Attester) AttestCancellation(ctx context.Context, payment, cancellation
 	}
 	digest := CancellationDigest(a.Planner.Chain.ChainID(), a.Planner.Chain.Bridge(), auth)
 	out := map[uint16][]byte{}
-	for _, seat := range a.Seats {
+	for _, seat := range signers {
 		if out[seat], err = SignDigest(a.Key, digest); err != nil {
 			return nil, none, err
 		}

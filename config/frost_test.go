@@ -25,7 +25,7 @@ func TestFrostActivationRejectedBeforeCredentials(t *testing.T) {
 	}
 	var c Config
 	err := c.ReadConfig(path, nil, StartCmdCategories...)
-	if err == nil || !strings.Contains(err.Error(), "only the local K-01 harness") {
+	if err == nil || !strings.Contains(err.Error(), "only explicitly configured local integration is supported") {
 		t.Fatalf("activation did not fail before Ethereum validation: %v", err)
 	}
 }

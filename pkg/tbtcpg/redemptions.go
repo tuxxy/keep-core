@@ -1,6 +1,7 @@
 package tbtcpg
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"sort"
@@ -11,6 +12,10 @@ import (
 
 	"github.com/keep-network/keep-core/internal/hexutils"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
+	"github.com/keep-network/keep-core/pkg/frost/dkg"
+	"github.com/keep-network/keep-core/pkg/frost/movement"
+	"github.com/keep-network/keep-core/pkg/frost/redemption"
+	"github.com/keep-network/keep-core/pkg/frost/signing"
 	"github.com/keep-network/keep-core/pkg/tbtc"
 )
 
@@ -62,6 +67,10 @@ func (rt *RedemptionTask) Run(request *tbtc.CoordinationProposalRequest) (
 		)
 	}
 
+	if request.FrostWallet {
+		return rt.runFrost(taskLogger, walletPublicKeyHash, redemptionMaxSize)
+	}
+
 	redeemersOutputScripts, err := rt.FindPendingRedemptions(
 		taskLogger,
 		walletPublicKeyHash,
@@ -97,6 +106,177 @@ func (rt *RedemptionTask) Run(request *tbtc.CoordinationProposalRequest) (
 
 func (rt *RedemptionTask) ActionType() tbtc.WalletActionType {
 	return tbtc.ActionRedemption
+}
+
+// runFrost proposes the pending redemption requests of a FROST wallet as
+// base proposes a legacy wallet's: the requests found from chain state, with
+// the fee the leader estimates within the Bridge's total fee cap (D19). The
+// legacy on-chain proposal validator does not know FROST wallets; every
+// member builds the K-05 plan from chain state and checks it against the
+// proposal, and the Bridge checks the reservation (C-04).
+func (rt *RedemptionTask) runFrost(
+	taskLogger log.StandardLogger,
+	walletPublicKeyHash [20]byte,
+	redemptionMaxSize uint16,
+) (tbtc.CoordinationProposal, bool, error) {
+	// A reservation the wallet holds is proposed again until it is
+	// resolved: the members resume it (pay the same reservation), as base
+	// proposes pending redemptions again after a restart.
+	reservedOutputScripts, reserved, err := rt.findReservedFrostRedemptions(
+		walletPublicKeyHash,
+	)
+	if err != nil {
+		return nil, false, fmt.Errorf(
+			"cannot find the reserved FROST redemption: [%w]",
+			err,
+		)
+	}
+	if reserved {
+		taskLogger.Info("FROST wallet holds an unresolved reservation")
+		return &tbtc.RedemptionProposal{
+			RedeemersOutputScripts: reservedOutputScripts,
+			RedemptionTxFee:        big.NewInt(0),
+		}, true, nil
+	}
+
+	redeemersOutputScripts, err := rt.findPendingFrostRedemptions(
+		walletPublicKeyHash,
+		redemptionMaxSize,
+	)
+	if err != nil {
+		return nil, false, fmt.Errorf(
+			"cannot find pending FROST redemption requests: [%w]",
+			err,
+		)
+	}
+
+	if len(redeemersOutputScripts) == 0 {
+		taskLogger.Info("no pending FROST redemption requests")
+		return nil, false, nil
+	}
+
+	redemptionParams, err := rt.chain.GetRedemptionParameters()
+	if err != nil {
+		return nil, false, fmt.Errorf(
+			"cannot get redemption tx max total fee: [%w]",
+			err,
+		)
+	}
+
+	fee, err := EstimateRedemptionFee(
+		rt.btcChain,
+		redeemersOutputScripts,
+		redemptionParams.TxMaxTotalFee,
+	)
+	if err != nil {
+		return nil, false, fmt.Errorf(
+			"cannot estimate FROST redemption transaction fee: [%w]",
+			err,
+		)
+	}
+
+	taskLogger.Infof("FROST redemption transaction fee: [%d]", fee)
+
+	return &tbtc.RedemptionProposal{
+		RedeemersOutputScripts: redeemersOutputScripts,
+		RedemptionTxFee:        big.NewInt(fee),
+	}, true, nil
+}
+
+// findReservedFrostRedemptions returns the output scripts of the requests of
+// a FROST wallet's admitted, unresolved reservation, if it holds one.
+func (rt *RedemptionTask) findReservedFrostRedemptions(
+	walletPublicKeyHash [20]byte,
+) ([]bitcoin.Script, bool, error) {
+	frostChain, ok := rt.chain.(tbtc.FrostRedemptionRequestChain)
+	if !ok {
+		return nil, false, fmt.Errorf("chain cannot read FROST redemption requests")
+	}
+	outputKey, frost, err := frostChain.FrostTargetOutputKey(walletPublicKeyHash)
+	if err != nil {
+		return nil, false, fmt.Errorf("cannot resolve FROST wallet: [%w]", err)
+	}
+	if !frost {
+		return nil, false, fmt.Errorf("wallet is not a FROST wallet")
+	}
+	return frostChain.ReservedFrostRedemptions(outputKey)
+}
+
+// findPendingFrostRedemptions returns the output scripts of a FROST wallet's
+// pending redemption requests (C-04), oldest first, as FindPendingRedemptions
+// does for a legacy wallet. The proposal names them; every member builds the
+// K-05 plan for them from chain state and checks it against the proposal.
+// The requests are selected with the members' own rule (redemption.Planner,
+// with their deadline margin) at the current block, which is the window's
+// coordination block, so the proposal names exactly the requests the members
+// plan: a request they would refuse (watchtower-delayed, or too close to its
+// deadline) is left out and does not hold back the others, and the limit
+// counts the requests kept.
+func (rt *RedemptionTask) findPendingFrostRedemptions(
+	walletPublicKeyHash [20]byte,
+	redemptionMaxSize uint16,
+) ([]bitcoin.Script, error) {
+	frostChain, ok := rt.chain.(tbtc.FrostBridgeConnector)
+	if !ok {
+		return nil, fmt.Errorf("chain cannot read FROST redemption requests")
+	}
+	outputKey, frost, err := frostChain.FrostTargetOutputKey(walletPublicKeyHash)
+	if err != nil {
+		return nil, fmt.Errorf("cannot resolve FROST wallet: [%w]", err)
+	}
+	if !frost {
+		return nil, fmt.Errorf("wallet is not a FROST wallet")
+	}
+
+	blockCounter, err := rt.chain.BlockCounter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get block counter: [%w]", err)
+	}
+	currentBlockNumber, err := blockCounter.CurrentBlock()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current block number: [%w]", err)
+	}
+	filterStartBlock := uint64(0)
+	if currentBlockNumber > DepositSweepLookBackBlocks {
+		filterStartBlock = currentBlockNumber - DepositSweepLookBackBlocks
+	}
+
+	limit := int(redemptionMaxSize)
+	if limit > signing.MaxRedemptionRequests {
+		limit = signing.MaxRedemptionRequests
+	}
+
+	ctx := context.Background()
+	bridge, err := frostChain.FrostBridge(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("cannot bind the FROST Bridge: [%w]", err)
+	}
+	wallet, err := bridge.Wallet(
+		ctx,
+		currentBlockNumber,
+		movement.Label(dkg.WalletID(outputKey)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get FROST wallet: [%w]", err)
+	}
+	planner := redemption.Planner{
+		Chain:          bridge,
+		Wallet:         wallet.Descriptor,
+		DeadlineMargin: tbtc.FrostRedemptionDeadlineMargin,
+	}
+	ids, err := planner.Pending(ctx, filterStartBlock, currentBlockNumber, limit)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find pending FROST redemptions: [%w]", err)
+	}
+	scripts := make([]bitcoin.Script, 0, len(ids))
+	for _, id := range ids {
+		request, err := bridge.Request(ctx, currentBlockNumber, id)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get FROST redemption request: [%w]", err)
+		}
+		scripts = append(scripts, bitcoin.Script(request.Script))
+	}
+	return scripts, nil
 }
 
 // RedemptionRequest represents a redemption request.

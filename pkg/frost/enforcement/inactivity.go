@@ -34,7 +34,26 @@ type Claimer struct {
 	// (2 in tests, OPEN; legacy uses 3). Lookback bounds the rounds scanned.
 	Failures int
 	Lookback uint64
-	boundary func(string) error
+	// MinimumActivePercent, when set, is the activity rule of base
+	// keep-core's heartbeat: a heartbeat with fewer than this percentage of
+	// the wallet's seats authenticated present is a failure, signed or not;
+	// one with enough presence ends the failure streak if signed and is not
+	// counted otherwise, as base does not count a heartbeat whose signing
+	// errored. Zero keeps the K-08 rule: every unsigned heartbeat fails.
+	MinimumActivePercent int
+	boundary             func(string) error
+}
+
+// failed reports whether a heartbeat outcome counts as a failure, and, if
+// not, whether it ends the failure streak.
+func (c *Claimer) failed(o Outcome, seats int) (failure, ends bool) {
+	if c.MinimumActivePercent <= 0 {
+		return !o.Signed, o.Signed
+	}
+	if len(o.Present)*100 < c.MinimumActivePercent*seats {
+		return true, false
+	}
+	return false, o.Signed
 }
 
 func (c *Claimer) step(name string) error {
@@ -92,6 +111,12 @@ func (c *Claimer) Derive(ctx context.Context) (Claim, uint64, error) {
 	if lookback == 0 {
 		lookback = 64
 	}
+	seatCount := 0
+	for _, member := range w.Members {
+		if member != 0 {
+			seatCount++
+		}
+	}
 	var failed []Outcome
 	for k := uint64(0); k < lookback && k < current.Number && len(failed) < c.Failures; k++ {
 		anchor := (current.Number - k) * c.Runner.Schedule.RoundBlocks
@@ -112,10 +137,13 @@ func (c *Claimer) Derive(ctx context.Context) (Claim, uint64, error) {
 		if err != nil {
 			return Claim{}, 0, err
 		}
-		if o.Signed {
+		failure, ends := c.failed(o, seatCount)
+		if ends {
 			break // a signed heartbeat ends the failure streak
 		}
-		failed = append(failed, o)
+		if failure {
+			failed = append(failed, o)
+		}
 	}
 	if len(failed) < c.Failures {
 		return Claim{}, 0, ErrNoClaim

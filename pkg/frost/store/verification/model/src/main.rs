@@ -49,9 +49,12 @@ fn main() {
             "--max-commits" => max_commits = args.next().expect("--max-commits K").parse().expect("max commits"),
             "--claim-only" => skip_weakenings = true,
             "--profile" => {
-                profile = match args.next().expect("--profile store|dkg").as_str() {
+                profile = match args.next().expect("--profile store|dkg|dkg-restore|dkg-host-crash|dkg-clone").as_str() {
                     "store" => Profile::Store,
                     "dkg" => Profile::Dkg,
+                    "dkg-restore" => Profile::DkgRestore,
+                    "dkg-host-crash" => Profile::DkgHostCrash,
+                    "dkg-clone" => Profile::DkgClone,
                     other => panic!("unknown profile {other}"),
                 }
             }
@@ -147,6 +150,8 @@ fn main() {
     all_traces.extend(match profile {
         Profile::Store => boundary_traces(max_commits),
         Profile::Dkg => dkg_boundary_traces(max_commits),
+        // The hand-declared dkg boundary set is written by the dkg profile.
+        Profile::DkgRestore | Profile::DkgHostCrash | Profile::DkgClone => Vec::new(),
     });
     for t in &all_traces {
         let name = format!("{}.json", t.id);

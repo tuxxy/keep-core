@@ -32,7 +32,7 @@ func TestResolutionSweepNeedsDirectiveAfterContainment(t *testing.T) {
 			name = "sign-contain-broadcast"
 		}
 		t.Run(name, func(t *testing.T) {
-			w := newK06World(t)
+			w := newK06WorldWith(t, k06Options{mode: "k05", beforeDKG: certifyAllSeats})
 			ctx := w.f.ctx
 			w.fundBySweep()
 			w.request(100_000, p2wpkh(0x64))

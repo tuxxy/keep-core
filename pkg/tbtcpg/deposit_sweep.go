@@ -63,6 +63,10 @@ func (dst *DepositSweepTask) Run(request *tbtc.CoordinationProposalRequest) (
 		)
 	}
 
+	if request.FrostWallet {
+		return dst.runFrost(taskLogger, walletPublicKeyHash, depositSweepMaxSize)
+	}
+
 	deposits, err := dst.FindDepositsToSweep(
 		taskLogger,
 		walletPublicKeyHash,

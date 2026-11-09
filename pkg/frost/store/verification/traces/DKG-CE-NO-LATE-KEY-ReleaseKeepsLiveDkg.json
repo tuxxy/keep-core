@@ -38,7 +38,7 @@
       "n": 2,
       "action": "claim",
       "proc": 1,
-      "attempt": 0,
+      "attempt": 1,
       "purpose": "dkg",
       "domain": 0,
       "pause": "before-write"
@@ -73,31 +73,27 @@
     },
     {
       "n": 7,
-      "action": "fence_reset"
-    },
-    {
-      "n": 8,
       "action": "step",
       "proc": 1,
       "step": "fence",
       "pause": "before-acknowledgement"
     },
     {
-      "n": 9,
+      "n": 8,
       "action": "step",
       "proc": 1,
       "step": "ack",
       "expect": "claim_ok"
     },
     {
-      "n": 10,
+      "n": 9,
       "action": "release",
       "proc": 1,
       "domain": 0,
       "kind": "dkg"
     },
     {
-      "n": 11,
+      "n": 10,
       "action": "save_key",
       "proc": 1,
       "domain": 0,
@@ -136,7 +132,7 @@
       "n": 2,
       "action": "claim",
       "proc": 1,
-      "attempt": 0,
+      "attempt": 1,
       "purpose": "dkg",
       "domain": 0,
       "pause": "before-write"
@@ -171,31 +167,27 @@
     },
     {
       "n": 7,
-      "action": "fence_reset"
-    },
-    {
-      "n": 8,
       "action": "step",
       "proc": 1,
       "step": "fence",
       "pause": "before-acknowledgement"
     },
     {
-      "n": 9,
+      "n": 8,
       "action": "step",
       "proc": 1,
       "step": "ack",
       "expect": "claim_ok"
     },
     {
-      "n": 10,
+      "n": 9,
       "action": "release",
       "proc": 1,
       "domain": 0,
       "kind": "dkg"
     },
     {
-      "n": 11,
+      "n": 10,
       "action": "save_key",
       "proc": 1,
       "domain": 0,

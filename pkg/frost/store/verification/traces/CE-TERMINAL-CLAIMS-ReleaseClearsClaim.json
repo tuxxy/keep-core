@@ -39,8 +39,8 @@
       "action": "claim",
       "proc": 0,
       "attempt": 0,
-      "purpose": "sign",
-      "domain": 0,
+      "purpose": "dkg",
+      "domain": 1,
       "pause": "before-write"
     },
     {
@@ -89,8 +89,8 @@
       "n": 9,
       "action": "release",
       "proc": 0,
-      "domain": 0,
-      "kind": "sign"
+      "domain": 1,
+      "kind": "dkg"
     },
     {
       "n": 10,
@@ -98,7 +98,7 @@
       "proc": 0,
       "attempt": 0,
       "purpose": "dkg",
-      "domain": 1,
+      "domain": 0,
       "pause": "before-write"
     },
     {
@@ -176,8 +176,8 @@
       "action": "claim",
       "proc": 0,
       "attempt": 0,
-      "purpose": "sign",
-      "domain": 0,
+      "purpose": "dkg",
+      "domain": 1,
       "pause": "before-write"
     },
     {
@@ -226,8 +226,8 @@
       "n": 9,
       "action": "release",
       "proc": 0,
-      "domain": 0,
-      "kind": "sign"
+      "domain": 1,
+      "kind": "dkg"
     },
     {
       "n": 10,
@@ -235,7 +235,7 @@
       "proc": 0,
       "attempt": 0,
       "purpose": "dkg",
-      "domain": 1,
+      "domain": 0,
       "expect": "claimed",
       "diverges": true
     }

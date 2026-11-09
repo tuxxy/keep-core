@@ -19,6 +19,8 @@
 //! store profile's state space is unchanged by the additions (new fields stay
 //! at their defaults and no new actions are offered), which the re-pin run
 //! checks by reproducing the tranche 1 unique-state count.
+//! `Profile::DkgRestore`, `Profile::DkgHostCrash` and `Profile::DkgClone` are
+//! the dkg profile plus exactly one kernel fault family each (SCOPE.md §13.3).
 //!
 //! Design rules followed here:
 //! - No target invariant is encoded as an action precondition. Guards exist in
@@ -253,6 +255,10 @@ pub struct History {
     pub both_lost: bool,
     /// Some open loaded committed state from a journal (witness support).
     pub reopened: bool,
+    /// A host crash happened on this path. Written only in the
+    /// dkg-host-crash profile (witness support), so the other profiles'
+    /// state spaces are unchanged.
+    pub host_crashed: bool,
 }
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
@@ -352,6 +358,39 @@ pub enum Weakening {
 pub enum Profile {
     Store,
     Dkg,
+    /// `Dkg` plus stale restores (SCOPE.md §13.3).
+    DkgRestore,
+    /// `Dkg` plus host crashes (SCOPE.md §13.3).
+    DkgHostCrash,
+    /// `Dkg` plus one clone of image 0 (SCOPE.md §13.3).
+    DkgClone,
+}
+
+impl Profile {
+    /// The dkg profile or one of its split variants: K-03 state, DKG claims
+    /// in domain 0 only, no slots, the dkg properties and weakenings.
+    pub fn is_dkg(self) -> bool {
+        self != Profile::Store
+    }
+    pub fn has_clone(self) -> bool {
+        matches!(self, Profile::Store | Profile::DkgClone)
+    }
+    pub fn has_restore(self) -> bool {
+        matches!(self, Profile::Store | Profile::DkgRestore)
+    }
+    pub fn has_host_crash(self) -> bool {
+        matches!(self, Profile::Store | Profile::DkgHostCrash)
+    }
+    /// Trace ID prefix, so every profile's traces can share one directory.
+    pub fn trace_prefix(self) -> &'static str {
+        match self {
+            Profile::Store => "",
+            Profile::Dkg => "DKG-",
+            Profile::DkgRestore => "DKG-R-",
+            Profile::DkgHostCrash => "DKG-H-",
+            Profile::DkgClone => "DKG-C-",
+        }
+    }
 }
 
 impl Weakening {
@@ -375,7 +414,7 @@ impl Weakening {
     pub fn for_profile(p: Profile) -> &'static [Weakening] {
         match p {
             Profile::Store => &Self::ALL,
-            Profile::Dkg => &Self::DKG,
+            _ => &Self::DKG,
         }
     }
     /// The properties each weakening is declared to break (scope record §6 and
@@ -432,7 +471,7 @@ pub const DKG_SAFETY: [&str; 5] = [
 
 pub fn safety_for(p: Profile) -> Vec<&'static str> {
     let mut v: Vec<&'static str> = SAFETY.to_vec();
-    if p == Profile::Dkg {
+    if p.is_dkg() {
         v.extend(DKG_SAFETY);
     }
     v
@@ -474,13 +513,30 @@ pub const DKG_WITNESSES: [(&str, &str, &str); 10] = [
 
 pub fn witnesses_for(p: Profile) -> Vec<(&'static str, &'static str, &'static str)> {
     let mut v: Vec<_> = WITNESSES.to_vec();
-    if p == Profile::Dkg {
-        // Not reachable in the reduced dkg profile (no slots, no clone, no restore).
-        v.retain(|(n, _, _)| !matches!(*n, "w_identical" | "w_conflict" | "w_clone_busy" | "w_stale_restore_quarantine"));
+    if p.is_dkg() {
+        // Not reachable in the reduced dkg profile (no slots, no clone, no
+        // restore). The split profiles keep the witness of their own fault.
+        v.retain(|(n, _, _)| match *n {
+            "w_identical" | "w_conflict" => false,
+            "w_clone_busy" => p.has_clone(),
+            "w_stale_restore_quarantine" => p.has_restore(),
+            _ => true,
+        });
         v.extend(DKG_WITNESSES);
+        if p == Profile::DkgHostCrash {
+            v.extend(HOST_CRASH_WITNESSES);
+        }
     }
     v
 }
+
+/// Witness of the dkg-host-crash profile. Proposed, not in KC-VER
+/// (SCOPE.md §13.3).
+pub const HOST_CRASH_WITNESSES: [(&str, &str, &str); 1] = [(
+    "w_key_loaded_after_host_crash",
+    "P-K03-RELOAD-ONLY-DURABLE",
+    "after a host crash, a handle without the live DKG claim loaded the completed key",
+)];
 
 /// Reachable boundary of assumption A-05. Not a safety witness.
 pub const BOUNDARY_WITNESS: &str = "w_both_lost";
@@ -552,7 +608,10 @@ impl HostModel {
             let facts = s.history.acked_claims != 0
                 || s.history.acked_slots.iter().any(|x| x.is_some())
                 || s.history.acked_keys.iter().any(|x| x.is_some())
-                || s.history.acked_wallet.iter().any(|x| x.is_some());
+                || s.history.acked_wallet.iter().any(|x| x.is_some())
+                // A "seats lost" status told to a caller is a fact too
+                // (SCOPE.md §13.6, finding F-12).
+                || s.history.seats_lost_reported.iter().any(|x| *x);
             if facts && !journals_present {
                 s.history.both_lost = true;
             } else if facts && !s.history.both_lost {
@@ -736,7 +795,9 @@ impl HostModel {
         };
         // Observer: a key is being installed without live ownership, or after
         // the seats were already reported lost.
-        if !s.procs[p].holds_dkg[d] || s.history.seats_lost_reported[d] {
+        // After both histories are lost (assumption A-05) an earlier report
+        // is not binding (SCOPE.md §13.6, finding F-12).
+        if !s.procs[p].holds_dkg[d] || (s.history.seats_lost_reported[d] && !s.history.both_lost) {
             s.history.late_key = true;
         }
         let mut next = st;
@@ -854,7 +915,9 @@ impl HostModel {
         if reported != expected {
             s.history.status_mismatch = true;
         }
-        if s.history.seats_lost_reported[d] && reported != Outcome::StatusSeatsLost {
+        // Safety flags are not raised after both histories are lost
+        // (assumption A-05; SCOPE.md §13.6, finding F-12).
+        if s.history.seats_lost_reported[d] && reported != Outcome::StatusSeatsLost && !s.history.both_lost {
             s.history.seats_lost_regressed = true;
         }
         if reported == Outcome::StatusSeatsLost {
@@ -1156,6 +1219,9 @@ impl HostModel {
                     img.local_lock = None;
                 }
                 s.fence.lease = None;
+                if self.profile == Profile::DkgHostCrash {
+                    s.history.host_crashed = true;
+                }
                 true
             }
             Action::FenceReset => {
@@ -1294,7 +1360,7 @@ impl Model for HostModel {
                         }
                     }
                 }
-                Profile::Dkg => {
+                Profile::Dkg | Profile::DkgRestore | Profile::DkgHostCrash | Profile::DkgClone => {
                     // Keys and the wallet record live in domain 0; domain 1 keeps
                     // only its DKG reservation for the scope checks.
                     for key in [Some(0u8), Some(1u8), None] {
@@ -1322,19 +1388,23 @@ impl Model for HostModel {
         if !s.fence.reset_used {
             out.push(Action::FenceReset);
         }
-        // Clone, stale restore and host crash are kernel faults whose effect on
-        // the store is checked by the store profile. The dkg profile omits them
-        // to keep its state space within the run limits (SCOPE.md §11.3).
-        if self.profile == Profile::Store {
-            if !s.cloned {
-                out.push(Action::Clone);
-            }
+        // Clone, stale restore and host crash are kernel faults. The store
+        // profile offers all three. The dkg profile omits them to keep its
+        // state space within the run limits (SCOPE.md §11.3); each split dkg
+        // profile adds exactly one of them (SCOPE.md §13.3). The order of
+        // the pushes is the store profile's.
+        if self.profile.has_clone() && !s.cloned {
+            out.push(Action::Clone);
+        }
+        if self.profile.has_restore() {
             for img in 0..IMAGES {
                 let image = &s.images[img];
                 if image.exists && image.local_lock.is_none() && image.journals.iter().any(|j| j.name_durable) {
                     out.push(Action::RestoreStale { image: img as u8 });
                 }
             }
+        }
+        if self.profile.has_host_crash() {
             let volatile = s.images.iter().any(|i| i.journals.iter().any(|j| !j.name_durable || !j.content_durable));
             if s.procs.iter().any(|p| p.open) || volatile {
                 out.push(Action::HostCrash);
@@ -1367,7 +1437,7 @@ impl Model for HostModel {
             // P-K02-UNCERTAIN
             Property::<Self>::always("uncertain_fail_closed", |_, s| !s.history.ack_after_uncertain),
         ];
-        if self.profile == Profile::Dkg {
+        if self.profile.is_dkg() {
             p.extend([
                 // P-K03-NO-LATE-KEY
                 Property::<Self>::always("no_late_key", |_, s| !s.history.late_key),
@@ -1381,7 +1451,14 @@ impl Model for HostModel {
                 Property::<Self>::always("wallet_monotone", |_, s| !s.history.wallet_regressed && !s.history.ready_without_key),
             ]);
         }
-        if self.weakening == Weakening::None && self.profile == Profile::Dkg {
+        if self.weakening == Weakening::None && self.profile == Profile::DkgHostCrash {
+            // Proposed, not in KC-VER (SCOPE.md §13.3).
+            p.push(Property::<Self>::sometimes("w_key_loaded_after_host_crash", |_, s| {
+                s.history.host_crashed
+                    && s.last.is_some_and(|l| l.outcome == Outcome::KeyLoaded && !s.procs[l.proc as usize].holds_dkg[0])
+            }));
+        }
+        if self.weakening == Weakening::None && self.profile.is_dkg() {
             p.extend([
                 Property::<Self>::sometimes("w_key_saved_live", |_, s| outcome_is(s, Outcome::KeySaved)),
                 Property::<Self>::sometimes("w_key_identical", |_, s| outcome_is(s, Outcome::KeyIdentical)),
@@ -1409,8 +1486,8 @@ impl Model for HostModel {
         if self.weakening == Weakening::None {
             p.extend([
                 Property::<Self>::sometimes("w_fresh_claim", |_, s| outcome_is(s, Outcome::ClaimOk)),
-                Property::<Self>::sometimes("w_identical", |m, s| m.profile == Profile::Dkg || outcome_is(s, Outcome::Identical)),
-                Property::<Self>::sometimes("w_conflict", |m, s| m.profile == Profile::Dkg || outcome_is(s, Outcome::Conflict)),
+                Property::<Self>::sometimes("w_identical", |m, s| m.profile.is_dkg() || outcome_is(s, Outcome::Identical)),
+                Property::<Self>::sometimes("w_conflict", |m, s| m.profile.is_dkg() || outcome_is(s, Outcome::Conflict)),
                 Property::<Self>::sometimes("w_claimed", |_, s| outcome_is(s, Outcome::Claimed)),
                 Property::<Self>::sometimes("w_claimed_after_restart", |_, s| {
                     // The refusing handle holds no live claim: the tombstone came
@@ -1424,7 +1501,7 @@ impl Model for HostModel {
                     s.last.is_some_and(|l| l.outcome == Outcome::Busy && !s.procs[l.proc as usize].open)
                 }),
                 Property::<Self>::sometimes("w_clone_busy", |m, s| {
-                    m.profile == Profile::Dkg
+                    !m.profile.has_clone()
                         || (s.last.is_some_and(|l| l.outcome == Outcome::Busy && l.image == 1 && !s.procs[l.proc as usize].open)
                             && s.procs.iter().any(|p| p.open && p.image == 0))
                 }),
@@ -1462,7 +1539,7 @@ impl Model for HostModel {
                     })
                 }),
                 Property::<Self>::sometimes("w_stale_restore_quarantine", |m, s| {
-                    m.profile == Profile::Dkg || s.last.is_some_and(|l| {
+                    !m.profile.has_restore() || s.last.is_some_and(|l| {
                         let image = &s.images[l.image as usize];
                         l.outcome == Outcome::Quarantined
                             && !s.procs[l.proc as usize].open
@@ -1478,7 +1555,7 @@ impl Model for HostModel {
                         l.outcome == Outcome::Quarantined && p.open && p.uncertain
                     })
                 }),
-                Property::<Self>::sometimes(BOUNDARY_WITNESS, |m, s| m.profile == Profile::Dkg || s.history.both_lost),
+                Property::<Self>::sometimes(BOUNDARY_WITNESS, |m, s| m.profile.is_dkg() || s.history.both_lost),
             ]);
         }
         p
@@ -1813,10 +1890,7 @@ pub fn run(model: HostModel, threads: usize, timeout: Duration) -> RunOutput {
             let actions: Vec<Action> = path.into_actions();
             // Trace IDs are namespaced by profile so both profiles' sets can
             // live in one directory.
-            let prefix = match model.profile {
-                Profile::Store => "",
-                Profile::Dkg => "DKG-",
-            };
+            let prefix = model.profile.trace_prefix();
             let (kind, id) = match prop.expectation {
                 stateright::Expectation::Always => {
                     counterexample_actions.insert(prop.name.to_string(), actions.iter().map(|a| format!("{a:?}")).collect());

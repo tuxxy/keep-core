@@ -7,9 +7,9 @@ negative controls and concrete correspondence. It is not proof of Go and is
 not a production, merge, funding or C-04 acceptance gate.
 
 Run `python3 pkg/frost/signing/verification/run.py model` from the assigned
-repository. It builds offline and records a plan before execution, a 1,800 s
-wall deadline, four threads and a 16 GiB process-tree RSS ceiling monitored at
-250 ms. A timeout or resource stop is blocked. The thirteen signing/reservation weakenings and eleven admission weakenings
+repository. It builds offline and records a plan before execution, a 900 s
+wall deadline, four threads and a 20 GiB process-tree RSS ceiling monitored at
+250 ms (limits of 6 November 2026; earlier runs used 1,800 s and 16 GiB). A timeout or resource stop is blocked. The thirteen signing/reservation weakenings and eleven admission weakenings
 stop on their declared counterexample. The claim run
 must finish exhaustively and discover every witness.
 
@@ -38,7 +38,8 @@ first. `admission-replay` replays the admission traces on the real K-05
 and its negative control on the real Bridge. `k05` runs the K-05 named tests.
 See RESULTS-K05.md (statement S-K05-SIGN-1).
 
-`process` runs the twelve declared subprocess application traces, including
+`generated` drives every generated model trace through the same subprocess
+child (#82; see SCOPE-2026-11-06.md and LIMITATIONS.md). `process` runs the twelve declared subprocess application traces, including
 actual process kills and store reopens. It is a distinct trace set from the
 generated model's storage-stage projections. `admission.rs` checks the
 C-04/host-certificate join in ADMISSION-SEMANTICS.md. Since K-05, its traces
@@ -47,4 +48,6 @@ replay on the real slot lock.
 See RESULTS.md and evidence/V-04-2026-10-13/safety-statement.json for the final
 checkpoint. `admission` reruns only the proposed admission/host-attestation
 profile after an affected-module change. `audit-evidence.py` checks final profile
-pins, discoveries and replay classifications; check-freshness.py checks source.
+pins, discoveries and replay classifications; `check-freshness.py <manifest>`
+checks source, including the git-blob pins of the C-04 contracts and specs.
+The current statement and its manifest are named in the newest `REPIN-*.md`.

@@ -1,0 +1,25 @@
+diff --git a/pkg/chain/ethereum/frost_movement.go b/pkg/chain/ethereum/frost_movement.go
+index 7bb9721fd..7340a3880 100644
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -480,7 +480,8 @@ func (tc *TbtcChain) IsFrostIncomingPending(
+ 		return false, err
+ 	}
+ 	return record.Target == dkg.WalletID(outputKey) &&
+-		movement.IncomingState(record.State) == movement.IncomingPending, nil
++		(movement.IncomingState(record.State) == movement.IncomingPending ||
++			movement.IncomingState(record.State) == movement.IncomingEscalated), nil
+ }
+ 
+ // FrostWalletHasMain implements tbtc.FrostIncomingChain.
+@@ -530,6 +531,10 @@ func (tc *TbtcChain) validateFrostMovedFundsSweepProposal(
+ 	if !pending {
+ 		return fmt.Errorf("not a pending FROST incoming output of the wallet")
+ 	}
++	if record, err := tc.frostBridge.FrostIncoming(nil, deposit.OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: proposal.MovingFundsTxHash, OutputIndex: proposal.MovingFundsTxOutputIndex})); err != nil ||
++		movement.IncomingState(record.State) != movement.IncomingPending {
++		return fmt.Errorf("not a pending FROST incoming output of the wallet")
++	}
+ 
+ 	if proposal.SweepTxFee == nil || proposal.SweepTxFee.Sign() <= 0 {
+ 		return fmt.Errorf("proposed sweep transaction fee must be greater than zero")

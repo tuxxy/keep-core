@@ -92,11 +92,14 @@ func (m FrostSweepMaintainer) ProveSweep(ctx context.Context, wallet, hash [32]b
 	if m.Confirmations == 0 {
 		return action, errors.New("confirmations must be positive")
 	}
-	n, err := m.Bitcoin.GetTransactionConfirmations(ctx, bitcoin.Hash(hash))
-	if err != nil || n < m.Confirmations {
+	depth, ok, err := frostProofDepth(m.Chain, m.Bitcoin, bitcoin.Hash(hash), m.Confirmations)
+	if err != nil {
+		return action, err
+	}
+	if !ok {
 		return action, ErrSweepNotConfirmed
 	}
-	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), m.Confirmations, m.Bitcoin)
+	tx, proof, err := bitcoin.AssembleSpvProof(bitcoin.Hash(hash), depth, m.Bitcoin)
 	if err != nil {
 		return action, err
 	}
@@ -137,7 +140,7 @@ func (m FrostSweepMaintainer) ProveSweep(ctx context.Context, wallet, hash [32]b
 }
 
 // ErrFundingNotConfirmed reports a deposit funding transaction below the
-// required confirmations.
+// proof depth.
 var ErrFundingNotConfirmed = errors.New("FROST deposit funding is not confirmed")
 
 // ReserveDeposit reserves one revealed deposit against the C-10 exposure
@@ -189,8 +192,13 @@ func (m FrostSweepMaintainer) ReserveDeposit(ctx context.Context, key [32]byte) 
 		return action, nil
 	}
 	hash := bitcoin.Hash(record.FundingTransactionHash)
-	n, err := m.Bitcoin.GetTransactionConfirmations(ctx, hash)
-	if err != nil || n < m.Confirmations {
+	// The Bridge checks the funding proof with BitcoinTx.validateProof, so it
+	// is sized like every other FROST proof.
+	depth, confirmed, err := frostProofDepth(m.Chain, m.Bitcoin, hash, m.Confirmations)
+	if err != nil {
+		return action, err
+	}
+	if !confirmed {
 		return action, ErrFundingNotConfirmed
 	}
 	unspent, err := m.Funding.Unspent(ctx, bitcoin.TransactionOutpoint{TransactionHash: hash, OutputIndex: record.FundingOutputIndex})
@@ -213,7 +221,7 @@ func (m FrostSweepMaintainer) ReserveDeposit(ctx context.Context, key [32]byte) 
 	if assemble == nil {
 		assemble = bitcoin.AssembleSpvProof
 	}
-	tx, proof, err := assemble(hash, m.Confirmations, m.Bitcoin)
+	tx, proof, err := assemble(hash, depth, m.Bitcoin)
 	if err != nil {
 		return action, err
 	}

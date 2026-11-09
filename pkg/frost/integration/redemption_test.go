@@ -28,7 +28,7 @@ func p2pkh(b byte) []byte  { s, _ := bitcoin.PayToPublicKeyHash([20]byte{b}); re
 // acceptance, maintainer SPV proof and settlement; SC-05 equations; replay and
 // double-refund refusal.
 func TestFrostRedemptionLifecycle(t *testing.T) {
-	w := newK05World(t)
+	w := newK05WorldWith(t, certifyAllSeats)
 	ctx := w.f.ctx
 	treasuryBefore := w.balance(w.f.deployment.Treasury)
 	adminBefore := w.balance(w.adminAddr)
@@ -211,7 +211,7 @@ func (w *k05World) requireRefunded(adminBefore uint64, gross uint64, ids ...[32]
 // reservation, after share release, after signing (rebroadcast policy) and
 // after broadcast, on one funded wallet.
 func TestReservationTimeoutRace(t *testing.T) {
-	w := newK05World(t)
+	w := newK05WorldWith(t, certifyAllSeats)
 	ctx := w.f.ctx
 	const gross = 50_000
 	t.Run("before reservation", func(t *testing.T) {
@@ -428,7 +428,7 @@ func timeoutAfterRelease(w *k05World, id [32]byte) {
 // cannot be recovered into a result, cannot start a second release, and the
 // entitlement resolves only by a proven conflicting cancellation.
 func TestLateSignatureQuarantine(t *testing.T) {
-	w := newK05World(t)
+	w := newK05WorldWith(t, certifyAllSeats)
 	ctx := w.f.ctx
 	const gross = 60_000
 	id := w.request(gross, p2wpkh(0x61))
@@ -493,7 +493,7 @@ func TestLateSignatureQuarantine(t *testing.T) {
 // result: Resolve and Broadcast reconcile it from the recorded attempt round,
 // both while Reserved and after a timeout under RebroadcastThenCancel.
 func TestSignedResultRecoveredWithoutLedgerMarker(t *testing.T) {
-	w := newK05World(t)
+	w := newK05WorldWith(t, certifyAllSeats)
 	ctx := w.f.ctx
 	failSigned := func(on bool) {
 		for _, j := range w.journals {
@@ -561,7 +561,7 @@ func TestSignedResultRecoveredWithoutLedgerMarker(t *testing.T) {
 // payment attempt record is refused. Capacity is scaled down so the boundary
 // is reached with few real store writes; the rule is the production rule.
 func TestLedgerRecoveryHeadroom(t *testing.T) {
-	w := newK05World(t)
+	w := newK05WorldWith(t, certifyAllSeats)
 	ctx := w.f.ctx
 	const gross = 50_000
 	id := w.request(gross, p2wpkh(0x91))
@@ -624,7 +624,7 @@ func (d staticDirectives) Directive(_ context.Context, reservation [32]byte) (re
 // directive names the containment class and the action. With a cancel
 // directive the reservation is cancelled and refunded.
 func TestContainedReservationNeedsDirective(t *testing.T) {
-	w := newK05World(t)
+	w := newK05WorldWith(t, certifyAllSeats)
 	ctx := w.f.ctx
 	const gross = 50_000
 	id := w.request(gross, p2wpkh(0x57))
@@ -676,7 +676,7 @@ func TestContainedReservationNeedsDirective(t *testing.T) {
 // wallet is contained. No operator may sign or broadcast that already-admitted
 // cancellation until a governance directive says to cancel.
 func TestAdmittedCancellationNeedsDirectiveAfterContainment(t *testing.T) {
-	w := newK05World(t)
+	w := newK05WorldWith(t, certifyAllSeats)
 	ctx := w.f.ctx
 	const gross = 50_000
 	id := w.request(gross, p2wpkh(0x58))

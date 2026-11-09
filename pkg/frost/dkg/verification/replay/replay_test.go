@@ -72,6 +72,13 @@ type abstract struct {
 	Old             bool     `json:"old"`
 	Identities      [4]uint8 `json:"identities"`
 	OldIDs          [4]uint8 `json:"old_ids"`
+	// Restore path (RESTORE-SCOPE-2026-11-06.md).
+	Restarted       uint8    `json:"restarted"`
+	Restored        uint8    `json:"restored"`
+	RestoreCert     uint8    `json:"restore_cert"`
+	RestoreReloaded uint8    `json:"restore_reloaded"`
+	RestoreAttest   uint8    `json:"restore_attest"`
+	Heard           [2]uint8 `json:"heard"`
 }
 type step struct {
 	N              int             `json:"n"`
@@ -363,6 +370,7 @@ func TestV03Node(t *testing.T) {
 	var opts struct {
 		URL, Root   string
 		Node, Epoch int
+		Restore     bool
 	}
 	if err := json.Unmarshal([]byte(os.Getenv("V03_NODE")), &opts); err != nil {
 		t.Fatal(err)
@@ -427,9 +435,18 @@ func TestV03Node(t *testing.T) {
 		return nil
 	}
 	engine.pause = e.Boundary
-	w, err := e.Run(ctx)
+	var w dkg.WalletRecord
+	var status frost.DKGStatus
+	if opts.Restore {
+		// Node startup: the real Executor.Restore in a fresh process.
+		status, w, err = e.Restore(ctx)
+	} else {
+		w, err = e.Run(ctx)
+	}
 	outcome := "ready-unfunded"
-	if errors.Is(err, dkg.ErrQuarantined) {
+	if opts.Restore && err == nil && status.State == frost.DKGSeatsLost {
+		outcome = "lost"
+	} else if errors.Is(err, dkg.ErrQuarantined) {
 		outcome = "quarantined"
 	} else if errors.Is(err, dkg.ErrExpired) {
 		outcome = "expired"
@@ -441,7 +458,7 @@ func TestV03Node(t *testing.T) {
 		detail = err.Error()
 	}
 	_ = root.Close()
-	_ = emitNode(event{Kind: "result", Outcome: outcome, Wallet: w, Detail: detail})
+	_ = emitNode(event{Kind: "result", Outcome: outcome, Wallet: w, Status: status, Detail: detail})
 	os.Exit(0)
 }
 
@@ -491,6 +508,11 @@ type world struct {
 	sent              [2]uint8
 	fences            [2]authority
 	root              string
+	// restored processes and what they did (restore clause of
+	// P-K03-READY-ONLY-RELOADED)
+	restored      [2]bool
+	restoreReload uint8
+	restoreReady  uint8
 }
 
 func newWorld(root string) *world { w := &world{root: root}; w.reset(0); return w }
@@ -509,6 +531,9 @@ func (w *world) reset(epoch int) {
 	w.deliveryReady = [2]bool{}
 	w.deliveryMask = [2]uint8{}
 	w.epoch = epoch
+	w.restored = [2]bool{}
+	w.restoreReload = 0
+	w.restoreReady = 0
 	w.head = 10
 	w.chain = 0
 	w.submitted = nil
@@ -691,6 +716,9 @@ func (w *world) serve(res http.ResponseWriter, req *http.Request) {
 	case "worker-complete":
 	case "reloaded":
 		w.reloadMask |= 3 << uint(r.Node*2)
+		if w.restored[r.Node] {
+			w.restoreReload |= 3 << uint(r.Node*2)
+		}
 	case "parameters":
 		val = parameters()
 	case "selection":
@@ -774,6 +802,9 @@ func (w *world) serve(res http.ResponseWriter, req *http.Request) {
 		}
 		if a.Stage == "ready" {
 			w.readyMask |= 1 << uint(a.Seat-1)
+			if w.restored[r.Node] {
+				w.restoreReady |= 1 << uint(a.Seat-1)
+			}
 			w.sent[r.Node]++
 			if w.sent[r.Node] == 2 {
 				close(w.attest[r.Node])
@@ -880,10 +911,18 @@ type child struct {
 
 func start(t *testing.T, url, root string, node, epoch int) *child {
 	t.Helper()
+	return startMode(t, url, root, node, epoch, false)
+}
+
+// startMode starts a node subprocess; restore runs Executor.Restore (node
+// startup) instead of Run.
+func startMode(t *testing.T, url, root string, node, epoch int, restore bool) *child {
+	t.Helper()
 	opts, _ := json.Marshal(struct {
 		URL, Root   string
 		Node, Epoch int
-	}{url, root, node, epoch})
+		Restore     bool
+	}{url, root, node, epoch, restore})
 	c := &child{events: make(chan event, 32)}
 	life, stop := context.WithTimeout(context.Background(), 15*time.Second)
 	t.Cleanup(stop)
@@ -997,6 +1036,11 @@ func (c *child) finish(t *testing.T, want string) event {
 	}
 	c.done = true
 	c.terminal = &e
+	if want == "lost" {
+		// Restore reported every local seat lost: in the model the process
+		// stays dead.
+		c.outcome = "dead"
+	}
 	return e
 }
 func (c *child) kill(t *testing.T) {
@@ -1118,7 +1162,12 @@ func checkBoundary(t *testing.T, e event, s abstract, n int) {
 	if e.Key != (s.Key&(1<<n) != 0) {
 		t.Fatalf("key at %s concrete=%t abstract=%d", e.Boundary, e.Key, s.Key)
 	}
-	if e.Reloaded != (s.Reloaded&(3<<(n*2)) != 0) {
+	reloaded := s.Reloaded
+	if s.Restored&(1<<n) != 0 {
+		// Reload state is per process: a restored process must reload itself.
+		reloaded = s.RestoreReloaded
+	}
+	if e.Reloaded != (reloaded&(3<<(n*2)) != 0) {
 		t.Fatalf("reload at %s concrete=%t abstract=%d", e.Boundary, e.Reloaded, s.Reloaded)
 	}
 	compareWallet(t, e.Wallet, s, n)
@@ -1154,6 +1203,9 @@ func checkWorld(t *testing.T, w *world, s abstract) {
 	}
 	if w.reloadMask != s.Reloaded || w.readyMask != s.Attest {
 		t.Fatalf("seats reload/attest concrete=%d/%d model=%d/%d", w.reloadMask, w.readyMask, s.Reloaded, s.Attest)
+	}
+	if w.restoreReload != s.RestoreReloaded || w.restoreReady != s.RestoreAttest {
+		t.Fatalf("restored reload/attest concrete=%d/%d model=%d/%d", w.restoreReload, w.restoreReady, s.RestoreReloaded, s.RestoreAttest)
 	}
 	if w.certified && (w.certMask != s.CertSeats || w.certCount != s.CertCount || w.certTick != s.CertTick) {
 		t.Fatalf("accepted certificate concrete=%d/%d/%d model=%d/%d/%d", w.certMask, w.certCount, w.certTick, s.CertSeats, s.CertCount, s.CertTick)
@@ -1329,6 +1381,9 @@ func play(t *testing.T, tr trace) map[string]any {
 				complete(n, "quarantined")
 			} else if s.Phase[n] == 13 {
 				complete(n, "expired")
+			} else if s.Phase[n] == 19 {
+				// Restored collection read the wallet certified elsewhere.
+				boundaryWait(n, "after-readiness-postcondition", s)
 			}
 		case "Attest":
 			children[n].goOn(t)
@@ -1408,10 +1463,68 @@ func play(t *testing.T, tr trace) map[string]any {
 			w.mu.Unlock()
 			permit <- struct{}{}
 			children[n].wait(t, "monitor-complete", "")
-			if s.Phase[n] == 10 {
-				complete(n, "quarantined")
-			} else if s.Phase[n] == 13 {
-				complete(n, "expired")
+			if s.Phase[n] == 10 || s.Phase[n] == 13 {
+				// The monitor cancels the executor while its main goroutine
+				// is paused; Go reaches the outcome at its next
+				// context-aware step. after-key-reload is followed directly
+				// by before-readiness-collect with no step between, so a
+				// node paused there passes that one hook first, with its
+				// durable state unchanged (REPIN-2026-11-09.md section 3).
+				if c := children[n]; c.last == "after-key-reload" {
+					var paused event
+					for _, e := range c.observed {
+						if e.Kind == "boundary" && e.Boundary == "after-key-reload" {
+							paused = e
+						}
+					}
+					c.goOn(t)
+					e := c.wait(t, "boundary", "before-readiness-collect")
+					hooks["before-readiness-collect"]++
+					if e.Key != paused.Key || e.Reloaded != paused.Reloaded || !reflect.DeepEqual(e.Wallet, paused.Wallet) || !reflect.DeepEqual(e.Status, paused.Status) {
+						t.Fatalf("durable state changed between after-key-reload and before-readiness-collect")
+					}
+				}
+				if s.Phase[n] == 10 {
+					complete(n, "quarantined")
+				} else {
+					complete(n, "expired")
+				}
+			}
+		case "Restart":
+			// Node startup after a kill: fresh per-process gates; bus
+			// statements queued for the killed process are not delivered.
+			w.mu.Lock()
+			w.fences[n].leased = false
+			w.restored[n] = s.Restored&(1<<n) != 0
+			w.buses[n] = make(chan dkg.Attestation, 16)
+			w.delivery[n] = make(chan struct{})
+			w.deliveryReady[n] = false
+			w.deliveryMask[n] = 0
+			w.poll[n] = make(chan bool, 8)
+			w.pollFree[n] = false
+			w.watches[n] = make(chan struct{}, 8)
+			w.monitorHold[n] = false
+			w.monitorCaptured[n] = make(chan struct{}, 1)
+			w.monitorRelease[n] = make(chan struct{}, 1)
+			w.attest[n] = make(chan struct{})
+			w.sent[n] = 0
+			w.mu.Unlock()
+			children[n] = startMode(t, server.URL, w.root, n, int(s.Epoch), true)
+			switch s.Phase[n] {
+			case 9:
+				e := children[n].finish(t, "lost")
+				if e.Status.State != frost.DKGSeatsLost {
+					t.Fatalf("restore status %s", e.Status.State)
+				}
+				inspectKilled(t, w, n, s)
+			case 10:
+				children[n].finish(t, "quarantined")
+			case 13:
+				children[n].finish(t, "expired")
+			case 6: // only the weakened model skips the reload
+				boundaryWait(n, "before-readiness-collect", s)
+			default:
+				boundaryWait(n, "after-key-reload", s)
 			}
 		case "Retry": // Real retry seam is a fixed wallet read; no deadline reset or resubmit.
 			w.mu.Lock()
@@ -1514,7 +1627,7 @@ func play(t *testing.T, tr trace) map[string]any {
 			t.Fatalf("unsupported action %s", action)
 		}
 		checkWorld(t, w, s)
-		if st.Proc != nil && children[*st.Proc].done && action != "ProcessCrash" && action != "HostCrash" {
+		if st.Proc != nil && children[*st.Proc].done && action != "ProcessCrash" && action != "HostCrash" && !(action == "Restart" && s.Phase[*st.Proc] == 9) {
 			inspectTerminal(t, w, *st.Proc, s, children[*st.Proc].terminal)
 		}
 		actual := "environment"
@@ -1565,8 +1678,10 @@ func TestV03SubprocessReplay(t *testing.T) {
 	if err != nil || len(files) == 0 {
 		t.Fatal("missing current traces", err)
 	}
-	var reports []map[string]any
-	for _, file := range files {
+	// Each trace has its own world, directory, server and child processes, so
+	// the traces run in parallel; the report keeps trace order.
+	reports := make([]map[string]any, len(files))
+	for i, file := range files {
 		var tr trace
 		raw, err := os.ReadFile(file)
 		if err != nil {
@@ -1575,15 +1690,27 @@ func TestV03SubprocessReplay(t *testing.T) {
 		if err = json.Unmarshal(raw, &tr); err != nil {
 			t.Fatal(err)
 		}
-		t.Run(tr.ID, func(t *testing.T) { reports = append(reports, play(t, tr)) })
+		t.Run(tr.ID, func(t *testing.T) {
+			t.Parallel()
+			reports[i] = play(t, tr)
+		})
 	}
-	if os.Getenv("V03_REPLAY_REPORT") != "" {
-		raw, _ := json.MarshalIndent(reports, "", "  ")
-		if err = os.WriteFile(os.Getenv("V03_REPLAY_REPORT"), append(raw, '\n'), 0600); err != nil {
-			t.Fatal(err)
+	// Parallel subtests finish after this function returns; cleanup runs after them.
+	t.Cleanup(func() {
+		matched := []map[string]any{}
+		for _, r := range reports {
+			if r != nil {
+				matched = append(matched, r)
+			}
 		}
-	}
-	t.Logf("matched traces=%d", len(reports))
+		if os.Getenv("V03_REPLAY_REPORT") != "" {
+			raw, _ := json.MarshalIndent(matched, "", "  ")
+			if err := os.WriteFile(os.Getenv("V03_REPLAY_REPORT"), append(raw, '\n'), 0600); err != nil {
+				t.Error(err)
+			}
+		}
+		t.Logf("matched traces=%d", len(matched))
+	})
 }
 
 func compareWallet(t *testing.T, w dkg.WalletRecord, s abstract, n int) {

@@ -1,0 +1,31 @@
+diff --git a/pkg/tbtcpg/frost_moving_funds.go b/pkg/tbtcpg/frost_moving_funds.go
+index c287d75d5..068ab7a04 100644
+--- a/pkg/tbtcpg/frost_moving_funds.go
++++ b/pkg/tbtcpg/frost_moving_funds.go
+@@ -5,6 +5,7 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"math/big"
++	"slices"
+ 	"time"
+ 
+ 	"github.com/ipfs/go-log/v2"
+@@ -168,9 +169,15 @@ func (mft *MovingFundsTask) runFrost(
+ // frostExecutingSeat is the executing operator's lowest seat in the wallet:
+ // the seat a FROST commitment is submitted with.
+ func frostExecutingSeat(request *tbtc.CoordinationProposalRequest) (uint16, error) {
+-	for i, operator := range request.WalletOperators {
+-		if operator == request.ExecutingOperator {
+-			return uint16(i + 1), nil
++	var distinct []string
++	for _, operator := range request.WalletOperators {
++		if !slices.Contains(distinct, string(operator)) {
++			distinct = append(distinct, string(operator))
++		}
++	}
++	for i, operator := range distinct {
++		if operator == string(request.ExecutingOperator) {
++			return uint16(i), nil
+ 		}
+ 	}
+ 	return 0, ErrNoExecutingOperator

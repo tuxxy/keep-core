@@ -1,0 +1,40 @@
+diff --git a/pkg/tbtcpg/frost_moving_funds.go b/pkg/tbtcpg/frost_moving_funds.go
+index 20dbbde7c..54bec9745 100644
+--- a/pkg/tbtcpg/frost_moving_funds.go
++++ b/pkg/tbtcpg/frost_moving_funds.go
+@@ -4,6 +4,8 @@ import (
+ 	"context"
+ 	"errors"
+ 	"fmt"
++	"github.com/ethereum/go-ethereum/common"
++	"github.com/keep-network/keep-core/pkg/chain"
+ 	"math/big"
+ 	"time"
+ 
+@@ -140,7 +142,7 @@ func (mft *MovingFundsTask) runFrost(
+ 			return nil, false, fmt.Errorf("cannot find FROST target wallets: [%w]", err)
+ 		}
+ 
+-		seat, err := frostExecutingSeat(request)
++		seat, err := frostDescriptorSeat(source.Wallet.Descriptor.Operators, request.ExecutingOperator)
+ 		if err != nil {
+ 			return nil, false, err
+ 		}
+@@ -184,6 +186,17 @@ func frostExecutingSeat(request *tbtc.CoordinationProposalRequest) (uint16, erro
+ 	return 0, ErrNoExecutingOperator
+ }
+ 
++// frostDescriptorSeat is the executing operator's highest seat in the
++// on-chain descriptor, as FrostMovement.commit indexes it (0-based).
++func frostDescriptorSeat(operators []common.Address, executing chain.Address) (uint16, error) {
++	for i := len(operators) - 1; i >= 0; i-- {
++		if operators[i] == common.HexToAddress(string(executing)) {
++			return uint16(i), nil
++		}
++	}
++	return 0, ErrNoExecutingOperator
++}
++
+ // validateFrostMovingFundsSafetyMargin is base's moving funds safety margin
+ // (tbtc.ValidateMovingFundsSafetyMargin) for a FROST wallet: 24 hours of
+ // wall-clock time after the moving-funds request, 14 days for a wallet that

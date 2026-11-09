@@ -10,7 +10,9 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/keep-network/keep-core/pkg/bitcoin"
 	binding "github.com/keep-network/keep-core/pkg/chain/ethereum/frostabi"
+	"github.com/keep-network/keep-core/pkg/frost/deposit"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
 	"github.com/keep-network/keep-core/pkg/frost/movement"
 	"github.com/keep-network/keep-core/pkg/tbtc"
@@ -276,6 +278,35 @@ func (tc *TbtcChain) FrostTargetOutputKey(label [20]byte) ([32]byte, bool, error
 	if legacy.State != uint8(tbtc.StateUnknown) {
 		return [32]byte{}, false, nil
 	}
+	// A label unknown to both registries is also what a legacy node sees for
+	// a wallet whose key it holds before the Bridge registers it (base
+	// registers the signer before the DKG result is published). Only a label
+	// the Bridge logged as a FROST registration is asked walletScheme, so a
+	// pre-FROST Bridge is never asked a FROST-only function (D14), as in
+	// FrostDrainState.
+	registrations, err := tc.frostBridgeEvents.FilterFrostWalletRegistered(
+		&bind.FilterOpts{},
+		nil,
+		[][20]byte{label},
+	)
+	if err != nil {
+		return [32]byte{}, false, err
+	}
+	registered, err := anyLog(registrations)
+	if err != nil {
+		return [32]byte{}, false, err
+	}
+	if !registered {
+		// A committed legacy target is always known to the legacy registry,
+		// so a label unknown to both is never a legacy answer. Without the
+		// registration log (for example a short log index) it is unknown:
+		// fail closed rather than pay P2WPKH(label) to a FROST target.
+		return [32]byte{}, false, fmt.Errorf(
+			"wallet [0x%x] is unknown to the legacy registry and has no "+
+				"FROST registration log",
+			label,
+		)
+	}
 	scheme, err := tc.frostBridge.WalletScheme(nil, label)
 	if err != nil {
 		return [32]byte{}, false, err
@@ -408,3 +439,118 @@ func (tc *TbtcChain) IsFrostMovementTarget(label [20]byte) (bool, error) {
 }
 
 var _ tbtc.FrostDrainChain = (*TbtcChain)(nil)
+var _ tbtc.FrostIncomingChain = (*TbtcChain)(nil)
+
+// PastFrostIncomingOutputs implements tbtc.FrostIncomingChain from the
+// Bridge's FrostIncomingRecorded logs of the wallet.
+func (tc *TbtcChain) PastFrostIncomingOutputs(
+	outputKey [32]byte,
+	startBlock uint64,
+) ([]bitcoin.TransactionOutpoint, error) {
+	iterator, err := tc.frostBridgeEvents.FilterFrostIncomingRecorded(
+		&bind.FilterOpts{Start: startBlock},
+		nil,
+		[][32]byte{dkg.WalletID(outputKey)},
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer iterator.Close()
+	var outpoints []bitcoin.TransactionOutpoint
+	for iterator.Next() {
+		if iterator.Event.Raw.Removed {
+			continue
+		}
+		outpoints = append(outpoints, bitcoin.TransactionOutpoint{
+			TransactionHash: bitcoin.Hash(iterator.Event.TransactionHash),
+			OutputIndex:     iterator.Event.OutputIndex,
+		})
+	}
+	return outpoints, iterator.Error()
+}
+
+// IsFrostIncomingPending implements tbtc.FrostIncomingChain: the Bridge's
+// incoming record of the outpoint belongs to the wallet and is still
+// sweepable, Pending or Escalated. The Bridge sweeps an Escalated output as
+// a Pending one and closure waits for it, so hosts sweep both (D27).
+func (tc *TbtcChain) IsFrostIncomingPending(
+	outputKey [32]byte,
+	outpoint bitcoin.TransactionOutpoint,
+) (bool, error) {
+	record, err := tc.frostBridge.FrostIncoming(nil, deposit.OutpointKey(outpoint))
+	if err != nil {
+		return false, err
+	}
+	if record.Target != dkg.WalletID(outputKey) {
+		return false, nil
+	}
+	switch movement.IncomingState(record.State) {
+	case movement.IncomingPending, movement.IncomingEscalated:
+		return true, nil
+	default:
+		return false, nil
+	}
+}
+
+// FrostWalletHasMain implements tbtc.FrostIncomingChain.
+func (tc *TbtcChain) FrostWalletHasMain(outputKey [32]byte) (bool, error) {
+	custody, err := tc.frostBridge.FrostWalletCustody(nil, dkg.WalletID(outputKey))
+	if err != nil {
+		return false, err
+	}
+	return custody.MainOutpoint != [32]byte{}, nil
+}
+
+// validateFrostMovedFundsSweepProposal checks a FROST wallet's moved funds
+// sweep proposal as the base WalletProposalValidator checks a legacy one,
+// against the Bridge's FROST records: the wallet can sweep incoming outputs
+// (FrostMovement.sweep), the named output is a pending (Pending or
+// Escalated, D27) incoming output of this wallet, and the fee is positive
+// and within the on-chain moved funds sweep cap (D19).
+func (tc *TbtcChain) validateFrostMovedFundsSweepProposal(
+	label [20]byte,
+	outputKey [32]byte,
+	proposal *tbtc.MovedFundsSweepProposal,
+) error {
+	raw, err := tc.frostBridge.WalletDescriptor(nil, label)
+	if err != nil {
+		return err
+	}
+	wallet, err := decodeWallet(raw)
+	if err != nil {
+		return err
+	}
+	const readyUnfunded, live, movingFunds, closing, terminated = 3, 4, 5, 6, 8
+	switch wallet.State {
+	case readyUnfunded, live, movingFunds, closing, terminated:
+	default:
+		return fmt.Errorf("FROST wallet cannot sweep incoming outputs in state [%d]", wallet.State)
+	}
+
+	pending, err := tc.IsFrostIncomingPending(
+		outputKey,
+		bitcoin.TransactionOutpoint{
+			TransactionHash: proposal.MovingFundsTxHash,
+			OutputIndex:     proposal.MovingFundsTxOutputIndex,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if !pending {
+		return fmt.Errorf("not a pending FROST incoming output of the wallet")
+	}
+
+	if proposal.SweepTxFee == nil || proposal.SweepTxFee.Sign() <= 0 {
+		return fmt.Errorf("proposed sweep transaction fee must be greater than zero")
+	}
+	parameters, err := tc.bridge.MovingFundsParameters()
+	if err != nil {
+		return err
+	}
+	if !proposal.SweepTxFee.IsUint64() ||
+		proposal.SweepTxFee.Uint64() > parameters.MovedFundsSweepTxMaxTotalFee {
+		return fmt.Errorf("proposed sweep transaction fee is too high")
+	}
+	return nil
+}

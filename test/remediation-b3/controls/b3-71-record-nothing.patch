@@ -1,0 +1,16 @@
+diff --git a/pkg/frost/movement/mover.go b/pkg/frost/movement/mover.go
+index 2d4fc15cd..ac4fb15a2 100644
+--- a/pkg/frost/movement/mover.go
++++ b/pkg/frost/movement/mover.go
+@@ -309,7 +309,10 @@ func (m *Mover) Resolve(ctx context.Context, plan *signing.Plan) (Status, error)
+ 		if err = m.step("outcome-seen"); err != nil {
+ 			return "", err
+ 		}
+-		return StatusSettled, m.Ledger.Append(ctx, redemption.Entry{Reservation: id, Kind: redemption.KindMovementOutcome, Block: head.Number, Transaction: plan.BitcoinTransactionHash()})
++		// CONTROL b3-71-record-nothing (review R4 wrong fix): report settled,
++		// record no outcome.
++		_ = id
++		return StatusSettled, nil
+ 	}
+ 	_, signed, err := m.signedRound(ctx, plan)
+ 	if err != nil {

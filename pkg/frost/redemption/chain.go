@@ -6,6 +6,7 @@ package redemption
 import (
 	"context"
 	"errors"
+	"math/big"
 )
 
 // RequestState mirrors C-04 FrostRedemptionLedger.RequestState.
@@ -213,7 +214,17 @@ type Reader interface {
 	RequestEvents(ctx context.Context, wallet [32]byte, from, to uint64) ([]RequestEvent, error)
 	Admissions(ctx context.Context, wallet [32]byte, from, to uint64) ([]Admission, error)
 	Admission(ctx context.Context, reservation [32]byte) (Admission, error)
+	// TxProofDifficultyFactor and GetCurrentAndPrevEpochDifficulty are the
+	// Bridge's proof difficulty factor and the epoch difficulties of its
+	// relay, from which a producer sizes an SPV proof the Bridge accepts (as
+	// the base spv.Chain and btcdiff.Chain report them).
+	TxProofDifficultyFactor() (*big.Int, error)
+	GetCurrentAndPrevEpochDifficulty() (*big.Int, *big.Int, error)
 	CancellationAdmission(ctx context.Context, reservation, transactionHash [32]byte) (Admission, error)
+	// CertifiedSeats is the seat set of the wallet's accepted readiness
+	// certificate. Only these seats attest or sign for the wallet (KC-SF-V3
+	// 4.2; base registerSigner's final signing group).
+	CertifiedSeats(ctx context.Context, wallet [32]byte) ([]uint16, error)
 }
 
 // Writer is the permissionless write half. Every call returns after the

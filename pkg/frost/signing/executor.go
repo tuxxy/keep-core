@@ -23,6 +23,22 @@ import (
 var ErrUnauthorized = errors.New("FROST transaction is not authorized")
 var ErrLateSignature = errors.New("FROST signature retained in quarantine: reservation changed")
 
+// errReservationUnread marks a C-04 record the provider could not read. A
+// failed read shows nothing about the reservation, so a signature whose
+// acceptance check fails this way is not a late signature: it stays retained
+// and unaccepted, and a later round reads again (KC-VER
+// P-K05-LATE-SIGNATURE-QUARANTINE quarantines only a signature completed
+// after its reservation left Reserved).
+var errReservationUnread = errors.New("reservation record not read")
+
+// lateUnlessUnread classifies a failed acceptance check after a signature.
+func lateUnlessUnread(err error) error {
+	if errors.Is(err, errReservationUnread) {
+		return err
+	}
+	return fmt.Errorf("%w: %v", ErrLateSignature, err)
+}
+
 // ReservationView must be read at the current canonical head, from one
 // internally consistent snapshot. The provider verifies the C-04 certificate
 // and current request state; the executor cannot discover a hidden newer head. Matching
@@ -161,7 +177,7 @@ func (e *Executor) reservationCheck(ctx context.Context, initialize bool, allowe
 	}
 	v, err := e.config.Reservations.ReadReservation(ctx, e.config.Reservation)
 	if err != nil {
-		return fmt.Errorf("%w: reservation read: %v", ErrUnauthorized, err)
+		return fmt.Errorf("%w: %w: %v", ErrUnauthorized, errReservationUnread, err)
 	}
 	p := e.config.Plan
 	if v.ID != e.config.Reservation || v.Commitment != p.PaymentCommitment() || v.Generation != p.intent.Generation || v.StateVersion != p.intent.StateVersion || !allowed(v.State) || v.Block == 0 || v.BlockHash == ([32]byte{}) || v.BlockHash != v.CanonicalBlockHash || v.HeadHash == ([32]byte{}) || v.Head < v.Block || v.Head-v.Block < e.config.FinalityBlocks {
@@ -185,7 +201,7 @@ func (e *Executor) reservationCheck(ctx context.Context, initialize bool, allowe
 		}
 		c, err := reader.ReadCancellation(ctx, e.config.Reservation, p.cancellation.TransactionHash)
 		if err != nil {
-			return fmt.Errorf("%w: cancellation read: %v", ErrUnauthorized, err)
+			return fmt.Errorf("%w: cancellation %w: %v", ErrUnauthorized, errReservationUnread, err)
 		}
 		if c.Reservation != e.config.Reservation || c.TransactionHash != p.cancellation.TransactionHash || c.Snapshot != p.cancellation.Snapshot || c.Fee != uint64(p.cancellation.Fee) || c.Block == 0 || c.BlockHash == ([32]byte{}) || c.BlockHash != c.CanonicalBlockHash || v.Head < c.Block || v.Head-c.Block < e.config.FinalityBlocks {
 			return fmt.Errorf("%w: missing, unfinalized or changed cancellation admission", ErrUnauthorized)
@@ -460,7 +476,7 @@ func (e *Executor) Run(ctx context.Context) (*Result, error) {
 			return nil, err
 		}
 		if err = e.reservation(ctx, false); err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrLateSignature, err)
+			return nil, lateUnlessUnread(err)
 		}
 		signatures = append(signatures, signature)
 		result.Done = append(result.Done, done)
@@ -571,7 +587,7 @@ func (e *Executor) recoverCompletedResult(ctx context.Context) (*Result, error) 
 		signatures = append(signatures, signature)
 	}
 	if err := e.reservation(ctx, false); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrLateSignature, err)
+		return nil, lateUnlessUnread(err)
 	}
 	result.Transaction, err = p.snapshot.AddSignatures(signatures)
 	if err != nil {
@@ -674,9 +690,18 @@ func (e *Executor) Result(ctx context.Context) (*Result, error) {
 	return result, e.checkResultReceipt(ctx, result)
 }
 
-// PossibleRelease reports whether any input's signature completion is durable
-// for this plan and session, i.e. a share may have been released.
+// PossibleRelease reports whether a share of this plan may have been
+// released. Run retains the plan intent before any grant and keeps no durable
+// record between that point and the worker, so a retained intent is a
+// possible release until chain evidence settles the plan: a missing done
+// record proves nothing (tuxxy/keep-core#50, KC-SF-V3 line 258). A durable
+// signature completion is one as well.
 func (e *Executor) PossibleRelease(ctx context.Context) (bool, error) {
+	if _, err := e.config.Journal.ReadSigningRecord(ctx, e.config.Plan.hash); err == nil {
+		return true, nil
+	} else if !errors.Is(err, store.ErrMissing) {
+		return true, err
+	}
 	for index := range e.config.Plan.snapshot.Digests() {
 		attempt, err := e.attempt(index)
 		if err != nil {

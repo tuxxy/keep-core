@@ -47,7 +47,12 @@ type Executor struct {
 	failure              chan error
 	pending              []Attestation
 	record               WalletRecord
+	restoring            bool
 }
+
+// errCertifiedElsewhere ends a restored host's readiness collection once the
+// registry accepted another certificate for the wallet.
+var errCertifiedElsewhere = errors.New("wallet certified while collecting readiness")
 
 func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 	if ctx == nil || e.Chain == nil || e.Engine == nil || e.Journal == nil || e.Bus == nil || e.Signer == nil || e.FinalityBlocks == 0 {
@@ -59,36 +64,9 @@ func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	e.abort = cancel
-	var err error
-	e.params, err = e.Chain.Parameters(ctx)
+	locals, err := e.prepare(ctx)
 	if err != nil {
 		return WalletRecord{}, err
-	}
-	if err = e.params.Validate(); err != nil {
-		return WalletRecord{}, err
-	}
-	e.selection, err = e.Chain.Selection(ctx, e.Request.Group.Epoch)
-	if err != nil {
-		return WalletRecord{}, err
-	}
-	if err = e.selection.Validate(e.params); err != nil {
-		return WalletRecord{}, err
-	}
-	domain := e.Journal.Domain()
-	var chain [32]byte
-	e.params.ChainID.FillBytes(chain[:])
-	if domain.Chain != chain || domain.Registry != [20]byte(e.params.Registry) || domain.Epoch != e.selection.Epoch || !reflect.DeepEqual(e.Request.Group.Roster, e.selection.Roster()) || e.Request.Group.Threshold != e.params.Threshold || e.Request.Group.Quorum != e.params.GroupSize || !reflect.DeepEqual(e.Request.Participants, e.selection.Roster()) {
-		return WalletRecord{}, errors.New("executor does not match chain selection")
-	}
-	address := crypto.PubkeyToAddress(e.Signer.PublicKey)
-	var locals []uint16
-	for i, a := range e.selection.Operators {
-		if a == address {
-			locals = append(locals, uint16(i+1))
-		}
-	}
-	if len(locals) == 0 || !reflect.DeepEqual(locals, e.Request.LocalSeats) {
-		return WalletRecord{}, errors.New("executor must own every selected local seat")
 	}
 	if e.PollInterval <= 0 {
 		e.PollInterval = 250 * time.Millisecond
@@ -117,49 +95,226 @@ func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 	if err = e.atBoundary("after-post-key-read"); err != nil {
 		return e.finishFailure(ctx, err)
 	}
-	var session [32]byte
-	if _, err = rand.Read(session[:]); err != nil {
+	return e.ready(ctx, view, key, locals, e.finishFailure)
+}
+
+// prepare reads and validates the chain's parameters and selection for the
+// request's epoch and returns the local seats, which must be exactly the
+// request's.
+func (e *Executor) prepare(ctx context.Context) ([]uint16, error) {
+	var err error
+	e.params, err = e.Chain.Parameters(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = e.params.Validate(); err != nil {
+		return nil, err
+	}
+	e.selection, err = e.Chain.Selection(ctx, e.Request.Group.Epoch)
+	if err != nil {
+		return nil, err
+	}
+	if err = e.selection.Validate(e.params); err != nil {
+		return nil, err
+	}
+	domain := e.Journal.Domain()
+	var chain [32]byte
+	e.params.ChainID.FillBytes(chain[:])
+	if domain.Chain != chain || domain.Registry != [20]byte(e.params.Registry) || domain.Epoch != e.selection.Epoch || !reflect.DeepEqual(e.Request.Group.Roster, e.selection.Roster()) || e.Request.Group.Threshold != e.params.Threshold || e.Request.Group.Quorum != e.params.GroupSize || !reflect.DeepEqual(e.Request.Participants, e.selection.Roster()) {
+		return nil, errors.New("executor does not match chain selection")
+	}
+	address := crypto.PubkeyToAddress(e.Signer.PublicKey)
+	var locals []uint16
+	for i, a := range e.selection.Operators {
+		if a == address {
+			locals = append(locals, uint16(i+1))
+		}
+	}
+	if len(locals) == 0 || !reflect.DeepEqual(locals, e.Request.LocalSeats) {
+		return nil, errors.New("executor must own every selected local seat")
+	}
+	return locals, nil
+}
+
+// Restore is node startup for this operator's seats in the journal's epoch,
+// the counterpart of base keep-core's newWalletRegistry/loadSigners: it never
+// reruns the DKG. The request is the chain's selection for that epoch.
+//   - Seats whose host died before the durable KeyReady are reported lost
+//     (frost.DKGSeatsLost) and Restore returns at once.
+//   - Otherwise the saved wallet and key are restored as Run would finish
+//     them: the completed key is reloaded in a fresh worker before any
+//     readiness claim (KC-SF-V3 4.2, C-03), the seats take part in readiness
+//     while the wallet is pending, and the wallet is saved ReadyUnfunded
+//     once the registry certifies it.
+//
+// A failed reload or an unclassified error is returned without changing the
+// saved wallet, so a later startup can restore it; an expiry or quarantine is
+// recorded as Run records it.
+func (e *Executor) Restore(ctx context.Context) (frost.DKGStatus, WalletRecord, error) {
+	if ctx == nil || e.Chain == nil || e.Engine == nil || e.Journal == nil || e.Bus == nil || e.Signer == nil {
+		return frost.DKGStatus{}, WalletRecord{}, errors.New("incomplete FROST executor")
+	}
+	if _, ok := ctx.Deadline(); !ok {
+		return frost.DKGStatus{}, WalletRecord{}, errors.New("FROST executor needs a protocol deadline")
+	}
+	status, err := e.Journal.DKGStatus(ctx)
+	if err != nil {
+		return status, WalletRecord{}, err
+	}
+	switch status.State {
+	case frost.DKGSeatsLost:
+		return status, WalletRecord{}, nil
+	case frost.DKGKeyStored:
+	default:
+		return status, WalletRecord{}, fmt.Errorf("no completed key to restore: DKG %s", status.State)
+	}
+	record, err := e.Journal.LoadWallet(ctx)
+	if err != nil {
+		return status, record, err
+	}
+	if record.Quarantined || record.State == "Closed" {
+		return status, record, nil
+	}
+	if record.State != "RegisteredPendingReady" && record.State != "ReadyUnfunded" {
+		return status, record, fmt.Errorf("saved wallet %s cannot be restored", record.State)
+	}
+	key, err := e.Journal.LoadKey(ctx)
+	if err != nil {
+		return status, record, err
+	}
+	params, err := e.Chain.Parameters(ctx)
+	if err != nil {
+		return status, record, err
+	}
+	selection, err := e.Chain.Selection(ctx, e.Journal.Domain().Epoch)
+	if err != nil {
+		return status, record, err
+	}
+	e.Request = frost.DKGRequest{Group: frost.Group{Roster: selection.Roster(), Threshold: params.Threshold, Quorum: params.GroupSize, Epoch: selection.Epoch}, LocalSeats: status.LocalSeats, Participants: selection.Roster()}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	e.abort = cancel
+	locals, err := e.prepare(ctx)
+	if err != nil {
+		return status, record, err
+	}
+	e.restoring = true
+	e.record = record
+	descriptor := record.Descriptor
+	e.descriptor = &descriptor
+	// The saved record exists only after this host observed the approval, so
+	// a restored host knows it before its monitor starts: a later read of it
+	// removed or replaced quarantines, as it does for a Run host (KC-SF-V3 4.3).
+	e.mu.Lock()
+	e.approvalGeneration++
+	e.approvalSeen = true
+	e.observedApprovalID = record.ID
+	e.observedApprovalHash = record.ApprovalHash
+	e.mu.Unlock()
+	if e.PollInterval <= 0 {
+		e.PollInterval = 250 * time.Millisecond
+	}
+	e.incoming = make(chan Attestation, 400)
+	e.failure = make(chan error, 2)
+	e.background.Add(2)
+	go func() { defer e.background.Done(); e.receive(ctx) }()
+	go func() { defer e.background.Done(); e.monitor(ctx) }()
+	defer func() { cancel(); e.background.Wait() }()
+	e.Providers.Acceptance = e
+	view, err := e.checkedApproval(ctx)
+	if err != nil {
+		record, err = e.finishRestore(ctx, err)
+		return status, record, err
+	}
+	record, err = e.ready(ctx, view, key, locals, e.finishRestore)
+	return status, record, err
+}
+
+// finishRestore records a classified expiry or quarantine as finishFailure
+// does; any other failure leaves the saved wallet as it was. Run uses it too
+// when the executor cancelled itself before sending its certificate (D32).
+func (e *Executor) finishRestore(ctx context.Context, err error) (WalletRecord, error) {
+	if e.abort != nil {
+		e.abort()
+	}
+	e.background.Wait()
+	e.callbackMu.Lock()
+	err = preferFailure(err, e.callbackErr)
+	e.callbackMu.Unlock()
+	for draining := true; draining; {
+		select {
+		case failure := <-e.failure:
+			err = preferFailure(err, failure)
+		default:
+			draining = false
+		}
+	}
+	if errors.Is(err, ErrQuarantined) || errors.Is(err, ErrExpired) {
 		return e.finishFailure(ctx, err)
 	}
-	attempt, err := domain.NewAttempt("sign", session, view.Head)
+	return e.record, err
+}
+
+// ready reloads the completed key in a fresh worker, then takes part in
+// readiness with every local seat and saves the wallet ReadyUnfunded once the
+// registry certifies it. No readiness claim precedes a successful reload
+// (KC-SF-V3 4.2, C-03). It is the tail of both Run and Restore; fail is the
+// caller's failure handling.
+func (e *Executor) ready(ctx context.Context, view View, key frost.KeyReady, locals []uint16, fail func(context.Context, error) (WalletRecord, error)) (WalletRecord, error) {
+	var err error
+	var session [32]byte
+	if _, err = rand.Read(session[:]); err != nil {
+		return fail(ctx, err)
+	}
+	attempt, err := e.Journal.Domain().NewAttempt("sign", session, view.Head)
 	if err != nil {
-		return e.finishFailure(ctx, err)
+		return fail(ctx, err)
 	}
 	reload := frost.SigningRequest{Group: e.Request.Group, LocalSeats: locals, Selected: e.selection.Roster(), Attempt: attempt, Key: key}
 	providers := e.Providers
 	providers.Transport = reloadOnlyTransport{attempt}
 	providers.Store = e.Journal
 	if err = e.Engine.ReloadKey(ctx, reload, providers); err != nil {
-		return e.finishFailure(ctx, err)
+		return fail(ctx, err)
 	}
 	if err = e.atBoundary("after-key-reload"); err != nil {
-		return e.finishFailure(ctx, err)
+		return fail(ctx, err)
 	}
 	if err = e.atBoundary("before-readiness-collect"); err != nil {
-		return e.finishFailure(ctx, err)
+		return fail(ctx, err)
 	}
 	local := make([]Attestation, len(locals))
 	for i, seat := range locals {
 		reference := crypto.Keccak256Hash(key.LocalReferences[i])
 		digest, x := e.Chain.ReadinessDigest(ctx, view.Approved, seat, reference)
 		if x != nil {
-			return e.finishFailure(ctx, x)
+			return fail(ctx, x)
 		}
 		signature, x := Sign(e.Signer, digest)
 		if x != nil {
-			return e.finishFailure(ctx, x)
+			return fail(ctx, x)
 		}
 		local[i] = Attestation{Stage: "ready", Epoch: e.selection.Epoch, Seat: seat, Digest: digest, Reference: reference, Signature: signature}
 	}
-	votes, err := e.collect(ctx, "ready", int(e.params.ReadySeats), local, func(a Attestation) bool {
-		if a.Reference == ([32]byte{}) {
-			return false
-		}
-		digest, x := e.Chain.ReadinessDigest(ctx, view.Approved, a.Seat, a.Reference)
-		return x == nil && a.Digest == digest
-	})
+	var votes []Attestation
+	// A restored wallet the registry already certified needs no readiness
+	// from these seats.
+	if !e.restoring || view.Approved.State != 2 {
+		votes, err = e.collect(ctx, "ready", int(e.params.ReadySeats), local, func(a Attestation) bool {
+			if a.Reference == ([32]byte{}) {
+				return false
+			}
+			digest, x := e.Chain.ReadinessDigest(ctx, view.Approved, a.Seat, a.Reference)
+			return x == nil && a.Digest == digest
+		})
+	}
+	if errors.Is(err, errCertifiedElsewhere) {
+		// Restore only: another certificate was accepted while these seats
+		// waited for votes; the postcondition below decides.
+		votes, err = nil, nil
+	}
 	if err != nil {
-		return e.finishFailure(ctx, err)
+		return fail(ctx, err)
 	}
 	var seats []uint16
 	var references [][32]byte
@@ -169,40 +324,52 @@ func (e *Executor) Run(ctx context.Context) (WalletRecord, error) {
 		references = append(references, a.Reference)
 		signatures = append(signatures, a.Signature...)
 	}
-	if err = e.atBoundary("before-certificate-submit"); err != nil {
-		return e.finishFailure(ctx, err)
-	}
-	if err = e.Chain.Ready(ctx, e.record.ID, seats, references, signatures); err != nil {
-		if _, x := e.reconcileWallet(ctx, view, err); x != nil {
-			return e.finishFailure(ctx, x)
+	if len(votes) > 0 {
+		if err = e.atBoundary("before-certificate-submit"); err != nil {
+			return fail(ctx, err)
 		}
-	}
-	if err = e.atBoundary("after-certificate-submit"); err != nil {
-		return e.finishFailure(ctx, err)
+		if ctx.Err() != nil {
+			// The executor already cancelled itself: the certificate never
+			// leaves the host, so no outcome is unresolved. Only a classified
+			// cause changes the saved wallet, on Run as on Restore (D32).
+			return e.finishRestore(ctx, ctx.Err())
+		}
+		if err = e.Chain.Ready(ctx, e.record.ID, seats, references, signatures); err != nil {
+			if _, x := e.reconcileWallet(ctx, view, err); x != nil {
+				return fail(ctx, x)
+			}
+		}
+		if err = e.atBoundary("after-certificate-submit"); err != nil {
+			return fail(ctx, err)
+		}
 	}
 	// Verify the public postcondition; never infer it from transaction submission.
 	view, err = e.checkedApproval(ctx)
 	if err != nil {
-		return e.finishFailure(ctx, err)
+		return fail(ctx, err)
 	}
 	if view.Approved.State != 2 {
-		return e.finishFailure(ctx, errors.New("readiness transaction did not certify wallet"))
+		return fail(ctx, errors.New("readiness transaction did not certify wallet"))
 	}
 	if err = e.atBoundary("after-readiness-postcondition"); err != nil {
-		return e.finishFailure(ctx, err)
+		return fail(ctx, err)
 	}
-	e.record.State = "ReadyUnfunded"
-	if err = e.Journal.SaveWallet(ctx, e.record); err != nil {
-		return e.finishFailure(ctx, err)
+	if e.record.State != "ReadyUnfunded" {
+		e.record.State = "ReadyUnfunded"
+		if err = e.Journal.SaveWallet(ctx, e.record); err != nil {
+			return fail(ctx, err)
+		}
 	}
 	if err = e.atBoundary("after-wallet-ready-save"); err != nil {
-		return e.finishFailure(ctx, err)
+		return fail(ctx, err)
 	}
 	return e.finishSuccess(ctx)
 }
 
 // Join observers before returning success. A classified conflict can arrive
-// after the final wallet save; cancellation alone must not erase it.
+// after the final wallet save; cancellation alone must not erase it. Any other
+// cause is returned with the saved ReadyUnfunded wallet unchanged, on Run as
+// on Restore, so a later startup restores it (D31).
 func (e *Executor) finishSuccess(ctx context.Context) (WalletRecord, error) {
 	if e.abort != nil {
 		e.abort()
@@ -219,8 +386,11 @@ func (e *Executor) finishSuccess(ctx context.Context) (WalletRecord, error) {
 			draining = false
 		}
 	}
-	if cause != nil && (errors.Is(cause, ErrQuarantined) || errors.Is(cause, ErrExpired) || (!errors.Is(cause, context.Canceled) && !errors.Is(cause, context.DeadlineExceeded))) {
+	if errors.Is(cause, ErrQuarantined) || errors.Is(cause, ErrExpired) {
 		return e.finishFailure(ctx, cause)
+	}
+	if cause != nil && !errors.Is(cause, context.Canceled) && !errors.Is(cause, context.DeadlineExceeded) {
+		return e.record, cause
 	}
 	return e.record, nil
 }
@@ -605,8 +775,12 @@ func (e *Executor) collect(ctx context.Context, stage string, count int, local [
 			return nil, ctx.Err()
 		case <-ticker.C:
 			if stage == "ready" {
-				if _, err := e.checkedApproval(ctx); err != nil {
+				view, err := e.checkedApproval(ctx)
+				if err != nil {
 					return nil, err
+				}
+				if e.restoring && view.Approved.State == 2 {
+					return nil, errCertifiedElsewhere
 				}
 			}
 		}

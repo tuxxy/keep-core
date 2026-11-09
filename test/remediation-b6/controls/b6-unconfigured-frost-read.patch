@@ -1,0 +1,38 @@
+diff --git a/pkg/tbtc/frost_node_b6_binding_test.go b/pkg/tbtc/frost_node_b6_binding_test.go
+new file mode 100644
+index 0000000..f575718
+--- /dev/null
++++ b/pkg/tbtc/frost_node_b6_binding_test.go
+@@ -0,0 +1,32 @@
++package tbtc_test
++
++// CONTROL b6-unconfigured-frost-read (rule 5): today's node initialisation,
++// plus one read of a FROST-only Bridge function (frostRegistry()) through the
++// node's own endpoint even when FROST is not configured. Not a fix.
++
++import (
++	"context"
++
++	"github.com/ethereum/go-ethereum"
++	"github.com/ethereum/go-ethereum/common"
++	"github.com/ethereum/go-ethereum/crypto"
++	"github.com/ethereum/go-ethereum/ethclient"
++
++	"github.com/keep-network/keep-core/pkg/tbtc"
++)
++
++func init() {
++	frostNodeStart = func(ctx context.Context, h frostNodeHost) error {
++		if err := tbtc.Initialize(ctx, h.Chain, h.BitcoinChain, h.Network, h.KeyStore, h.Work, h.Scheduler, h.Proposals, h.Config, nil, nil, h.EthereumNetwork); err != nil {
++			return err
++		}
++		client, err := ethclient.Dial(h.EthereumConfig.URL)
++		if err != nil {
++			return err
++		}
++		defer client.Close()
++		bridge := common.HexToAddress(h.EthereumConfig.ContractAddresses["bridge"])
++		_, _ = client.CallContract(ctx, ethereum.CallMsg{To: &bridge, Data: crypto.Keccak256([]byte("frostRegistry()"))[:4]}, nil)
++		return nil
++	}
++}

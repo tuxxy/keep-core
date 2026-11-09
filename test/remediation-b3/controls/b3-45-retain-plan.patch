@@ -1,0 +1,38 @@
+diff --git a/pkg/frost/movement/planner.go b/pkg/frost/movement/planner.go
+index a4764207e..f094db903 100644
+--- a/pkg/frost/movement/planner.go
++++ b/pkg/frost/movement/planner.go
+@@ -6,6 +6,7 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"sort"
++	"sync"
+ 
+ 	"github.com/keep-network/keep-core/pkg/bitcoin"
+ 	"github.com/keep-network/keep-core/pkg/frost/dkg"
+@@ -222,6 +223,25 @@ func (p Planner) Movement(ctx context.Context) (*signing.Plan, error) {
+ // IncomingSweep builds the target's sweep of every finalized pending or
+ // escalated incoming output (ascending key order, at most 127) with its main.
+ func (p Planner) IncomingSweep(ctx context.Context) (*signing.Plan, error) {
++	// CONTROL b3-45-retain-plan: the first plan is kept for good (K09-29).
++	retainedMu.Lock()
++	defer retainedMu.Unlock()
++	if plan, ok := retained[p.walletID()]; ok {
++		return plan, nil
++	}
++	plan, err := p.incomingSweep(ctx)
++	if err == nil {
++		retained[p.walletID()] = plan
++	}
++	return plan, err
++}
++
++var (
++	retainedMu sync.Mutex
++	retained   = map[[32]byte]*signing.Plan{}
++)
++
++func (p Planner) incomingSweep(ctx context.Context) (*signing.Plan, error) {
+ 	if err := p.step("before-movement-plan"); err != nil {
+ 		return nil, err
+ 	}

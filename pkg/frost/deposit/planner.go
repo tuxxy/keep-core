@@ -16,6 +16,10 @@ import (
 // ErrNothingToSweep reports that no revealed deposit is sweepable at the anchor.
 var ErrNothingToSweep = errors.New("no sweepable FROST deposit")
 
+// ErrWalletNotSynced reports a wallet spend on Bitcoin the Bridge has not
+// seen proven: a new sweep must wait for its proof.
+var ErrWalletNotSynced = errors.New("FROST wallet has a sweep the Bridge has not proven")
+
 // Planner builds sweeps from finalized C-05 state at one agreed anchor block,
 // so every honest operator derives the same plan without coordination. The
 // planning margin uses the anchor block's Ethereum timestamp, which every
@@ -27,14 +31,24 @@ type Planner struct {
 	// Funding reports whether a deposit's funding output is still unspent; a
 	// refunded deposit is never planned again.
 	Funding Funding
-	Lock    *MainLock
-	Wallet  dkg.Descriptor
-	Genesis [32]byte
-	Policy  Policy
+	// Clock, when set, makes Pending and Build first require the wallet to
+	// be synced between chains (Synced), as base keep-core's
+	// EnsureWalletSyncedBetweenChains does before every wallet action.
+	Clock Clock
+	// SyncFrom is the first block Build reads reveals from for Synced.
+	SyncFrom uint64
+	Lock     *MainLock
+	Wallet   dkg.Descriptor
+	Genesis  [32]byte
+	Policy   Policy
 	// FeeRate sizes the sweep; MaximumSatPerVByte is its ceiling. Both are
 	// D-09 inputs (local test values, OPEN).
 	FeeRate, MaximumSatPerVByte int64
-	boundary                    func(string) error
+	// Fee, when set, is the exact sweep fee: the coordinated proposal's,
+	// which every operator signs (D19). It replaces the FeeRate sizing; the
+	// plan still checks it against the rate ceiling and each deposit's cap.
+	Fee      int64
+	boundary func(string) error
 }
 
 func (p Planner) step(name string) error {
@@ -82,12 +96,76 @@ func (p Planner) eligible(ctx context.Context, at uint64, key [32]byte) (Record,
 	return r, unspent, err
 }
 
+// Synced reports whether the wallet is synced between chains at block at
+// (base keep-core EnsureWalletSyncedBetweenChains): no deposit revealed for
+// it in [from, at] and reserved under C-10 (its funding proven on Bitcoin)
+// is unswept on the Bridge while its funding output is spent on Bitcoin, in
+// a block or the mempool, before its refund locktime by median-time-past. Before the locktime only the wallet can spend a deposit,
+// so such a spend is a sweep the Bridge has not proven yet; a second sweep
+// planned beside it, for example a deposit-only sweep of a wallet with no
+// main, could never be proven once the first proof sets the main. A
+// deposit spent at or after its locktime may be the depositor's refund and
+// does not count. Without a Clock nothing is checked.
+func (p Planner) Synced(ctx context.Context, from, at uint64) error {
+	if p.Clock == nil {
+		return nil
+	}
+	reveals, err := p.Chain.Reveals(ctx, p.walletID(), from, at)
+	if err != nil {
+		return err
+	}
+	var mtp uint64
+	for _, reveal := range reveals {
+		r, err := p.Chain.Deposit(ctx, at, reveal.Outpoint)
+		if errors.Is(err, ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if r.RevealedAt == 0 || r.SweptAt != 0 || r.Terms.WalletID != p.walletID() {
+			continue
+		}
+		// Only a C-10 reserved deposit counts: its funding was proven on
+		// Bitcoin by SPV at reservation, the reservation is never released,
+		// and only reserved deposits are ever swept. A reveal whose funding
+		// never reached Bitcoin, or is not confirmed yet, is never reserved
+		// and cannot block the wallet (review R1).
+		reserved, err := p.Chain.Reserved(ctx, at, reveal.Outpoint)
+		if err != nil {
+			return err
+		}
+		if !reserved {
+			continue
+		}
+		unspent, err := p.Funding.Unspent(ctx, bitcoin.TransactionOutpoint{TransactionHash: bitcoin.Hash(r.FundingTransactionHash), OutputIndex: r.FundingOutputIndex})
+		if err != nil {
+			return err
+		}
+		if unspent {
+			continue
+		}
+		if mtp == 0 {
+			if mtp, err = p.Clock.MedianTimePast(ctx); err != nil {
+				return err
+			}
+		}
+		if mtp < uint64(r.Terms.RefundLocktime) {
+			return fmt.Errorf("%w: deposit %x is spent but not swept", ErrWalletNotSynced, reveal.Outpoint)
+		}
+	}
+	return nil
+}
+
 // Pending returns the deposits to sweep at anchor block at: revealed for this
 // wallet in [from, at], final at at, unswept, reserved and before the
 // planning margin.
 // All selected deposits share one vault (C-05 credits one vault per sweep):
 // the vault of the smallest eligible key. Keys are in ascending order.
 func (p Planner) Pending(ctx context.Context, from, at uint64, limit int) ([][32]byte, error) {
+	if err := p.Synced(ctx, from, at); err != nil {
+		return nil, err
+	}
 	reveals, err := p.Chain.Reveals(ctx, p.walletID(), from, at)
 	if err != nil {
 		return nil, err
@@ -155,6 +233,9 @@ func (p Planner) Build(ctx context.Context, at uint64, keys [][32]byte, resoluti
 	}
 	if p.FeeRate <= 0 || p.MaximumSatPerVByte < p.FeeRate {
 		return nil, errors.New("sweep fee policy")
+	}
+	if err := p.Synced(ctx, p.SyncFrom, at); err != nil {
+		return nil, err
 	}
 	wallet := p.walletID()
 	custody, err := p.Chain.Custody(ctx, at, wallet)
@@ -238,6 +319,10 @@ func (p Planner) Build(ctx context.Context, at uint64, keys [][32]byte, resoluti
 	if p.FeeRate > bitcoin.MaxSatoshi/vsize {
 		return nil, errors.New("sweep fee overflow")
 	}
-	tx.Outputs[0].Value = total - p.FeeRate*vsize
+	fee := p.FeeRate * vsize
+	if p.Fee > 0 {
+		fee = p.Fee
+	}
+	tx.Outputs[0].Value = total - fee
 	return signing.NewSweepPlan(signing.SweepProposal{Wallet: p.Wallet, BitcoinGenesis: p.Genesis, Generation: custody.Generation, StateVersion: custody.StateVersion, Vault: vault, Main: main, Resolution: resolution, Deposits: deposits, MaximumSatPerVByte: p.MaximumSatPerVByte, Transaction: tx})
 }

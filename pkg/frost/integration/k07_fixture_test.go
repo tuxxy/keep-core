@@ -76,7 +76,7 @@ func newK07World(t *testing.T) *k07World {
 	var bJournals []*store.Scoped
 	var bRequests []frost.DKGRequest
 	var bRecord dkg.WalletRecord
-	k6 := newK06WorldWith(t, k06Options{mode: "k07", afterDKG: func(f *fixture) {
+	k6 := newK06WorldWith(t, k06Options{mode: "k07", beforeDKG: certifyAllSeats, afterDKG: func(f *fixture) {
 		aJournals, aExecutors, aEpoch := f.journals, f.executors, f.deployment.Epoch
 		t.Log("K-07: second DKG for wallet B")
 		f.nextEpoch()
@@ -161,13 +161,27 @@ func (w *k07World) mround(h *walletHost, after uint64) movement.Round {
 	}
 }
 
-// signAll runs every operator's mover for one round concurrently.
-func (w *k07World) signAll(h *walletHost, plan *signing.Plan, number uint64) []error {
+// signAll runs, concurrently, the mover of every operator the round selects
+// (as base, a round signs with a subset of whole operators; #66) and returns
+// the index of one that signed. An operator outside the selection does not
+// sign; its error stays nil.
+func (w *k07World) signAll(h *walletHost, plan *signing.Plan, number uint64) ([]error, int) {
 	errs := make([]error, len(h.movers))
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithTimeout(w.f.ctx, 120*time.Second)
 	defer cancel()
+	signer := -1
 	for i, m := range h.movers {
+		eligible, err := m.Eligible(ctx, number)
+		if err != nil {
+			w.t.Fatalf("operator %d round %d selection: %v", i, number, err)
+		}
+		if !eligible {
+			continue
+		}
+		if signer < 0 {
+			signer = i
+		}
 		wg.Add(1)
 		go func(i int, m *movement.Mover) {
 			defer wg.Done()
@@ -175,7 +189,10 @@ func (w *k07World) signAll(h *walletHost, plan *signing.Plan, number uint64) []e
 		}(i, m)
 	}
 	wg.Wait()
-	return errs
+	if signer < 0 {
+		w.t.Fatalf("round %d selects no operator", number)
+	}
+	return errs, signer
 }
 
 // plans derives a plan on every operator and requires them equal.
@@ -195,18 +212,19 @@ func (w *k07World) plans(h *walletHost, build func(movement.Planner) (*signing.P
 	return first
 }
 
-// settle signs plan in the next round on every operator, broadcasts it, mines
-// it and proves it once through the maintainer.
+// settle signs plan in the next round on every selected operator, broadcasts
+// it from one of them, mines it and proves it once through the maintainer.
 func (w *k07World) settle(h *walletHost, plan *signing.Plan, prove func(context.Context, [32]byte, [32]byte) (spv.FrostAction, error)) {
 	t := w.t
 	t.Helper()
 	r := w.mround(h, w.head())
-	for i, err := range w.signAll(h, plan, r.Number) {
+	errs, signer := w.signAll(h, plan, r.Number)
+	for i, err := range errs {
 		if err != nil {
 			t.Fatalf("%s signer %d: %v", plan.Purpose(), i, err)
 		}
 	}
-	if err := h.movers[1].Broadcast(w.f.ctx, plan); err != nil {
+	if err := h.movers[signer].Broadcast(w.f.ctx, plan); err != nil {
 		t.Fatal("broadcast:", err)
 	}
 	w.coreMine(1)

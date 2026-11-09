@@ -114,6 +114,23 @@ func (n *node) runCoordinationLayer(
 				}
 			}(currentWalletPublicKey)
 		}
+
+		// FROST wallets are coordinated in the same windows, each by an
+		// independent procedure, when FROST is configured.
+		if n.frost != nil {
+			for _, currentFrostWallet := range n.frost.coordinatedWallets() {
+				go func(wallet *frostWallet) {
+					result, ok := executeFrostCoordinationProcedure(
+						n,
+						window,
+						wallet,
+					)
+					if ok {
+						coordinationResultChan <- result
+					}
+				}(currentFrostWallet)
+			}
+		}
 	}
 
 	// Start the coordination windows watcher.
@@ -262,6 +279,11 @@ func processCoordinationResult(node *node, result *coordinationResult) {
 
 	startBlock := result.window.endBlock()
 	expiryBlock := startBlock + result.proposal.ValidityBlocks()
+
+	if result.frostWallet != nil {
+		processFrostCoordinationResult(node, result, startBlock, expiryBlock)
+		return
+	}
 
 	switch proposedAction {
 	case ActionHeartbeat:

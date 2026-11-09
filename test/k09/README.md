@@ -51,8 +51,8 @@ use 8 Go cores). Each stage process leads its own process group. After the
 stage, pass or fail, the runner kills that group (Anvil and bitcoind run in
 it) and the group of every orphaned node process of the run (a node whose
 stage process is gone), and records each process it had to kill under that
-stage (#30). An interrupted run (Ctrl-C, SIGTERM) kills every stage group it
-started and every node group on exit. Wrong-behaviour probes for 08-10 and 12:
+stage (#30). An interrupted run (Ctrl-C, SIGTERM) kills the group of every
+stage still running and every node group on exit. Wrong-behaviour probes for 08-10 and 12:
 `test/k09/controls/README.md`.
 
 The harness is depositor, redeemer, SPV maintainer, keeper and governance

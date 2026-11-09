@@ -80,11 +80,13 @@ cleanup() {
   # Process-group cleanup: every stage and node process leads its own group
   # (a stage's Anvil and bitcoind run in the stage's); none may outlive the
   # run, an interrupted one included (#30). The lanes go first, so no new
-  # stage starts; then every recorded stage group and the group of every
-  # remaining test-binary process (stages and nodes), never run.sh's own.
+  # stage starts; then the group of every stage still running (a stage's
+  # record goes once stop_stage has handled it, so no group ID that may
+  # since have been reused is signalled) and the group of every remaining
+  # test-binary process (stages and nodes), never run.sh's own.
   kill -9 $(jobs -p) 2>/dev/null || true
   own=$(ps -o pgid= -p $$ | tr -d ' ')
-  groups=$(cat "$scratch/groups" 2>/dev/null || true)
+  groups=$(cat "$scratch"/group-* 2>/dev/null || true)
   for p in $(pgrep -f -- "$evidence/tbtc.test" || true); do
     groups="$groups $(ps -o pgid= -p "$p" 2>/dev/null | tr -d ' ' || true)"
   done
@@ -162,9 +164,10 @@ run_stage() {
     "$evidence/tbtc.test" -test.v -test.count=1 -test.timeout 12m \
     -test.run "^TestK09Lifecycle\$/^${stage}\$" > "$evidence/$stage.log" 2>&1 &
   local pgid=$!
-  echo "$pgid" >> "$scratch/groups"
+  echo "$pgid" > "$scratch/group-$stage"
   wait "$pgid" || status=$?
   stop_stage "$stage" "$pgid"
+  rm -f "$scratch/group-$stage"
   printf '%s\t%s.log\t%s\n' "$stage" "$stage" "$status" >> "$results"
   grep -E -- '^\s*--- (PASS|FAIL|SKIP): TestK09Lifecycle/' "$evidence/$stage.log" | sed "s|^|$stage: |" || true
   # Node logs only (never stores).

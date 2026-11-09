@@ -19,7 +19,11 @@ if [ "${1:-}" = "-run" ]; then
   shift 2
 fi
 # Tests known to dominate the package; each runs alone.
-long='^(TestV04C04ProjectionReplay|TestV04C04WeakenedExpectationsFail|TestReservationTimeoutRace|TestCrossSchemeDrainAndSweep|TestMovementTargetStateRace|TestMovementCommittedFeeCap|TestNoTargetAndDustRecovery|TestCloseWithPendingObligations|TestFrostFraudPublicAdmissionDefenseTimeout|TestHeartbeatDomainAndDefense|TestInactivityMemberRouting)$'
+# pkg/frost/integration
+long_integration='TestV04C04ProjectionReplay|TestV04C04WeakenedExpectationsFail|TestReservationTimeoutRace|TestCrossSchemeDrainAndSweep|TestMovementTargetStateRace|TestMovementCommittedFeeCap|TestNoTargetAndDustRecovery|TestCloseWithPendingObligations|TestFrostFraudPublicAdmissionDefenseTimeout|TestHeartbeatDomainAndDefense|TestInactivityMemberRouting'
+# pkg/tbtc: K-09 alone is ~270 s; sharing a shard with it set the package wall time.
+long_tbtc='TestK09Lifecycle|TestDrainProducer_Drains|TestDrainProducer_NoRouteRecovery|TestDrainProducer_LegacyFallbackBeforeCutover|TestMovingFundsAction_Execute'
+long="^($long_integration|$long_tbtc)\$"
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT

@@ -39,10 +39,13 @@ package dkg_test
 // reads and the monitor's first read is a reachable interleaving. Every read
 // made synchronously under Restore is answered at once.
 //
-// Fallback (review B1, 2026-11-06): an implementation may make Restore's
-// main path wait for the monitor's first read. If a background read is held,
-// the boundary is not yet reached, and the main path has made no chain or bus
-// call for b10Grace, the harness applies the change there instead
+// Fallback (review B1, 2026-11-06; gated per B3): an implementation may make
+// Restore's main path wait for the monitor's first read. If a background read
+// is held, the boundary is not yet reached, the main path has made no chain
+// or bus call for b10Grace, and the goroutine running Restore is parked on a
+// channel receive or select with no time.Sleep frame (not runnable, not
+// sleeping: a slow or stalled host never qualifies), the harness applies the
+// change there instead
 // ("before-first-main-read"), releases the read, and records the fallback.
 // A change case may then end with ErrQuarantined before its boundary; the
 // same assertions 1-4 decide it. Unchanged cases are released without a
@@ -63,6 +66,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -262,7 +266,9 @@ func b10Restore(t *testing.T, saved, boundary string, change b10Change) b10Resul
 	}
 
 	done := make(chan b10Outcome, 1)
+	var restoreGoroutine atomic.Int64
 	go func() {
+		restoreGoroutine.Store(b10GoroutineID())
 		status, record, err := e.Restore(ctx)
 		done <- b10Outcome{status, record, err}
 	}()
@@ -276,7 +282,7 @@ wait:
 		case got = <-done:
 			break wait
 		case <-watchdog.C:
-			if !reached.Load() && !fellBack.Load() && w.chain.heldNow() > 0 && w.chain.silentFor() >= b10Grace {
+			if !reached.Load() && !fellBack.Load() && w.chain.heldNow() > 0 && w.chain.silentFor() >= b10Grace && b10Parked(restoreGoroutine.Load()) {
 				fellBack.Store(true)
 				apply()
 			}
@@ -287,6 +293,7 @@ wait:
 
 	at := boundary
 	if fellBack.Load() {
+		t.Logf("B10 fallback applied (boundary %s reached=%t)", boundary, reached.Load())
 		at = "before-first-main-read (fallback: the main path waited on a held background read)"
 	}
 	stored, err := journal.LoadWallet(context.Background())
@@ -535,8 +542,9 @@ func (c *b10Chain) heldNow() int {
 }
 
 // signalClassified marks that the monitor has classified a released read: it
-// fired after-monitor-inspect, came back for a second read, or its context
-// was cancelled (it quarantined and aborted Restore).
+// fired after-monitor-inspect, or its context was cancelled (it quarantined
+// and aborted Restore). A second read is not a signal: the monitor may reread
+// inside one inspection before classifying (review B4).
 func (c *b10Chain) signalClassified() { c.classifyOnce.Do(func() { close(c.classified) }) }
 
 func (c *b10Chain) monitorReadsAfterRelease() int {
@@ -626,9 +634,6 @@ func (c *b10Chain) View(ctx context.Context, _ uint64) (dkg.View, error) {
 	v := c.view
 	if background && c.released {
 		c.monitorAfter++
-		if c.monitorAfter > 1 {
-			go c.signalClassified()
-		}
 		go func() {
 			<-ctx.Done()
 			c.signalClassified()
@@ -785,4 +790,34 @@ func (l b10Lease) Close() error {
 	defer l.f.mu.Unlock()
 	l.f.leased = false
 	return nil
+}
+
+// b10GoroutineID returns the calling goroutine's ID from its stack header.
+func b10GoroutineID() int64 {
+	buf := make([]byte, 64)
+	buf = buf[:runtime.Stack(buf, false)]
+	id, _ := strconv.ParseInt(strings.Fields(strings.TrimPrefix(string(buf), "goroutine "))[0], 10, 64)
+	return id
+}
+
+// b10Parked reports whether goroutine id (the one running Restore) is blocked
+// on a channel receive or select, with no time.Sleep frame: it waits on
+// something else, as a main path waiting for the monitor does. A runnable
+// (starved) or sleeping (stalled) goroutine is not parked (review B3).
+func b10Parked(id int64) bool {
+	if id == 0 {
+		return false
+	}
+	buf := make([]byte, 1<<22)
+	buf = buf[:runtime.Stack(buf, true)]
+	prefix := "goroutine " + strconv.FormatInt(id, 10) + " ["
+	for _, g := range strings.Split(string(buf), "\n\n") {
+		if !strings.HasPrefix(g, prefix) {
+			continue
+		}
+		header := strings.SplitN(g, "\n", 2)[0]
+		return (strings.Contains(header, "[chan receive") || strings.Contains(header, "[select")) &&
+			!strings.Contains(g, "time.Sleep") && strings.Contains(g, "/pkg/frost/dkg.(*Executor).Restore(")
+	}
+	return false
 }

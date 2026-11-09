@@ -451,8 +451,12 @@ func TestReadinessCannotFundEarly(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
-	if f.bridgeCall("isFrostFundingTarget", label)[0].(bool) {
-		t.Fatal("ReadyUnfunded wallet is fundable")
+	// A ReadyUnfunded wallet is a funding target: KC-SF-V3 forbids funding
+	// only while the wallet is pending, and the view follows deposit
+	// admission (ReadyUnfunded or Live), tuxxy/tbtc-v2#65.
+	// Refs tuxxy/keep-core#154
+	if !f.bridgeCall("isFrostFundingTarget", label)[0].(bool) {
+		t.Fatal("ReadyUnfunded wallet is not a funding target")
 	}
 }
 func lostBeforeReady(t *testing.T, fresh bool) {

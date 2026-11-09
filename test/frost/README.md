@@ -57,7 +57,7 @@ hash-identical worker executable so crash tests cannot kill another test's worke
 | `TestForeignResultIsChallenged` | A foreign public submission is challenged; honest DKG still completes. |
 | `TestSubmittedDoesNotCancelAcceptance` | Submission does not cancel the worker's acceptance callback. |
 | `TestApprovalReorg` | Revert an observed approval before finality; quarantine and no completed key. |
-| `TestReadinessCannotFundEarly` | Pending and ready-but-unfunded wallets are excluded from funding. |
+| `TestReadinessCannotFundEarly` | A pending wallet is excluded from funding; once ReadyUnfunded it is a funding target (tbtc-v2#65). |
 | `TestLostSeatBeforeReadinessExpiresWallet` | Kill before the worker readiness statement; all affected seats are lost and the pending wallet expires. |
 | `TestLostSeatAfterReadinessCertifiesUnderPolicy` | Kill after worker readiness but before durable KeyReady; survivors certify without the lost seat under the explicit policy. |
 | `TestPendingWalletExpiryThenFreshEpoch` | Expiry retains identity/Q tombstones; the same contracts and stores complete a new epoch. |

@@ -786,3 +786,10 @@ K-04 `e865fd83c`, which carry V-03's executor repairs F-V03-01/02. The changed
 selected blobs are `pkg/frost/dkg/executor.go` (rows 1–3) and the K-05
 redemption sources and named tests (rows 5–7). This commit is rebased onto
 K-04 `e865fd83c`.
+
+## Owners (tux, 2026-11-09)
+
+tux owns all V-05 ledger rows and gate blockers: every row and blocker
+`owner.person` is `tux` with `assignment_status` `assigned` (DECISIONS.md,
+"V-05 owners"). Caller-obligation owners are unchanged (that decision names
+rows and gate blockers only).

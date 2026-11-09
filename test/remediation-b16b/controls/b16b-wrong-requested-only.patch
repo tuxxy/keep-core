@@ -1,0 +1,17 @@
+diff --git a/pkg/tbtcpg/frost_moving_funds.go b/pkg/tbtcpg/frost_moving_funds.go
+index 20dbbde7c..05112f0df 100644
+--- a/pkg/tbtcpg/frost_moving_funds.go
++++ b/pkg/tbtcpg/frost_moving_funds.go
+@@ -144,6 +144,12 @@ func (mft *MovingFundsTask) runFrost(
+ 		if err != nil {
+ 			return nil, false, err
+ 		}
++		// WRONG (batch 16b control): renumbered only for a source with a
++		// moving-funds request recorded (MovingFunds, or Terminated after
++		// it); a source terminated from Live still commits 1-based.
++		if source.Lifecycle.MovingFundsRequestedAt != 0 {
++			seat--
++		}
+ 
+ 		taskLogger.Infof("commitment not submitted yet; committing FROST target wallets")
+ 

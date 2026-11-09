@@ -1,0 +1,16 @@
+diff --git a/pkg/tbtc/frost_node.go b/pkg/tbtc/frost_node.go
+index cdd977db9..e7def8964 100644
+--- a/pkg/tbtc/frost_node.go
++++ b/pkg/tbtc/frost_node.go
+@@ -658,9 +658,8 @@ func (fn *frostNode) executeDKG(
+ 
+ 	started := false
+ 	defer func() {
+-		if !started {
+-			fn.unclaimEpoch(epoch)
+-		}
++		_ = started
++		fn.unclaimEpoch(epoch)
+ 	}()
+ 
+ 	dkgCtx, cancel := context.WithTimeout(ctx, frostDKGTimeout)

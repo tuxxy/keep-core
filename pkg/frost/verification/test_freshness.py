@@ -568,7 +568,8 @@ class FreshnessTests(unittest.TestCase):
         or unmapped_stages is a stage the runner has (test/k09/run.sh, and so
         the cited run's manifest), and every such stage is in one of them.
         A mapping that cites a stage the runner does not have, or omits one
-        it has, is an invalid ledger: check_freshness.py exits 3 and names
+        it has (including one stage swapped for another, so the count is
+        unchanged: review N-33a), is an invalid ledger: check_freshness.py exits 3 and names
         the stage. The committed mapping (stages 01-09 and 11, unmapped 10
         and 12) is accepted.
 
@@ -624,7 +625,9 @@ class FreshnessTests(unittest.TestCase):
                              "K-09 #33: the checker refuses the committed k09_run_mapping against a run of the runner's stages: "
                              + correct.stderr + correct.stdout[-400:])
             for mutation, stage in (("mapped_stage_runner_lacks", "13-phantom"), ("unmapped_stage_runner_lacks", "13-phantom"),
-                                    ("mapped_stage_missing", "08-deposit-refund"), ("unmapped_stage_missing", "12-no-inactivity")):
+                                    ("mapped_stage_missing", "08-deposit-refund"), ("unmapped_stage_missing", "12-no-inactivity"),
+                                    # One stage swapped for another, count unchanged (review N-33a).
+                                    ("mapped_stage_renamed", "13-phantom")):
                 with self.subTest(mutation=mutation):
                     invalid = copy.deepcopy(ledger)
                     wrong = invalid["k09_run_mapping"]
@@ -632,6 +635,8 @@ class FreshnessTests(unittest.TestCase):
                         wrong["stages"][stage] = {"rows": [1], "claim": "FIXTURE: a stage the runner does not have"}
                     elif mutation == "unmapped_stage_runner_lacks":
                         wrong["unmapped_stages"][stage] = "FIXTURE: a stage the runner does not have"
+                    elif mutation == "mapped_stage_renamed":
+                        wrong["stages"][stage] = wrong["stages"].pop("08-deposit-refund")
                     elif mutation == "mapped_stage_missing":
                         del wrong["stages"][stage]
                     else:
@@ -639,7 +644,8 @@ class FreshnessTests(unittest.TestCase):
                     result = verdict(invalid)
                     self.assertEqual(result.returncode, 3,
                                      "K-09 #33 %s: the checker does not refuse a k09_run_mapping that %s (exit %d, want 3: invalid ledger)"
-                                     % (mutation, ("cites stage %s, which the runner does not have" if "lacks" in mutation
+                                     % (mutation, ("cites %s and omits 08-deposit-refund" if mutation == "mapped_stage_renamed"
+                                                   else "cites stage %s, which the runner does not have" if "lacks" in mutation
                                                    else "omits the runner's stage %s") % stage, result.returncode))
                     self.assertIn(stage, result.stderr + result.stdout,
                                   "K-09 #33 %s: the refusal does not name stage %s" % (mutation, stage))

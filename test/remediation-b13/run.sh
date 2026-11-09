@@ -15,7 +15,7 @@ head=$(git rev-parse HEAD)
 clean=$([ -z "$(git status --porcelain)" ] && echo true || echo false)
 start=$(date +%s)
 set +e
-GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 4 -timeout 5m -json \
+GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 5 -timeout 5m -json \
   ./pkg/tbtc -run '^TestFrostRedemptionLeaderMatchesFollower$' \
   > "$out/tbtc.json" 2>&1
 set -e
@@ -37,6 +37,7 @@ expected = [
     "tbtc/TestFrostRedemptionLeaderMatchesFollower/delayed",
     "tbtc/TestFrostRedemptionLeaderMatchesFollower/delayed-alone",
     "tbtc/TestFrostRedemptionLeaderMatchesFollower/expired",
+    "tbtc/TestFrostRedemptionLeaderMatchesFollower/capped",
 ]
 missing = [k for k in expected if k not in cases]
 failed = sorted(k for k, v in cases.items() if v["result"] != "pass")

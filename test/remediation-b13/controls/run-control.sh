@@ -18,7 +18,7 @@ trap cleanup EXIT
 if [ "$patch" != none ]; then git -C "$scratch" apply "$here/$patch.patch"; fi
 cd "$scratch"
 set +e
-GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 4 -timeout 5m -v ./pkg/tbtc \
+GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 5 -timeout 5m -v ./pkg/tbtc \
   -run '^TestFrostRedemptionLeaderMatchesFollower$' > "$log" 2>&1
 status=$?
 set -e

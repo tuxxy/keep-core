@@ -24,10 +24,14 @@ package tbtc_test
 // World: batch 3's world, rebuilt here (b13SetUpFrost, drainToTarget) on
 // the real upgraded Bridge (tbtc-v2 integration/frost-base,
 // LEGACY_UPGRADED_DIR) with Bitcoin Core regtest. Its one change: the FROST
-// target's descriptor has three distinct operators, so members can plan for
-// it (batch 3's maps two seats to one operator, which keep-core's descriptor
-// validation refuses). The legacy source drains into the target through the
-// real movement commitment and proof.
+// target's descriptor is well formed, three seats with three distinct
+// operators. Batch 3's fixture descriptor is malformed: it gives one operator
+// two different member IDs (members {1,2,3}, operators {A,B,A}), which
+// dkg.ValidateDescriptor refuses, so members cannot plan for it. Real
+// multi-seat wallets repeat the member ID with the operator ({1,2,1},
+// {A,B,A}) and are valid. Batch 3's frozen fixture is left as it is. The
+// legacy source drains into the target through the real movement commitment
+// and proof.
 // The target's incoming output is swept and proven on the real Bridge, which
 // makes the target Live with a recognized main; FROST redemptions are then
 // configured and enabled by governance, and the requests are real
@@ -151,6 +155,8 @@ type b13World struct {
 	followers map[legacyRevertEncoding]*chainethereum.TbtcChain
 	names     map[string]string
 	next      byte
+	delay     uint64
+	maxSize   uint16
 }
 
 func b13Bounded(t *testing.T, what string, fn func() error) error {
@@ -261,6 +267,7 @@ func newB13World(t *testing.T) *b13World {
 	if err != nil || maxSize < 3 {
 		t.Fatalf("precondition: redemption max size %d < 3 (%v)", maxSize, err)
 	}
+	w.maxSize = maxSize
 	params, err := w.legacy.RedemptionParameters(&bind.CallOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -273,9 +280,9 @@ func newB13World(t *testing.T) *b13World {
 
 // b13Operators are the target's three seats' operators: Anvil's public
 // development accounts 1 (the legacy operator), 0 (the deployer) and 2, one
-// seat each, so the descriptor passes keep-core's descriptor validation
-// (batch 3's target maps two members to one operator, which members refuse
-// to plan for).
+// seat each, so the descriptor passes dkg.ValidateDescriptor. (Batch 3's
+// fixture gives one operator two different member IDs, which is malformed; a
+// real multi-seat wallet repeats the member ID and is valid.)
 func (w *b13World) b13Operators() []common.Address {
 	return []common.Address{w.operator, crypto.PubkeyToAddress(w.adminKey.PublicKey), common.HexToAddress("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC")}
 }
@@ -514,16 +521,26 @@ func (w *b13World) sweepIncoming(t *testing.T) bitcoin.Hash {
 // with the given watchtower delay, and returns it with its captured timing.
 func (w *b13World) request(t *testing.T, name string, delay uint64) b13Request {
 	t.Helper()
-	w.b13Send(t, "watchtower delay", func(o *bind.TransactOpts) (*types.Transaction, error) {
-		return w.watchtower.Transact(o, "changeRequestPolicy", w.policy, delay)
-	})
+	return w.requestGross(t, name, delay, b13Gross)
+}
+
+// requestGross is request with the given amount. The watchtower's delay is
+// changed only when it differs from the last one set (it starts at 0).
+func (w *b13World) requestGross(t *testing.T, name string, delay, gross uint64) b13Request {
+	t.Helper()
+	if delay != w.delay {
+		w.b13Send(t, "watchtower delay", func(o *bind.TransactOpts) (*types.Transaction, error) {
+			return w.watchtower.Transact(o, "changeRequestPolicy", w.policy, delay)
+		})
+		w.delay = delay
+	}
 	w.next++
 	script, err := bitcoin.PayToWitnessPublicKeyHash([20]byte{0xb1, 0x3, w.next})
 	if err != nil {
 		t.Fatal(err)
 	}
 	receipt := w.b13Send(t, "request "+name, func(o *bind.TransactOpts) (*types.Transaction, error) {
-		return w.frost.Transact(o, "requestFrostRedemption", w.target.id, []byte(script), b13Gross, crypto.PubkeyToAddress(w.adminKey.PublicKey))
+		return w.frost.Transact(o, "requestFrostRedemption", w.target.id, []byte(script), gross, crypto.PubkeyToAddress(w.adminKey.PublicKey))
 	})
 	topic := crypto.Keccak256Hash([]byte("FrostRedemptionRequested(bytes32,bytes32,address,uint64,uint64,uint64,uint64)"))
 	var id [32]byte
@@ -651,10 +668,16 @@ func (w *b13World) follow(t *testing.T, what string, encoding legacyRevertEncodi
 	})
 }
 
+// b13Refusals are the follower's refusals of a proposal naming a request it
+// does not plan (frostWallet.redeem): its plan pays other requests, or it
+// finds none to pay. Any other error is a harness or chain failure, not a
+// refusal.
+var b13Refusals = []string{"FROST redemption plan does not match the proposal", "no pending FROST redemptions"}
+
 // requireRefused is a precondition: a proposal naming the requests is
-// refused by every follower, while the same proposal without the refused
-// request is accepted. It shows that the base leader's choice stalls the
-// window, whatever the leader does.
+// refused by every follower for its requests (b13Refusals), while the same
+// proposal without the refused request is accepted. It shows that the base
+// leader's choice stalls the window, whatever the leader does.
 func (w *b13World) requireRefused(t *testing.T, what string, refused b13Request, all ...b13Request) {
 	t.Helper()
 	coordinationBlock := w.head(t)
@@ -667,8 +690,16 @@ func (w *b13World) requireRefused(t *testing.T, what string, refused b13Request,
 	fee := big.NewInt(1_000)
 	for _, encoding := range legacyEncodings {
 		with := &tbtc.RedemptionProposal{RedeemersOutputScripts: b13Scripts(all...), RedemptionTxFee: fee}
-		if err := w.follow(t, what, encoding, with, coordinationBlock); err == nil {
+		err := w.follow(t, what, encoding, with, coordinationBlock)
+		if err == nil {
 			t.Fatalf("%sprecondition, %s: a follower (%v) accepted a proposal naming %s", b13Prefix, what, encoding, refused.name)
+		}
+		known := false
+		for _, reason := range b13Refusals {
+			known = known || strings.Contains(err.Error(), reason)
+		}
+		if !known {
+			t.Fatalf("%sprecondition, %s: a follower (%v) failed on a proposal naming %s for another reason than its requests: %v", b13Prefix, what, encoding, refused.name, err)
 		}
 		if len(rest) == 0 {
 			continue
@@ -732,6 +763,46 @@ func TestFrostRedemptionLeaderMatchesFollower(t *testing.T) {
 		w.window(t, "only R1, delayed by the watchtower")
 		w.at(t, r1.notBefore)
 		w.window(t, "only R1, at its NotBefore", r1)
+	})
+
+	// Review N2: as many delayed requests as the leader may propose
+	// (redemption max size), the oldest, and one ready request after them.
+	// The cap applies to the requests kept, not to those looked at: the
+	// leader proposes the ready one. Once the delayed ones are due, the
+	// leader proposes the oldest max-size requests and followers accept.
+	// Governance lowers the redemption dust threshold (test value) so that
+	// max size + 1 requests fit the depositor's balance and the custody.
+	t.Run("capped", func(t *testing.T) {
+		t.Parallel()
+		w := newB13World(t)
+		r, err := w.legacy.RedemptionParameters(&bind.CallOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Above the moving-funds dust threshold and the redemption TX max
+		// fee, as the Bridge requires.
+		m, err := w.legacy.MovingFundsParameters(&bind.CallOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		dust := m.MovingFundsDustThreshold + 50_000
+		if dust <= r.RedemptionTxMaxFee+dust/r.RedemptionTreasuryFeeDivisor || uint64(w.maxSize+1)*dust > 8*b13Gross {
+			t.Fatalf("precondition: a %d sat dust threshold does not fit %d requests", dust, w.maxSize+1)
+		}
+		w.b13Send(t, "redemption dust threshold", func(o *bind.TransactOpts) (*types.Transaction, error) {
+			return w.legacy.UpdateRedemptionParameters(o, dust, r.RedemptionTreasuryFeeDivisor,
+				r.RedemptionTxMaxFee, r.RedemptionTxMaxTotalFee, r.RedemptionTimeout,
+				r.RedemptionTimeoutSlashingAmount, r.RedemptionTimeoutNotifierRewardMultiplier)
+		})
+		var delayed []b13Request
+		for i := 1; i <= int(w.maxSize); i++ {
+			delayed = append(delayed, w.requestGross(t, fmt.Sprintf("R%d(delayed)", i), b13Delay, dust))
+		}
+		ready := w.requestGross(t, fmt.Sprintf("R%d", w.maxSize+1), 0, dust)
+		w.at(t, w.now(t)+1)
+		w.window(t, fmt.Sprintf("the %d oldest requests delayed, one ready after them", w.maxSize), ready)
+		w.at(t, delayed[len(delayed)-1].notBefore)
+		w.window(t, fmt.Sprintf("all %d delayed requests due: the oldest %d", w.maxSize, w.maxSize), delayed...)
 	})
 
 	// An expiring request, the oldest, next to ready ones: proposed while

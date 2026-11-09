@@ -66,6 +66,10 @@ func (l b13Lease) Close() error { return nil }
 // from chain state, found it to pay exactly the proposed requests with the
 // proposed fee, and reached the retention), and the member's refusal
 // otherwise.
+//
+// Constraint on fixes (review N4): this relies on redeem retaining the plan
+// before it attests or reserves, and touching the store only after it has
+// validated the plan, as at de1e99f0.
 func B13FollowerRedeem(
 	ctx context.Context,
 	dir string,

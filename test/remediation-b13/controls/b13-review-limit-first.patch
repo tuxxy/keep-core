@@ -1,0 +1,38 @@
+diff --git a/pkg/chain/ethereum/frost_node.go b/pkg/chain/ethereum/frost_node.go
+index bd5f7e97f..fe9630dc6 100644
+--- a/pkg/chain/ethereum/frost_node.go
++++ b/pkg/chain/ethereum/frost_node.go
+@@ -139,11 +139,15 @@ func (tc *TbtcChain) PendingFrostRedemptions(
+ 
+ 	var scripts []bitcoin.Script
+ 	seen := make(map[[32]byte]bool)
++	// REVIEW CONTROL b13-review-limit-first (wrong): the limit counts the
++	// requests looked at, not the requests kept.
++	looked := 0
+ 	for _, event := range events {
+-		if seen[event.RequestID] || len(scripts) == limit {
++		if seen[event.RequestID] || looked == limit {
+ 			continue
+ 		}
+ 		seen[event.RequestID] = true
++		looked++
+ 		request, err := bridge.Request(ctx, head, event.RequestID)
+ 		if err != nil {
+ 			return nil, err
+@@ -153,6 +157,16 @@ func (tc *TbtcChain) PendingFrostRedemptions(
+ 			request.WalletID != wallet {
+ 			continue
+ 		}
++		// CONTROL b13-fix-predicate (positive, second shape): the members'
++		// NotBefore, deadline and margin conditions at the head's timestamp,
++		// in the leader's own finder (no Planner).
++		now, err := bridge.Timestamp(ctx, head)
++		if err != nil {
++			return nil, err
++		}
++		if now < request.NotBefore || request.Deadline <= now || request.Deadline-now < 600 {
++			continue
++		}
+ 		scripts = append(scripts, bitcoin.Script(request.Script))
+ 	}
+ 	return scripts, nil

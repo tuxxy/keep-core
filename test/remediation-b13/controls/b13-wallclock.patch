@@ -1,0 +1,25 @@
+diff --git a/pkg/chain/ethereum/frost_node.go b/pkg/chain/ethereum/frost_node.go
+index bd5f7e97f..ba268b263 100644
+--- a/pkg/chain/ethereum/frost_node.go
++++ b/pkg/chain/ethereum/frost_node.go
+@@ -1,6 +1,7 @@
+ package ethereum
+ 
+ import (
++	"time"
+ 	"context"
+ 	"errors"
+ 
+@@ -153,6 +154,12 @@ func (tc *TbtcChain) PendingFrostRedemptions(
+ 			request.WalletID != wallet {
+ 			continue
+ 		}
++		// CONTROL b13-wallclock (wrong): NotBefore, the deadline and the
++		// members' margin, judged by the local clock instead of the chain's.
++		now := uint64(time.Now().Unix())
++		if now < request.NotBefore || request.Deadline <= now || request.Deadline-now < 600 {
++			continue
++		}
+ 		scripts = append(scripts, bitcoin.Script(request.Script))
+ 	}
+ 	return scripts, nil

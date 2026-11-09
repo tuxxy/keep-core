@@ -1,5 +1,227 @@
 # V-05 incremental composition ledger
 
+Date: 6 November 2026. Basis: KC-SF-V3 revision 01 section 8.3 and KC-VER
+revision 01 V-05, with the section 4 gates of the KC-VER revision 02 draft
+recorded as blockers. This is an open ledger, not a composition safety
+statement. No row is discharged and no production gate is closed. The
+authoritative records are in `COMPOSITION.json` (format 3);
+`composition-source-pins.json` indexes the selected row sources.
+
+Subject: keep-core `integration/snowfall-base` 925103a6, tbtc-v2
+`integration/frost-base` 39412825, snowfall c1847ebd. Evidence for this
+catch-up: `implementation/V-05/catchup-2026-11-06/`.
+
+## Rows at 925103a6 / 39412825
+
+"Execution" counts pinned run records; "model" counts pinned model records.
+Cited statements are checked by their own component checkers on every run.
+
+| Row | Status | Producer → consumer | Pins | Evidence (src/exec/model/review) | Cited statements | Active blockers (KC-VER §4) | Missing before it can leave open |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | open | SF candidate → same host publication | match | 1/1/0/1 | S-K03-CHAIN-1 **stale** | V-03, V-06 | fresh V-03 statement; V-06 for validX; review |
+| 2 | open | Completion/store → fresh-reload readiness | match | 1/2/1/0 | S-K02-HOST-3 fresh, S-K03-STORE-2 fresh, S-K03-CHAIN-1 **stale** | V-02 (bound, VD-05), V-03 | V-02 at spec bound on a VD-05 store; fresh V-03; review |
+| 3 | open | Approved identity → intended Bridge wallet | match | 2/1/0/0 | S-K03-STORE-2 fresh, S-K03-CHAIN-1 **stale** | V-02, V-03, V-06 | finality/reorg correspondence (A-CHAIN-FINALITY); fresh V-03; review |
+| 4 | open | Deposit template/Q → admitted spend/refund | match | 7/1/0/0 | none | V-06, V-07 | V-07 model; V-06 named proofs; run at 39412825 (IFrostFundingBridge changed) |
+| 5 | open | Funded request/intent → exact signing | match | 6/2/0/3 | S-K05-SIGN-3 **stale** | V-04 | fresh V-04 with rev 02 predicates; certificate transport; run at 39412825 (BridgeState changed) |
+| 6 | open | Signature/frozen transaction → same broadcast/proof | match | 3/4/0/2 | S-K05-SIGN-3 **stale** | V-04, V-08 | fresh V-04; V-08; realistic-header SPV run |
+| 7 | open | Bitcoin custody → one credit/settlement | match | 15/6/0/0 | S-K05-SIGN-3 **stale** | V-04, V-07, V-08 | fresh V-04; V-07/V-08; adversarial double-outcome execution |
+| 8 | open | Signature/challenge → exact defense | match | 3/0/0/0 | none | V-06, V-09 | any execution: K-09 has no fraud stage; V-06; V-09 |
+| 9 | open | Cleared obligations → retirement | match | 4/2/0/0 | none | V-08, V-10 | K-12 archive inventory; V-10 |
+| 10 | open | Approved source/config → deployment claims | partial (no consumer) | 3/4/0/0 | none | V-10 | K-10 build and deployed-state records; V-10 |
+
+Every row also needs an assigned owner and independent review before
+discharge. The checker run in the evidence directory exits 1 (drift: the two
+stale statements) in both modes; with only the fresh V-01/V-02 statements
+cited it exits 0 normally and 2 under `--strict`.
+
+## How the checker works now (format 3)
+
+- **Evidence kinds (L4).** Every joining-evidence item has `evidence_kind`:
+  `source`, `execution`, `model` or `review`. A row may leave `open` (to
+  `blocked` or `discharged`) only with at least one pinned `execution` or
+  `model` record; otherwise the ledger is invalid. Retained run records
+  outside Git use repository `evidence`: a path under `--evidence-root`
+  (the folder holding `implementation/`), its SHA-256, and optionally the
+  run manifest's path and SHA-256 plus the stage name. The stage must be
+  recorded once, passing, with the hash pinned here, in an accepted run;
+  a stage that is not in the manifest refuses (the K09-13 failure mode).
+- **Cited statements (L1, E6).** `component_statements` holds one slot per
+  component: V-01 store (S-K02-HOST-3), V-02 store (S-K03-STORE-2), V-03
+  chain (S-K03-CHAIN-1), V-04 signing (S-K05-SIGN-3). Rows and obligations
+  cite slots. The checker finds each statement record, reads its bound and
+  evidence path from it, runs that component's own freshness checker, and
+  reports drift (exit 1) when a cited statement is stale or superseded. To
+  cite a re-pinned statement, change the slot's `id` (one line): the V-03
+  record is searched as `pkg/frost/dkg/verification/<id>.json` or
+  `implementation/V-03/*/<id>.json`, the V-04 record as
+  `implementation/V-04/*/<id>.json`, and its `freshness.manifest` is passed
+  to the signing checker.
+- **Blockers (L3).** Each row lists the KC-VER section 4 gates it waits on,
+  with the gate, the spec reference, what it blocks, what is missing and the
+  spec's owner role (no person is assigned yet). A gate tied to a slot clears
+  only while that statement is fresh; a gate without a slot stays active.
+  `--strict` refuses any active blocker.
+- **Execution subject.** Run records name the heads they ran on. The checker
+  lists every row pin whose bytes differ at that head.
+- **Exit codes (L5):** 0 pass; 1 drift (source, spec or cited statement);
+  2 strict only, ledger open; 3 invalid ledger, provenance or input,
+  including command-line errors.
+
+```sh
+python3 -B pkg/frost/verification/test_freshness.py
+python3 -B pkg/frost/verification/check_freshness.py \
+  --repo keep-core=<this checkout> --repo tbtc-v2=<tbtc-v2 at 39412825> \
+  --repo snowfall=<snowfall at c1847ebd> \
+  --spec KC-SF-V3=<FROST-migration-spec>/keep-core-integration-spec.md \
+  --spec KC-VER=<FROST-migration-spec>/keep-core-verification-spec.md \
+  --evidence-root /Users/tux/threshold/Research/SNOWFALL/integration-spec-v2 [--strict]
+```
+
+## KC-VER section 4 gates without a result
+
+| Gate | Spec | Blocks | Rows | Owner role | Missing at 925103a6 |
+| --- | --- | --- | --- | --- | --- |
+| V-02 at the spec bound | rev 01 §4, VD-05 | K-03 exit | 2, 3 | verification lead with the K-03 implementer | S-K03-STORE-2 is cited at three commits without clone, stale restore or host crash for the P-K03 predicates (#10 E3); `store/dkg_status.go:74` still rejects `Threshold <= n/2` (E4) |
+| V-03 model and replay | rev 01 §4 | K-03 merge, K-03 exit | 1, 2, 3 | verification lead with the K-03 implementer and the C-02/C-03 owners | fresh statement (S-K03-CHAIN-1 stale; re-pin in progress) |
+| V-04 model and replay | rev 01 §4; rev 02 predicates | K-04 merge, K-05 exit | 5, 6, 7 | verification lead with the K-04/K-05 implementers and the C-04 owner | fresh statement (S-K05-SIGN-3 stale; re-pin in progress); rev 02 predicates and containment not modelled |
+| V-06 named proofs | rev 01 §4 | C-02 exit where shared; C-05, C-08; G-F | 1, 3, 4, 8 | cryptographic contract lead with independent specialist review | not started |
+| V-07 | rev 02 draft §4 | K-06 merge and exit | 4, 7 | verification lead with the K-06 implementer and the C-05 owner | no model or replay |
+| V-08 | rev 02 draft §4 | K-07 | 6, 7, 9 | verification lead with the K-07 implementer and the C-06 owner | no model or replay |
+| V-09 | rev 02 draft §4 | K-08 | 8 | verification lead with the K-08 implementer and the C-08 owner | no model or replay |
+| V-10 | rev 02 draft §4 | K-10, K-11, K-12 | 9, 10 | verification lead with the release commander and the C-10 owner | no model or replay |
+
+The KC-VER revision 02 draft (kc-ver-02 `51b9a16`) is not merged; the
+ledger still pins KC-VER revision 01 (`d45afda`). Its gates are recorded so
+that the program does not look on track while they have no result.
+
+## K-09 run b9-r2 joined to the rows (#40, ledger half)
+
+Run `implementation/K09-lifecycle-run-2026-11-06-b9-r2/`: accepted, 12 of 12
+stages pass, no skips. Each stage log below is pinned by the SHA-256 the run
+manifest records, and the manifest is pinned too. The run's subject is
+keep-core ef916bf8 and tbtc-v2 8a9e9e5a. From there to the integration heads,
+keep-core changes no Go source and no K-09 test (the K-09 test files are
+byte-identical to the manifest's `testFiles`); tbtc-v2 changes Bridge.sol,
+BridgeGovernance.sol, BridgeState.sol, MovingFunds.sol, FrostMovement.sol,
+IFrostFundingBridge.sol and deploy 87 (batch 8 and C-11a). The checker
+reports the affected row pins: rows 4 (IFrostFundingBridge), 5 and 7
+(BridgeState) and 10 (both deploy scripts).
+
+| Stage | Rows | What the stage executes |
+| --- | --- | --- |
+| 01-legacy, 02-upgrade | 10 | 40a11d1d world; proxy upgraded in place with legacy wallets and Bank unchanged (local layout witness only) |
+| 03-dkg | 1, 2, 3 | real nodes and workers take a 5-seat wallet to ReadyUnfunded |
+| 04-drain | 6, 7 | FROST sweep of the incoming drain output, maintainer proof, Bridge main = sweep output |
+| 05-redemption | 5, 6, 7 | reserve and pay a redemption; Core pays; Bridge main = change |
+| 06-restart | 2, 6, 7 | SIGKILL and restart; signers restored without a DKG rerun; second sweep settles |
+| 07-reservation-timeout | 5, 7 | reservation then node loss; keeper timeout by deadline; wallet MovingFunds |
+| 08-deposit-refund | 4, 7 | sweep of a reserved FROST deposit; depositor credited; independent refund after locktime |
+| 09-movement | 6, 7 | FROST-to-FROST movement committed, moved and proved |
+| 11-cutover-closure | 9, 10 | cutover to FrostOnly; legacy source and an empty FROST wallet close |
+| 10-inactivity, 12-no-inactivity | none | inactivity enforcement has no section 8.3 row; V-09 gate |
+
+Gaps against the K-09 "verification now" list: no fraud admission, defense or
+timeout stage (row 8 has no execution evidence); no realistic-header SPV run.
+The tbtc-v2 K09 contract tests now have an execution record at 39412825
+(next section). These runs are concrete execution of honest paths; they do not
+discharge a row. Every row stays open, as KC-VER 2.7 and the V-05 exit
+require a checked guarantee or an owned assumption for every model
+assumption, fresh cited statements and independent review.
+
+## tbtc-v2 K09 contract run at 39412825 (6 November addendum)
+
+The tbtc-v2 K09 contract tests (tbtc-v2#53) ran at `integration/frost-base`
+39412825, clean tree, at the manager's request: 35 passing, 0 failing, 152.8 s
+wall including compilation, peak RSS 3.8 GB, one Node process on the
+in-process Hardhat network. The record is
+`implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/`
+(planned limits, actual result, log, manifest). Its log is pinned by SHA-256
+through the manifest as `execution` evidence on:
+
+- row 9: K09.LegacyObligations (every 40a11d1d obligation class carried
+  across upgrade, drain, cutover and containment and discharged through each
+  of 21 routes) and K09.CutoverInvariants (a direct FROST closure with an open
+  challenge reverts);
+- row 10: K09.RegistryCutover (cutover refused in every non-IDLE registry DKG
+  state with the storage frame unchanged) and K09.CutoverInvariants.
+
+The world uses the real ECDSA WalletRegistry stack and the 40a11d1d Bridge
+behind a real proxy; the beacon (smock) and the difficulty-0 relay are
+labelled adapters. These are concrete contract tests. They do not supply the
+K-12 Bitcoin/archive inventory (row 9) or K-10 deployed-state correspondence
+(row 10), so both rows stay open.
+
+The checker was rerun at `4a955b371` (`catchup-2026-11-06/checker-rerun/`):
+22 unit tests pass; normal and strict both exit 1, because S-K03-CHAIN-1 and
+S-K05-SIGN-3 are still the cited, stale statements. Row pins and both specs
+match.
+
+## Pending re-pins (not cited; drafts on unmerged branches)
+
+The slots below still cite the statements on this branch. None of the
+pending statements is cited as fresh here. Each was probed with this
+checker's adapters against its PR head (worktrees under
+`integration-worktrees/VER-v05/probe/`, `--repo tbtc-v2` at 39412825 and the
+KC-VER rev 02 draft checkout); "probe" is that result, not a citation.
+
+| Slot | Cited now | Pending | PR (head) | Change when it merges | Probe |
+| --- | --- | --- | --- | --- | --- |
+| V-01-store | S-K02-HOST-3 | S-K02-HOST-4 | #122 (`81de8f3a7`) | `id` | fresh |
+| V-02-store | S-K03-STORE-2 | S-K03-STORE-3 | #122 | `id`. The V-02 blocker stays: four commits blocked, clone at two commits, VD-05 open (#77) | fresh |
+| V-03-chain | S-K03-CHAIN-1 | S-K03-CHAIN-2 | #127 (`ba6faa031`) | `id` | fresh |
+| V-04-signing | S-K05-SIGN-3 | S-K05-SIGN-4, then S-K05-SIGN-5 (supersedes 4) | #123 (`2c94293d3`), #126 (`242ad3718`) | `id` (S-K05-SIGN-5 if #126 merges) | fresh only after the snowfall `clients/go` dependency source is extracted into `pkg/frost/signing/verification/dependency-source` (gitignored; command in the signing README); a clean checkout reads stale |
+| new V-07-deposit | none | S-K06-DEPOSIT-1 | #131 (`52e06b610`) | add the slot below; set the V-07 blocker's `slot` on rows 4 and 7 | fresh |
+| new V-08-movement | none | S-K07-MOVEMENT-1 | #132 (`2334b49ee`) | add the slot below; set the V-08 blocker's `slot` on rows 6, 7 and 9 | fresh |
+| new V-09-enforcement | none | S-K08-ENFORCE-1 | #130 (`75864443f`) | add the slot below; set the V-09 blocker's `slot` on row 8 | fresh with `--repo` args; "unchecked" without |
+
+The new slots need `--repo kc-ver-02=<FROST-migration-spec-kcver02 checkout>`
+on the V-05 command line:
+
+```json
+{"slot": "V-07-deposit", "component": "V-07", "id": "S-K06-DEPOSIT-1",
+ "checker": {"kind": "store-statements", "repository": "keep-core", "path": "pkg/frost/deposit/verification/check-freshness.py",
+             "args": ["--repo", "tbtc-v2={repo:tbtc-v2}", "--repo", "spec={repo:kc-ver-02}"]},
+ "statement": {"file": "pkg/frost/deposit/verification/STATEMENTS.json"}},
+{"slot": "V-08-movement", "component": "V-08", "id": "S-K07-MOVEMENT-1",
+ "checker": {"kind": "store-statements", "repository": "keep-core", "path": "pkg/frost/movement/verification/check-freshness.py",
+             "args": ["--repo", "tbtc-v2={repo:tbtc-v2}", "--repo", "spec-kcver02={repo:kc-ver-02}"]},
+ "statement": {"file": "pkg/frost/movement/verification/STATEMENTS.json"}},
+{"slot": "V-09-enforcement", "component": "V-09", "id": "S-K08-ENFORCE-1",
+ "checker": {"kind": "store-statements", "repository": "keep-core", "path": "pkg/frost/enforcement/verification/check-freshness.py",
+             "args": ["--repo", "tbtc-v2={repo:tbtc-v2}", "--repo", "kc-ver-02={repo:kc-ver-02}"]},
+ "statement": {"file": "pkg/frost/enforcement/verification/STATEMENTS.json"}}
+```
+
+Without `--repo spec-kcver02`, the V-08 checker falls back to the paths in its
+own statement (the main tbtc-v2 checkout), so pass it explicitly.
+
+#126 proposes discharging an A-STORE assumption in V-05 through clauses
+A-STORE-1..6 (`pkg/frost/signing/verification/SCOPE-2026-11-06.md` on that
+branch). This ledger has no A-STORE obligation; the nearest are
+A-FENCE-STORAGE and A-GUARDED-END-BEFORE-RELEASE. The proposal is not adopted
+here. Map its clauses to obligations after #126 merges, and keep each one
+open until its evidence is an `execution` or `model` record.
+
+## Review L2 obligations: current status
+
+| Item | Obligation | Status at 39412825 | Cited commits and tests |
+| --- | --- | --- | --- |
+| SPV maintainer gate | A-SPV-MAINTAINER-RELAY | on-chain gate implemented; relay/canonical-chain qualification and maintainer availability open | `isSpvMaintainer` in FrostBridge.sol for deposit sweep (02baba9e), sweep resolution (4ccbacf0), redemption and cancellation proofs (2b205b85), and FrostMovementDispatch.sol for movement proofs (98f1e993); Frost.PublicSpvMaintainer.test.ts, Frost.FundingDispatch.test.ts |
+| Gas cap 2^24 | A-TARGET-CHAIN-GAS-CAP (new) | caps lowered and measured locally; target-chain qualification open | MAX_REQUESTS 64 / MAX_INPUTS 32 (FrostSigningIntent.sol), MAX_SWEEP_INPUTS 128, MAX_MOVEMENT_TARGETS 128 (28b35730, ADV-C1 tbtc-v2#49, B8.MovementTargetCap.test.ts), FrostFraud 128/252; Frost.PublicGasCap, FullAdmissionGas, DepositSweep.Gas, SweepConflictResolution.Gas tests |
+| Sweep/reservation serialization | A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION | recovery route implemented; canonical host serialization and V-04 interleaving open | 4ccbacf0 (FrostSweepResolutionCertificate.sol); Frost.SweepConflictResolution*.test.ts |
+| Single-shot cancellation | A-FEE-INCLUSION-ESCALATION | in-envelope alternatives implemented; above-envelope policy and D-09 caps open | 52413cc6 (FrostCancellationHistory.sol); Frost.CancellationAlternatives/History tests |
+| Duplicate x-only validation | A-XONLY-SINGLE-VALIDATION (new) | unchanged; open (V-06 not started) | keep-core and tbtc-v2 FrostCurve.sol are the same blob `db089b56`; FrostSecp256k1.lift is separate |
+
+The sources are pinned at 39412825 as `source` evidence on each obligation.
+No gas, maintainer or cancellation test was rerun here.
+
+## Earlier records
+
+The sections below are kept as written. Their pin and statement remarks are
+superseded by the sections above.
+
+## Rows on 15 October 2026 (K-05 pins)
+
 Date: 15 October 2026. Basis: KC-SF-V3 revision 01 section 8.3 and KC-VER
 revision 01 V-05. This is an open ledger, not a composition safety statement.
 No row is discharged and no production gate is closed. The authoritative per-row
@@ -95,8 +317,11 @@ and local witnesses is incremental provenance, not milestone completion.
 | A-K05-TIMEOUT-POLICY | Choose the TimeoutPending host policy and deadlines (spec issue #3) | Both K-05 policies implemented; neither is a default | Owner with K-05 signing/C-04 leads | TBD | No default; escalate unresolved TimeoutPending intents |
 | A-K05-LATE-SIGNATURE-SETTLEMENT | Decide whether a late valid signature may settle the exact admitted payment by SPV (spec issue #2, A5) | P-K05-LATE-SIGNATURE-QUARANTINE blocked; V-04 claims neither reading | Owner with C-04/V-04 owners | TBD | No new release or second release; report late signatures |
 | A-K05-CERTIFICATE-TRANSPORT | Authenticated cross-operator transport for certificates, seat signatures and cancellation attestations | Absent; local fixture collects in-process | K-05 coordination/transport leads | TBD | Refuse incomplete or conflicting sets; escalate partitions |
+| A-TARGET-CHAIN-GAS-CAP | Every FROST admission, proof, resolution, movement and defense fits the 2^24 per-transaction cap at its declared maximum | Caps implemented and measured locally (6 November); target-chain qualification open | C-04/C-05/C-06/C-08 contract leads, C-11 release owners | TBD | Refuse shapes above the caps; requalify on change |
+| A-XONLY-SINGLE-VALIDATION | One qualified x-only BIP340 validation for C-02 and C-07, or both covered by P-C07-BIP340 | Two implementations unchanged; V-06 not started | Cryptographic contract lead (V-06) with C-02/C-07 owners | TBD | Any change re-opens V-06 evidence |
 
-V-01/V-02 statement freshness is checked on its own verification branch. K-04
+(Superseded 6 November 2026: the V-05 checker now runs the V-01/V-02 checker
+and fails on a stale cited statement.) V-01/V-02 statement freshness is checked on its own verification branch. K-04
 changes the pinned engine interface and the implementation stack does not yet
 include the newer #10 model/replay tooling. Reconcile source and tool pins before
 citing that statement against a combined integration head. Historical statement

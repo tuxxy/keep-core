@@ -17,12 +17,11 @@ package dkg_test
 //   - a classified quarantine (approval replaced) or expiry (wallet closed)
 //     read by the same monitor at the same boundaries is still recorded.
 //
-// The before-certificate-submit boundary is left out of the unclassified
-// matrix pending D32 (see the loop). The classified side covers it.
+// The before-certificate-submit cell (D32) and Run's success rule (D31) are
+// tested in run_unclassified_test.go.
 //
-// Only the Restore path is tested. What Run's success path does with an
-// unclassified error is an owner decision (proposed D31 in
-// K-09-restart/DECISIONS.md); nothing here constrains it.
+// A restore that goes on after an unclassified error must still watch the
+// approval: TestRestoredHostStillWatchesAfterUnclassifiedError (review B1).
 //
 // "Without changing the saved wallet" is checked on the durable record: it
 // stays unquarantined, never Closed, with every identity and approval field
@@ -124,12 +123,10 @@ func TestRestoredHostKeepsWalletOnUnclassifiedError(t *testing.T) {
 	for _, saved := range []string{"RegisteredPendingReady", "ReadyUnfunded"} {
 		for _, boundary := range b10Boundaries[saved] {
 			if boundary == "before-certificate-submit" {
-				// Excluded pending D32 (K-09-restart/DECISIONS.md): there the
-				// cancellation the observer causes makes the certificate
-				// submission fail, and reconcileWallet classifies the
-				// still-pending wallet as "outcome unresolved after
-				// transaction" (ErrQuarantined), a classification of its own,
-				// not finishSuccess routing (#139's mechanism).
+				// Covered by TestRestoredHostKeepsWalletOnCancelledCertificate
+				// in run_unclassified_test.go (D32 (a): a certificate refused
+				// on the executor's own cancellation is unclassified), with
+				// the sent-but-unresolved negative beside it.
 				continue
 			}
 			for _, source := range b12Sources {
@@ -443,5 +440,81 @@ func (b *b12Bus) Receive(ctx context.Context) (dkg.Attestation, error) {
 		return dkg.Attestation{}, err
 	case <-ctx.Done():
 		return dkg.Attestation{}, ctx.Err()
+	}
+}
+
+// TestRestoredHostStillWatchesAfterUnclassifiedError (review B1): the
+// tolerance above ("a design that retries a transient read") holds only if
+// the restored host keeps watching. An unclassified monitor fault early in
+// the restore (after-key-reload), then the approval replaced after the
+// ReadyUnfunded save: a restore that stopped on the fault (error returned,
+// wallet unchanged) passes; one that went on must report and record the
+// quarantine (batch 10, P-K03-INCONSISTENCY-QUARANTINE). A monitor that
+// silently gives up on the fault returns success with the replaced approval
+// missed, and fails here.
+func TestRestoredHostStillWatchesAfterUnclassifiedError(t *testing.T) {
+	for _, saved := range []string{"RegisteredPendingReady", "ReadyUnfunded"} {
+		for _, source := range []b12Source{b12MonitorTransport, b12MonitorRevert3, b12MonitorRevert32000} {
+			t.Run(fmt.Sprintf("%s/%s", saved, source), func(t *testing.T) {
+				t.Parallel()
+				ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+				defer cancel()
+				w := newB10World(t)
+				journal := w.persist(ctx, t, saved)
+				chain := &b12Chain{b10Chain: w.chain, release: make(chan struct{}), delivered: make(chan struct{})}
+				bus := &b12Bus{b10Bus: w.bus, fault: make(chan error, 1), chain: chain}
+				var faulted, replaced atomic.Bool
+				e := &dkg.Executor{Chain: chain, Engine: &b10Engine{journal: journal}, Journal: journal, Bus: bus, Signer: b10Signer(0), PollInterval: 2 * time.Millisecond}
+				e.Boundary = func(name string) error {
+					switch name {
+					case "after-key-reload":
+						chain.arm(b12Fault(source), nil)
+						select {
+						case <-chain.delivered:
+							faulted.Store(true)
+						case <-time.After(3 * time.Second):
+							return nil
+						}
+						select {
+						case <-chain.cancelled():
+						case <-time.After(300 * time.Millisecond):
+						}
+					case "after-wallet-ready-save":
+						v := b10Approval(t, w.desc, 12, common.Hash{0xa2}, 2)
+						w.chain.mu.Lock()
+						w.chain.view = v
+						w.chain.mu.Unlock()
+						replaced.Store(true)
+						time.Sleep(200 * time.Millisecond) // about 100 monitor polls
+					}
+					return nil
+				}
+				done := make(chan b10Outcome, 1)
+				go func() {
+					status, record, err := e.Restore(ctx)
+					done <- b10Outcome{status, record, err}
+				}()
+				var got b10Outcome
+				select {
+				case got = <-done:
+				case <-time.After(9 * time.Second):
+					t.Fatalf("harness: Restore did not return within 9 s")
+				}
+				stored, err := journal.LoadWallet(context.Background())
+				if err != nil {
+					t.Fatalf("harness: reading the saved wallet: %v", err)
+				}
+				if got.err == nil {
+					t.Errorf("%s: restored host from %s went on after an unclassified %s and returned success with the approval replaced after its ReadyUnfunded save (replaced=%t): durable state=%s quarantined=%t (want the fault returned, or the quarantine recorded)",
+						b12Invariant, saved, source, replaced.Load(), stored.State, stored.Quarantined)
+				} else if errors.Is(got.err, dkg.ErrQuarantined) != stored.Quarantined {
+					t.Errorf("%s: restored host from %s after an unclassified %s: Restore returned err=%v but durable quarantined=%t (a reported quarantine must be recorded, and an unreported one must not be)",
+						b12Invariant, saved, source, got.err, stored.Quarantined)
+				}
+				if !faulted.Load() {
+					t.Errorf("harness: the %s was never delivered to the monitor", source)
+				}
+			})
+		}
 	}
 }

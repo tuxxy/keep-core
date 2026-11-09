@@ -221,9 +221,11 @@ func (p Planner) main(ctx context.Context, at uint64, key [32]byte) (bitcoin.Pre
 }
 
 // Build plans a sweep of keys (in the given order) at anchor block at. The main
-// follows the C-05 rule: an unreserved main is included, a reserved main is
-// not, unless resolution names the active reservation (the C-04 route). A main
-// held by another purpose under the host lock refuses the plan.
+// follows the C-05 rule: an unreserved main is included. While the main is
+// reserved only the C-04 route (resolution names the active reservation)
+// sweeps; an ordinary sweep is refused with ErrMainBusy and its deposits wait
+// (D13 refinement, single main). A main held by another purpose under the host
+// lock refuses the plan.
 func (p Planner) Build(ctx context.Context, at uint64, keys [][32]byte, resolution [32]byte) (*signing.Plan, error) {
 	if len(keys) == 0 {
 		return nil, ErrNothingToSweep
@@ -248,8 +250,10 @@ func (p Planner) Build(ctx context.Context, at uint64, keys [][32]byte, resoluti
 		if custody.ActiveReservation != resolution || custody.MainOutpoint == ([32]byte{}) {
 			return nil, errors.New("resolution needs the active reservation's main")
 		}
-	case custody.ActiveReservation != ([32]byte{}) || custody.MainOutpoint == ([32]byte{}):
-		// Deposit-only: a reserved main stays with its reservation.
+	case custody.ActiveReservation != ([32]byte{}):
+		return nil, fmt.Errorf("%w: main is reserved for a redemption", ErrMainBusy)
+	case custody.MainOutpoint == ([32]byte{}):
+		// Deposit-only: the first sweep of a wallet without main.
 	default:
 		history, err := p.Lock.History(ctx, wallet, custody.MainOutpoint)
 		if err != nil {

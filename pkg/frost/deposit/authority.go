@@ -121,15 +121,19 @@ func matches(plan *signing.Plan, d signing.SweepDeposit, r Record) error {
 }
 
 // mainRule is C-05's inclusion rule. An ordinary sweep must include an
-// unreserved main and must not include a reserved one; a resolution sweep
-// spends exactly the reserved main of its reservation.
+// unreserved main and is refused with ErrMainBusy while the main is reserved
+// (D13 refinement, single main); a resolution sweep spends exactly the reserved
+// main of its reservation.
 func mainRule(plan *signing.Plan, s Snapshot) error {
 	c := s.Custody
 	main := plan.SweepMain()
 	resolution := plan.SweepResolution()
 	switch {
 	case main == nil:
-		if c.MainOutpoint != ([32]byte{}) && c.ActiveReservation == ([32]byte{}) {
+		if c.ActiveReservation != ([32]byte{}) {
+			return fmt.Errorf("%w: main is reserved for a redemption", ErrMainBusy)
+		}
+		if c.MainOutpoint != ([32]byte{}) {
 			return fmt.Errorf("%w: an unreserved main must be included", ErrPlanMismatch)
 		}
 	case OutpointKey(main.Outpoint) != c.MainOutpoint:

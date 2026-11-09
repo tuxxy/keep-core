@@ -343,8 +343,10 @@ func TestV04ProcessBoundaryReplay(t *testing.T) {
 		{Name: "late-done-quarantine", At: "after-signature", Decision: "timeout", AfterMode: "recover", AfterTimeout: true, Expect: "late"},
 		{Name: "fresh-agreed-attempt-after-failed-claim", At: "before-worker-start", Decision: "fail", AfterMode: "run", Fresh: true, Expect: "fresh-success"},
 	}
+	// Each case has its own directory and child processes, so the cases run in parallel.
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			if err := os.WriteFile(filepath.Join(root, "fence"), []byte("{}"), 0600); err != nil {
 				t.Fatal(err)

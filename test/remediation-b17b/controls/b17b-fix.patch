@@ -1,0 +1,32 @@
+diff --git a/pkg/tbtc/frost_node.go b/pkg/tbtc/frost_node.go
+index cdd977db9..91de49f86 100644
+--- a/pkg/tbtc/frost_node.go
++++ b/pkg/tbtc/frost_node.go
+@@ -656,9 +656,9 @@ func (fn *frostNode) executeDKG(
+ 	epoch := selection.Epoch
+ 	epochLogger := logger.With(zap.Uint64("frostEpoch", epoch))
+ 
+-	started := false
++	succeeded := false
+ 	defer func() {
+-		if !started {
++		if !succeeded {
+ 			fn.unclaimEpoch(epoch)
+ 		}
+ 	}()
+@@ -707,7 +707,6 @@ func (fn *frostNode) executeDKG(
+ 
+ 	epochLogger.Infof("joining FROST DKG with seats [%v]", locals)
+ 
+-	started = true
+ 	record, err := ExecuteFrostDKG(dkgCtx, &dkg.Executor{
+ 		Chain:   fn.registry,
+ 		Engine:  engine,
+@@ -733,6 +732,7 @@ func (fn *frostNode) executeDKG(
+ 		epochLogger.Errorf("FROST DKG failed: [%v]", err)
+ 		return
+ 	}
++	succeeded = true
+ 
+ 	fn.addWallet(epoch, journal, record)
+ }

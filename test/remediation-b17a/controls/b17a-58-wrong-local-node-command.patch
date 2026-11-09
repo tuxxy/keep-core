@@ -1,0 +1,13 @@
+diff --git a/cmd/cmd.go b/cmd/cmd.go
+index 0dbe4a24e..0da10aa6d 100644
+--- a/cmd/cmd.go
++++ b/cmd/cmd.go
+@@ -37,6 +37,8 @@ func init() {
+ 		EthereumCommand,
+ 		MaintainerCommand,
+ 		MaintainerCliCommand,
++		// Control (batch 17a): the closed K-09's local FROST node command.
++		&cobra.Command{Use: "frost-local-node", Short: "Run a local FROST node until its time bound"},
+ 	)
+ }
+ 

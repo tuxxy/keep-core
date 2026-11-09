@@ -1,0 +1,14 @@
+diff --git a/pkg/tbtc/frost_node.go b/pkg/tbtc/frost_node.go
+index cdd977db9..08e7b6f04 100644
+--- a/pkg/tbtc/frost_node.go
++++ b/pkg/tbtc/frost_node.go
+@@ -118,6 +118,9 @@ type FrostConfig struct {
+ 	// Store is the FROST key store, the same on every restart of the
+ 	// operator.
+ 	Store store.Config
++	// Control (batch 17a): a fault-injection callback in configuration, as
++	// the closed K-09's VerificationPause/AfterGrant.
++	OnDKGStep func(step string) error
+ }
+ 
+ // Configured reports whether FROST is configured.

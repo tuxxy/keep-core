@@ -1203,7 +1203,13 @@ func runB6Node(t *testing.T, config b6NodeConfig) error {
 	// The base firewall: applications first, then base's own allow list
 	// (as cmd/start_test.go builds it); the allow list holds the operators.
 	policy := firewall.AnyApplicationPolicy([]firewall.Application{tbtcChain}, firewall.NewAllowList(allowed))
-	provider, err := libp2p.Connect(ctx, libp2p.Config{Port: config.Port, Peers: config.Peers}, operatorKey, policy,
+	// Loopback only (D35, tuxxy/keep-core#37): the operator keys are public
+	// test scalars, so the node must not listen on a LAN interface.
+	networkConfig, err := b17aLoopbackNetworkConfig(config.Port, config.Peers)
+	if err != nil {
+		return err
+	}
+	provider, err := libp2p.Connect(ctx, networkConfig, operatorKey, policy,
 		retransmission.NewTicker(blockCounter.WatchBlocks(ctx)))
 	if err != nil {
 		return fmt.Errorf("network: %w", err)

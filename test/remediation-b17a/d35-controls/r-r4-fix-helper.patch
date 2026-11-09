@@ -1,0 +1,51 @@
+diff --git a/pkg/net/libp2p/libp2p.go b/pkg/net/libp2p/libp2p.go
+index 0d8339df8..ec6e88343 100644
+--- a/pkg/net/libp2p/libp2p.go
++++ b/pkg/net/libp2p/libp2p.go
+@@ -82,6 +82,9 @@ type Config struct {
+ 	Peers              []string
+ 	Port               int
+ 	AnnouncedAddresses []string
++	// ListenAddresses, when set, are the only addresses the provider listens
++	// on; empty listens on every interface address (base behaviour).
++	ListenAddresses    []string
+ 	DisseminationTime  int // TODO: Convert to time.Duration
+ }
+ 
+@@ -331,6 +334,7 @@ func Connect(
+ 		identity,
+ 		config.Port,
+ 		config.AnnouncedAddresses,
++		config.ListenAddresses,
+ 		firewall,
+ 		&metricsRecorderRef,
+ 	)
+@@ -410,13 +414,14 @@ func discoverAndListen(
+ 	identity *identity,
+ 	port int,
+ 	announcedAddresses []string,
++	listenAddresses []string,
+ 	firewall net.Firewall,
+ 	metricsRecorderRef *atomic.Value,
+ ) (host.Host, error) {
+ 	var err error
+ 
+ 	// Get available network ifaces, for a specific port, as multiaddrs
+-	addrs, err := getListenAddrs(port)
++	addrs, err := selectListenAddrs(port, listenAddresses)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+@@ -716,3 +721,12 @@ func multiaddressWithIdentity(
+ ) string {
+ 	return fmt.Sprintf("%s/ipfs/%s", multiaddress.String(), peerID.String())
+ }
++
++// selectListenAddrs is the configured listen set, or base's every-interface
++// set when none is configured.
++func selectListenAddrs(port int, configured []string) ([]ma.Multiaddr, error) {
++	if len(configured) > 0 {
++		return parseMultiaddresses(configured), nil
++	}
++	return getListenAddrs(port)
++}

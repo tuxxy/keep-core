@@ -1,0 +1,14 @@
+diff --git a/pkg/net/libp2p/libp2p.go b/pkg/net/libp2p/libp2p.go
+index 0d8339df8..6208ed942 100644
+--- a/pkg/net/libp2p/libp2p.go
++++ b/pkg/net/libp2p/libp2p.go
+@@ -82,6 +82,9 @@ type Config struct {
+ 	Peers              []string
+ 	Port               int
+ 	AnnouncedAddresses []string
++	// ListenAddresses, when set, are the only addresses the provider listens
++	// on; empty listens on every interface address (base behaviour).
++	ListenAddresses    string
+ 	DisseminationTime  int // TODO: Convert to time.Duration
+ }
+ 

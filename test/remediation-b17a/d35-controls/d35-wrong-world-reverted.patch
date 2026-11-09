@@ -1,0 +1,57 @@
+diff --git a/pkg/net/libp2p/libp2p.go b/pkg/net/libp2p/libp2p.go
+index 0d8339df8..0976effa8 100644
+--- a/pkg/net/libp2p/libp2p.go
++++ b/pkg/net/libp2p/libp2p.go
+@@ -82,6 +82,9 @@ type Config struct {
+ 	Peers              []string
+ 	Port               int
+ 	AnnouncedAddresses []string
++	// ListenAddresses, when set, are the only addresses the provider listens
++	// on; empty listens on every interface address (base behaviour).
++	ListenAddresses    []string
+ 	DisseminationTime  int // TODO: Convert to time.Duration
+ }
+ 
+@@ -331,6 +334,7 @@ func Connect(
+ 		identity,
+ 		config.Port,
+ 		config.AnnouncedAddresses,
++		config.ListenAddresses,
+ 		firewall,
+ 		&metricsRecorderRef,
+ 	)
+@@ -410,6 +414,7 @@ func discoverAndListen(
+ 	identity *identity,
+ 	port int,
+ 	announcedAddresses []string,
++	listenAddresses []string,
+ 	firewall net.Firewall,
+ 	metricsRecorderRef *atomic.Value,
+ ) (host.Host, error) {
+@@ -420,6 +425,9 @@ func discoverAndListen(
+ 	if err != nil {
+ 		return nil, err
+ 	}
++	if len(listenAddresses) > 0 {
++		addrs = parseMultiaddresses(listenAddresses)
++	}
+ 
+ 	connectionManager, err := connmgr.NewConnManager(
+ 		DefaultConnMgrLowWater,
+diff --git a/pkg/tbtc/frost_node_b6_world_test.go b/pkg/tbtc/frost_node_b6_world_test.go
+index c30a422da..bda3fc0de 100644
+--- a/pkg/tbtc/frost_node_b6_world_test.go
++++ b/pkg/tbtc/frost_node_b6_world_test.go
+@@ -1205,11 +1205,7 @@ func runB6Node(t *testing.T, config b6NodeConfig) error {
+ 	policy := firewall.AnyApplicationPolicy([]firewall.Application{tbtcChain}, firewall.NewAllowList(allowed))
+ 	// Loopback only (D35, tuxxy/keep-core#37): the operator keys are public
+ 	// test scalars, so the node must not listen on a LAN interface.
+-	networkConfig, err := b17aLoopbackNetworkConfig(config.Port, config.Peers)
+-	if err != nil {
+-		return err
+-	}
+-	provider, err := libp2p.Connect(ctx, networkConfig, operatorKey, policy,
++	provider, err := libp2p.Connect(ctx, libp2p.Config{Port: config.Port, Peers: config.Peers}, operatorKey, policy,
+ 		retransmission.NewTicker(blockCounter.WatchBlocks(ctx)))
+ 	if err != nil {
+ 		return fmt.Errorf("network: %w", err)

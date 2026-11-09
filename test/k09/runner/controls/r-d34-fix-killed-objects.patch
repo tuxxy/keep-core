@@ -1,0 +1,112 @@
+diff --git a/test/k09/run.sh b/test/k09/run.sh
+index e0f22e33f..8f81195b8 100755
+--- a/test/k09/run.sh
++++ b/test/k09/run.sh
+@@ -30,7 +30,8 @@
+ set -euo pipefail
+ umask 077
+ : "${SNOWFALL_WORKER:?pinned worker required}" "${SNOWFALL_WORKER_SHA256:?pinned worker hash required}"
+-for v in LEGACY_BASELINE_DIR LEGACY_TBTC_REPO LEGACY_ANVIL LEGACY_BITCOIND LEGACY_BITCOIND_SHA256 LEGACY_UPGRADED_DIR LEGACY_UPGRADED_COMMIT K09_ECDSA_NODE_MODULES K09_ECDSA_NODE_LOCK; do
++inputs="SNOWFALL_WORKER SNOWFALL_WORKER_SHA256 SNOWFALL_COMMIT LEGACY_BASELINE_DIR LEGACY_TBTC_REPO LEGACY_ANVIL LEGACY_BITCOIND LEGACY_BITCOIND_SHA256 LEGACY_UPGRADED_DIR LEGACY_UPGRADED_COMMIT K09_ECDSA_NODE_MODULES K09_ECDSA_NODE_LOCK"
++for v in $inputs; do
+   [ -n "${!v:-}" ] || { echo "$v required" >&2; exit 2; }
+ done
+ evidence=${1:?evidence directory required}
+@@ -46,6 +47,15 @@ head_lock=$(git show HEAD:solidity/ecdsa/yarn.lock | shasum -a 256 | cut -d' ' -
+ given_lock=$(shasum -a 256 < "$K09_ECDSA_NODE_LOCK" | cut -d' ' -f1)
+ [ "$head_lock" = "$given_lock" ] || { echo "K09_ECDSA_NODE_LOCK is not HEAD's solidity/ecdsa/yarn.lock" >&2; exit 2; }
+ 
++snowfall=$(cd "$kc_root/../snowfall" && pwd)
++[ "$(git -C "$snowfall" rev-parse HEAD)" = "$SNOWFALL_COMMIT" ] || { echo "../snowfall is not at SNOWFALL_COMMIT" >&2; exit 2; }
++[ -z "$(git -C "$snowfall" status --porcelain)" ] || { echo "../snowfall has uncommitted changes" >&2; exit 2; }
++# The build and every stage see only these variables (tbtc-v2#19).
++allow=(PATH="$PATH" HOME="$HOME" TMPDIR="${TMPDIR:-/tmp}")
++for v in $inputs GOCACHE GOMODCACHE GOPATH; do
++  [ -z "${!v:-}" ] || allow+=("$v=${!v}")
++done
++build_env=("${allow[@]}" GOFLAGS= GOTOOLCHAIN=local GOWORK=off)
+ run_id="$(date +%Y%m%d%H%M%S)-$$"
+ # Node directories (stores included) stay outside the evidence and go at
+ # exit; only node.log files are copied in.
+@@ -66,11 +76,12 @@ trap cleanup EXIT
+ src="$scratch/src"
+ mkdir -p "$src/keep-core"
+ git archive --format=tar HEAD | tar -x -C "$src/keep-core"
+-ln -s "$(cd "$kc_root/../snowfall" && pwd)" "$src/snowfall"
++mkdir -p "$src/snowfall"
++git -C "$snowfall" archive --format=tar HEAD | tar -x -C "$src/snowfall"
+ ln -s "$K09_ECDSA_NODE_MODULES" "$src/keep-core/solidity/ecdsa/node_modules"
+-(cd "$src/keep-core/solidity/ecdsa" && NODE_OPTIONS=--max-old-space-size=8192 npx hardhat compile) > "$evidence/ecdsa-build.log" 2>&1 \
++(cd "$src/keep-core/solidity/ecdsa" && env -i "${build_env[@]}" NODE_OPTIONS=--max-old-space-size=8192 npx hardhat compile) > "$evidence/ecdsa-build.log" 2>&1 \
+   || { echo "solidity/ecdsa build failed (ecdsa-build.log)" >&2; exit 2; }
+-(cd "$src/keep-core" && go test -c -o "$evidence/tbtc.test" ./pkg/tbtc)
++(cd "$src/keep-core" && env -i "${build_env[@]}" go test -c -o "$evidence/tbtc.test" ./pkg/tbtc)
+ 
+ results="$evidence/cases.tsv"
+ : > "$results"
+@@ -82,9 +93,19 @@ run_stage() {
+   # Each of the three node processes runs at GOMAXPROCS 1; with the test
+   # process at <procs>, a lane uses procs+3 Go cores (shared rules: at most
+   # 8 in all, so two lanes run the test process at 1).
+-  K09_RUN_ID=$run_id B6_DEBUG_DIR="$scratch/$stage" GOMAXPROCS=$procs \
++  # Own process group (#30): the stage's Anvil and bitcoind share it; after
++  # the stage, pass or fail, the group is recorded and killed.
++  env -i "${allow[@]}" K09_RUN_ID=$run_id B6_DEBUG_DIR="$scratch/$stage" GOMAXPROCS=$procs \
++    python3 -c 'import os, sys; os.setpgid(0, 0); os.execv(sys.argv[1], sys.argv[1:])' \
+     "$evidence/tbtc.test" -test.v -test.count=1 -test.timeout 12m \
+-    -test.run "^TestK09Lifecycle\$/^${stage}\$" > "$evidence/$stage.log" 2>&1 || status=$?
++    -test.run "^TestK09Lifecycle\$/^${stage}\$" > "$evidence/$stage.log" 2>&1 &
++  local pg=$!
++  wait "$pg" || status=$?
++  : > "$scratch/killed-$stage"
++  for p in $(pgrep -g "$pg" || true); do
++    echo "$p $(ps -o comm= -p "$p" 2>/dev/null || true)" >> "$scratch/killed-$stage"
++  done
++  kill -9 -- "-$pg" 2>/dev/null || true
+   printf '%s\t%s.log\t%s\n' "$stage" "$stage" "$status" >> "$results"
+   grep -E -- '^\s*--- (PASS|FAIL|SKIP): TestK09Lifecycle/' "$evidence/$stage.log" | sed "s|^|$stage: |" || true
+   # Node logs only (never stores).
+@@ -126,9 +147,11 @@ grep -rlF -f test/k09/secret-patterns.txt --exclude=tbtc.test "$evidence" > "$sc
+ [ ! -s "$scratch/secret-hits" ] || secrets=$(wc -l < "$scratch/secret-hits" | tr -d ' ')
+ cp "$scratch/secret-hits" "$evidence/secret-scan-hits.txt"
+ 
+-python3 - "$evidence" "$kc_root" "$wall" "$secrets" "${leftover:-}" "$src/keep-core" <<'EOF'
++python3 - "$evidence" "$kc_root" "$wall" "$secrets" "${leftover:-}" "$src/keep-core" "$scratch" "$snowfall" "${allow[@]}" <<'EOF'
+ import hashlib, json, os, re, subprocess, sys
+ evidence, root, wall, secrets, leftover, src = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5], sys.argv[6]
++scratch, snowfall_dir = sys.argv[7], sys.argv[8]
++allowed = dict(a.split("=", 1) for a in sys.argv[9:])
+ env = os.environ
+ def sha(path):
+     with open(path, "rb") as f:
+@@ -191,7 +214,8 @@ for stage, log, status in rows:
+                if re.search(r"_test\.go:\d+: ", l) and not re.search(r"K09TIME|b6 phase", l)]
+     stages.append({"stage": stage, "log": log, "logSha256": sha(os.path.join(evidence, log)), "exit": int(status),
+                    "result": result, "seconds": float(elapsed.group(1)) if elapsed else None, "phases": times,
+-                   "failure": failure[:3]})
++                   "failure": failure[:3],
++                   "leftoverKilled": [{"pid": int(l.split()[0]), "command": " ".join(l.split()[1:])} for l in open(os.path.join(scratch, "killed-" + stage)) if l.strip()]})
+ passed = sum(s["result"] == "pass" for s in stages)
+ skips = sum(s["result"] == "skip" for s in stages)
+ if passed != len(stages):
+@@ -204,7 +228,9 @@ tbtc = env["LEGACY_TBTC_REPO"]
+ manifest = {
+     "suite": "keep-core K-09 lifecycle demonstration",
+     "candidate": {"keepCoreHead": head, "clean": not dirty, "branch": git(root, "rev-parse", "--abbrev-ref", "HEAD")},
+-    "repos": {"keepCore": head, "tbtcV2Upgraded": env["LEGACY_UPGRADED_COMMIT"], "tbtcV2Baseline": "40a11d1dcdcf82d3962e430067cfe3f97be81483"},
++    "repos": {"keepCore": head, "tbtcV2Upgraded": env["LEGACY_UPGRADED_COMMIT"], "tbtcV2Baseline": "40a11d1dcdcf82d3962e430067cfe3f97be81483",
++              "snowfall": git(snowfall_dir, "rev-parse", "HEAD")},
++    "environment": allowed,
+     "testFiles": {f: sha(os.path.join(root, "pkg/tbtc", f)) for f in sorted(os.listdir(os.path.join(root, "pkg/tbtc"))) if f.startswith("k09_")},
+     "runner": {"runSh": sha(os.path.join(root, "test/k09/run.sh")), "secretPatterns": sha(os.path.join(root, "test/k09/secret-patterns.txt"))},
+     "dependencies": {
+@@ -224,6 +250,9 @@ manifest = {
+     "leftoverProcesses": leftover or None,
+     "problems": problems, "accepted": not problems,
+ }
++manifest["files"] = {os.path.relpath(os.path.join(d, f), evidence): sha(os.path.join(d, f))
++                     for d, _, files in os.walk(evidence) for f in files
++                     if os.path.relpath(os.path.join(d, f), evidence) != "manifest.json"}
+ with open(os.path.join(evidence, "manifest.json"), "w") as f:
+     json.dump(manifest, f, indent=2)
+ print(f"manifest: {passed}/{len(stages)} stages passed, {skips} skipped, wall {wall}s, secret hits {secrets}, accepted={manifest['accepted']}")

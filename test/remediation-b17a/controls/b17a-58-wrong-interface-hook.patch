@@ -1,0 +1,14 @@
+diff --git a/pkg/tbtc/frost_node.go b/pkg/tbtc/frost_node.go
+index cdd977db9..5b8be59e9 100644
+--- a/pkg/tbtc/frost_node.go
++++ b/pkg/tbtc/frost_node.go
+@@ -118,6 +118,9 @@ type FrostConfig struct {
+ 	// Store is the FROST key store, the same on every restart of the
+ 	// operator.
+ 	Store store.Config
++	// Control (batch 17a): an injected observer the node calls at each
++	// step, a hook behind an interface.
++	Observer interface{ Observe(step string) error }
+ }
+ 
+ // Configured reports whether FROST is configured.

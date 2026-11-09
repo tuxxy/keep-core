@@ -14,15 +14,19 @@
 //     and logSha256 (that file's SHA-256);
 //   - failure: the stage's failing line(s), each a test-file assertion line
 //     ("<file>_test.go:<n>: ...") that is in the log, and the log shows
-//     "--- FAIL: TestK09Lifecycle/<stage>".
+//     "--- FAIL: TestK09Lifecycle/<stage>" after "--- PASS" for each of the
+//     stages 01-06 before <stage> (review N-60c: a failure after a failed
+//     predecessor or setup is not the probe's).
 //
 // The records are written by test/k09/controls/run-probe.sh:
 //
 //	run-probe.sh <patch> <stage> <new record directory>
 //
-// It applies the patch to an export of HEAD (never to the checkout), runs
-// stages 01-06 and <stage> with go test, and writes <dir>/probe.json and the
-// log it names. It refuses an existing record directory. A probe that does
+// It applies the patch to an export of HEAD (never to the checkout), builds
+// solidity/ecdsa in the export as run.sh does (the world reads its build:
+// review B1), runs stages 01-06 and <stage> with go test, and writes
+// <dir>/probe.json and the log it names. It refuses an existing record
+// directory. A probe that does
 // not fail at <stage>, a patch that does not apply, an unknown stage or a
 // dirty tree give no citable record (none, or one checkProbeRecord refuses).
 //
@@ -212,6 +216,19 @@ func checkProbeRecord(dir, repo string) []string {
 			add("failure %s names no test-file assertion line", string(r.Failure))
 		}
 	}
+	// The stages before <stage> that a probe runs (01-06, or those before
+	// <stage> when it is one of them) passed, so the failure is <stage>'s
+	// own and not a missing predecessor or setup error (review N-60c).
+	if log != "" && stage != "" {
+		for _, s := range k09Stages[:6] {
+			if s >= stage {
+				break
+			}
+			if !regexp.MustCompile(`--- PASS: TestK09Lifecycle/` + regexp.QuoteMeta(s) + ` `).MatchString(log) {
+				add("the log does not show stage %s passing before %s: the failure may not be the probe's", s, stage)
+			}
+		}
+	}
 	if log != "" && stage != "" && !regexp.MustCompile(`--- FAIL: TestK09Lifecycle/`+regexp.QuoteMeta(stage)+` `).MatchString(log) {
 		add("the log does not show stage %s failing (--- FAIL: TestK09Lifecycle/%s)", stage, stage)
 	}
@@ -284,7 +301,11 @@ func synthetic(t *testing.T, repo string, edit func(r map[string]any, dir string
 	}
 	dir := t.TempDir()
 	failLine := "k09_lifecycle_test.go:529: K-09 08-deposit-refund (D13): the deposit sweep 48a5 does not spend the wallet's main"
-	log := "=== RUN   TestK09Lifecycle/08-deposit-refund\n    " + failLine + "\n--- FAIL: TestK09Lifecycle/08-deposit-refund (47.80s)\n"
+	log := ""
+	for _, s := range k09Stages[:6] {
+		log += "=== RUN   TestK09Lifecycle/" + s + "\n--- PASS: TestK09Lifecycle/" + s + " (1.00s)\n"
+	}
+	log += "=== RUN   TestK09Lifecycle/08-deposit-refund\n    " + failLine + "\n--- FAIL: TestK09Lifecycle/08-deposit-refund (47.80s)\n"
 	if err := os.WriteFile(filepath.Join(dir, "probe.log"), []byte(log), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -357,6 +378,12 @@ func TestB17cProbeRecordChecker(t *testing.T) {
 		{"empty-failure", "names no test-file assertion line", func(r map[string]any, _ string) { r["failure"] = []any{} }},
 		{"failure-not-in-log", "is not in the log", func(r map[string]any, _ string) {
 			r["failure"] = "k09_lifecycle_test.go:1: a line the probe never printed"
+		}},
+		{"predecessor-failed", "passing before", func(r map[string]any, dir string) {
+			log := "=== RUN   TestK09Lifecycle/03-dkg\n    frost_node_b6_world_test.go:111: setup: keep-core solidity/ecdsa/build is required\n--- FAIL: TestK09Lifecycle/03-dkg (0.01s)\n=== RUN   TestK09Lifecycle/08-deposit-refund\n    k09_lifecycle_test.go:40: no snapshot of 06-restart\n--- FAIL: TestK09Lifecycle/08-deposit-refund (0.01s)\n"
+			os.WriteFile(filepath.Join(dir, "probe.log"), []byte(log), 0o644)
+			r["logSha256"] = sha([]byte(log))
+			r["failure"] = []any{"k09_lifecycle_test.go:40: no snapshot of 06-restart"}
 		}},
 		{"stage-did-not-fail", "does not show stage", func(r map[string]any, _ string) { r["stage"] = "09-movement" }},
 	}
@@ -555,6 +582,10 @@ fi
 exec "$py" "$state/stages.py" "$(pwd)" "$@"
 `, f.state, python, realGo), 0o755)
 	tools := filepath.Join(root, "tools")
+	// FIXTURE npx (review B1): a run-probe.sh that builds solidity/ecdsa in
+	// the export (as run.sh does; b6ArtifactRoot needs it) runs offline:
+	// `npx hardhat compile` writes an empty FIXTURE build.
+	write(t, filepath.Join(stubs, "npx"), "#!/usr/bin/env bash\n[ \"$*\" = \"hardhat compile\" ] || { echo \"FIXTURE npx: $*\" >&2; exit 1; }\nmkdir -p build\necho FIXTURE build > build/.fixture\n", 0o755)
 	write(t, filepath.Join(tools, "anvil"), "#!/usr/bin/env bash\necho 'anvil 0.0.0-b17c-fixture'\n", 0o755)
 	write(t, filepath.Join(tools, "bitcoind"), "#!/usr/bin/env bash\necho 'FIXTURE bitcoind v0.0.0-b17c'\n", 0o755)
 	write(t, filepath.Join(tools, "worker"), "#!/usr/bin/env bash\necho 'FIXTURE worker 0.0.0-b17c'\n", 0o755)

@@ -20,6 +20,12 @@ import (
 // K-09's node.Config.VerificationPause and signing.Config.AfterGrant (review
 // round 6, K09-43), and the verification boundary callbacks that the FROST
 // packages keep on their own types (never in configuration).
+//
+// Deliberate update point (review N4): the pattern is wider than the
+// invariant, so it rejects some ordinary names too (a "grant" margin
+// setting, for example). A legitimate field that matches gets added here as
+// an explicit exception, by an edit to this guard, never by renaming around
+// it.
 var hookName = regexp.MustCompile(`(?i)pause|fault|inject|hook|boundary|grant|crash`)
 
 // allowedInterfaces are the interface-typed configuration fields that are
@@ -102,6 +108,11 @@ func TestB17aNoFaultHooksInProductionConfiguration(t *testing.T) {
 // baseCommands are keep-client's top-level commands at base keep-core
 // (origin/main cmd/cmd.go): FROST adds none (D5: keep-client start refuses a
 // FROST configuration until a testnet decision).
+//
+// Deliberate update point (review N4): this list must equal the top-level
+// commands exactly, so any new production command, even an unrelated
+// upstream one, fails the guard until it is added here. Adding it is a
+// conscious edit, and a FROST local-node or fault command is never added.
 var baseCommands = []string{"ethereum", "maintainer", "maintainer-cli", "ping", "start"}
 
 // TestB17aNoLocalNodeCommand (guard, unit).

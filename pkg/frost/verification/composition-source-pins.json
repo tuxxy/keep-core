@@ -11,9 +11,9 @@
       }
     },
     "keep-core": {
-      "head": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+      "head": "31ab213f39f87085abd812c9e934fabc8ec4a9df",
       "blobs": {
-        "pkg/frost/dkg/executor.go": "e3242c01ba1da91bc52062099d5da23298ab75bb",
+        "pkg/frost/dkg/executor.go": "b61a34a8125cd8a89f78748ec5a727351b933a96",
         "pkg/frost/dkg/types.go": "68c9b67adb74d5eb0ca3a63e6bdcf5b05fdf5d65",
         "pkg/frost/snowfallengine/engine.go": "06bf6b7ee887dba2096ae353a12707b947c82ae5",
         "solidity/ecdsa/contracts/frost/FrostCurve.sol": "db089b5617b7c4af72248bc3ad93876bf992331c",
@@ -102,7 +102,7 @@
       }
     }
   },
-  "note": "Selected row sources only; generated from COMPOSITION.json rows on 2026-11-06",
+  "note": "Selected row sources only; generated from COMPOSITION.json rows on 2026-11-06; keep-core head and executor.go re-pinned at 31ab213f on 2026-11-09",
   "specifications": [
     {
       "name": "KC-SF-V3",

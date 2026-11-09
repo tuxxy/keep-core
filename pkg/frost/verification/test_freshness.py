@@ -557,7 +557,7 @@ class FreshnessTests(unittest.TestCase):
         ledger = json.loads(Path(__file__).with_name("COMPOSITION.json").read_text())
         self.assertEqual(ledger["format"], checker.FORMAT)
         slots = {s["slot"] for s in ledger["component_statements"]}
-        self.assertEqual(slots, {"V-01-store", "V-02-store", "V-03-chain", "V-04-signing"})
+        self.assertEqual(slots, {"V-01-store", "V-02-store", "V-03-chain", "V-04-signing", "V-07-deposit", "V-08-movement", "V-09-enforcement"})
         for row in ledger["rows"]:
             self.assertEqual(row["status"], "open")
             for evidence in row["joining_evidence"]:

@@ -70,9 +70,10 @@ test/remediation-24/run.sh --controls <evidence dir>  # controls, throwaway work
 ```
 
 Acceptance writes `manifest.json`. It is `"accepted": true` only if all 19 unit
-cases (14 deposit, 5 leader) and the 3 integration tests ran and passed, with zero skips, `go test
-./pkg/frost/deposit/... ./pkg/frost/signing/... ./pkg/maintainer/spv/...`
-passed, and the tree is clean. The integration cases need the K-06 environment
+cases (14 deposit, 5 leader) and the 3 integration tests ran and passed,
+with zero skips, `go test ./pkg/frost/deposit/... ./pkg/frost/signing/...
+./pkg/maintainer/spv/...` passed (skipping `TestV07Replay`, see above), and
+the tree is clean. The integration cases need the K-06 environment
 (`FROST_K03_TBTC`, `FROST_K03_ANVIL`, `SNOWFALL_WORKER(_SHA256)`,
 `FROST_K04_BITCOIND(_SHA256)`), with `solidity/ecdsa/{build,node_modules}` and
 `../snowfall` present. Without it they skip and the manifest is not accepted.

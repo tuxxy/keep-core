@@ -95,6 +95,10 @@ const (
 // the proposal generator reads FROST wallets at the same depth.
 const FrostFinalityBlocks = frostFinalityBlocks
 
+// FrostRedemptionDeadlineMargin is the members' redemption deadline margin;
+// the proposal generator selects requests with the same margin.
+const FrostRedemptionDeadlineMargin = frostRedemptionDeadlineMargin
+
 // FrostDepositPolicy is the K-06 deposit timing every FROST member and the
 // proposal generator apply: the finality depth and base's refund safety
 // margin.

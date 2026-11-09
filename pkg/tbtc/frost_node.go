@@ -643,10 +643,11 @@ func (fn *frostNode) joinDKGIfEligible(ctx context.Context, epoch uint64) {
 }
 
 // executeDKG runs the FROST DKG of one epoch for the local seats and adds the
-// wallet to coordination once it is ready. A setup error before the executor
-// starts releases the epoch claim, so the DKG loop joins it again on a later
-// block. Once the executor starts, the claim is kept; once its engine claims
-// the journal, the DKG loop restores the epoch and never runs it again.
+// wallet to coordination once it is ready. Every error releases the epoch
+// claim, so the DKG loop looks at the epoch again on a later block: before
+// the engine claims the journal it joins the DKG again; after, DKGStatus
+// routes the epoch to restore and the DKG never runs again. A successful
+// DKG keeps the claim.
 func (fn *frostNode) executeDKG(
 	ctx context.Context,
 	selection dkg.Selection,
@@ -656,9 +657,9 @@ func (fn *frostNode) executeDKG(
 	epoch := selection.Epoch
 	epochLogger := logger.With(zap.Uint64("frostEpoch", epoch))
 
-	started := false
+	succeeded := false
 	defer func() {
-		if !started {
+		if !succeeded {
 			fn.unclaimEpoch(epoch)
 		}
 	}()
@@ -707,7 +708,6 @@ func (fn *frostNode) executeDKG(
 
 	epochLogger.Infof("joining FROST DKG with seats [%v]", locals)
 
-	started = true
 	record, err := ExecuteFrostDKG(dkgCtx, &dkg.Executor{
 		Chain:   fn.registry,
 		Engine:  engine,
@@ -733,6 +733,7 @@ func (fn *frostNode) executeDKG(
 		epochLogger.Errorf("FROST DKG failed: [%v]", err)
 		return
 	}
+	succeeded = true
 
 	fn.addWallet(epoch, journal, record)
 }

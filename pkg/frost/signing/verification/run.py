@@ -56,7 +56,7 @@ if __name__=='__main__':
             binary='v04-signing-model' if mode=='model' else 'admission-check'
             ok=run('model' if mode=='model' else 'admission-model',['pkg/frost/signing/verification/model/target/release/'+binary,str(OUT)])
     elif mode=='vectors':ok=run('typescript',['node','--experimental-strip-types','test/frost/check-k04-intent.ts'])
-    elif mode in ('normal','race','guard','integration','recovery','process','c04','c04-control','k05','admission-replay'):
+    elif mode in ('normal','race','guard','integration','recovery','process','generated','c04','c04-control','k05','admission-replay'):
         # Worktree lacks sibling replacement. A private modfile preserves the exact
         # pinned dependency source, without touching go.mod or any other checkout.
         mf=OUT/'run.mod';original=(ROOT/'go.mod').read_text()
@@ -65,6 +65,7 @@ if __name__=='__main__':
         cmd=['go','test','-mod=readonly','-modfile='+str(mf),'-p','2','-json','-count=1','-timeout=14m']
         if mode=='race':cmd+=['-race']
         if mode=='process':cmd+=['-run','^TestV04ProcessBoundaryReplay$','./pkg/frost/signing']
+        elif mode=='generated':cmd+=['-run','^TestV04GeneratedTraceProcessReplay$','./pkg/frost/signing']
         elif mode=='recovery':cmd+=['-run','^TestV04(CancelledReturnedSignatureRetained|DoneOnlyRecovery)$','./pkg/frost/signing']
         elif mode=='guard':cmd+=['-run','^TestV04RealStoreWorkerGuard$','./pkg/frost/store']
         elif mode=='admission-replay':cmd+=['-run','^TestV04AdmissionTraceReplay$','./pkg/frost/redemption']
@@ -74,5 +75,5 @@ if __name__=='__main__':
         elif mode=='k05':cmd+=['-run','^(TestFrostRedemptionLifecycle|TestReservationTimeoutRace|TestLateSignatureQuarantine)$','./pkg/frost/integration']
         else:cmd+=['-run','^(TestV04|TestCanonicalIntent|TestAuthorizationBoundaries|TestReservationReceipt|TestSignatureDone|TestSigningAuthorizationAfterDurableClaim|TestSigningRecords|TestSigningRecordUncertainty|TestSigningRecordDomain|TestReturnedSignature|TestRecoverResult|TestMultiInput|TestSighashVectors|TestTaprootSnapshot)','./pkg/frost/signing','./pkg/frost/store','./pkg/frost/snowfallengine','./pkg/frost/redemption','./pkg/bitcoin']
         ok=run(mode,cmd)
-    else:raise SystemExit('model|admission|vectors|normal|race|process|recovery|guard|integration|c04|c04-control|k05|admission-replay')
+    else:raise SystemExit('model|admission|vectors|normal|race|process|generated|recovery|guard|integration|c04|c04-control|k05|admission-replay')
     raise SystemExit(0 if ok else 1)

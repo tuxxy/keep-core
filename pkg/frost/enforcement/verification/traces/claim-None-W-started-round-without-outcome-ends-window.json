@@ -1,0 +1,442 @@
+{
+  "bound": "3 seats, threshold 2, 3 rounds, F = 2",
+  "claim_model_steps": [
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              0,
+              2
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 1,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          0,
+          2
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      "n": 1,
+      "offered": true
+    },
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              0,
+              2
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              1
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 2,
+        "w_real": false,
+        "w_unknown_ends": true,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          0,
+          1
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      "n": 2,
+      "offered": true
+    }
+  ],
+  "id": "claim-None-W-started-round-without-outcome-ends-window",
+  "init": {
+    "accepted": false,
+    "bad": false,
+    "claimed": 0,
+    "derived": [
+      0,
+      0
+    ],
+    "rec": [
+      {
+        "live3": false,
+        "s": [
+          0,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      {
+        "live3": false,
+        "s": [
+          0,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      {
+        "live3": false,
+        "s": [
+          0,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      {
+        "live3": false,
+        "s": [
+          0,
+          0
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      }
+    ],
+    "rounds": 0,
+    "w_real": false,
+    "w_unknown_ends": false,
+    "windows": [
+      0,
+      0
+    ]
+  },
+  "kind": "witness",
+  "profile": "claim",
+  "property": "W-started-round-without-outcome-ends-window",
+  "replay": "pending",
+  "replay_note": "set by the Go replay report",
+  "steps": [
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              0,
+              2
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 1,
+        "w_real": false,
+        "w_unknown_ends": false,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          0,
+          2
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      "n": 1
+    },
+    {
+      "action": "Round",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "accepted": false,
+        "bad": false,
+        "claimed": 0,
+        "derived": [
+          0,
+          0
+        ],
+        "rec": [
+          {
+            "live3": false,
+            "s": [
+              0,
+              2
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              1
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          },
+          {
+            "live3": false,
+            "s": [
+              0,
+              0
+            ],
+            "sig": [
+              false,
+              false
+            ],
+            "signed": false,
+            "suspect": false
+          }
+        ],
+        "rounds": 2,
+        "w_real": false,
+        "w_unknown_ends": true,
+        "windows": [
+          0,
+          0
+        ]
+      },
+      "fields": {
+        "live3": false,
+        "s": [
+          0,
+          1
+        ],
+        "sig": [
+          false,
+          false
+        ],
+        "signed": false,
+        "suspect": false
+      },
+      "n": 2
+    }
+  ],
+  "weakening": "None"
+}

@@ -1,0 +1,169 @@
+{
+  "S-K08-ENFORCE-1": {
+    "scope": "V-09 at keep-core integration/snowfall-base 925103a6c and tbtc-v2 integration/frost-base 39412825: bounded model checking of the V-09 model (hb 74,254 states; enf 244,260; claim F=2 278,464; claim F=3 four rounds 17,163,806; all exhaustive before the 800 s deadline). P-K08-HEARTBEAT-DOMAIN pass; P-K08-EVIDENCE-RETAINED pass; P-K08-NO-SUSPECT-SANCTION pass; P-K08-DEFENSE-BEFORE-DEADLINE blocked at host scope (DECISIONS F4: no node caller of the defender), component result conditional on A-V09-DEFENDER-INVOKED. Weakenings break their declared property only (SharedAttemptDomain masked, Q3). 27 traces replay on the real code (16 full, 11 partial), normal and -race. Self-review only.",
+    "evidence": "implementation/K-08/v09-model-2026-11-06/",
+    "evidence_class": "bounded model checking plus concrete replay/tests; not a proof",
+    "subject": {
+      "keep-core": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+      "tbtc-v2": "39412825",
+      "snowfall": "c1847ebdf133",
+      "kc-ver": "kc-ver-02 51b9a16 (rev 02 draft, unmerged)"
+    },
+    "guarantees": {
+      "P-K08-HEARTBEAT-DOMAIN": "pass within bound: no heartbeat grant at a stale nonce, no grant across purposes, no attempt granted two messages, across crash and retry",
+      "P-K08-EVIDENCE-RETAINED": "pass within bound: on a readable store every granted digest has intent and defense record, every finished signing its Done record (SCOPE D3 reading, Q4)",
+      "P-K08-DEFENSE-BEFORE-DEADLINE": "blocked at host scope (F4, Q1); the Defender component reaches a defense by host-only actions in every reachable state before the deadline tick, under A-V09-DEFENDER-INVOKED and D-09",
+      "P-K08-NO-SUSPECT-SANCTION": "pass within bound: an accepted claim names only seats absent from every counted round of each signer, with at least F counted failures and no window across a started-without-outcome or signed-with-activity round, F = 2 (three rounds) and F = 3 (four rounds)"
+    },
+    "bound": "one wallet; A authorized + U unauthorized; two challenges; deadline tick 3; hb: nonces 1..3, two heartbeat and two transaction starts, two crashes, one misroute; enf: two crashes, one stale restore, one lost reply; claim: three seats, threshold 2, rounds 3 (F=2) and 4 (F=3)",
+    "assumptions": [
+      "A-V09-STORE: S-K02-HOST-4 (durable acknowledged writes, immutable records, stale restore quarantined)",
+      "A-V09-DEFENDER-INVOKED (DEFENSE component scope only; not discharged in the integration, F4)",
+      "D-09 inclusion within the deadline margin",
+      "D12 C-08/C-09 contract facts (SCOPE.md)",
+      "HoldPresence: every live seat's key reaches every up host in the heartbeat period"
+    ],
+    "not_covered": [
+      "node duty frost_node_duties.go (no hooks, G1)",
+      "rotated signer selection and the 30-block period (G2)",
+      "RederiveRetainedClaim (G3)",
+      "executor stages in the enf replay are fixtures; stale restore is a replay limitation (G5)",
+      "byte-level attempt domain separation (tests)"
+    ],
+    "pins": {
+      "pkg/frost/enforcement/verification/model/Cargo.toml": "33c0694e7ee96b68dcbb48f94cf54149ffe94c5a",
+      "pkg/frost/enforcement/verification/model/Cargo.lock": "02e099fea3fcee071696f8725159b4aa5e70c692",
+      "pkg/frost/enforcement/verification/model/rust-toolchain.toml": "16ad9a6d2dfdc94bf74c7887eec54fca2a3abfc9",
+      "pkg/frost/enforcement/verification/run.py": "c0dc85bac61200ac87ecf085dad0c796a4ef355a",
+      "pkg/frost/enforcement/verification/SCOPE.md": "eb9e3c4129c11cd28649f7eb0ffb9a10cbcfeca5",
+      "pkg/frost/enforcement/verification/TRANSITION-MAP.md": "bf24f9db6eee2450a60ac1ff883483e1830fe0a2",
+      "pkg/frost/enforcement/v09_replay_test.go": "546060562258bc6879aafa9b4baa62fa7253bc64",
+      "pkg/frost/signing/v09_heartbeat_replay_test.go": "a15cd74f1ecab6eb2dabf79ebfa0d320be11d5d6",
+      "pkg/frost/enforcement/defender_test.go": "af80edb605f34cece7d052c42b51a275dd5b2a71",
+      "pkg/frost/enforcement/inactivity_test.go": "d5912eae3cde3e851ac78d46f1d9dfd0e8e9e4a3",
+      "pkg/frost/signing/heartbeat_test.go": "fb8bed45133c07ce239adb6d4a5972fec4d6dd4b",
+      "pkg/frost/signing/signing_test.go": "e51abaf0fc0e8ad68713c03f9ff9c66667a2e1e8",
+      "pkg/tbtc/frost_node_duties.go": "24645e2fd45a155149425d522cb675d32895aefd",
+      "pkg/tbtc/frost_node.go": "2542605e3d492ea4e4a3b24a87858b21fc37d16f",
+      "pkg/tbtc/heartbeat.go": "c86afd88db60c9c5e8fe131b054a2bd38dfb5ea8",
+      "pkg/tbtc/coordination.go": "4fe466356f761b93ba62cced2ae3a1f02bd18a17",
+      "pkg/chain/ethereum/frost_enforcement.go": "8212ca0dda9e870f8d6e4be1031c91421500cf81"
+    },
+    "manifests": {
+      "pkg/frost/enforcement": {
+        "kind": "go-package",
+        "files": {
+          "chain.go": "3c986fb5526aeaff085e465047b912ac2a5d8b56",
+          "defender.go": "a718c34ba51bbfea99d2d20038e5d7edad971012",
+          "heartbeat.go": "ae1e1a5af68805e71b5a9152b05f5472d33e24af",
+          "inactivity.go": "dae8fc026d45e6d06ae61665945873887357a3c7"
+        }
+      },
+      "pkg/frost/signing": {
+        "kind": "go-package",
+        "files": {
+          "cancellation.go": "16c86465549e56cbe17bf1e3e4fced61b7b67ced",
+          "defense.go": "5817027476e6f0cbfe9a58c1d719e4c7ff90a7ac",
+          "done.go": "e6ba3064c9f3ae247c7f2cc0489aa13ebe358a12",
+          "executor.go": "02f2877d7acc7dc049b48d7989260d5bdbfbaaff",
+          "heartbeat.go": "f4be02babebbdffbc5a0a66c399e55aaf3ca3a79",
+          "movement.go": "d63d7ad31540b48ed7a49017629247c04d774568",
+          "plan.go": "a8e27b8c86bd59bfe5736385f192f2bf835c96e9",
+          "previous_transaction.go": "699b61d08a9a32a02f42dde331e0dc307d2081f1",
+          "sweep.go": "600941fede65b341a2c2a83cd43d4cce4f3748ed"
+        }
+      },
+      "pkg/frost/transport": {
+        "kind": "go-package",
+        "files": {
+          "message.go": "7f092d1d52b2c21ac0d54799886c498f6509b1f7",
+          "transport.go": "6a5a0dfeab283b656d76fd2e842fc6ee3f361602"
+        }
+      },
+      "pkg/frost/store": {
+        "kind": "go-package",
+        "files": {
+          "dkg_status.go": "57e6533e30bdae2fe4d6b55cf9a296a7f9df68c3",
+          "fence.go": "66e7f0b0d3f4e978cc1cab0d17972cb73d980870",
+          "lease_other.go": "0813ced4baff131baba2badac3545bcc4b8d9d7b",
+          "lease_unix.go": "93e63201ff4f37e7fb671508c309c2230f130611",
+          "signing.go": "40a00d3ddf5168a55aff09ee12d092a71e5dac5b",
+          "store.go": "255eb6b18360b35596750c1df05169cb2ec88dd0",
+          "wallet.go": "1eeada06c53d217eb1cc28adc39c7ef6495a4af1"
+        }
+      },
+      "pkg/frost/snowfallengine": {
+        "kind": "go-package",
+        "files": {
+          "engine.go": "06bf6b7ee887dba2096ae353a12707b947c82ae5",
+          "reload.go": "f2b8e5e052819d9aa0ce943132e71c8365caf325"
+        }
+      },
+      "pkg/frost": {
+        "kind": "go-package",
+        "files": {
+          "config.go": "1d427488fc6bf4224d6ad41232ab252bec0523a8",
+          "dkg_status.go": "fffaed425a8800e10f2b05957208e7561d5f64cc",
+          "domain.go": "b2374dde41b1b1e85876443e155bda17517e48b3",
+          "engine.go": "2275eb6a4d604d9340d083187b2c556a448796a7"
+        }
+      },
+      "pkg/frost/enforcement/verification/model/src": {
+        "kind": "rust-src",
+        "files": {
+          "main.rs": "99f4d27f19f70c4dd7a97a6c08dc218855ba34c8"
+        }
+      },
+      "pkg/frost/enforcement/verification/traces": {
+        "kind": "trace-json",
+        "files": {
+          "claim-ClaimFromSuspect-P-K08-NO-SUSPECT-SANCTION.json": "c0f194cf7cd864eeb4eaa98fc7a3c307d35d035e",
+          "claim-None-W-real-inactivity-claim-names-absent-seat.json": "5dfbe421969379db4289289b278c80300f2ef4df",
+          "claim-None-W-started-round-without-outcome-ends-window.json": "96b7aa7c1e2fae4f0dbaed9db31dc23e7b6c82d7",
+          "claim-SingleFailureClaim-P-K08-NO-SUSPECT-SANCTION.json": "42ca3f651fe2ab3801db7782d27bb6dadba4320a",
+          "claim-SkipUnknownRound-P-K08-NO-SUSPECT-SANCTION.json": "891d05fce52c4a04c68f303233d8cd245c2c9b03",
+          "claim-f3-ClaimFromSuspect-P-K08-NO-SUSPECT-SANCTION.json": "63844a47c16dc5be1a9c1ab689fb5a7c8dfcb1e7",
+          "claim-f3-None-W-real-inactivity-claim-names-absent-seat.json": "a237704e67e29a59ae0e553d6daf06488910602f",
+          "claim-f3-None-W-started-round-without-outcome-ends-window.json": "ebd59fa5f6dbc203437345ead0abf6e653217457",
+          "claim-f3-SingleFailureClaim-P-K08-NO-SUSPECT-SANCTION.json": "87a59293081defca599ef66923c81137f24698cc",
+          "claim-f3-SkipUnknownRound-P-K08-NO-SUSPECT-SANCTION.json": "a944d6ac8f6fd86f1e490747705fa7d06b89da92",
+          "enf-AbortOnFirstFailure-P-K08-DEFENSE-BEFORE-DEADLINE.json": "0d137c2ecf138dd1dc03b1bb983047b949cfd0a8",
+          "enf-DefendAfterRecovery-P-K08-DEFENSE-BEFORE-DEADLINE.json": "7f5de5eb473ce79e4c6b1520b1fba2538ecd6d7b",
+          "enf-DeleteAtSettlement-P-K08-EVIDENCE-RETAINED.json": "4ee264578e2938a3c43c8f8fab62d188b2d51971",
+          "enf-None-W-defense-after-restart-before-deadline.json": "a3b46525b64b39313b8ced6b2c8816ce169aa352",
+          "enf-None-W-defense-reply-lost-settled-by-reread.json": "0b540b8ffc8f66660bbfc590071809ab57af2df3",
+          "enf-None-W-first-not-ours-second-defended.json": "dd83cff454f2d143054bc17b7939b94d5e686283",
+          "enf-None-W-heartbeat-signed-challenged-defended.json": "130e086d8f5a90a7ae85cf656753366e9e3b7f07",
+          "enf-None-W-losing-replacement-defended-after-refund.json": "09d94c9a8d9548570492162700d810b9e9a16bf7",
+          "enf-None-W-unauthorized-timed-out-terminated.json": "e5ab64219718b6b716795ac5f0c3054078a0d81c",
+          "enf-ProvenOnly-P-K08-DEFENSE-BEFORE-DEADLINE.json": "1c2ff3073690fbcf858d727e17a1c8114a445f46",
+          "enf-RecordAfterGrant-P-K08-EVIDENCE-RETAINED.json": "215cacda59b449aeef19921398cb30b3d76dc3c4",
+          "hb-AcceptRawDigest-P-K08-HEARTBEAT-DOMAIN.json": "c2909704ac7201eecaecff5c0217558cbee30baa",
+          "hb-AnyNonce-P-K08-HEARTBEAT-DOMAIN.json": "1dc3abb5c6755671cdf1229c2b70f0d1b11cf417",
+          "hb-None-W-heartbeat-granted-after-crash-retry.json": "9e0b5e5b597f2d975c4bfed6ce61874717ab02f2",
+          "hb-None-W-heartbeat-granted-current-nonce.json": "31ce00b6129d64c23ef2b55706100c0bfbcab08b",
+          "hb-None-W-transaction-granted.json": "9d25e7c71755a9c8f8863acca42a0ddf3801c523",
+          "hb-ReuseAttempt-P-K08-HEARTBEAT-DOMAIN.json": "eab47bec6f2c95bac974779c7f7979c1e5471ef4"
+        }
+      }
+    },
+    "external": {
+      "tbtc-v2": {
+        "commit": "39412825",
+        "files": {
+          "solidity/contracts/frost/FrostFraud.sol": "abb14e7839f2b049ae94ffe4d22789b984b1161e",
+          "solidity/contracts/frost/FrostFraudState.sol": "bbc38cc6d7db7a07256cf6c04672019fcfe996d0",
+          "solidity/contracts/frost/FrostLifecycle.sol": "7db6ca7ba712e2048eb4d5c79cce9f74ec152a5a",
+          "solidity/contracts/frost/FrostFraudDispatch.sol": "42678dbda24c280a3e1af7f2ad6f1aabb4c48e68"
+        }
+      },
+      "kc-ver-02": {
+        "commit": "51b9a16",
+        "files": {
+          "keep-core-verification-spec.md": "ab1815f31cf311ca5b3b7d04e7a70dd37dfa1d3d",
+          "keep-core-integration-spec.md": "98f8589a48ab95d065d5b95307734d66b93618f1"
+        }
+      }
+    }
+  }
+}

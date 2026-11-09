@@ -202,6 +202,15 @@ func (e *Executor) Restore(ctx context.Context) (frost.DKGStatus, WalletRecord, 
 	e.record = record
 	descriptor := record.Descriptor
 	e.descriptor = &descriptor
+	// The saved record exists only after this host observed the approval, so
+	// a restored host knows it before its monitor starts: a later read of it
+	// removed or replaced quarantines, as it does for a Run host (KC-SF-V3 4.3).
+	e.mu.Lock()
+	e.approvalGeneration++
+	e.approvalSeen = true
+	e.observedApprovalID = record.ID
+	e.observedApprovalHash = record.ApprovalHash
+	e.mu.Unlock()
 	if e.PollInterval <= 0 {
 		e.PollInterval = 250 * time.Millisecond
 	}

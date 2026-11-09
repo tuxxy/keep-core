@@ -3,7 +3,7 @@
 Run these in a scratch worktree only (`B16-tests/keep-core-ctl`, detached at `1b6ad8de`, never pushed), with the `LEGACY_*` environment from `test/remediation-b16/run.sh`:
 `run-control.sh <scratch> <patch or none> <log>`.
 
-The script copies in `pkg/tbtc/frost_movement_seat_b16_test.go`, applies the patch to `pkg/tbtcpg/frost_moving_funds.go`, runs the six cases, then reverses the patch and removes the copy.
+The script copies in `pkg/tbtc/frost_movement_seat_b16_test.go`, applies the patch to `pkg/tbtcpg/frost_moving_funds.go`, runs the six cases (`<encoding>/<leader>`), then reverses the patch and removes the copy.
 
 | Patch | Kind | Expected result |
 | --- | --- | --- |
@@ -16,3 +16,14 @@ The script copies in `pkg/tbtc/frost_movement_seat_b16_test.go`, applies the pat
 
 The contract control needs a scratch tbtc-v2 commit. That commit is `b8ad1fd6`, on 39412825, and it changes only the seat check in `FrostMovement.commit` to `seat > 0 && seat <= length && operators[seat - 1]`. It lives in the detached scratch worktree `B16-tests/tbtc-v2-ctl` and is never pushed. It was built with `test/legacy/build-baseline.sh` into `B16-tests/upgraded-ctl-1based`. Run it with:
 `LEGACY_UPGRADED_DIR=<that build> LEGACY_UPGRADED_COMMIT=b8ad1fd670dd20d35b615fd30d73648b639d0c2e run-control.sh <scratch> none <log>`.
+
+## Reviewer probes (REVIEW-TEST-B16.md, rerun at the snapshot/revert head)
+
+These are not in this directory; they are in the reviewer's scratchpad `b16-review/`.
+
+| Patch | Kind | Result |
+| --- | --- | --- |
+| `r-fix-adapter`: the host stays 1-based, and `FrostRedemptionChain.SubmitCommitment` sends `seat-1` | positive, a third shape | 6/6 pass |
+| `r-wrong-member`: seat = member ID - 1 | wrong | `*/C` fails at the named assertion |
+
+**Fix interface (review N2):** the test builds `CoordinationProposalRequest` itself. A fix must therefore get the seat from `WalletOperators`/`ExecutingOperator` or from the on-chain descriptor, or convert it at the chain boundary. It must not add a new request field.

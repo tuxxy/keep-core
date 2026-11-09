@@ -270,7 +270,7 @@ func (w *b16World) registerSource(t *testing.T) {
 		t.Fatal(err)
 	}
 	registry := bind.NewBoundContract(registryAddress, registryABI, w.admin, w.admin, w.admin)
-	key, err := crypto.ToECDSA(common.LeftPadBytes(big.NewInt(b16SourceKey).Bytes(), 32))
+	key, err := crypto.ToECDSA(b16Key(b16SourceKey))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -376,7 +376,7 @@ func (w *b16World) sweepIncoming(t *testing.T) {
 	if err != nil {
 		t.Fatalf("setup: sweep snapshot: %v", err)
 	}
-	private, _ := btcec.PrivKeyFromBytes(common.LeftPadBytes(big.NewInt(b16SourceKey).Bytes(), 32))
+	private, _ := btcec.PrivKeyFromBytes(b16Key(b16SourceKey))
 	var signatures []bitcoin.Signature
 	for _, digest := range snapshot.Digests() {
 		signature, err := schnorr.Sign(private, digest[:])
@@ -498,6 +498,8 @@ func (w *b16World) pinContract(t *testing.T) {
 			}
 		}
 	}
+	// The environment's commit only (upgradedBuild returns
+	// LEGACY_UPGRADED_COMMIT); the dry-runs above are the real guard.
 	if _, commit := upgradedBuild(t); commit != b16PinnedContract {
 		t.Fatalf("%scontract pin: the upgraded Bridge is built from %s, not tbtc-v2 %s", b16Prefix, commit, b16PinnedContract)
 	}
@@ -595,6 +597,32 @@ func (w *b16World) recordedCommitment(t *testing.T, s movement.Source) (common.A
 	return common.Address{}, 0
 }
 
+// snapshot takes an Anvil snapshot of the world's state (setup: the
+// background miner must be stopped).
+func (w *b16World) snapshot(t *testing.T) string {
+	t.Helper()
+	var id string
+	if err := w.admin.Client().Call(&id, "evm_snapshot"); err != nil {
+		t.Fatalf("setup: evm_snapshot: %v", err)
+	}
+	return id
+}
+
+// revertTo restores the snapshot (Anvil consumes its id), takes a new one for
+// the next case, and checks the source again has nothing committed.
+func (w *b16World) revertTo(t *testing.T, id string) string {
+	t.Helper()
+	var reverted bool
+	if err := w.admin.Client().Call(&reverted, "evm_revert", id); err != nil || !reverted {
+		t.Fatalf("setup: evm_revert %s: %v", id, err)
+	}
+	next := w.snapshot(t)
+	if s := w.readSource(t); s.Wallet.State != movement.StateMovingFunds || s.Log != nil {
+		t.Fatalf("setup: after the revert the source is in state %d with a commitment recorded %v", s.Wallet.State, s.Log != nil)
+	}
+	return next
+}
+
 // TestFrostMovementLeaderOwnCommitment (tuxxy/keep-core#146): for a
 // MovingFunds source with nothing committed, the window's leader, for every
 // operator of the wallet (A: seats 0 and 2; B: seat 1; C: the last seat 3
@@ -602,67 +630,78 @@ func (w *b16World) recordedCommitment(t *testing.T, s movement.Source) (common.A
 // the real Bridge accepts it: the commitment is recorded to the only eligible
 // target, sent by the leader, at a seat the descriptor maps to the leader,
 // and the window proposes the movement. Before that, an executing operator
-// with no seat proposes nothing and makes no commitment attempt, and the contract's numbering is
-// pinned (pinContract).
+// with no seat proposes nothing and makes no commitment attempt, and the
+// contract's numbering is pinned (pinContract).
+//
+// One world per encoding: after setup the Anvil state is snapshotted, and
+// each leader's case starts from evm_revert to it (as k09World.seedWindow
+// does), so every leader faces the same source with nothing committed. The
+// leader path writes nothing to Core (b16Bitcoin only reads mined blocks),
+// and every window starts fresh clients, so the revert restores the case's
+// whole starting state.
 func TestFrostMovementLeaderOwnCommitment(t *testing.T) {
-	for _, leader := range []string{"A", "B", "C"} {
-		for _, encoding := range legacyEncodings {
-			leader, encoding := leader, encoding
-			t.Run(fmt.Sprintf("%s-%v", leader, encoding), func(t *testing.T) {
-				t.Parallel()
-				w := newB16World(t)
-				stop := w.mineInBackground()
-				defer stop()
-				w.pinContract(t)
+	for _, encoding := range legacyEncodings {
+		t.Run(encoding.String(), func(t *testing.T) {
+			t.Parallel()
+			world := newB16World(t)
+			snapshot := world.snapshot(t)
+			for _, leader := range []string{"A", "B", "C"} {
+				t.Run(leader, func(t *testing.T) {
+					w := world
+					snapshot = w.revertTo(t, snapshot)
+					stop := w.mineInBackground()
+					defer stop()
+					w.pinContract(t)
 
-				var o *b16Operator
-				for _, candidate := range w.operators {
-					if candidate.name == leader {
-						o = candidate
+					var o *b16Operator
+					for _, candidate := range w.operators {
+						if candidate.name == leader {
+							o = candidate
+						}
 					}
-				}
-				what := fmt.Sprintf("leader %s %s (seats %v of %d, %v)", o.name, o.addr, o.seats, len(w.descriptor), encoding)
+					what := fmt.Sprintf("leader %s %s (seats %v of %d, %v)", o.name, o.addr, o.seats, len(w.descriptor), encoding)
 
-				// Negative: an executing operator that holds no seat
-				// commits nothing and gets no proposal.
-				proposal, rec, err := w.window(t, w.stranger, encoding)
-				if _, ok := proposal.(*tbtc.MovingFundsProposal); ok {
-					t.Fatalf("%san executing operator with no seat proposed a movement (error %v)", b16Prefix, err)
-				}
-				if n := w.commitmentAttempts(rec); n != 0 {
-					t.Fatalf("%san executing operator with no seat attempted %d movement commitments", b16Prefix, n)
-				}
-				if s := w.readSource(t); s.Log != nil {
-					t.Fatalf("%sa commitment was recorded for an executing operator with no seat", b16Prefix)
-				}
+					// Negative: an executing operator that holds no seat
+					// commits nothing and gets no proposal.
+					proposal, rec, err := w.window(t, w.stranger, encoding)
+					if _, ok := proposal.(*tbtc.MovingFundsProposal); ok {
+						t.Fatalf("%san executing operator with no seat proposed a movement (error %v)", b16Prefix, err)
+					}
+					if n := w.commitmentAttempts(rec); n != 0 {
+						t.Fatalf("%san executing operator with no seat attempted %d movement commitments", b16Prefix, n)
+					}
+					if s := w.readSource(t); s.Log != nil {
+						t.Fatalf("%sa commitment was recorded for an executing operator with no seat", b16Prefix)
+					}
 
-				// The leader's own commitment.
-				proposal, rec, err = w.window(t, o, encoding)
-				p, ok := proposal.(*tbtc.MovingFundsProposal)
-				if err != nil || !ok {
-					t.Fatalf("%s%s: the leader's own movement commitment was not accepted by the Bridge (proposal %T, error %v)", b16Prefix, what, proposal, err)
-				}
-				if w.commitmentAttempts(rec) == 0 {
-					t.Fatalf("%s%s: the leader proposed without submitting the commitment itself", b16Prefix, what)
-				}
-				s := w.readSource(t)
-				if s.Log == nil || len(s.Commitment.Targets) != 1 || s.Commitment.Targets[0] != w.dest.label {
-					t.Fatalf("%s%s: the Bridge holds no commitment of the source to the only eligible target (recorded %v, targets %x)", b16Prefix, what, s.Log != nil, s.Commitment.Targets)
-				}
-				sender, seat := w.recordedCommitment(t, s)
-				if sender != o.addr {
-					t.Fatalf("%s%s: the recorded commitment was sent by %s, not the leader", b16Prefix, what, sender)
-				}
-				if !slices.Contains(o.seats, seat) || w.descriptor[seat] != o.addr {
-					t.Fatalf("%s%s: the commitment names seat %d, which the descriptor maps to another operator", b16Prefix, what, seat)
-				}
-				if len(p.TargetWallets) != 1 || p.TargetWallets[0] != w.dest.label {
-					t.Fatalf("%s%s: the proposal moves to %x, not to the committed target %x", b16Prefix, what, p.TargetWallets, w.dest.label)
-				}
-				if p.MovingFundsTxFee == nil || p.MovingFundsTxFee.Sign() <= 0 || p.MovingFundsTxFee.Uint64() > s.Commitment.MaxFee {
-					t.Fatalf("%s%s: proposal fee %v is not within (0, %d], the committed cap", b16Prefix, what, p.MovingFundsTxFee, s.Commitment.MaxFee)
-				}
-			})
-		}
+					// The leader's own commitment.
+					proposal, rec, err = w.window(t, o, encoding)
+					p, ok := proposal.(*tbtc.MovingFundsProposal)
+					if err != nil || !ok {
+						t.Fatalf("%s%s: the leader's own movement commitment was not accepted by the Bridge (proposal %T, error %v)", b16Prefix, what, proposal, err)
+					}
+					if w.commitmentAttempts(rec) == 0 {
+						t.Fatalf("%s%s: the leader proposed without submitting the commitment itself", b16Prefix, what)
+					}
+					s := w.readSource(t)
+					if s.Log == nil || len(s.Commitment.Targets) != 1 || s.Commitment.Targets[0] != w.dest.label {
+						t.Fatalf("%s%s: the Bridge holds no commitment of the source to the only eligible target (recorded %v, targets %x)", b16Prefix, what, s.Log != nil, s.Commitment.Targets)
+					}
+					sender, seat := w.recordedCommitment(t, s)
+					if sender != o.addr {
+						t.Fatalf("%s%s: the recorded commitment was sent by %s, not the leader", b16Prefix, what, sender)
+					}
+					if !slices.Contains(o.seats, seat) || w.descriptor[seat] != o.addr {
+						t.Fatalf("%s%s: the commitment names seat %d, which the descriptor maps to another operator", b16Prefix, what, seat)
+					}
+					if len(p.TargetWallets) != 1 || p.TargetWallets[0] != w.dest.label {
+						t.Fatalf("%s%s: the proposal moves to %x, not to the committed target %x", b16Prefix, what, p.TargetWallets, w.dest.label)
+					}
+					if p.MovingFundsTxFee == nil || p.MovingFundsTxFee.Sign() <= 0 || p.MovingFundsTxFee.Uint64() > s.Commitment.MaxFee {
+						t.Fatalf("%s%s: proposal fee %v is not within (0, %d], the committed cap", b16Prefix, what, p.MovingFundsTxFee, s.Commitment.MaxFee)
+					}
+				})
+			}
+		})
 	}
 }

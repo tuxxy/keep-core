@@ -15,7 +15,7 @@ head=$(git rev-parse HEAD)
 clean=$([ -z "$(git status --porcelain)" ] && echo true || echo false)
 start=$(date +%s)
 set +e
-GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 6 -timeout 5m -json \
+GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 2 -timeout 5m -json \
   ./pkg/tbtc -run '^TestFrostMovementLeaderOwnCommitment$' \
   > "$out/tbtc.json" 2>&1
 set -e
@@ -32,7 +32,7 @@ for line in open(os.path.join(out, "tbtc.json")):
     if e.get("Test") and e.get("Action") in ("pass", "fail", "skip"):
         # a skip (missing environment) is never acceptance
         cases["tbtc/" + e["Test"]] = {"result": e["Action"], "seconds": e.get("Elapsed")}
-expected = ["tbtc/TestFrostMovementLeaderOwnCommitment/%s-%s" % (l, e) for l in "ABC" for e in ("code3-0x", "geth-32000-nodata")]
+expected = ["tbtc/TestFrostMovementLeaderOwnCommitment/%s/%s" % (e, l) for l in "ABC" for e in ("code3-0x", "geth-32000-nodata")]
 missing = [k for k in expected if k not in cases]
 failed = sorted(k for k, v in cases.items() if v["result"] != "pass")
 m = {"head": head, "clean": clean, "wallSeconds": wall, "cases": cases, "failed": failed,

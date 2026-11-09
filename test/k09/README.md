@@ -4,13 +4,24 @@ KC-SF-V3 §6 K-09: the FROST lifecycle driven through real node processes on
 the integration branch. Local only; nothing here runs in CI.
 
 ```
-source <env with SNOWFALL_WORKER*, LEGACY_*, K09_ECDSA_NODE_*>; test/k09/run.sh <new evidence dir>
+source <env with SNOWFALL_WORKER*, SNOWFALL_COMMIT, LEGACY_*, K09_ECDSA_NODE_*>; test/k09/run.sh <new evidence dir>
 K09_EVIDENCE=<that dir> go test -count=1 -run 'TestK09Evidence' ./test/k09/evidence
 ```
 
 The run builds from HEAD alone: `git archive HEAD`, a fresh `solidity/ecdsa`
 build in that export (the FROST registry stack the world deploys), and the
-test binary from the same export (tuxxy/keep-core#22).
+test binary from the same export (tuxxy/keep-core#22). The SNOWFALL Go
+client (`go.mod`'s `../snowfall` replace) is exported with `git archive` at
+the required `SNOWFALL_COMMIT`; a `../snowfall` checkout that is dirty or at
+another commit is refused, and the build never reads the live checkout
+(#35).
+
+The build and every stage run under `env -i` with a named allowlist
+(tbtc-v2#19): `PATH`, `HOME`, `TMPDIR`, the required inputs above, and
+`GOCACHE`, `GOMODCACHE` and `GOPATH` when set, with `GOFLAGS` empty,
+`GOTOOLCHAIN=local` and `GOWORK=off`. A stage adds `K09_RUN_ID`,
+`B6_DEBUG_DIR` and `GOMAXPROCS`; the ECDSA build adds `NODE_OPTIONS`. Nothing
+else from the caller's environment reaches them.
 
 ## What runs
 `pkg/tbtc/k09_lifecycle_test.go`, one stage per process, in this order:
@@ -32,7 +43,10 @@ test binary from the same export (tuxxy/keep-core#22).
 
 Stages 01-04 run in order; 07 runs beside 05-06; after 06, 12 and 09 run in
 one lane and 10, 08, 11 in another (each test process at GOMAXPROCS 1, so two lanes
-use 8 Go cores). Wrong-behaviour probes for 08-10 and 12:
+use 8 Go cores). Each stage process leads its own process group. After the
+stage, pass or fail, the runner kills that group (Anvil and bitcoind run in
+it) and the groups of the stage's orphaned node processes, and records each
+process it had to kill (#30). Wrong-behaviour probes for 08-10 and 12:
 `test/k09/controls/README.md`.
 
 The harness is depositor, redeemer, SPV maintainer, keeper and governance
@@ -44,12 +58,15 @@ EcdsaDkgValidator FIXTURE): `pkg/tbtc/k09_ecdsa_test.go`. The harness signs
 only setup transactions with a legacy group (funding a source's main).
 
 ## Evidence
-The run writes `manifest.json` (both repo heads, pins, the ECDSA build record
-`dependencies.ecdsaBuild`, every stage's result and times, the node-log hashes
-`nodeLogs`, the secret scan, leftover processes), one log per stage and the
-node logs (`nodes/<stage>/operator-N.log`; never node stores).
+The run writes `manifest.json` (the keep-core, tbtc-v2 and snowfall commits
+`repos`, pins, the ECDSA build record `dependencies.ecdsaBuild`, the
+allowlisted environment `environment`, every stage's result and times with
+the processes killed after it `stages[].leftoverKilled`, the node-log hashes
+`nodeLogs`, the secret scan, leftover processes, and `files`: the SHA-256 of
+every file in the evidence directory but `manifest.json`), one log per stage
+and the node logs (`nodes/<stage>/operator-N.log`; never node stores).
 `test/k09/evidence` checks the build record, the node-log hashes and the
 drain records on the evidence directory. `accepted` is
 true only with every stage passing, zero skips, a clean tree, no secret-scan
-hit and no leftover process. A stage that fails at an assertion starting
+hit, no process surviving a stage's kill and no leftover process. A stage that fails at an assertion starting
 `FINDING` found missing or wrong production behaviour; see K09-RUN.md.

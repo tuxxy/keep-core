@@ -1,0 +1,75 @@
+diff --git a/pkg/chain/ethereum/frost_node.go b/pkg/chain/ethereum/frost_node.go
+index bd5f7e97f..483483522 100644
+--- a/pkg/chain/ethereum/frost_node.go
++++ b/pkg/chain/ethereum/frost_node.go
+@@ -3,6 +3,7 @@ package ethereum
+ import (
+ 	"context"
+ 	"errors"
++	"math/big"
+ 
+ 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+ 
+@@ -131,6 +132,10 @@ func (tc *TbtcChain) PendingFrostRedemptions(
+ 	if err != nil {
+ 		return nil, err
+ 	}
++	header, err := tc.ethClient.HeaderByNumber(ctx, new(big.Int).SetUint64(head))
++	if err != nil {
++		return nil, err
++	}
+ 	wallet := dkg.WalletID(outputKey)
+ 	events, err := bridge.RequestEvents(ctx, wallet, startBlock, head)
+ 	if err != nil {
+@@ -150,7 +155,8 @@ func (tc *TbtcChain) PendingFrostRedemptions(
+ 		}
+ 			if request.State != redemption.RequestRequested ||
+ 			request.ReservationID != ([32]byte{}) ||
+-			request.WalletID != wallet {
++			request.WalletID != wallet ||
++			!redemption.Timely(request, header.Time, redemption.DeadlineMargin) {
+ 			continue
+ 		}
+ 		scripts = append(scripts, bitcoin.Script(request.Script))
+diff --git a/pkg/frost/redemption/planner.go b/pkg/frost/redemption/planner.go
+index f698114c0..e91b6e06c 100644
+--- a/pkg/frost/redemption/planner.go
++++ b/pkg/frost/redemption/planner.go
+@@ -51,6 +51,15 @@ func DustFloor(script bitcoin.Script) (int64, error) {
+ // taprootDust is Bitcoin Core's default dust threshold for P2TR outputs.
+ const taprootDust = 330
+ 
++// REVIEW CONTROL b13-review-shared: DeadlineMargin is the members' minimum
++// number of seconds before a request deadline, and Timely the shared timing
++// rule both the leader and the members apply.
++const DeadlineMargin = 600
++
++func Timely(r Request, now, margin uint64) bool {
++	return now >= r.NotBefore && r.Deadline > now && r.Deadline-now >= margin
++}
++
+ // OutpointKey is the C-04 custody key: keccak256(rawTxHash || uint32 BE index).
+ func OutpointKey(o bitcoin.TransactionOutpoint) [32]byte {
+ 	b := append([]byte(nil), o.TransactionHash[:]...)
+@@ -151,7 +160,7 @@ func (p Planner) redeemable(ctx context.Context, at uint64, id [32]byte) (Reques
+ 	if err != nil {
+ 		return r, err
+ 	}
+-	if r.State != RequestRequested || r.ReservationID != ([32]byte{}) || r.WalletID != walletID || r.DescriptorHash != descriptorHash || bytes.Equal(r.Script, change) || now < r.NotBefore || r.Deadline <= now || r.Deadline-now < p.DeadlineMargin {
++	if r.State != RequestRequested || r.ReservationID != ([32]byte{}) || r.WalletID != walletID || r.DescriptorHash != descriptorHash || bytes.Equal(r.Script, change) || !Timely(r, now, p.DeadlineMargin) {
+ 		return r, ErrNotRedeemable
+ 	}
+ 	return r, nil
+diff --git a/pkg/tbtc/frost_node.go b/pkg/tbtc/frost_node.go
+index 2542605e3..b713e77ac 100644
+--- a/pkg/tbtc/frost_node.go
++++ b/pkg/tbtc/frost_node.go
+@@ -53,7 +53,7 @@ const (
+ 	frostRedemptionCancelAfterBlocks = 400
+ 	// frostRedemptionDeadlineMargin is the minimum number of seconds left
+ 	// before a request deadline for it to be planned or attested.
+-	frostRedemptionDeadlineMargin = 600
++	frostRedemptionDeadlineMargin = redemption.DeadlineMargin
+ 	// frostMaximumSatPerVByte is the signing envelope's fee-rate ceiling.
+ 	frostMaximumSatPerVByte = 20
+ 	// frostMinimumFee is the redemption certificate's minimum absolute fee.

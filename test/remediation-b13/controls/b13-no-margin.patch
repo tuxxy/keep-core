@@ -1,0 +1,63 @@
+diff --git a/pkg/tbtcpg/redemptions.go b/pkg/tbtcpg/redemptions.go
+index dd930bb5a..b436ee5f0 100644
+--- a/pkg/tbtcpg/redemptions.go
++++ b/pkg/tbtcpg/redemptions.go
+@@ -1,6 +1,7 @@
+ package tbtcpg
+ 
+ import (
++	"context"
+ 	"fmt"
+ 	"math/big"
+ 	"sort"
+@@ -11,6 +12,7 @@ import (
+ 
+ 	"github.com/keep-network/keep-core/internal/hexutils"
+ 	"github.com/keep-network/keep-core/pkg/bitcoin"
++	"github.com/keep-network/keep-core/pkg/frost/redemption"
+ 	"github.com/keep-network/keep-core/pkg/frost/signing"
+ 	"github.com/keep-network/keep-core/pkg/tbtc"
+ )
+@@ -236,9 +238,41 @@ func (rt *RedemptionTask) findPendingFrostRedemptions(
+ 		limit = signing.MaxRedemptionRequests
+ 	}
+ 
+-	return frostChain.PendingFrostRedemptions(outputKey, filterStartBlock, limit)
++	// CONTROL b13-no-margin (wrong): the members' own rule (redemption.Planner.Pending)
++	// with the wallet's descriptor from the Bridge and the members' margin.
++	connector, ok := rt.chain.(tbtc.FrostBridgeConnector)
++	if !ok {
++		return nil, fmt.Errorf("chain cannot bind the FROST bridge")
++	}
++	ctx := context.Background()
++	bridge, err := connector.FrostBridge(ctx)
++	if err != nil {
++		return nil, err
++	}
++	wallet, err := bridge.Wallet(ctx, currentBlockNumber, walletPublicKeyHash)
++	if err != nil {
++		return nil, err
++	}
++	_ = outputKey
++	planner := redemption.Planner{Chain: bridge, Wallet: wallet.Descriptor, DeadlineMargin: 0}
++	ids, err := planner.Pending(ctx, filterStartBlock, currentBlockNumber, limit)
++	if err != nil {
++		return nil, err
++	}
++	scripts := make([]bitcoin.Script, 0, len(ids))
++	for _, id := range ids {
++		request, err := bridge.Request(ctx, currentBlockNumber, id)
++		if err != nil {
++			return nil, err
++		}
++		scripts = append(scripts, bitcoin.Script(request.Script))
++	}
++	return scripts, nil
+ }
+ 
++// b13DeadlineMargin is tbtc's frostRedemptionDeadlineMargin (CONTROL).
++const b13DeadlineMargin = 600
++
+ // RedemptionRequest represents a redemption request.
+ type RedemptionRequest struct {
+ 	WalletPublicKeyHash  [20]byte

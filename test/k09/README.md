@@ -4,7 +4,7 @@ KC-SF-V3 §6 K-09: the FROST lifecycle driven through real node processes on
 the integration branch. Local only; nothing here runs in CI.
 
 ```
-source <env with SNOWFALL_WORKER*, SNOWFALL_COMMIT, LEGACY_*, K09_ECDSA_NODE_*>; test/k09/run.sh <new evidence dir>
+source <env with the inputs named in run.sh's header>; test/k09/run.sh <new evidence dir>
 K09_EVIDENCE=<that dir> go test -count=1 -run 'TestK09Evidence' ./test/k09/evidence
 ```
 
@@ -17,8 +17,12 @@ another commit is refused, and the build never reads the live checkout
 (#35).
 
 The build and every stage run under `env -i` with a named allowlist
-(tbtc-v2#19): `PATH`, `HOME`, `TMPDIR`, the required inputs above, and
-`GOCACHE`, `GOMODCACHE` and `GOPATH` when set, with `GOFLAGS` empty,
+(tbtc-v2#19): `PATH`, `HOME`, `TMPDIR`, the required inputs named in
+`run.sh` (`SNOWFALL_WORKER`, `SNOWFALL_WORKER_SHA256`, `SNOWFALL_COMMIT`, the
+seven `LEGACY_` inputs `LEGACY_BASELINE_DIR`, `LEGACY_TBTC_REPO`,
+`LEGACY_ANVIL`, `LEGACY_BITCOIND`, `LEGACY_BITCOIND_SHA256`,
+`LEGACY_UPGRADED_DIR`, `LEGACY_UPGRADED_COMMIT`, and `K09_ECDSA_NODE_MODULES`,
+`K09_ECDSA_NODE_LOCK`), and `GOCACHE`, `GOMODCACHE` and `GOPATH` when set, with `GOFLAGS` empty,
 `GOTOOLCHAIN=local` and `GOWORK=off`. A stage adds `K09_RUN_ID`,
 `B6_DEBUG_DIR` and `GOMAXPROCS`; the ECDSA build adds `NODE_OPTIONS`. Nothing
 else from the caller's environment reaches them.
@@ -45,8 +49,10 @@ Stages 01-04 run in order; 07 runs beside 05-06; after 06, 12 and 09 run in
 one lane and 10, 08, 11 in another (each test process at GOMAXPROCS 1, so two lanes
 use 8 Go cores). Each stage process leads its own process group. After the
 stage, pass or fail, the runner kills that group (Anvil and bitcoind run in
-it) and the groups of the stage's orphaned node processes, and records each
-process it had to kill (#30). Wrong-behaviour probes for 08-10 and 12:
+it) and the group of every orphaned node process of the run (a node whose
+stage process is gone), and records each process it had to kill under that
+stage (#30). An interrupted run (Ctrl-C, SIGTERM) kills every stage group it
+started and every node group on exit. Wrong-behaviour probes for 08-10 and 12:
 `test/k09/controls/README.md`.
 
 The harness is depositor, redeemer, SPV maintainer, keeper and governance

@@ -77,8 +77,20 @@ run_id="$(date +%Y%m%d%H%M%S)-$$"
 # exit; only node.log files are copied in.
 scratch=$(mktemp -d)
 cleanup() {
-  # Process-group cleanup: every node process runs in its own group; none
-  # may outlive the run.
+  # Process-group cleanup: every stage and node process leads its own group
+  # (a stage's Anvil and bitcoind run in the stage's); none may outlive the
+  # run, an interrupted one included (#30). The lanes go first, so no new
+  # stage starts; then every recorded stage group and the group of every
+  # remaining test-binary process (stages and nodes), never run.sh's own.
+  kill -9 $(jobs -p) 2>/dev/null || true
+  own=$(ps -o pgid= -p $$ | tr -d ' ')
+  groups=$(cat "$scratch/groups" 2>/dev/null || true)
+  for p in $(pgrep -f -- "$evidence/tbtc.test" || true); do
+    groups="$groups $(ps -o pgid= -p "$p" 2>/dev/null | tr -d ' ' || true)"
+  done
+  for g in $groups; do
+    [ "$g" = "$own" ] || kill -9 -- "-$g" 2>/dev/null || true
+  done
   pids=$(pgrep -f -- "$evidence/tbtc.test" || true)
   [ -z "$pids" ] || kill -9 $pids 2>/dev/null || true
   rm -rf "$scratch"
@@ -150,6 +162,7 @@ run_stage() {
     "$evidence/tbtc.test" -test.v -test.count=1 -test.timeout 12m \
     -test.run "^TestK09Lifecycle\$/^${stage}\$" > "$evidence/$stage.log" 2>&1 &
   local pgid=$!
+  echo "$pgid" >> "$scratch/groups"
   wait "$pgid" || status=$?
   stop_stage "$stage" "$pgid"
   printf '%s\t%s.log\t%s\n' "$stage" "$stage" "$status" >> "$results"

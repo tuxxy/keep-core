@@ -19,9 +19,10 @@ package tbtc_test
 // Terminated sub-cases (fsm-analysis/contracts.md, "Terminated has hidden
 // sub-states"), against FrostMovement at tbtc-v2 39412825:
 //   - awaiting movement: commit and prove accept it (FrostMovement.sol:86-89,
-//     176-179). Case "terminated" (Live, then Terminated, then committed)
-//     and case "terminated-committed" (committed while MovingFunds, then
-//     Terminated).
+//     176-179). Case "terminated-uncommitted" (Live, then Terminated, and
+//     the first window's leader commits; review B1), case "terminated" (Live,
+//     then Terminated, then committed in setup) and case
+//     "terminated-committed" (committed while MovingFunds, then Terminated).
 //   - moved (current commitment provenAt != 0, custody 0): commit refuses
 //     ("FROST movement committed"), prove refuses ("FROST movement
 //     commitment"). Checked after every settle.
@@ -40,9 +41,10 @@ package tbtc_test
 // wallet max age, notifyFrostWalletCloseable by a stranger) for MovingFunds;
 // an undefeated fraud challenge over a digest S signed (governance defeat
 // timeout 1 s, notifyFrostFraudChallengeDefeatTimeout by a stranger) for
-// Terminated; notifyFrostMovingFundsBelowDust by a stranger for dust. The
+// Terminated; notifyFrostMovingFundsBelowDust by a stranger for dust. In
+// "terminated-uncommitted" the first window's leader commits; the other
 // movable cases' commitment is submitted in setup by S's seat-0 operator
-// (see commit for why not by the leader). A movement is carried to Bitcoin
+// (see commit and registerSource for the leader's seat). A movement is carried to Bitcoin
 // (Core mines it) and proven on the real Bridge.
 // FIXTURES: the FROST registry fixture behind both wallets (no FROST DKG);
 // the legacy source's test key (the drain); S's test key (scalar 1002), which
@@ -104,10 +106,11 @@ const (
 	b15Terminated
 	b15TerminatedCommitted
 	b15TerminatedDust
+	b15TerminatedUncommitted
 )
 
 func (s b15Start) String() string {
-	return [...]string{"live", "moving-funds", "terminated", "terminated-committed", "terminated-dust"}[s]
+	return [...]string{"live", "moving-funds", "terminated", "terminated-committed", "terminated-dust", "terminated-uncommitted"}[s]
 }
 
 type b15World struct {
@@ -191,13 +194,15 @@ func newB15World(t *testing.T, start b15Start) *b15World {
 	case b15TerminatedDust:
 		w.terminate(t)
 		w.recordDust(t)
+	case b15TerminatedUncommitted:
+		w.terminate(t)
 	}
 
 	// Preconditions every case relies on.
 	s := w.readSource(t)
 	want := map[b15Start]movement.State{b15Live: movement.StateLive, b15MovingFunds: movement.StateMovingFunds,
 		b15Terminated: movement.StateTerminated, b15TerminatedCommitted: movement.StateTerminated,
-		b15TerminatedDust: movement.StateTerminated}[start]
+		b15TerminatedDust: movement.StateTerminated, b15TerminatedUncommitted: movement.StateTerminated}[start]
 	if s.Wallet.State != want {
 		t.Fatalf("setup (%s): source state %d, want %d", start, s.Wallet.State, want)
 	}
@@ -217,7 +222,13 @@ func newB15World(t *testing.T, start b15Start) *b15World {
 // registerSource registers and readies the source through the registry
 // FIXTURE's callbacks, as setUpFrostDrain registers its wallet, with the
 // FIXTURE source key and a descriptor the K-07 planner accepts: the world's
-// two operators, the first holding seats 1 and 3 under one member ID.
+// two operators, the first holding seats 1 and 2 under one member ID
+// (operators [op, op, deployer], members [1, 1, 2]; review B1). The first
+// window's leader is op at index 0: whether it sends the 1-based seat 1
+// (tbtcpg frostExecutingSeat today, tuxxy/keep-core#146) or the 0-based seat
+// 0 that FrostMovement.commit reads, the seat names op, so its own
+// commitment does not depend on #146. Later leaders find the commitment
+// recorded and only propose.
 func (w *b15World) registerSource(t *testing.T) {
 	t.Helper()
 	frost := bind.NewBoundContract(w.bridge, w.frostABI(), w.admin, w.admin, w.admin)
@@ -252,7 +263,7 @@ func (w *b15World) registerSource(t *testing.T) {
 		t.Fatal(err)
 	}
 	admin := crypto.PubkeyToAddress(w.adminKey.PublicKey)
-	operators := []common.Address{w.operator, admin, w.operator}
+	operators := []common.Address{w.operator, w.operator, admin}
 	descriptor := struct {
 		Scheme             uint8
 		Profile            uint8
@@ -264,7 +275,7 @@ func (w *b15World) registerSource(t *testing.T) {
 		Threshold          uint16
 		SnowfallDescriptor [32]byte
 		OutputKey          [32]byte
-	}{2, 1, w.chainID, registryAddress, head, []uint32{1, 2, 1}, operators,
+	}{2, 1, w.chainID, registryAddress, head, []uint32{1, 1, 2}, operators,
 		2, crypto.Keccak256Hash([]byte("batch-15 FROST source")), w.src.q}
 	encoded, err := abi.Arguments{{Type: descriptorType}}.Pack(descriptor)
 	if err != nil {
@@ -558,11 +569,12 @@ func (w *b15World) operatorOpts(t *testing.T) *bind.TransactOpts {
 // Bridge accepts this source's movement: the source's seat-0 operator
 // commits the movement to the target, as the contract allows any seat
 // operator to (FrostMovement.commit, seat = descriptor index). SETUP, not
-// the leader: the leader's own commitment (tbtcpg frostExecutingSeat) sends
-// the 1-based seat that FrostMovement.commit reads as a 0-based index, so it
-// reverts "FROST movement operator" in this world (seat 1 is another
-// operator) for any source, MovingFunds included; that is a separate defect
-// outside #141, so the windows here start from a recorded commitment.
+// the leader, for "moving-funds", "terminated" and "terminated-committed":
+// the leader's own commitment (tbtcpg frostExecutingSeat) sends the 1-based
+// seat that FrostMovement.commit reads as a 0-based index
+// (tuxxy/keep-core#146, outside #141). The leader's own commit path is
+// exercised by "terminated-uncommitted", whose descriptor order makes the
+// first leader's seat valid either way (registerSource).
 func (w *b15World) commit(t *testing.T) {
 	t.Helper()
 	tx, err := w.frost.Transact(w.operatorOpts(t), "submitFrostMovingFundsCommitment", w.src.id, uint16(0), [][20]byte{w.dest.label})
@@ -760,7 +772,10 @@ func (w *b15World) requireMovement(t *testing.T, what string, proposal tbtc.Coor
 }
 
 // requireNoMovement: the window ends as base ends a window with nothing to
-// move: no error, no movement proposal, and no attempt to commit.
+// move: no error, no movement proposal, and no attempt to commit. The host
+// decides from the source's state it reads, as base does (D30: "as for
+// MovingFunds"); asking the contract instead (estimating the commitment and
+// treating a revert as nothing to do) counts as an attempt (review N4).
 func (w *b15World) requireNoMovement(t *testing.T, what string, proposal tbtc.CoordinationProposal, rec *legacyRecorder, err error) {
 	t.Helper()
 	if err != nil {
@@ -824,17 +839,19 @@ func (w *b15World) requireRefusedEveryWindow(t *testing.T, what string, stale *t
 // Terminated with nothing committed or with an unproven commitment, every
 // window's leader, whichever seat's operator and on either empty-revert
 // encoding, proposes the movement to the eligible FROST target from chain
-// state; every follower plans and authorizes it; the movement carried to
+// state (the first leader commits it when nothing is committed:
+// terminated-uncommitted); every follower plans and authorizes it; the movement carried to
 // Bitcoin is accepted by the real Bridge. After that the movement is proven
 // ("moved" sub-case): the Bridge refuses another commitment, no leader
 // proposes or commits, and every follower refuses the stale proposal.
 func TestFrostMovementTerminatedSourceProposed(t *testing.T) {
-	for _, start := range []b15Start{b15MovingFunds, b15Terminated, b15TerminatedCommitted} {
+	for _, start := range []b15Start{b15MovingFunds, b15Terminated, b15TerminatedCommitted, b15TerminatedUncommitted} {
 		start := start
 		t.Run(start.String(), func(t *testing.T) {
 			t.Parallel()
-			// The setup's commitment is the Bridge accepting this source's
-			// movement (commit; prove is the settle step).
+			// The setup's commitment (or, for terminated-uncommitted, the
+			// first leader's) is the Bridge accepting this source's movement
+			// (commit; prove is the settle step).
 			w := newB15World(t, start)
 			stop := w.mineInBackground()
 			defer stop()

@@ -15,7 +15,7 @@ head=$(git rev-parse HEAD)
 clean=$([ -z "$(git status --porcelain)" ] && echo true || echo false)
 start=$(date +%s)
 set +e
-GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 5 -timeout 5m -json \
+GOMAXPROCS=${GOMAXPROCS:-8} go test -count=1 -parallel 6 -timeout 5m -json \
   ./pkg/tbtc -run '^TestFrostMovementTerminatedSource(Proposed|Refused)$' \
   > "$out/tbtc.json" 2>&1
 set -e
@@ -36,6 +36,7 @@ expected = [
     "tbtc/TestFrostMovementTerminatedSourceProposed/moving-funds",
     "tbtc/TestFrostMovementTerminatedSourceProposed/terminated",
     "tbtc/TestFrostMovementTerminatedSourceProposed/terminated-committed",
+    "tbtc/TestFrostMovementTerminatedSourceProposed/terminated-uncommitted",
     "tbtc/TestFrostMovementTerminatedSourceRefused/live",
     "tbtc/TestFrostMovementTerminatedSourceRefused/terminated-dust",
 ]

@@ -1,0 +1,143 @@
+{
+  "S-K06-DEPOSIT-1": {
+    "scope": "KC-VER V-07 at keep-core 925103a6 (tooling 93896bf8) and tbtc-v2 39412825, bounded model checking at the V-07 bound (one wallet, two deposits, one main, one reservation, refund locktime at tick 2, ticks 0..2, margin one tick, two sweep attempts, two rounds): claim model exhaustive, 42,972,245 states, no counterexample to P-K06-SWEEP-AUTHORIZED-ONLY, -ONE-MAIN-PURPOSE, -REFUND-RACE, -CREDIT-ONCE, -TERMINAL-SWEEP-ATTEMPT; all seven witnesses discovered; all ten weakenings break their declared predicate. Proposed P-K06-D13-NO-SIDE-SWEEP fails (implementation defect against the D13 refinement, tracked by tuxxy/tbtc-v2#24). Replay: 18 traces, 4 full and 14 partial, none mismatched, normal and -race. Self-review only.",
+    "evidence": "implementation/K-06/v07-model-2026-11-06/",
+    "check": "python3 pkg/frost/deposit/verification/check-freshness.py --repo spec=<FROST-migration-spec-kcver02 checkout>@kc-ver-02 (tbtc-v2 defaults to ../tbtc-v2; pass --repo tbtc-v2=DIR@39412825 to check the pinned contracts)",
+    "pins": {
+      "pkg/frost/deposit/verification/SCOPE.md": "5a53b5c5a8d99f19dff81c0dcb5ce3ae19f66616",
+      "pkg/frost/deposit/verification/run.py": "3566a7cf3e9a146b972470d1283e143d1988047a",
+      "pkg/frost/deposit/verification/check-freshness.py": "b776a5b5acbfff44974c94009063adc12e5735c4",
+      "pkg/frost/deposit/verification/model/Cargo.toml": "2c90a7278cbd5bcc83d97a4087d81b9de734f68b",
+      "pkg/frost/deposit/verification/model/Cargo.lock": "7859df4dac01ea39f82d4471c695a454f3fa1d11",
+      "pkg/frost/deposit/verification/model/rust-toolchain.toml": "16ad9a6d2dfdc94bf74c7887eec54fca2a3abfc9",
+      "pkg/frost/deposit/v07_replay_test.go": "36faad1bd7240329fcdf63d02c99c9b5c1cf4365",
+      "pkg/frost/deposit/fake_test.go": "14c8eb56646797e704245e44835f4e9ee79f5d53",
+      "pkg/maintainer/spv/frost_sweeps.go": "525a4b42bfcc5fbbfe41483d229bb9f219b9944c",
+      "pkg/tbtc/frost_node_duties.go": "24645e2fd45a155149425d522cb675d32895aefd",
+      "spec:keep-core-verification-spec.md": "ab1815f31cf311ca5b3b7d04e7a70dd37dfa1d3d",
+      "spec:keep-core-integration-spec.md": "98f8589a48ab95d065d5b95307734d66b93618f1"
+    },
+    "manifests": {
+      "pkg/frost/deposit": {
+        "kind": "go-package",
+        "files": {
+          "authority.go": "325e6355abad4909b0879116c684f850d747d538",
+          "chain.go": "0d981562e2404a32cba703efe028a6bd55170e02",
+          "clock.go": "bcd3c0a7a20bdf8a80d9c59cf07743e1735ddd70",
+          "lock.go": "ef2696fbd5f877de26dfeb0203a414803deed9db",
+          "planner.go": "52d7e9e71ded3c98e8ca59ea98a1142d31713ab5",
+          "refund.go": "b28f1fbc4b5e41b8079f6437e8dd8b2887d1bca4",
+          "resolution.go": "1ce97af430a945785307f40f296c5685f1e65bd4",
+          "sweeper.go": "7cc7ca3d54d7b8c8a1d6022db81a7bf7f93b2d0a",
+          "template.go": "4cb488794315fef7cd7ebed48fecfb6c72e3f944",
+          "view.go": "4075ff7fa92d7eb430bdedf92b2a98ad523a305b"
+        }
+      },
+      "pkg/frost/signing": {
+        "kind": "go-package",
+        "files": {
+          "cancellation.go": "16c86465549e56cbe17bf1e3e4fced61b7b67ced",
+          "defense.go": "5817027476e6f0cbfe9a58c1d719e4c7ff90a7ac",
+          "done.go": "e6ba3064c9f3ae247c7f2cc0489aa13ebe358a12",
+          "executor.go": "02f2877d7acc7dc049b48d7989260d5bdbfbaaff",
+          "heartbeat.go": "f4be02babebbdffbc5a0a66c399e55aaf3ca3a79",
+          "movement.go": "d63d7ad31540b48ed7a49017629247c04d774568",
+          "plan.go": "a8e27b8c86bd59bfe5736385f192f2bf835c96e9",
+          "previous_transaction.go": "699b61d08a9a32a02f42dde331e0dc307d2081f1",
+          "sweep.go": "600941fede65b341a2c2a83cd43d4cce4f3748ed"
+        }
+      },
+      "pkg/frost/redemption": {
+        "kind": "go-package",
+        "files": {
+          "agreement.go": "a09aca1124a98063a7ce3cb1ca032a966c49bd81",
+          "attestation.go": "f203352295801599ea011bd534af997937e58c4a",
+          "chain.go": "e5b46f78efcc5ac6270147832b44ddfaf7223b5b",
+          "ledger.go": "0ba6e89dd37d59543c77471d1203880e6b5bbfb3",
+          "planner.go": "f698114c059a12908a75d90f3c736613bb36e121",
+          "reload.go": "2c9fc3398cc6699bc1795131b8b763f73993bf78",
+          "reservations.go": "e4fb789920bfbabe2cad549b3e11b150ca8b0279",
+          "resolver.go": "c2c5603b3c532cb34e120d48c5ff82843fd86e7c"
+        }
+      },
+      "pkg/frost/deposit/verification/model/src": {
+        "kind": "rust-src",
+        "files": {
+          "main.rs": "ea868c84a1780f167506315dd6355234176e1773"
+        }
+      },
+      "pkg/frost/deposit/verification/traces": {
+        "kind": "json-dir",
+        "files": {
+          "AcceptFeeAboveCap-P-K06-SWEEP-AUTHORIZED-ONLY.json": "ea85bcac29575b55c9f41a9d9a8f52cbdc1c254c",
+          "AcceptLateSweepSignature-P-K06-REFUND-RACE.json": "4b1985a2032b83699e9f22809031b79ead08b173",
+          "DropMainLock-P-K06-ONE-MAIN-PURPOSE.json": "b089db163dee04abf03e33b49e47cf85c9051cc4",
+          "ForgetConsumptionOnRetry-P-K06-CREDIT-ONCE.json": "5686b56f6706762a70bec290cd3037e5e92a2e71",
+          "LockFromUnfinalizedReservation-P-K06-ONE-MAIN-PURPOSE.json": "c29b7caecd3c9be2e4c03ababcfef82b7d04e23c",
+          "NoRefundMargin-P-K06-REFUND-RACE.json": "0df8e69230ee2460ff5a97d1fbd76c876267a675",
+          "None-P-K06-D13-NO-SIDE-SWEEP.json": "acb2a70c8a9ef03eb60e4789c60b2f46ffab33bf",
+          "None-W-authorized-sweep-credited.json": "2bbef338fd41bfab057696aeee76fc0e2fd200e7",
+          "None-W-fresh-attempt-after-failure.json": "1c643db1ee2881aaf4b2c295fbc69c705179f4dc",
+          "None-W-lost-reply-credits-once.json": "3cc3ee49067f2a0b5276ecd6f1f5bb06d81862d4",
+          "None-W-refund-operators-stopped.json": "ab434a7cac0604f5bd8ff37aa3eb7d170391c0dd",
+          "None-W-resolution-sweep-resolves.json": "52a14a80a61da9e1e2ca4a093b756aa74e06225e",
+          "None-W-sweep-after-payment-new-main.json": "349e7c80db4c35aaa0c9cd407a5a0a49812bb17e",
+          "None-W-sweep-before-margin-credited-after-locktime.json": "1e350ea992f4aa8fabc24ab317f0c383eb8135c9",
+          "PlanTimeMarginOnly-P-K06-SWEEP-AUTHORIZED-ONLY.json": "b8854f87ef0562cc1fed3dbfd8136896bde38372",
+          "ReuseSweepAttempt-P-K06-TERMINAL-SWEEP-ATTEMPT.json": "8ebfa7fa9708e1d2ca0f6ec233c2a95915c8a1d3",
+          "SignWithoutRevealFinality-P-K06-SWEEP-AUTHORIZED-ONLY.json": "12b26e0a57fb499e6520b262637cafde9ef6c9fd",
+          "TrustLedgerMarkerOnly-P-K06-TERMINAL-SWEEP-ATTEMPT.json": "5cd20c4c177b7c8cd6d35de51e16612b18bc51ab"
+        }
+      },
+      "tbtc-v2:solidity/contracts/frost": {
+        "kind": "sol-dir",
+        "files": {
+          "FrostBitcoinEncoding.sol": "2187ab410ecbbdcfe3ed41a37259a33560aa7017",
+          "FrostBridge.sol": "0b0e69fcfa5cd8e1d520b5425f88a008f41da1d9",
+          "FrostCancellationAdmissions.sol": "70b1fce4ca12ee4a92c14dd6dd40efb4f813cad6",
+          "FrostCancellationCertificate.sol": "4d45d65f7b0ece9da6a4495760073b92e0f937a1",
+          "FrostCancellationHistory.sol": "29fd9e62fdb49a11bba39e0b79be05cea73b777f",
+          "FrostCurve.sol": "db089b5617b7c4af72248bc3ad93876bf992331c",
+          "FrostCustody.sol": "5fae71a81102819dd817cf8f1997380e83d73efd",
+          "FrostDepositAdmission.sol": "6e9d7ece253b22ff28f82cd1913e3c23058103a5",
+          "FrostDepositProfile.sol": "261b9619dedb4a9a5122145e4d26fa11586f84b3",
+          "FrostDepositSweep.sol": "2a7230399533988352a5f064737023f5185a8484",
+          "FrostExposure.sol": "26a2c845c3d98a579446cc14271f57a2bf70359f",
+          "FrostExposureController.sol": "9e0e768b7256e3218d49aad32c3022fe5d9c8e2d",
+          "FrostExposureState.sol": "9b7d69cc1a7c744007e433bf4e0ad495b615e1c8",
+          "FrostFraud.sol": "abb14e7839f2b049ae94ffe4d22789b984b1161e",
+          "FrostFraudDispatch.sol": "42678dbda24c280a3e1af7f2ad6f1aabb4c48e68",
+          "FrostFraudState.sol": "bbc38cc6d7db7a07256cf6c04672019fcfe996d0",
+          "FrostFundingConfiguration.sol": "0897be497bd54c007e1900816a1803874612994b",
+          "FrostFundingState.sol": "9e8e8928519d278f81c76a35e598b52c611e58f5",
+          "FrostLifecycle.sol": "7db6ca7ba712e2048eb4d5c79cce9f74ec152a5a",
+          "FrostMovement.sol": "8a1dbd443c20465a26fb01e8fdfd62116a986f95",
+          "FrostMovementDispatch.sol": "35a836bdd7707e55996a3b79a39a0d9bc973b74a",
+          "FrostMovementState.sol": "c8302cb8fe6af4809f72725dfe5867edb9b15650",
+          "FrostRedemptionLedger.sol": "8a1d6aeca09cca64c330cdb3452f3ab3ec3121be",
+          "FrostRedemptionRequests.sol": "aeec9e3985d41e55b445c92960fbdbf9b89ade26",
+          "FrostRedemptionSettlement.sol": "5df9044356d3e893d97788dd9f6dff7cd661b385",
+          "FrostRedemptionState.sol": "6a5af03eca135604f303062d1ed33c6e779abaf0",
+          "FrostRedemptionTransaction.sol": "9f337ebcedaffee6f5746fbdb59b972c76dfafab",
+          "FrostRedemptions.sol": "bb9f64e28c7ed19213dc2f5d21980eeef4b453f9",
+          "FrostReservationCertificate.sol": "afd9a4d5e62cc691e732474acd3fcc7a1e61f9c6",
+          "FrostSecp256k1.sol": "24987710b29cd9194ffc66c536819e6a63feeaec",
+          "FrostSigningIntent.sol": "e5ccc4c18e3a5ef6b47adc1caaced47c2f2b5939",
+          "FrostSweepResolutionCertificate.sol": "4ca653f357cca0526f3fdd7644902c71ad9bb16e",
+          "FrostTypes.sol": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6",
+          "FrostVerifier.sol": "95c2cdd08551756de91fc7c0cc1343e45b009278",
+          "FrostWallets.sol": "c91a8941d059ccf694dc815763214e46527a88c7",
+          "IFrostBridge.sol": "da45ded07c5c726878c60d38d5cd1e19f7b097a7",
+          "IFrostExposureBridge.sol": "4dff35a522320d44e7d057bb7c447efd300f0d0d",
+          "IFrostExposureController.sol": "15c605fc66622e6f277ac1ac197ceb92c9b10435",
+          "IFrostFraudBridge.sol": "6a9624ad222dbb5855eb7bbc5f9955b562a22cbe",
+          "IFrostFundingBridge.sol": "8a937f109328bb132d866cce244b144f2930d1b5",
+          "IFrostFundingProof.sol": "fd127de00bc61d6740df62976d1fc4cc3bed5580",
+          "IFrostLifecycleBridge.sol": "06e3e1a5b481482e178dc36a54205e813f06c557",
+          "IFrostMovementBridge.sol": "942aa421b500a1966c660efd75798910bed37615",
+          "IFrostVerifier.sol": "c908c07dbe70ac07e96336f3573f81763108f488"
+        }
+      }
+    }
+  }
+}

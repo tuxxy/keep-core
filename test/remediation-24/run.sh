@@ -44,6 +44,13 @@ unit_cases+=("TestSingleMainBoundaries/no_main,_no_reservation:_deposit-only"
 	"TestSingleMainBoundaries/deposit_waits_for_the_reservation,_then_sweeps_with_the_new_main"
 	"TestPlannerMainRule/reserved_main_refuses_an_ordinary_sweep"
 	"TestAuthorityRequiresUnreservedMain")
+leader_run='^TestFrostDepositSweepLeaderWaitsWhileMainReserved$'
+leader_cases=("TestFrostDepositSweepLeaderWaitsWhileMainReserved/no_main,_no_reservation:_proposed"
+	"TestFrostDepositSweepLeaderWaitsWhileMainReserved/unreserved_main:_proposed")
+for s in Reserved TimeoutPending Quarantined; do
+	leader_cases+=("TestFrostDepositSweepLeaderWaitsWhileMainReserved/reserved_main_(${s}):_deposits_wait")
+done
+unit_cases+=("${leader_cases[@]}")
 integration_run='^(TestFrostDepositSweepAndCredit|TestLateDepositRecovery|TestMainPurposeLockAndResolution)$'
 integration_cases=(TestFrostDepositSweepAndCredit TestLateDepositRecovery TestMainPurposeLockAndResolution)
 
@@ -61,7 +68,8 @@ if [ "$mode" = controls ]; then
 		git -C "$tree" apply "$patch"
 		status=0
 		(cd "$tree" && go test -count=1 -v -run "$unit_run" ./pkg/frost/deposit/) > "$evidence/$name.log" 2>&1 || status=$?
-		failures=$(grep -E '^\s+single_main_test.go:[0-9]+: |^\s+deposit_test.go:[0-9]+: ' "$evidence/$name.log" | sed 's/^ *//' | cut -c1-160 | sort -u | tr '\n' '|' || true)
+		(cd "$tree" && go test -count=1 -v -run "$leader_run" ./pkg/tbtcpg/) >> "$evidence/$name.log" 2>&1 || status=1
+		failures=$(grep -E '^\s+single_main_test.go:[0-9]+: |^\s+deposit_test.go:[0-9]+: |^\s+frost_deposit_sweep_d13_test.go:[0-9]+: ' "$evidence/$name.log" | sed 's/^ *//' | cut -c1-160 | sort -u | tr '\n' '|' || true)
 		printf '%s\t%s\t%s\n' "$name" "$status" "$failures" >> "$evidence/controls.tsv"
 		printf '%s: exit %s %s\n' "$name" "$status" "$failures"
 	done
@@ -69,6 +77,7 @@ if [ "$mode" = controls ]; then
 fi
 
 go test -count=1 -v -run "$unit_run" ./pkg/frost/deposit/ > "$evidence/unit.log" 2>&1 || true
+go test -count=1 -v -run "$leader_run" ./pkg/tbtcpg/ >> "$evidence/unit.log" 2>&1 || true
 go test -count=1 ./pkg/frost/deposit/... ./pkg/frost/signing/... ./pkg/maintainer/spv/... > "$evidence/packages.log" 2>&1 || true
 go test -count=1 -v -timeout 14m -run "$integration_run" ./pkg/frost/integration/ > "$evidence/integration.log" 2>&1 || true
 
@@ -107,7 +116,7 @@ passed = sum(c["result"] == "pass" for c in cases)
 skipped = sum(c["result"] == "skip" for c in cases)
 if passed != len(cases):
     problems.append(f"{len(cases) - passed} of {len(cases)} intended cases did not pass ({skipped} skipped)")
-tests = ["pkg/frost/deposit/single_main_test.go", "pkg/frost/deposit/deposit_test.go", "pkg/frost/integration/deposits_test.go"]
+tests = ["pkg/tbtcpg/frost_deposit_sweep_d13_test.go", "pkg/frost/deposit/single_main_test.go", "pkg/frost/deposit/deposit_test.go", "pkg/frost/integration/deposits_test.go"]
 manifest = {
     "suite": "tuxxy/tbtc-v2#24 keep-core single main (D13 refinement)",
     "candidate": {"keepCoreHead": git("rev-parse", "HEAD"), "clean": not git("status", "--porcelain")},

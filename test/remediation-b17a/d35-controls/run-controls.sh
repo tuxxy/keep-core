@@ -13,7 +13,8 @@ here=$(cd "$(dirname "$0")" && pwd)
 controls=("$@")
 if [ ${#controls[@]} -eq 0 ]; then
   controls=(d35-fix.patch d35-wrong-port-zero.patch d35-wrong-field-type.patch d35-wrong-world-reverted.patch
-    d35-wrong-helper-loopback.patch r-d35-wrong-always-loopback.patch)
+    d35-wrong-helper-loopback.patch r-d35-wrong-always-loopback.patch
+    r-r4-fix-helper.patch r-r4-fix-nested-error.patch r-r4-fix-nil-check.patch)
 fi
 cd "$scratch"
 test -z "$(git status --porcelain -- pkg)" || { echo "scratch pkg/ is dirty" >&2; exit 1; }

@@ -621,6 +621,8 @@ func (fn *frostNode) joinDKGIfEligible(ctx context.Context, epoch uint64) {
 	}
 	journal, err := fn.scope(epoch)
 	if err != nil {
+		// Nothing started; look again on a later block.
+		fn.unclaimEpoch(epoch)
 		epochLogger.Errorf("cannot open FROST store scope: [%v]", err)
 		return
 	}
@@ -641,7 +643,10 @@ func (fn *frostNode) joinDKGIfEligible(ctx context.Context, epoch uint64) {
 }
 
 // executeDKG runs the FROST DKG of one epoch for the local seats and adds the
-// wallet to coordination once it is ready.
+// wallet to coordination once it is ready. A setup error before the executor
+// starts releases the epoch claim, so the DKG loop joins it again on a later
+// block. Once the executor starts, the claim is kept; once its engine claims
+// the journal, the DKG loop restores the epoch and never runs it again.
 func (fn *frostNode) executeDKG(
 	ctx context.Context,
 	selection dkg.Selection,
@@ -650,6 +655,13 @@ func (fn *frostNode) executeDKG(
 ) {
 	epoch := selection.Epoch
 	epochLogger := logger.With(zap.Uint64("frostEpoch", epoch))
+
+	started := false
+	defer func() {
+		if !started {
+			fn.unclaimEpoch(epoch)
+		}
+	}()
 
 	dkgCtx, cancel := context.WithTimeout(ctx, frostDKGTimeout)
 	defer cancel()
@@ -695,6 +707,7 @@ func (fn *frostNode) executeDKG(
 
 	epochLogger.Infof("joining FROST DKG with seats [%v]", locals)
 
+	started = true
 	record, err := ExecuteFrostDKG(dkgCtx, &dkg.Executor{
 		Chain:   fn.registry,
 		Engine:  engine,

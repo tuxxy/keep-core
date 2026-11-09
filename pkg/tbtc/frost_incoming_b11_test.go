@@ -113,6 +113,9 @@ func (w *frostIncomingWorld) escalate(t *testing.T) {
 		t.Fatal(err)
 	}
 	address := crypto.PubkeyToAddress(anyone.PublicKey)
+	if address == crypto.PubkeyToAddress(w.adminKey.PublicKey) {
+		t.Fatal("setup: the escalating account is the deployer")
+	}
 	for _, operator := range w.operators {
 		if common.HexToAddress(string(operator)) == address {
 			t.Fatal("setup: the escalating account is an operator")
@@ -288,6 +291,25 @@ func TestFrostIncomingSweepEscalatedFollowerValidation(t *testing.T) {
 	w := newFrostIncomingWorld(t)
 	w.other = w.registerSecondFrostWallet(t)
 	w.escalate(t)
+	// Review B1 (REVIEW-TEST-B11.md): the moving-funds fee cap differs from
+	// the moved-funds sweep cap, so a follower checking an Escalated sweep
+	// against the wrong parameter accepts a fee above the sweep cap. Only
+	// movingFundsTxMaxTotalFee changes; every other parameter is kept.
+	p, err := w.legacy.MovingFundsParameters(&bind.CallOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.send("moving funds tx fee", func(o *bind.TransactOpts) (*types.Transaction, error) {
+		return w.legacy.UpdateMovingFundsParameters(o, 2*p.MovedFundsSweepTxMaxTotalFee, p.MovingFundsDustThreshold,
+			p.MovingFundsTimeoutResetDelay, p.MovingFundsTimeout, p.MovingFundsTimeoutSlashingAmount,
+			p.MovingFundsTimeoutNotifierRewardMultiplier, p.MovingFundsCommitmentGasOffset,
+			p.MovedFundsSweepTxMaxTotalFee, p.MovedFundsSweepTimeout,
+			p.MovedFundsSweepTimeoutSlashingAmount, p.MovedFundsSweepTimeoutNotifierRewardMultiplier)
+	})
+	if q, err := w.legacy.MovingFundsParameters(&bind.CallOpts{}); err != nil ||
+		q.MovingFundsTxMaxTotalFee != 2*w.sweepCap || q.MovedFundsSweepTxMaxTotalFee != w.sweepCap {
+		t.Fatalf("precondition: the moving-funds fee cap does not differ from the sweep cap %d: %+v, %v", w.sweepCap, q, err)
+	}
 	stop := w.mineInBackground()
 	defer stop()
 	good := func(fee uint64) *tbtc.MovedFundsSweepProposal {

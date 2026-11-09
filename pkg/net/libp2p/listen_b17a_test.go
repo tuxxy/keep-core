@@ -60,9 +60,18 @@ func TestB17aListenAddressesBindLoopbackOnly(t *testing.T) {
 	p := connected.(*provider)
 	defer p.host.Close()
 
-	listening := p.host.Network().ListenAddresses()
+	// Socket listeners only: base libp2p's circuit relay address
+	// (/p2p-circuit) opens no socket and accepts only connections relayed
+	// through peers the provider is already connected to.
+	var listening []ma.Multiaddr
+	for _, addr := range p.host.Network().ListenAddresses() {
+		if _, err := addr.ValueForProtocol(ma.P_CIRCUIT); err == nil {
+			continue
+		}
+		listening = append(listening, addr)
+	}
 	if len(listening) == 0 {
-		t.Fatalf("K09-20: with ListenAddresses [%s] the provider listens nowhere", want)
+		t.Fatalf("K09-20: with ListenAddresses [%s] the provider has no socket listener", want)
 	}
 	for _, addr := range listening {
 		if !manet.IsIPLoopback(addr) {

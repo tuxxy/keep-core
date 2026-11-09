@@ -118,10 +118,26 @@ const stageScript = `#!/usr/bin/env bash
 state=%q
 stage=$(printf '%%s\n' "$@" | sed -n 's/^\^TestK09Lifecycle\$\/\^\(.*\)\$$/\1/p')
 env | cut -d= -f1 | sort > "$state/env-stage-$stage"
+# Which earlier stages' children are still alive as this stage starts (a
+# runner that kills only at the end of the run leaves them running).
+for f in "$state"/child-*; do
+  [ -f "$f" ] || continue
+  pid=$(cat "$f"); st=alive
+  for _ in 1 2 3; do
+    if ! kill -0 "$pid" 2>/dev/null || ps -o stat= -p "$pid" 2>/dev/null | grep -q '^Z'; then st=dead; break; fi
+    sleep 0.1
+  done
+  echo "${f##*/child-} $st" >> "$state/alive-at-$stage"
+done
 plan=$(grep "^$stage " "$state/plan" | cut -d' ' -f2 || true)
 case "$plan" in
   leak-pass|leak-timeout)
-    sleep 300 </dev/null >/dev/null 2>&1 &
+    # The Anvil stand-in: LEGACY_ANVIL itself, in the stage's process group.
+    if [ -n "${LEGACY_ANVIL:-}" ]; then
+      "$LEGACY_ANVIL" b17a-standin </dev/null >/dev/null 2>&1 &
+    else
+      sleep 300 </dev/null >/dev/null 2>&1 &
+    fi
     echo $! > "$state/child-$stage" ;;
 esac
 echo "=== RUN   TestK09Lifecycle/$stage"
@@ -158,14 +174,21 @@ func newFixture(t *testing.T, plan map[string]string) *fixture {
 	write(t, filepath.Join(f.repo, "test/k09/secret-patterns.txt"), string(patterns), 0o644)
 	write(t, filepath.Join(f.repo, "solidity/ecdsa/yarn.lock"), "# FIXTURE lock\n", 0o644)
 	write(t, filepath.Join(f.repo, "pkg/tbtc/doc.go"), "package tbtc\n", 0o644)
+	// A minimal go.mod with base's snowfall replace line (review B1).
+	write(t, filepath.Join(f.repo, "go.mod"), "module github.com/keep-network/keep-core\n\ngo 1.21\n\nreplace github.com/threshold-network/snowfall/clients/go => ../snowfall/clients/go\n", 0o644)
 	run(t, f.repo, "git", "init", "-q")
 	run(t, f.repo, "git", "add", ".")
 	run(t, f.repo, "git", "commit", "-q", "-m", "FIXTURE keep-core")
 	// FIXTURE snowfall sibling (go.mod's ../snowfall).
 	write(t, filepath.Join(f.snowfall, "README"), "FIXTURE snowfall\n", 0o644)
+	write(t, filepath.Join(f.snowfall, "clients/go/go.mod"), "module github.com/threshold-network/snowfall/clients/go\n\ngo 1.21\n", 0o644)
+	write(t, filepath.Join(f.snowfall, ".gitignore"), "ignored.go\n", 0o644)
 	run(t, f.snowfall, "git", "init", "-q")
 	run(t, f.snowfall, "git", "add", ".")
 	run(t, f.snowfall, "git", "commit", "-q", "-m", "FIXTURE snowfall")
+	// An ignored file: the checkout stays clean, but this file is not part
+	// of SNOWFALL_COMMIT, so a build of the committed snowfall never sees it.
+	write(t, filepath.Join(f.snowfall, "ignored.go"), "package ignored\n", 0o644)
 	f.snowHead = run(t, f.snowfall, "git", "rev-parse", "HEAD")
 
 	var lines []string
@@ -174,25 +197,36 @@ func newFixture(t *testing.T, plan map[string]string) *fixture {
 	}
 	write(t, filepath.Join(f.state, "plan"), strings.Join(lines, "\n")+"\n", 0o644)
 	stubs := filepath.Join(root, "stubs")
-	// Stub go: `go version` and `go test -c -o <out> ./pkg/tbtc`. It records
-	// the names it sees and GOFLAGS' value, then writes the stub stage.
+	// Stub go (review B1): `go test -c -o <out> ...` builds the stub stage,
+	// recording the variable names the build sees, GOFLAGS' value, and
+	// whether the build tree's ../snowfall holds a file snowfall never
+	// committed. Every other call (`go version`, `go env`, `go list -m`, ...)
+	// runs the real go, resolved before the stubs are put on PATH.
+	realGo, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatalf("FIXTURE: no go on PATH: %v", err)
+	}
 	write(t, filepath.Join(stubs, "go"), fmt.Sprintf(`#!/usr/bin/env bash
 state=%q
-if [ "$1" = version ]; then echo "go version b17a-fixture"; exit 0; fi
+if [ "${1-}" != test ] || ! printf '%%s\n' "$@" | grep -qx -- -c; then exec %q "$@"; fi
 env | cut -d= -f1 | sort > "$state/env-build"
 printf '%%s' "${GOFLAGS-}" > "$state/goflags-build"
+if [ -e ../snowfall/ignored.go ]; then echo present; else echo absent; fi > "$state/snowfall-ignored-build"
 out=""; while [ $# -gt 0 ]; do [ "$1" = -o ] && out=$2; shift; done
 cat > "$out" < "$state/stage-script"
 chmod +x "$out"
-`, f.state), 0o755)
+`, f.state, realGo), 0o755)
 	write(t, filepath.Join(f.state, "stage-script"), fmt.Sprintf(stageScript, f.state), 0o644)
 	write(t, filepath.Join(stubs, "npx"), "#!/usr/bin/env bash\nmkdir -p build\n", 0o755)
 	anvil := filepath.Join(root, "tools/anvil")
-	write(t, anvil, "#!/usr/bin/env bash\necho 'anvil 0.0.0-b17a-fixture'\n", 0o755)
+	// FIXTURE Anvil: prints a version, or (as the stage's stand-in child)
+	// runs until killed, so a runner that kills by the Anvil path finds it.
+	write(t, anvil, "#!/usr/bin/env bash\nif [ \"${1-}\" = --version ]; then echo 'anvil 0.0.0-b17a-fixture'; exit 0; fi\nwhile :; do sleep 1; done\n", 0o755)
+	// FIXTURE bitcoind and worker: runnable, so a runner may ask their version.
 	bitcoind := filepath.Join(root, "tools/bitcoind")
-	write(t, bitcoind, "FIXTURE bitcoind\n", 0o755)
+	write(t, bitcoind, "#!/usr/bin/env bash\necho 'FIXTURE bitcoind v0.0.0-b17a'\n", 0o755)
 	worker := filepath.Join(root, "tools/worker")
-	write(t, worker, "FIXTURE worker\n", 0o755)
+	write(t, worker, "#!/usr/bin/env bash\necho 'FIXTURE worker 0.0.0-b17a'\n", 0o755)
 	upgraded := "1111111111111111111111111111111111111111"
 	write(t, filepath.Join(root, "baseline/manifest.json"), `{"tbtcCommit":"`+baseline+`"}`, 0o644)
 	write(t, filepath.Join(root, "upgraded/manifest.json"), `{"tbtcCommit":"`+upgraded+`"}`, 0o644)
@@ -344,9 +378,16 @@ func TestK09RunnerStageCleanup(t *testing.T) {
 			killed, _ := stageEntry(t, m, "03-dkg")["leftoverKilled"].([]any)
 			found := false
 			for _, k := range killed {
-				if strings.HasPrefix(fmt.Sprint(k), strconv.Itoa(pid)+" ") || fmt.Sprint(k) == strconv.Itoa(pid) {
+				if killedPID(k) == pid {
 					found = true
 				}
+			}
+			// Killed after its own stage, not at the end of the run: stage
+			// 04 (the next stage on the main chain) must not see it alive.
+			if raw, err := os.ReadFile(filepath.Join(f.state, "alive-at-04-drain")); err != nil {
+				t.Fatalf("FIXTURE: stage 04-drain recorded no child check: %v", err)
+			} else if strings.Contains(string(raw), "03-dkg alive") {
+				t.Errorf("K09-10: stage 03-dkg's child %d was still alive when stage 04-drain started (%s); the runner must kill a stage's processes after that stage, not at the end of the run", pid, plan)
 			}
 			if !found {
 				t.Errorf("K09-10: the manifest's stage 03-dkg leftoverKilled %v does not name the child %d the runner had to kill (%s)", killed, pid, plan)
@@ -357,6 +398,30 @@ func TestK09RunnerStageCleanup(t *testing.T) {
 			}
 		})
 	}
+}
+
+// killedPID reads one leftoverKilled entry: "<pid> <command>", a bare pid,
+// or an object with a "pid" field (review R1).
+func killedPID(entry any) int {
+	switch e := entry.(type) {
+	case string:
+		pid, _ := strconv.Atoi(strings.Fields(e + " ")[0])
+		return pid
+	case float64:
+		return int(e)
+	case map[string]any:
+		return killedPID(e["pid"])
+	}
+	return 0
+}
+
+// snowfallCommit reads manifest.repos.snowfall: the commit string, or an
+// object with a "commit" field (review R1).
+func snowfallCommit(v any) string {
+	if m, ok := v.(map[string]any); ok {
+		return fmt.Sprint(m["commit"])
+	}
+	return fmt.Sprint(v)
 }
 
 func problems(r result) string {
@@ -378,8 +443,13 @@ func TestK09RunnerSnowfallBinding(t *testing.T) {
 		r := f.runK09()
 		m := r.requireManifest(t)
 		repos, _ := m["repos"].(map[string]any)
-		if got := fmt.Sprint(repos["snowfall"]); got != f.snowHead {
+		if got := snowfallCommit(repos["snowfall"]); got != f.snowHead {
 			t.Errorf("K09-17: manifest.repos.snowfall is %q; the run compiled snowfall at %s and must record it", got, f.snowHead)
+		}
+		if seen, err := os.ReadFile(filepath.Join(f.state, "snowfall-ignored-build")); err != nil {
+			t.Fatalf("FIXTURE: the stub build recorded nothing: %v", err)
+		} else if strings.TrimSpace(string(seen)) != "absent" {
+			t.Errorf("K09-17: the stage binary build saw ../snowfall/ignored.go, a file that is not in SNOWFALL_COMMIT: it compiled the live snowfall checkout, not the pinned commit")
 		}
 		if strings.Contains(strings.ToLower(problems(r)), "snowfall") || r.exit != 0 {
 			t.Errorf("K09-17: a clean snowfall at SNOWFALL_COMMIT was refused (exit %d, problems %s):\n%s", r.exit, problems(r), r.output)

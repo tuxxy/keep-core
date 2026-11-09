@@ -15,7 +15,9 @@ controls=("$@")
 if [ ${#controls[@]} -eq 0 ]; then
   controls=(d34-fix.patch d34-wrong-tbtc-test-only.patch d34-wrong-kill-on-failure-only.patch
     d34-wrong-snowfall-record-only.patch d34-wrong-inventory-logs-only.patch
-    d34-wrong-env-denylist.patch d34-wrong-env-stages-only.patch)
+    d34-wrong-env-denylist.patch d34-wrong-env-stages-only.patch
+    r-d34-fix-goenv.patch r-d34-fix-setm.patch r-d34-fix-snowfall-object.patch r-d34-fix-killed-objects.patch
+    r-d34-fix-pathkill.patch r-d34-wrong-kill-at-exit.patch r-d34-wrong-snowfall-symlink.patch)
 fi
 cd "$scratch"
 test -z "$(git status --porcelain -- test/k09/run.sh)" || { echo "scratch run.sh is dirty" >&2; exit 1; }

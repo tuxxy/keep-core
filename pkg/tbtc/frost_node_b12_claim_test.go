@@ -9,9 +9,16 @@ package tbtc
 // scope in joinDKGIfEligible) must release that claim, so a later block of
 // the DKG loop tries the epoch again, as base keep-core's expiring
 // deduplication (pkg/tbtc/deduplicator.go, cache.TimeCache) lets a stuck DKG
-// start heal. A DKG or restore that started is never run twice for one epoch:
-// while it runs, and after its executor started and failed, later blocks
-// leave the epoch alone.
+// start heal. A DKG that claimed its journal, or a restore, is never run
+// twice for one epoch: while it runs, and after it failed, later blocks never
+// start another executor for the epoch.
+//
+// Where the line is (coordinator, 2026-11-09, review B3): "journal claimed",
+// not "Run entered". Once the guarded engine claims the journal, DKGStatus no
+// longer returns ErrMissing and the DKG loop sends the epoch to restoreStatus,
+// never to executeDKG. Releasing the claim on any executeDKG error before
+// that point (the FSM analysis's minimal fix) is correct; an executor that
+// failed before its journal claim may be retried.
 //
 // Real code: frostNode.joinDKGIfEligible, restoreEpoch, restoreStatus and
 // executeDKG, the real snowfallengine.NewGuarded, transport.New,
@@ -20,17 +27,20 @@ package tbtc
 //
 // FIXTURES (labelled, test-only):
 //   - b12Registry: the FROST registry adapter. The node's own selection reads
-//     are answered at once. A chain read made under a protocol deadline
-//     (Run and Restore require one) is the executor's: its first selection
-//     read is the witness that the executor started, and the fixture stops
-//     (or holds) the executor there, before any worker or journal write.
+//     are answered at once. A selection read made under dkg.Executor.Run or
+//     Restore (by call stack, as batch 10's inBackground decides; review B2)
+//     is the executor's: it is the witness that the executor started. The
+//     fixture then stops the executor there with an error, holds it there
+//     (running), or, in the executor-failed case, lets it go on to the real
+//     guarded engine, which claims the journal and then fails to spawn the
+//     never-present worker.
 //   - b12Provider/b12Channel: the libp2p provider and broadcast channels; a
 //     channel open fails once when the case arms it.
 //   - b12HostChain/b12Signing: the host chain's operator address derivation
 //     (go-ethereum addresses), which the membership validator uses.
-//   - advFence (batch 7): the in-memory store fence.
-//   - The worker config names a worker path and pin that are never executed:
-//     every case stops the executor before Engine.DKG.
+//   - b12Fence: the in-memory store fence (a copy of batch 7's advFence).
+//   - The worker config names a worker path that does not exist: no worker
+//     process ever runs.
 // The setup faults are transient (once) except the worker start, whose
 // config is fixed for the process; there a later block must still try the
 // epoch again (its parameters read is the witness).
@@ -42,6 +52,7 @@ import (
 	"fmt"
 	"math/big"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -128,7 +139,10 @@ func TestFrostNodeB12SetupErrorReleasesEpochClaim(t *testing.T) {
 				t.Fatalf("harness: the %s fault was never hit (%s)", tc.setup, w.counts())
 			}
 
-			// Later blocks of the DKG loop.
+			// Later blocks of the DKG loop. The retried executor is held
+			// (running), so the fix is judged on the setup error alone, not
+			// on retrying a failed executor (review B3).
+			w.registry.holdExecutor()
 			retried := w.blocksUntil(ctx, 1500*time.Millisecond, func() bool { return w.retried(tc.setup) })
 			if !retried {
 				t.Errorf("%s: after a %s error before the executor started, no later block joined epoch %d again: the epoch stayed claimed (%s)",
@@ -147,10 +161,12 @@ func TestFrostNodeB12SetupErrorReleasesEpochClaim(t *testing.T) {
 	}
 }
 
-// TestFrostNodeB12StartedDKGNeverRunsTwice is the negative side: once the
-// executor started (or a restore started), later blocks never start another
-// for the epoch, whether it is still running or failed. A fix that releases
-// the claim on every executeDKG error, or never holds it, fails here.
+// TestFrostNodeB12StartedDKGNeverRunsTwice is the negative side. A running
+// executor (held before its journal claim), a running restore, and an
+// executor that failed after the engine claimed the journal are never
+// followed by another executor start for the epoch. A claim that is never
+// held while the DKG runs, or that expires within the window, fails here; so
+// does a fix that reruns the DKG of an epoch whose journal is claimed.
 func TestFrostNodeB12StartedDKGNeverRunsTwice(t *testing.T) {
 	for _, mode := range []string{"executor-failed", "executor-running", "restore-running"} {
 		mode := mode
@@ -161,6 +177,8 @@ func TestFrostNodeB12StartedDKGNeverRunsTwice(t *testing.T) {
 			defer cancel()
 
 			switch mode {
+			case "executor-failed":
+				w.registry.passExecutor()
 			case "executor-running":
 				w.registry.holdExecutor()
 			case "restore-running":
@@ -178,12 +196,18 @@ func TestFrostNodeB12StartedDKGNeverRunsTwice(t *testing.T) {
 				t.Fatalf("harness: the %s never started (%s)", strings.SplitN(mode, "-", 2)[0], w.counts())
 			}
 			if mode == "executor-failed" {
-				// Let the failed executor's goroutine return first.
-				if !b12Eventually(time.Second, w.registry.executorReturned) {
+				// The executor goes on to the real guarded engine, which
+				// claims the journal and then fails (no worker binary).
+				if !b12Eventually(3*time.Second, func() bool { return w.journalClaimed(ctx) }) {
+					t.Fatalf("harness: the executor never claimed the journal (%s)", w.counts())
+				}
+				if !b12Eventually(3*time.Second, func() bool { return w.provider.closed("frost-chain-v1-") >= 1 }) {
 					t.Fatalf("harness: the failed executor never returned (%s)", w.counts())
 				}
 			}
-			w.blocksFor(ctx, 400*time.Millisecond)
+			// At least the positive test's retry budget (review N4): a claim
+			// that expires within it fails here.
+			w.blocksFor(ctx, 1600*time.Millisecond)
 
 			if n := w.registry.executorStarts(); mode != "restore-running" && n != 1 {
 				t.Errorf("%s: the epoch's DKG executor started %d times (%s), want exactly 1 (%s)",
@@ -228,7 +252,7 @@ func newB12World(t *testing.T) *b12World {
 		Keystore:  filepath.Join(t.TempDir(), "ks"),
 		StorageID: [32]byte{0xb1, 2},
 		Key:       [32]byte{0xb1, 2, 2},
-		Fence:     &advFence{},
+		Fence:     &b12Fence{},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -337,6 +361,17 @@ func (w *b12World) blocksFor(ctx context.Context, d time.Duration) {
 	w.blocksUntil(ctx, d, func() bool { return false })
 }
 
+// journalClaimed reports that the epoch's journal holds a DKG claim, so
+// DKGStatus no longer returns ErrMissing.
+func (w *b12World) journalClaimed(ctx context.Context) bool {
+	journal, err := w.fn.scope(b12Epoch)
+	if err != nil {
+		return false
+	}
+	_, err = journal.DKGStatus(ctx)
+	return err == nil
+}
+
 func (w *b12World) counts() string {
 	return fmt.Sprintf("node selection reads %d, parameter reads %d, transport opens %d, bus opens %d, executor starts %d, restore starts %d",
 		w.registry.nodeSelectionReads(), w.registry.parameterReads(), w.provider.opens("frost-v1-"), w.provider.opens("frost-chain-v1-"),
@@ -373,11 +408,13 @@ type b12Registry struct {
 	executorDone   int
 	restores       int
 	holdExec       bool
+	passExec       bool
 	holdRest       bool
 }
 
 func (r *b12Registry) failParameters(n int) { r.mu.Lock(); r.parameterFails = n; r.mu.Unlock() }
 func (r *b12Registry) holdExecutor()        { r.mu.Lock(); r.holdExec = true; r.mu.Unlock() }
+func (r *b12Registry) passExecutor()        { r.mu.Lock(); r.passExec = true; r.mu.Unlock() }
 func (r *b12Registry) holdRestore()         { r.mu.Lock(); r.holdRest = true; r.mu.Unlock() }
 
 func (r *b12Registry) parameterReads() int { r.mu.Lock(); defer r.mu.Unlock(); return r.parameters }
@@ -405,22 +442,25 @@ func (r *b12Registry) Parameters(context.Context) (dkg.Parameters, error) {
 	return r.params, nil
 }
 
-// Selection answers the node's reads at once. A read under a protocol
-// deadline is the executor's first selection read (Run and Restore refuse a
-// context without one): it is counted as an executor start and the executor
-// is stopped there with an error, or held until the test ends.
+// Selection answers the node's reads at once. A read under dkg.Executor.Run or
+// Restore is the executor's first selection read: it is counted as an executor
+// start, and the executor is stopped there with an error, held until the test
+// ends, or (pass) answered so that it goes on.
 func (r *b12Registry) Selection(ctx context.Context, epoch uint64) (dkg.Selection, error) {
 	s := r.selection
 	s.Epoch = epoch
 	r.mu.Lock()
-	if _, executor := ctx.Deadline(); !executor {
+	if !b12UnderExecutor() {
 		r.nodeSelections++
 		r.mu.Unlock()
 		return s, nil
 	}
 	r.executors++
-	hold := r.holdExec
+	hold, pass := r.holdExec, r.passExec
 	r.mu.Unlock()
+	if pass {
+		return s, nil
+	}
 	if hold {
 		select {
 		case <-r.release:
@@ -433,9 +473,25 @@ func (r *b12Registry) Selection(ctx context.Context, epoch uint64) (dkg.Selectio
 	return dkg.Selection{}, errors.New("FIXTURE registry: executor stopped at its first selection read")
 }
 
-// View is the startup path's DKG state read: the epoch awaits a result.
+// View is the startup path's DKG state read, and the executor monitor's: the
+// epoch awaits a result, far from its deadline.
 func (r *b12Registry) View(_ context.Context, epoch uint64) (dkg.View, error) {
-	return dkg.View{Epoch: epoch, State: frostDkgAwaitingResult}, nil
+	return dkg.View{Epoch: epoch, State: frostDkgAwaitingResult, Head: 1, ResultDeadline: 1 << 40}, nil
+}
+
+// b12UnderExecutor reports a call made under dkg.Executor.Run or Restore.
+func b12UnderExecutor() bool {
+	pc := make([]uintptr, 64)
+	frames := runtime.CallersFrames(pc[:runtime.Callers(2, pc)])
+	for {
+		f, more := frames.Next()
+		if strings.HasSuffix(f.Function, "/pkg/frost/dkg.(*Executor).Run") || strings.HasSuffix(f.Function, "/pkg/frost/dkg.(*Executor).Restore") {
+			return true
+		}
+		if !more {
+			return false
+		}
+	}
 }
 
 // ApprovedWallet is the restore path's first registry read: a restore
@@ -463,6 +519,16 @@ type b12Provider struct {
 	mu     sync.Mutex
 	fail   map[string]int
 	opened map[string]int
+	ended  map[string]int
+}
+
+// closed counts the channels of the prefix whose receive context ended: for
+// the attestation bus, that executeDKG returned (its DKG context is
+// cancelled on return).
+func (p *b12Provider) closed(prefix string) int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.ended[prefix]
 }
 
 func (p *b12Provider) failOpen(prefix string, n int) {
@@ -498,19 +564,31 @@ func (p *b12Provider) BroadcastChannelFor(name string) (net.BroadcastChannel, er
 		p.fail[prefix]--
 		return nil, fmt.Errorf("FIXTURE libp2p: cannot join topic %s (transient)", prefix)
 	}
-	return &b12Channel{name: name}, nil
+	return &b12Channel{name: name, prefix: prefix, provider: p}, nil
 }
 
 type b12Channel struct {
 	net.BroadcastChannel
-	name string
+	name     string
+	prefix   string
+	provider *b12Provider
 }
 
 func (c *b12Channel) Name() string { return c.name }
 func (c *b12Channel) Send(context.Context, net.TaggedMarshaler, ...net.RetransmissionStrategy) error {
 	return nil
 }
-func (c *b12Channel) Recv(context.Context, func(net.Message))     {}
+func (c *b12Channel) Recv(ctx context.Context, _ func(net.Message)) {
+	go func() {
+		<-ctx.Done()
+		c.provider.mu.Lock()
+		defer c.provider.mu.Unlock()
+		if c.provider.ended == nil {
+			c.provider.ended = map[string]int{}
+		}
+		c.provider.ended[c.prefix]++
+	}()
+}
 func (c *b12Channel) SetUnmarshaler(func() net.TaggedUnmarshaler) {}
 func (c *b12Channel) SetFilter(net.BroadcastChannelFilter) error  { return nil }
 
@@ -530,3 +608,32 @@ func (b12Signing) PublicKeyBytesToAddress(publicKey []byte) chain.Address {
 	}
 	return chain.Address(crypto.PubkeyToAddress(*key).Hex())
 }
+
+// ---------------------------------------------------------------------------
+// FIXTURE: in-memory store fence (a copy of batch 7's advFence, so this file
+// does not depend on an unfrozen file).
+
+type b12Fence struct {
+	mu   sync.Mutex
+	head store.Point
+}
+type b12Lease struct{ f *b12Fence }
+
+func (f *b12Fence) Acquire(context.Context, [32]byte) (store.FenceLease, error) {
+	return b12Lease{f}, nil
+}
+func (l b12Lease) Head(context.Context) (store.Point, error) {
+	l.f.mu.Lock()
+	defer l.f.mu.Unlock()
+	return l.f.head, nil
+}
+func (l b12Lease) Advance(_ context.Context, before, after store.Point) error {
+	l.f.mu.Lock()
+	defer l.f.mu.Unlock()
+	if l.f.head != before {
+		return store.ErrQuarantined
+	}
+	l.f.head = after
+	return nil
+}
+func (l b12Lease) Close() error { return nil }

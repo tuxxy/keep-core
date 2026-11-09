@@ -18,15 +18,16 @@ import (
 
 // runFrost commits and proposes the movement of a FROST wallet's funds to
 // FROST targets (K-07, C-06) as base commits and proposes a legacy wallet's:
-// only a MovingFunds wallet past base's wall-clock safety margin, with no
-// pending redemption, incoming output or unswept deposit, and a positive
-// main. If nothing is committed in the current period, the leader commits
-// the targets the K-07 planner chooses from chain state with its own seat
-// ("any seat" of the wallet); the proposal then names the committed targets
-// and the fee the leader estimates within the committed cap (D19). With
-// fewer eligible targets than required, no proposal is made and the next
-// window retries (D6). Every member plans the movement from the recorded
-// commitment and checks it against the proposal.
+// only a MovingFunds or Terminated wallet (D30) with no recorded dust, past
+// base's wall-clock safety margin, with no pending redemption, incoming
+// output or unswept deposit, and a positive main. If nothing is committed
+// in the current period, the leader commits the targets the K-07 planner
+// chooses from chain state with its own seat ("any seat" of the wallet); the
+// proposal then names the committed targets and the fee the leader estimates
+// within the committed cap (D19). With fewer eligible targets than required,
+// no proposal is made and the next window retries (D6). Every member plans
+// the movement from the recorded commitment and checks it against the
+// proposal.
 func (mft *MovingFundsTask) runFrost(
 	taskLogger log.StandardLogger,
 	request *tbtc.CoordinationProposalRequest,
@@ -60,8 +61,15 @@ func (mft *MovingFundsTask) runFrost(
 	if err != nil {
 		return nil, false, fmt.Errorf("cannot read FROST source wallet: [%w]", err)
 	}
-	if source.Wallet.State != movement.StateMovingFunds {
-		taskLogger.Infof("source wallet not in MoveFunds state")
+	// The Bridge moves a MovingFunds or Terminated source's funds (D30); a
+	// source whose funds are recorded as dust has nothing left to commit.
+	if source.Wallet.State != movement.StateMovingFunds &&
+		source.Wallet.State != movement.StateTerminated {
+		taskLogger.Infof("source wallet not in MoveFunds or Terminated state")
+		return nil, false, nil
+	}
+	if source.Lifecycle.Dust {
+		taskLogger.Infof("source wallet's funds are recorded as dust")
 		return nil, false, nil
 	}
 	if source.Commitment.ProvenAt != 0 {

@@ -125,7 +125,7 @@
         "rank": 4,
         "quarantined": true,
         "identity": 1,
-        "approval": 0
+        "approval": 1
       },
       "pause": "before-write"
     },

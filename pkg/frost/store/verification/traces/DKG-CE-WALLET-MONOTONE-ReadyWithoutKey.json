@@ -42,7 +42,7 @@
       "wallet": {
         "rank": 3,
         "quarantined": false,
-        "identity": 1,
+        "identity": 0,
         "approval": 0
       },
       "pause": "before-write"
@@ -91,34 +91,16 @@
     },
     {
       "n": 9,
-      "action": "save_wallet",
+      "action": "claim",
       "proc": 0,
+      "attempt": 1,
+      "purpose": "dkg",
       "domain": 0,
-      "wallet": {
-        "rank": 3,
-        "quarantined": true,
-        "identity": 1,
-        "approval": 0
-      },
       "pause": "before-write"
     },
     {
       "n": 10,
-      "action": "step",
-      "proc": 0,
-      "step": "write",
-      "pause": "before-file-sync"
-    },
-    {
-      "n": 11,
       "action": "fence_reset"
-    },
-    {
-      "n": 12,
-      "action": "open",
-      "proc": 1,
-      "image": 0,
-      "expect": "busy"
     }
   ],
   "claim_model_steps": [
@@ -156,7 +138,7 @@
       "wallet": {
         "rank": 3,
         "quarantined": false,
-        "identity": 1,
+        "identity": 0,
         "approval": 0
       },
       "expect": "wallet_invalid",

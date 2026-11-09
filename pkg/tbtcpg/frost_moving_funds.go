@@ -174,11 +174,14 @@ func (mft *MovingFundsTask) runFrost(
 }
 
 // frostExecutingSeat is the executing operator's lowest seat in the wallet:
-// the seat a FROST commitment is submitted with.
+// the seat a FROST commitment is submitted with. FrostMovement.commit reads
+// the seat as a 0-based descriptor index (operators[seat]), and
+// WalletOperators is in descriptor order, so the seat is the index itself.
+// The other FROST certificate seats are 1-based; this one is not.
 func frostExecutingSeat(request *tbtc.CoordinationProposalRequest) (uint16, error) {
 	for i, operator := range request.WalletOperators {
 		if operator == request.ExecutingOperator {
-			return uint16(i + 1), nil
+			return uint16(i), nil
 		}
 	}
 	return 0, ErrNoExecutingOperator

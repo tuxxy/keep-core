@@ -47,15 +47,15 @@ ordinary sweep proof to leave custody equal to its single unreserved main.
   - `sweepAndProve`: the custody check tolerated a reserved main beside the sweep output. It now requires the sweep output to be the unreserved main holding all custody.
   - The payment steps were moved into the `broadcastPayment` and `provePayment` helpers, which two tests now use.
 
-Not changed here, but a fix will break it (needs a decision; see below):
+Amended for the fix's sake (batch-18 review, decision 1):
 - `pkg/frost/deposit/v07_replay_test.go` `TestV07Replay`: four V-07 model
   traces (`None-P-K06-D13-NO-SIDE-SWEEP`, `ForgetConsumptionOnRetry-P-K06-CREDIT-ONCE`,
   `None-W-fresh-attempt-after-failure`, `None-W-refund-operators-stopped`)
-  plan a deposit-only sweep beside a reserved main (F-V07-1). Under the fix
-  `Planner.Build` refuses that step and the replay dereferences the missing
-  plan (panic in `stage`). The traces come from the V-07 model, which must
-  adopt D13 (P-K06-D13-NO-SIDE-SWEEP) and be re-run; that is verification
-  work, outside this batch.
+  plan a deposit-only sweep beside a reserved main (F-V07-1). A trace is now
+  skipped, citing F-V07-1, only when its ordinary Plan step is refused with
+  `ErrMainBusy` while the chain main is reserved; it stays stale until the
+  V-07 model adopts D13 (P-K06-D13-NO-SIDE-SWEEP) and is re-run. At the base
+  nothing skips; under the fix exactly those four traces skip.
 
 Unchanged, with the reason:
 - `pkg/frost/deposit/resolution_test.go`: it uses only the resolution route.
@@ -72,8 +72,8 @@ test/remediation-24/run.sh --controls <evidence dir>  # controls, throwaway work
 Acceptance writes `manifest.json`. It is `"accepted": true` only if all 19 unit
 cases (14 deposit, 5 leader) and the 3 integration tests ran and passed,
 with zero skips, `go test ./pkg/frost/deposit/... ./pkg/frost/signing/...
-./pkg/maintainer/spv/...` passed (skipping `TestV07Replay`, see above), and
-the tree is clean. The integration cases need the K-06 environment
+./pkg/maintainer/spv/...` passed `TestV07Replay` passed skipping exactly the four
+stale traces (see above), and the tree is clean. The integration cases need the K-06 environment
 (`FROST_K03_TBTC`, `FROST_K03_ANVIL`, `SNOWFALL_WORKER(_SHA256)`,
 `FROST_K04_BITCOIND(_SHA256)`), with `solidity/ecdsa/{build,node_modules}` and
 `../snowfall` present. Without it they skip and the manifest is not accepted.

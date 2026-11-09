@@ -78,10 +78,11 @@ fi
 
 go test -count=1 -v -run "$unit_run" ./pkg/frost/deposit/ > "$evidence/unit.log" 2>&1 || true
 go test -count=1 -v -run "$leader_run" ./pkg/tbtcpg/ >> "$evidence/unit.log" 2>&1 || true
-# TestV07Replay replays V-07 model traces, four of which plan the deposit-only
-# side path that the D13 refinement removes (F-V07-1); a correct fix cannot
-# replay them until the V-07 model adopts D13 (verification, not this suite).
-go test -count=1 -skip '^TestV07Replay$' ./pkg/frost/deposit/... ./pkg/frost/signing/... ./pkg/maintainer/spv/... > "$evidence/packages.log" 2>&1 || true
+go test -count=1 ./pkg/frost/deposit/... ./pkg/frost/signing/... ./pkg/maintainer/spv/... > "$evidence/packages.log" 2>&1 || true
+# The V-07 replay may skip only the four traces that plan the side path the
+# D13 refinement removes (F-V07-1); under an accepted fix it must skip exactly
+# those, and nothing else may skip or fail.
+go test -count=1 -v -run '^TestV07Replay$' ./pkg/frost/deposit/ > "$evidence/v07.log" 2>&1 || true
 go test -count=1 -v -timeout 14m -run "$integration_run" ./pkg/frost/integration/ > "$evidence/integration.log" 2>&1 || true
 
 python3 - "$evidence" "$kc_root" "${unit_cases[@]}" -- "${integration_cases[@]}" <<'PY'
@@ -114,7 +115,16 @@ for log, names in (("unit.log", unit), ("integration.log", integration)):
 packages = open(os.path.join(evidence, "packages.log")).read()
 packages_ok = "FAIL" not in packages and len(re.findall(r"^ok\s", packages, re.M)) >= 3
 if not packages_ok:
-    problems.append("go test ./pkg/frost/deposit/... ./pkg/frost/signing/... ./pkg/maintainer/spv/... (without TestV07Replay) did not pass")
+    problems.append("go test ./pkg/frost/deposit/... ./pkg/frost/signing/... ./pkg/maintainer/spv/... did not pass")
+v07 = open(os.path.join(evidence, "v07.log")).read()
+v07_stale = {"None-P-K06-D13-NO-SIDE-SWEEP", "ForgetConsumptionOnRetry-P-K06-CREDIT-ONCE",
+             "None-W-fresh-attempt-after-failure", "None-W-refund-operators-stopped"}
+v07_skipped = set(re.findall(r"--- SKIP: TestV07Replay/(\S+) ", v07))
+v07_ok = re.search(r"^--- (PASS|SKIP): TestV07Replay ", v07, re.M) is not None and "--- FAIL" not in v07 and "panic:" not in v07
+if not v07_ok:
+    problems.append("TestV07Replay did not pass")
+if v07_skipped != v07_stale:
+    problems.append(f"TestV07Replay skipped {sorted(v07_skipped)}, want exactly the four F-V07-1 traces {sorted(v07_stale)}")
 passed = sum(c["result"] == "pass" for c in cases)
 skipped = sum(c["result"] == "skip" for c in cases)
 if passed != len(cases):
@@ -127,7 +137,7 @@ manifest = {
     "runSh": sha(os.path.join(root, "test/remediation-24/run.sh")),
     "go": subprocess.run(["go", "version"], capture_output=True, text=True).stdout.strip(),
     "intendedCases": len(cases), "passed": passed, "skipped": skipped, "cases": cases,
-    "packagesPassed": packages_ok, "problems": problems, "accepted": not problems,
+    "packagesPassed": packages_ok, "v07Skipped": sorted(v07_skipped), "problems": problems, "accepted": not problems,
 }
 with open(os.path.join(evidence, "manifest.json"), "w") as f:
     json.dump(manifest, f, indent=2)

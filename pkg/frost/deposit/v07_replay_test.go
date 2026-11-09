@@ -23,6 +23,7 @@ package deposit
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -176,6 +177,10 @@ type v07Replayer struct {
 	results   map[string]bool
 	claims    map[string]bool
 	projected []string
+	// stale is set when the trace plans an ordinary sweep beside a reserved
+	// main, the side path the D13 refinement removed (F-V07-1,
+	// tuxxy/tbtc-v2#24). Such a trace is stale until V-07 adopts D13.
+	stale string
 }
 
 func newV07Replayer(t *testing.T) *v07Replayer {
@@ -402,6 +407,9 @@ func (rp *v07Replayer) exec(step v07Step, pre v07State, post *v07State) (bool, e
 		plan, err := w.planner.Build(ctx, h+2, keys, resolution)
 		w.planner.Fee = 0
 		if err != nil {
+			if resolution == ([32]byte{}) && errors.Is(err, ErrMainBusy) && w.chain.custody.ActiveReservation != ([32]byte{}) {
+				rp.stale = fmt.Sprintf("step %d %s: the V-07 model plans an ordinary sweep beside a reserved main, removed by the D13 refinement (F-V07-1, tuxxy/tbtc-v2#24); stale until the V-07 model adopts D13", step.N, step.Action)
+			}
 			return false, nil
 		}
 		rp.plans[slot], rp.rounds[slot] = plan, pre.Round
@@ -653,6 +661,9 @@ func (rp *v07Replayer) replay(tr v07Trace) v07Report {
 		rp.sync(pre)
 		before := len(rp.projected)
 		accepted, err := rp.exec(step, pre, step.ExpectState)
+		if rp.stale != "" {
+			break
+		}
 		if step.Diverges {
 			var fields bytes.Buffer
 			_ = json.Compact(&fields, step.Fields)
@@ -736,8 +747,12 @@ func TestV07Replay(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Run(tr.ID, func(t *testing.T) {
-			rep := newV07Replayer(t).replay(tr)
+			rp := newV07Replayer(t)
+			rep := rp.replay(tr)
 			reports = append(reports, rep)
+			if rp.stale != "" {
+				t.Skip(rp.stale)
+			}
 			for _, m := range rep.Mismatches {
 				t.Error(m)
 			}

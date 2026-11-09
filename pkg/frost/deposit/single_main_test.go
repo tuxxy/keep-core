@@ -17,7 +17,8 @@ import (
 // sweep-resolution route for that exact reservation (KC-SF-V3 §4.6). So
 // recognized custody is always exactly the main, and a movement can spend it
 // alone. Supports KC-VER P-K06-ONE-MAIN-PURPOSE and P-K06-CREDIT-ONCE (no
-// credit outside the main).
+// credit outside the main), and P-K06-D13-NO-SIDE-SWEEP (local KC-VER rev 02
+// draft, D29), whose V-07 counterexample is F-V07-1.
 // Refs tuxxy/tbtc-v2#24
 //
 // All chain state here is the in-memory fake C-05/C-04 reader of

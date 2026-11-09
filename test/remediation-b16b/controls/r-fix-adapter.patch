@@ -1,0 +1,19 @@
+diff --git a/pkg/chain/ethereum/frost_movement.go b/pkg/chain/ethereum/frost_movement.go
+index 40ea302b9..b08a27dce 100644
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -216,8 +216,13 @@ func (c *FrostRedemptionChain) ProvenTransaction(ctx context.Context, at uint64,
+ }
+ 
+ func (c *FrostRedemptionChain) SubmitCommitment(ctx context.Context, wallet [32]byte, seat uint16, targets [][20]byte) error {
++	// The host numbers seats from 1; FrostMovement.commit takes the 0-based
++	// descriptor index.
++	if seat == 0 {
++		return fmt.Errorf("FROST movement seat 0")
++	}
+ 	return c.send(ctx, func(o *bind.TransactOpts) (*types.Transaction, error) {
+-		return c.bridge.SubmitFrostMovingFundsCommitment(o, wallet, seat, targets)
++		return c.bridge.SubmitFrostMovingFundsCommitment(o, wallet, seat-1, targets)
+ 	})
+ }
+ 

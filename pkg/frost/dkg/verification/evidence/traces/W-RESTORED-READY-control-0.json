@@ -8221,7 +8221,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -8330,7 +8330,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -8447,7 +8447,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -8556,7 +8556,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -8673,7 +8673,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -8782,7 +8782,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": false,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -8809,6 +8809,232 @@
       "n": 39,
       "pause": null,
       "pause_before": "before-readiness-collect",
+      "proc": 1
+    },
+    {
+      "action": {
+        "Watch": 1
+      },
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          11,
+          14
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": true,
+        "funded": false,
+        "heard": [
+          0,
+          12
+        ],
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 2,
+        "monitor_pending": 0,
+        "monitor_used": 3,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          14,
+          7
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "restarted": 2,
+        "restore_attest": 12,
+        "restore_cert": 0,
+        "restore_reloaded": 12,
+        "restored": 2,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 3,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "paused",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 0,
+        "cert_desc": 0,
+        "cert_seats": 0,
+        "cert_tick": 0,
+        "certified": false,
+        "chain": 1,
+        "changed": false,
+        "closed": false,
+        "collect": [
+          11,
+          14
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": true,
+        "funded": false,
+        "heard": [
+          0,
+          12
+        ],
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 2,
+        "monitor_pending": 0,
+        "monitor_used": 3,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          14,
+          7
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 0,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "restarted": 2,
+        "restore_attest": 12,
+        "restore_cert": 0,
+        "restore_reloaded": 12,
+        "restored": 2,
+        "result_closed": false,
+        "retry": false,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 2,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          2,
+          2
+        ],
+        "watched": 3,
+        "worker_ready": 15
+      },
+      "n": 40,
+      "pause": null,
+      "pause_before": null,
       "proc": 1
     },
     {
@@ -8897,7 +9123,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -8918,7 +9144,7 @@
           2,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "diverges": false,
@@ -9006,7 +9232,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -9027,10 +9253,10 @@
           2,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
-      "n": 40,
+      "n": 41,
       "pause": null,
       "pause_before": null,
       "proc": null
@@ -9123,7 +9349,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -9144,7 +9370,7 @@
           2,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "diverges": false,
@@ -9232,7 +9458,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -9253,10 +9479,10 @@
           2,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
-      "n": 41,
+      "n": 42,
       "pause": "after-certificate-submit",
       "pause_before": "before-certificate-submit",
       "proc": 0
@@ -9349,7 +9575,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -9370,7 +9596,7 @@
           2,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "diverges": false,
@@ -9458,7 +9684,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -9479,10 +9705,10 @@
           2,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
-      "n": 42,
+      "n": 43,
       "pause": "after-readiness-postcondition",
       "pause_before": "after-certificate-submit",
       "proc": 0
@@ -9575,7 +9801,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -9596,7 +9822,7 @@
           3,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "diverges": false,
@@ -9684,7 +9910,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -9705,10 +9931,10 @@
           3,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
-      "n": 43,
+      "n": 44,
       "pause": "after-wallet-ready-save",
       "pause_before": "after-readiness-postcondition",
       "proc": 0
@@ -9801,7 +10027,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -9822,7 +10048,7 @@
           3,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "diverges": false,
@@ -9910,7 +10136,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -9931,10 +10157,10 @@
           3,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
-      "n": 44,
+      "n": 45,
       "pause": null,
       "pause_before": "after-wallet-ready-save",
       "proc": 0
@@ -10027,7 +10253,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -10048,7 +10274,7 @@
           3,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "diverges": false,
@@ -10136,7 +10362,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -10157,10 +10383,10 @@
           3,
           2
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
-      "n": 45,
+      "n": 46,
       "pause": "after-readiness-postcondition",
       "pause_before": null,
       "proc": 1
@@ -10253,7 +10479,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -10274,7 +10500,7 @@
           3,
           3
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "diverges": false,
@@ -10362,7 +10588,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -10383,462 +10609,12 @@
           3,
           3
         ],
-        "watched": 1,
-        "worker_ready": 15
-      },
-      "n": 46,
-      "pause": "after-wallet-ready-save",
-      "pause_before": "after-readiness-postcondition",
-      "proc": 1
-    },
-    {
-      "action": "Remove",
-      "claim_available": true,
-      "claim_state": {
-        "anchor": 3,
-        "attest": 15,
-        "cert_count": 3,
-        "cert_desc": 1,
-        "cert_seats": 11,
-        "cert_tick": 2,
-        "certified": true,
-        "chain": 2,
-        "changed": true,
-        "closed": false,
-        "collect": [
-          11,
-          14
-        ],
-        "deadline": 3,
-        "epoch": 0,
-        "foreign": true,
-        "funded": false,
-        "heard": [
-          0,
-          12
-        ],
-        "identities": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "inconsistency": 0,
-        "key": 3,
-        "key_desc": [
-          1,
-          1
-        ],
-        "monitor_overlap": 2,
-        "monitor_pending": 0,
-        "monitor_used": 3,
-        "old": false,
-        "old_closed": false,
-        "old_ids": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "old_quarantine": false,
-        "old_result_closed": false,
-        "old_tombstones": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "phase": [
-          8,
-          20
-        ],
-        "pre_tick": 0,
-        "quarantine": 0,
-        "ready": 3,
-        "receipt": 3,
-        "recognized": 3,
-        "recognized_desc": [
-          1,
-          1
-        ],
-        "recognized_tick": [
-          2,
-          2
-        ],
-        "recognized_view": [
-          1,
-          1
-        ],
-        "reloaded": 15,
-        "restarted": 2,
-        "restore_attest": 12,
-        "restore_cert": 0,
-        "restore_reloaded": 12,
-        "restored": 2,
-        "result_closed": false,
-        "retry": true,
-        "seen": 1,
-        "submitted": 0,
-        "termination": [
-          0,
-          0
-        ],
-        "tick": 2,
-        "tombstones": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "wallet_desc": [
-          1,
-          1
-        ],
-        "wallet_state": [
-          3,
-          3
-        ],
-        "watched": 1,
-        "worker_ready": 15
-      },
-      "diverges": false,
-      "expect": "environment",
-      "expect_state": {
-        "anchor": 3,
-        "attest": 15,
-        "cert_count": 3,
-        "cert_desc": 1,
-        "cert_seats": 11,
-        "cert_tick": 2,
-        "certified": true,
-        "chain": 2,
-        "changed": true,
-        "closed": false,
-        "collect": [
-          11,
-          14
-        ],
-        "deadline": 3,
-        "epoch": 0,
-        "foreign": true,
-        "funded": false,
-        "heard": [
-          0,
-          12
-        ],
-        "identities": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "inconsistency": 0,
-        "key": 3,
-        "key_desc": [
-          1,
-          1
-        ],
-        "monitor_overlap": 2,
-        "monitor_pending": 0,
-        "monitor_used": 3,
-        "old": false,
-        "old_closed": false,
-        "old_ids": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "old_quarantine": false,
-        "old_result_closed": false,
-        "old_tombstones": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "phase": [
-          8,
-          20
-        ],
-        "pre_tick": 0,
-        "quarantine": 0,
-        "ready": 3,
-        "receipt": 3,
-        "recognized": 3,
-        "recognized_desc": [
-          1,
-          1
-        ],
-        "recognized_tick": [
-          2,
-          2
-        ],
-        "recognized_view": [
-          1,
-          1
-        ],
-        "reloaded": 15,
-        "restarted": 2,
-        "restore_attest": 12,
-        "restore_cert": 0,
-        "restore_reloaded": 12,
-        "restored": 2,
-        "result_closed": false,
-        "retry": true,
-        "seen": 1,
-        "submitted": 0,
-        "termination": [
-          0,
-          0
-        ],
-        "tick": 2,
-        "tombstones": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "wallet_desc": [
-          1,
-          1
-        ],
-        "wallet_state": [
-          3,
-          3
-        ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "n": 47,
-      "pause": null,
-      "pause_before": null,
-      "proc": null
-    },
-    {
-      "action": {
-        "Watch": 1
-      },
-      "claim_available": true,
-      "claim_state": {
-        "anchor": 3,
-        "attest": 15,
-        "cert_count": 3,
-        "cert_desc": 1,
-        "cert_seats": 11,
-        "cert_tick": 2,
-        "certified": true,
-        "chain": 2,
-        "changed": true,
-        "closed": false,
-        "collect": [
-          11,
-          14
-        ],
-        "deadline": 3,
-        "epoch": 0,
-        "foreign": true,
-        "funded": false,
-        "heard": [
-          0,
-          12
-        ],
-        "identities": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "inconsistency": 2,
-        "key": 3,
-        "key_desc": [
-          1,
-          1
-        ],
-        "monitor_overlap": 2,
-        "monitor_pending": 0,
-        "monitor_used": 3,
-        "old": false,
-        "old_closed": false,
-        "old_ids": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "old_quarantine": false,
-        "old_result_closed": false,
-        "old_tombstones": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "phase": [
-          8,
-          20
-        ],
-        "pre_tick": 0,
-        "quarantine": 0,
-        "ready": 3,
-        "receipt": 3,
-        "recognized": 3,
-        "recognized_desc": [
-          1,
-          1
-        ],
-        "recognized_tick": [
-          2,
-          2
-        ],
-        "recognized_view": [
-          1,
-          1
-        ],
-        "reloaded": 15,
-        "restarted": 2,
-        "restore_attest": 12,
-        "restore_cert": 0,
-        "restore_reloaded": 12,
-        "restored": 2,
-        "result_closed": false,
-        "retry": true,
-        "seen": 1,
-        "submitted": 0,
-        "termination": [
-          0,
-          0
-        ],
-        "tick": 2,
-        "tombstones": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "wallet_desc": [
-          1,
-          1
-        ],
-        "wallet_state": [
-          3,
-          3
-        ],
-        "watched": 1,
-        "worker_ready": 15
-      },
-      "diverges": false,
-      "expect": "paused",
-      "expect_state": {
-        "anchor": 3,
-        "attest": 15,
-        "cert_count": 3,
-        "cert_desc": 1,
-        "cert_seats": 11,
-        "cert_tick": 2,
-        "certified": true,
-        "chain": 2,
-        "changed": true,
-        "closed": false,
-        "collect": [
-          11,
-          14
-        ],
-        "deadline": 3,
-        "epoch": 0,
-        "foreign": true,
-        "funded": false,
-        "heard": [
-          0,
-          12
-        ],
-        "identities": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "inconsistency": 2,
-        "key": 3,
-        "key_desc": [
-          1,
-          1
-        ],
-        "monitor_overlap": 2,
-        "monitor_pending": 0,
-        "monitor_used": 3,
-        "old": false,
-        "old_closed": false,
-        "old_ids": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "old_quarantine": false,
-        "old_result_closed": false,
-        "old_tombstones": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "phase": [
-          8,
-          20
-        ],
-        "pre_tick": 0,
-        "quarantine": 0,
-        "ready": 3,
-        "receipt": 3,
-        "recognized": 3,
-        "recognized_desc": [
-          1,
-          1
-        ],
-        "recognized_tick": [
-          2,
-          2
-        ],
-        "recognized_view": [
-          1,
-          1
-        ],
-        "reloaded": 15,
-        "restarted": 2,
-        "restore_attest": 12,
-        "restore_cert": 0,
-        "restore_reloaded": 12,
-        "restored": 2,
-        "result_closed": false,
-        "retry": true,
-        "seen": 1,
-        "submitted": 0,
-        "termination": [
-          0,
-          0
-        ],
-        "tick": 2,
-        "tombstones": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "wallet_desc": [
-          1,
-          1
-        ],
-        "wallet_state": [
-          3,
-          3
-        ],
-        "watched": 1,
-        "worker_ready": 15
-      },
-      "n": 48,
       "pause": "after-wallet-ready-save",
-      "pause_before": "after-wallet-ready-save",
+      "pause_before": "after-readiness-postcondition",
       "proc": 1
     },
     {
@@ -10854,8 +10630,8 @@
         "cert_seats": 11,
         "cert_tick": 2,
         "certified": true,
-        "chain": 2,
-        "changed": true,
+        "chain": 1,
+        "changed": false,
         "closed": false,
         "collect": [
           11,
@@ -10875,7 +10651,7 @@
           1,
           1
         ],
-        "inconsistency": 2,
+        "inconsistency": 0,
         "key": 3,
         "key_desc": [
           1,
@@ -10929,7 +10705,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -10950,7 +10726,7 @@
           3,
           3
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "diverges": false,
@@ -10963,8 +10739,8 @@
         "cert_seats": 11,
         "cert_tick": 2,
         "certified": true,
-        "chain": 2,
-        "changed": true,
+        "chain": 1,
+        "changed": false,
         "closed": false,
         "collect": [
           11,
@@ -10984,7 +10760,7 @@
           1,
           1
         ],
-        "inconsistency": 2,
+        "inconsistency": 0,
         "key": 3,
         "key_desc": [
           1,
@@ -11038,7 +10814,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -11059,10 +10835,10 @@
           3,
           3
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
-      "n": 49,
+      "n": 48,
       "pause": null,
       "pause_before": "after-wallet-ready-save",
       "proc": 1
@@ -11078,8 +10854,8 @@
         "cert_seats": 11,
         "cert_tick": 2,
         "certified": true,
-        "chain": 2,
-        "changed": true,
+        "chain": 1,
+        "changed": false,
         "closed": false,
         "collect": [
           11,
@@ -11099,7 +10875,7 @@
           1,
           1
         ],
-        "inconsistency": 2,
+        "inconsistency": 0,
         "key": 3,
         "key_desc": [
           1,
@@ -11153,7 +10929,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -11174,7 +10950,7 @@
           3,
           3
         ],
-        "watched": 1,
+        "watched": 3,
         "worker_ready": 15
       },
       "diverges": false,
@@ -11187,8 +10963,8 @@
         "cert_seats": 11,
         "cert_tick": 2,
         "certified": true,
-        "chain": 2,
-        "changed": true,
+        "chain": 1,
+        "changed": false,
         "closed": false,
         "collect": [
           11,
@@ -11208,7 +10984,7 @@
           1,
           1
         ],
-        "inconsistency": 2,
+        "inconsistency": 0,
         "key": 3,
         "key_desc": [
           1,
@@ -11262,7 +11038,7 @@
         "restored": 2,
         "result_closed": false,
         "retry": true,
-        "seen": 1,
+        "seen": 3,
         "submitted": 0,
         "termination": [
           0,
@@ -11283,7 +11059,231 @@
           3,
           3
         ],
-        "watched": 1,
+        "watched": 3,
+        "worker_ready": 15
+      },
+      "n": 49,
+      "pause": null,
+      "pause_before": null,
+      "proc": null
+    },
+    {
+      "action": "Replace",
+      "claim_available": true,
+      "claim_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 3,
+        "cert_desc": 1,
+        "cert_seats": 11,
+        "cert_tick": 2,
+        "certified": true,
+        "chain": 3,
+        "changed": true,
+        "closed": false,
+        "collect": [
+          11,
+          14
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": true,
+        "funded": false,
+        "heard": [
+          0,
+          12
+        ],
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 2,
+        "monitor_pending": 0,
+        "monitor_used": 3,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          8,
+          8
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 3,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "restarted": 2,
+        "restore_attest": 12,
+        "restore_cert": 0,
+        "restore_reloaded": 12,
+        "restored": 2,
+        "result_closed": false,
+        "retry": true,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 3,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          3,
+          3
+        ],
+        "watched": 3,
+        "worker_ready": 15
+      },
+      "diverges": false,
+      "expect": "environment",
+      "expect_state": {
+        "anchor": 3,
+        "attest": 15,
+        "cert_count": 3,
+        "cert_desc": 1,
+        "cert_seats": 11,
+        "cert_tick": 2,
+        "certified": true,
+        "chain": 3,
+        "changed": true,
+        "closed": false,
+        "collect": [
+          11,
+          14
+        ],
+        "deadline": 3,
+        "epoch": 0,
+        "foreign": true,
+        "funded": false,
+        "heard": [
+          0,
+          12
+        ],
+        "identities": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "inconsistency": 0,
+        "key": 3,
+        "key_desc": [
+          1,
+          1
+        ],
+        "monitor_overlap": 2,
+        "monitor_pending": 0,
+        "monitor_used": 3,
+        "old": false,
+        "old_closed": false,
+        "old_ids": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "old_quarantine": false,
+        "old_result_closed": false,
+        "old_tombstones": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase": [
+          8,
+          8
+        ],
+        "pre_tick": 0,
+        "quarantine": 0,
+        "ready": 3,
+        "receipt": 3,
+        "recognized": 3,
+        "recognized_desc": [
+          1,
+          1
+        ],
+        "recognized_tick": [
+          2,
+          2
+        ],
+        "recognized_view": [
+          1,
+          1
+        ],
+        "reloaded": 15,
+        "restarted": 2,
+        "restore_attest": 12,
+        "restore_cert": 0,
+        "restore_reloaded": 12,
+        "restored": 2,
+        "result_closed": false,
+        "retry": true,
+        "seen": 3,
+        "submitted": 0,
+        "termination": [
+          0,
+          0
+        ],
+        "tick": 3,
+        "tombstones": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "wallet_desc": [
+          1,
+          1
+        ],
+        "wallet_state": [
+          3,
+          3
+        ],
+        "watched": 3,
         "worker_ready": 15
       },
       "n": 50,

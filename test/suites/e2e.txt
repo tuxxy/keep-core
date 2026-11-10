@@ -10,6 +10,7 @@
 pkg/chain/ethereum TestFrostSendDoesNotHoldTheLockWhileMining  # Anvil
 pkg/chain/ethereum TestFrostSendIsResubmittedAfterAFeeSpike  # Anvil
 pkg/chain/ethereum TestFrostSendSharesTheOperatorNonceWithBaseSends  # Anvil
+pkg/frost/deposit TestV07Replay  # not a tool test: skips its four F-V07-1 traces until the V-07 model adopts D13 (tuxxy/tbtc-v2#24); move back to unit then
 pkg/frost/dkg/verification/replay TestV03Node helper # subprocess entry point of an end-to-end test
 pkg/frost/dkg/verification/replay TestV03SubprocessReplay  # starts the test binary as a separate process
 pkg/frost/integration TestAdmittedCancellationNeedsDirectiveAfterContainment  # Anvil, deployed contracts and the pinned worker
@@ -68,8 +69,10 @@ pkg/frost/movement TestIncomingSweepNextWindowAfterAbortedWindow  # the pinned s
 pkg/frost/movement TestIncomingSweepNextWindowAfterFailedWindow  # the pinned snowfall worker
 pkg/frost/movement TestIncomingSweepSettles  # the pinned snowfall worker
 pkg/frost/movement TestIncomingSweepSignsWithOperatorDown  # the pinned snowfall worker
+pkg/frost/movement TestV08TraceReplay  # V-08 model traces (V08_TRACES)
 pkg/frost/signing TestPossibleReleaseAfterGrantWithoutDone  # starts the test binary as a separate process
 pkg/frost/signing TestPossibleReleaseHelper helper # subprocess entry point of an end-to-end test
+pkg/frost/signing TestV04GeneratedTraceProcessReplay  # starts the test binary as a separate process
 pkg/frost/signing TestV04ProcessBoundaryReplay  # starts the test binary as a separate process
 pkg/frost/signing TestV04ProcessReplayChild helper # subprocess entry point of an end-to-end test
 pkg/frost/snowfallengine TestMalformedInput  # starts the test binary as a separate process
@@ -97,8 +100,16 @@ pkg/tbtc TestDrainProducer_NoRouteRecovery  # legacy world: Anvil, Bitcoin Core,
 pkg/tbtc TestDrainProducer_PreFrostUnchanged  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestDrainProducer_ShortIndex  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestFrostIncomingSweepDivergentLocalFees  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostIncomingSweepEscalatedFollowerValidation  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostIncomingSweepEscalatedProposed  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestFrostIncomingSweepFollowerValidation  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestFrostIncomingSweepProposedEveryWindow  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostMovementLeaderOwnCommitment  # legacy world: Anvil, Bitcoin Core, upgraded Bridge built at tbtc-v2 39412825 (pinned)
+pkg/tbtc TestFrostMovementTerminatedLeaderOwnCommitment  # legacy world: Anvil, Bitcoin Core, upgraded Bridge built at tbtc-v2 39412825 (pinned)
+pkg/tbtc TestFrostMovementTerminatedSourceProposed  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostMovementTerminatedSourceRefused  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostNodeB17bKeyStoredErrorNeverRerunsDKG  # the pinned snowfall worker
+pkg/tbtc TestFrostNodeB17bSuccessfulDKGKeepsEpochClaim  # the pinned snowfall worker
 pkg/tbtc TestFrostNodeDispatch_DKG  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestFrostNodeDispatch_IncomingSweepByLeader  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestFrostNodeDispatch_RestoreAtStartup  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
@@ -106,6 +117,7 @@ pkg/tbtc TestFrostNodeIsolation_CrashPoints  # legacy world: Anvil, Bitcoin Core
 pkg/tbtc TestFrostNodeIsolation_FailedDKGDoesNotBlockSweep  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestFrostNodeIsolation_ReservationOnOtherWallet  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestFrostNodeResume_ReservationPaidAfterRestart  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+pkg/tbtc TestFrostRedemptionLeaderMatchesFollower  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestFrostUnconfigured_NodeUnchanged  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestK07DrainSigner helper # subprocess entry point of an end-to-end test
 pkg/tbtc TestK09Lifecycle  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
@@ -117,3 +129,7 @@ pkg/tbtc TestLegacyUnchanged_SurfaceOracle  # legacy world: Anvil, Bitcoin Core,
 pkg/tbtc TestLegacyUnchanged_UpgradedBridgeDrain  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestLegacyUnchanged_UpgradedBridgeDrainTransient  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
 pkg/tbtc TestRV116_LaggingLogIndexKeepsFrostTarget  # legacy world: Anvil, Bitcoin Core, upgraded Bridge
+test/k09/runner TestK09RunnerEnvironment  # starts test/k09/run.sh on a fixture repository (git, python3, stub tools)
+test/k09/runner TestK09RunnerEvidenceInventory  # starts test/k09/run.sh on a fixture repository (git, python3, stub tools)
+test/k09/runner TestK09RunnerSnowfallBinding  # starts test/k09/run.sh on a fixture repository (git, python3, stub tools)
+test/k09/runner TestK09RunnerStageCleanup  # starts test/k09/run.sh on a fixture repository (git, python3, stub tools)

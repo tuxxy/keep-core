@@ -15,11 +15,13 @@
 # runbooks); pkg/frost/integration and pkg/tbtc run as shards.
 #
 # Packages that are acceptance checkers run by their own runbooks are in
-# neither suite: test/k09/evidence (test/k09/run.sh).
+# neither suite: test/k09/evidence (test/k09/run.sh) and test/k09/controls
+# (probe records, test/k09/controls/run-probe.sh). Their batch tests run
+# through test/remediation-b17c/controls/run-controls.sh.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 manifest=test/suites/e2e.txt
-excluded='^github.com/keep-network/keep-core/test/k09/evidence$'
+excluded='^github.com/keep-network/keep-core/test/k09/(evidence|controls)$'
 mode=${1:?usage: run.sh unit|e2e|check [go test flags]}
 shift
 

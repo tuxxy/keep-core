@@ -12,7 +12,8 @@
 # unit needs no external program, chain or pinned build, and fails if any of
 # its tests skips (a test that skips without its tools belongs in e2e.txt).
 # e2e needs the environment its tests name (see test/frost/README.md and the
-# runbooks); pkg/frost/integration and pkg/tbtc run as shards.
+# runbooks); pkg/frost/integration and pkg/tbtc run as shards, and the six
+# batch-6 node tests (b6 below) run last in a step of their own.
 #
 # Packages that are acceptance checkers run by their own runbooks are in
 # neither suite: test/k09/evidence (test/k09/run.sh) and test/k09/controls
@@ -33,6 +34,12 @@ names() {
   ' "$manifest"
 }
 packages() { awk '!/^#/ && NF >= 2 { print $1 }' "$manifest" | sort -u; }
+
+# The batch-6 node tests that miss their sweep windows (3600, 14400) when they
+# share the machine with other world tests. They run after the shards with
+# batch 6's settings (GOMAXPROCS 2, -parallel 2), as test/remediation-b6/run.sh
+# does, and never in a pkg/tbtc shard.
+b6='TestFrostNodeDispatch_IncomingSweepByLeader|TestFrostNodeDispatch_RestoreAtStartup|TestFrostNodeIsolation_CrashPoints|TestFrostNodeIsolation_FailedDKGDoesNotBlockSweep|TestFrostNodeIsolation_ReservationOnOtherWallet|TestFrostNodeResume_ReservationPaidAfterRestart'
 
 work=$(mktemp -d)
 pids=()
@@ -82,9 +89,9 @@ unit)
   report "$work"/*.json
   ;;
 e2e)
-  # Small packages together, then each sharded package on its own: the B6
-  # node-process tests in pkg/tbtc miss their windows when they share the
-  # machine with pkg/frost/integration's shards.
+  # Small packages together, then each sharded package on its own, then the
+  # b6 step alone: its node-process tests miss their windows when they share
+  # the machine with other world tests.
   for p in $(packages); do
     regex="^($(names "$p" tests))\$"
     [ "$regex" = '^()$' ] && continue
@@ -93,10 +100,18 @@ e2e)
     pids+=($!)
   done
   for pid in "${pids[@]}"; do wait "$pid"; done
+  status=0
   test/frost/go-test-shards.sh ./pkg/frost/integration 5 "$work/pkg_frost_integration.json" \
-    -run "^($(names pkg/frost/integration tests))\$" -parallel 4 "$@"
-  test/frost/go-test-shards.sh ./pkg/tbtc 6 "$work/pkg_tbtc.json" -run "^($(names pkg/tbtc tests))\$" "$@"
-  report "$work"/*.json
+    -run "^($(names pkg/frost/integration tests))\$" -parallel 4 "$@" || status=1
+  shards=$(names pkg/tbtc tests | tr '|' '\n' | grep -v -x -E "$b6" | paste -sd'|' -)
+  test/frost/go-test-shards.sh ./pkg/tbtc 6 "$work/pkg_tbtc.json" -run "^($shards)\$" "$@" || status=1
+  GOMAXPROCS=2 go test -json -run "^($b6)\$" "$@" -parallel 2 ./pkg/tbtc > "$work/pkg_tbtc_b6.json" 2>&1
+  for t in ${b6//|/ }; do
+    grep -q "\"Action\":\"pass\",\"Package\":\"[^\"]*\",\"Test\":\"$t\"," "$work/pkg_tbtc_b6.json" ||
+      { echo "test $t did not pass" >&2; status=1; }
+  done
+  report "$work"/*.json || status=1
+  exit $status
   ;;
 *)
   echo "usage: run.sh unit|e2e|check [go test flags]" >&2

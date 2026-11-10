@@ -502,6 +502,75 @@ def check_review_items(ledger):
     return [{"id": i["id"], "obligation": i["obligation"], "status": i["status"]} for i in items]
 
 
+K09_RUNNER = "test/k09/run.sh"
+
+
+def k09_runner_stages(repositories, commit):
+    """The stages test/k09/run.sh runs at keep-core `commit`: its `order`
+    list, the list its manifest checks every invocation against."""
+    if "keep-core" not in repositories:
+        raise ValueError("k09_run_mapping: provide --repo keep-core=/path/to/checkout")
+    root = repositories["keep-core"].resolve()
+    if not object_hash(commit):
+        raise ValueError("k09_run_mapping.subject[\"keep-core\"] must be a full commit hash")
+    try:
+        if git(root, "cat-file", "-t", commit) != "commit":
+            raise ValueError("k09_run_mapping.subject[\"keep-core\"] %s is not a commit" % commit)
+    except subprocess.CalledProcessError as error:
+        raise ValueError("k09_run_mapping.subject[\"keep-core\"] commit %s is missing from the keep-core checkout %s: fetch it, "
+                         "the runner's stages are read from %s at that commit" % (commit, root, K09_RUNNER)) from error
+    try:
+        run_sh = git(root, "show", "%s:%s" % (commit, K09_RUNNER))
+    except subprocess.CalledProcessError as error:
+        raise ValueError("k09_run_mapping: keep-core %s has no %s" % (commit, K09_RUNNER)) from error
+    order = re.search(r"^order = \[(.*?)\]", run_sh, re.S | re.M)
+    if order is None:
+        raise ValueError("k09_run_mapping: %s at %s has no stage order list" % (K09_RUNNER, commit))
+    stages = re.findall(r'"([^"]+)"', order.group(1))
+    if not stages or len(set(stages)) != len(stages):
+        raise ValueError("k09_run_mapping: %s at %s has an empty or repeated stage order list" % (K09_RUNNER, commit))
+    return stages
+
+
+def check_k09_run_mapping(ledger, repositories, evidence_root):
+    """K09-13 (tuxxy/keep-core#33): k09_run_mapping accounts for exactly the
+    runner's stages. Every stage in `stages` or `unmapped_stages` is one the
+    runner (test/k09/run.sh at the mapping's subject keep-core commit) runs,
+    each such stage is in exactly one of the two, and none is in both. With
+    --evidence-root, the cited run's manifest must also be the pinned bytes
+    (manifest_sha256) and record exactly the same stages. Without a root only
+    the run.sh check applies (file references refuse on their own)."""
+    mapping = ledger.get("k09_run_mapping")
+    if mapping is None:
+        return
+    if not isinstance(mapping, dict) or not isinstance(mapping.get("subject"), dict):
+        raise ValueError("malformed k09_run_mapping")
+    mapped, unmapped = mapping.get("stages"), mapping.get("unmapped_stages")
+    if not isinstance(mapped, dict) or not isinstance(unmapped, dict):
+        raise ValueError("k09_run_mapping.stages and unmapped_stages must be objects")
+    commit = mapping["subject"].get("keep-core")
+    runner = k09_runner_stages(repositories, commit)
+    both = sorted(set(mapped) & set(unmapped))
+    if both:
+        raise ValueError("k09_run_mapping lists stage(s) %s in both stages and unmapped_stages" % ", ".join(both))
+    lacks = sorted((set(mapped) | set(unmapped)) - set(runner))
+    missing = [s for s in runner if s not in mapped and s not in unmapped]
+    if lacks or missing:
+        raise ValueError("k09_run_mapping disagrees with %s at keep-core %s: cites stage(s) the runner does not have: %s; "
+                         "omits runner stage(s): %s" % (K09_RUNNER, commit, ", ".join(lacks) or "none", ", ".join(missing) or "none"))
+    if evidence_root is None:
+        return
+    manifest_path = evidence_root / relative_path(mapping.get("run")) / "manifest.json"
+    if not manifest_path.is_file():
+        raise ValueError("k09_run_mapping: run manifest missing: %s" % manifest_path)
+    if not sha256_hex(mapping.get("manifest_sha256")) or file_sha256(manifest_path) != mapping["manifest_sha256"]:
+        raise ValueError("k09_run_mapping: run manifest %s is not the bytes manifest_sha256 pins" % manifest_path)
+    recorded = [s.get("stage") if isinstance(s, dict) else None for s in json.loads(manifest_path.read_text()).get("stages", [])]
+    if sorted(recorded, key=str) != sorted(runner):
+        raise ValueError("k09_run_mapping: the run manifest records stages %s, but %s at keep-core %s runs %s"
+                         % (", ".join(map(str, recorded)), K09_RUNNER, commit, ", ".join(runner)))
+
+
 class Parser(argparse.ArgumentParser):
     def error(self, message):
         # Review L5: usage errors are invalid input (3), never "open" (2).
@@ -539,6 +608,7 @@ def main():
         reports = check_rows(ledger, repositories, evidence_root, statements)
         obligation_statements = check_obligation_citations(ledger, statements)
         review_items = check_review_items(ledger)
+        check_k09_run_mapping(ledger, repositories, evidence_root)
     except (ValueError, KeyError, TypeError, AttributeError, OSError, subprocess.CalledProcessError) as error:
         parser.exit(3, "freshness error: %s\n" % error)
     stale_statements = sorted({s["id"] for s in statements.values() if s["freshness"] != "fresh"})

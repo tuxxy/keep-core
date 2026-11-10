@@ -553,6 +553,103 @@ class FreshnessTests(unittest.TestCase):
 
     # --- the committed ledger ----------------------------------------------
 
+    # The stages test/k09/run.sh invokes, in its order (re-frozen d939d106).
+    K09_RUNNER_STAGES = ("01-legacy", "02-upgrade", "03-dkg", "04-drain", "05-redemption", "06-restart",
+                         "07-reservation-timeout", "08-deposit-refund", "09-movement", "10-inactivity",
+                         "11-cutover-closure", "12-no-inactivity")
+
+    def test_k09_run_mapping_names_exactly_the_runner_stages(self):
+        """Refs tuxxy/keep-core#33 (K09-13), remediation batch 17c. Kind: unit
+        (the checker CLI on a FIXTURE ledger and a FIXTURE run manifest; no
+        run, chain or model).
+
+        Invariant: the ledger's k09_run_mapping accounts for exactly the
+        stages of the K-09 run it cites: every stage in k09_run_mapping.stages
+        or unmapped_stages is a stage the runner has (test/k09/run.sh, and so
+        the cited run's manifest), and every such stage is in one of them.
+        A mapping that cites a stage the runner does not have, or omits one
+        it has (including one stage swapped for another, so the count is
+        unchanged: review N-33a), is an invalid ledger: check_freshness.py exits 3 and names
+        the stage. The committed mapping (stages 01-09 and 11, unmapped 10
+        and 12) is accepted.
+
+        The FIXTURE run manifest at --evidence-root/<run>/manifest.json
+        records exactly the runner's stages, passing, and is pinned by the
+        mapping's manifest_sha256, so a checker may read the stages from the
+        run manifest or from run.sh: both give the same set."""
+        run_sh = (Path(__file__).resolve().parents[3] / "test/k09/run.sh").read_text()
+        for stage in self.K09_RUNNER_STAGES:
+            self.assertIn('"%s"' % stage, run_sh, "FIXTURE: run.sh no longer names stage %s" % stage)
+        ledger = self.closed_fixture()
+        mapping = ledger["k09_run_mapping"]
+        self.assertEqual(set(mapping["stages"]) | set(mapping["unmapped_stages"]), set(self.K09_RUNNER_STAGES),
+                         "FIXTURE: the committed mapping no longer covers the runner's stages")
+        args = ["python3", "-B", str(Path(__file__).with_name("check_freshness.py")),
+                "--repo", "fixture=" + str(self.root), "--strict"]
+        for record in ledger["specifications"]:
+            path = self.root / (record["name"] + ".md")
+            data = (record["name"] + " fixture\n").encode()
+            path.write_bytes(data)
+            record["blob"] = checker.hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+            record["content_sha256"] = checker.hashlib.sha256(data).hexdigest()
+            args.extend(["--spec", record["name"] + "=" + str(path)])
+        with tempfile.TemporaryDirectory() as directory:
+            evidence_root = Path(directory)
+            run = evidence_root / mapping["run"]
+            run.mkdir(parents=True)
+            stages = []
+            for stage in self.K09_RUNNER_STAGES:
+                log = "=== RUN   TestK09Lifecycle/%s\n--- PASS: TestK09Lifecycle/%s (0.01s)\n" % (stage, stage)
+                (run / (stage + ".log")).write_text(log)
+                stages.append({"stage": stage, "log": stage + ".log", "logSha256": checker.hashlib.sha256(log.encode()).hexdigest(),
+                               "exit": 0, "result": "pass", "leftoverKilled": []})
+            manifest = {"suite": "FIXTURE K-09 run (no run made it)",
+                        "candidate": {"keepCoreHead": mapping["subject"]["keep-core"], "clean": True},
+                        "repos": {"keepCore": mapping["subject"]["keep-core"], "tbtcV2Upgraded": mapping["subject"]["tbtc-v2"]},
+                        "intendedStages": len(stages), "passed": len(stages), "skipped": 0, "stages": stages,
+                        "problems": [], "accepted": True}
+            (run / "manifest.json").write_text(json.dumps(manifest, indent=2))
+            mapping["manifest_sha256"] = checker.file_sha256(run / "manifest.json")
+            mapping["passed"], mapping["skipped"], mapping["accepted"] = len(stages), 0, True
+            path = self.root / "ledger.json"
+            args.extend(["--ledger", str(path), "--evidence-root", str(evidence_root)])
+
+            def verdict(data):
+                path.write_text(json.dumps(data))
+                result = subprocess.run(args, text=True, capture_output=True, timeout=60)
+                self.assertNotIn("Traceback", result.stderr)
+                return result
+
+            correct = verdict(ledger)
+            self.assertEqual(correct.returncode, 0,
+                             "K-09 #33: the checker refuses the committed k09_run_mapping against a run of the runner's stages: "
+                             + correct.stderr + correct.stdout[-400:])
+            for mutation, stage in (("mapped_stage_runner_lacks", "13-phantom"), ("unmapped_stage_runner_lacks", "13-phantom"),
+                                    ("mapped_stage_missing", "08-deposit-refund"), ("unmapped_stage_missing", "12-no-inactivity"),
+                                    # One stage swapped for another, count unchanged (review N-33a).
+                                    ("mapped_stage_renamed", "13-phantom")):
+                with self.subTest(mutation=mutation):
+                    invalid = copy.deepcopy(ledger)
+                    wrong = invalid["k09_run_mapping"]
+                    if mutation == "mapped_stage_runner_lacks":
+                        wrong["stages"][stage] = {"rows": [1], "claim": "FIXTURE: a stage the runner does not have"}
+                    elif mutation == "unmapped_stage_runner_lacks":
+                        wrong["unmapped_stages"][stage] = "FIXTURE: a stage the runner does not have"
+                    elif mutation == "mapped_stage_renamed":
+                        wrong["stages"][stage] = wrong["stages"].pop("08-deposit-refund")
+                    elif mutation == "mapped_stage_missing":
+                        del wrong["stages"][stage]
+                    else:
+                        del wrong["unmapped_stages"][stage]
+                    result = verdict(invalid)
+                    self.assertEqual(result.returncode, 3,
+                                     "K-09 #33 %s: the checker does not refuse a k09_run_mapping that %s (exit %d, want 3: invalid ledger)"
+                                     % (mutation, ("cites %s and omits 08-deposit-refund" if mutation == "mapped_stage_renamed"
+                                                   else "cites stage %s, which the runner does not have" if "lacks" in mutation
+                                                   else "omits the runner's stage %s") % stage, result.returncode))
+                    self.assertIn(stage, result.stderr + result.stdout,
+                                  "K-09 #33 %s: the refusal does not name stage %s" % (mutation, stage))
+
     def test_committed_ledger_shape(self):
         ledger = json.loads(Path(__file__).with_name("COMPOSITION.json").read_text())
         self.assertEqual(ledger["format"], checker.FORMAT)

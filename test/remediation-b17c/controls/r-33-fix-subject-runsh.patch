@@ -1,0 +1,38 @@
+diff --git a/pkg/frost/verification/check_freshness.py b/pkg/frost/verification/check_freshness.py
+index 14416ede1..9b16640af 100644
+--- a/pkg/frost/verification/check_freshness.py
++++ b/pkg/frost/verification/check_freshness.py
+@@ -502,6 +502,25 @@ def check_review_items(ledger):
+     return [{"id": i["id"], "obligation": i["obligation"], "status": i["status"]} for i in items]
+ 
+ 
++def check_k09_run_mapping(ledger, repositories, evidence_root):
++    """REVIEWER CONTROL r-33-fix-subject-runsh: the runner's stages from
++    test/k09/run.sh at the mapping's subject keep-core commit (no evidence
++    root needed); a stage in both lists is refused too."""
++    mapping = ledger.get("k09_run_mapping")
++    if mapping is None:
++        return
++    commit = mapping["subject"]["keep-core"]
++    run_sh = git(repositories["keep-core"], "show", commit + ":test/k09/run.sh")
++    runner = re.findall(r'"(\d\d-[a-z-]+)"', re.search(r"^order = \[(.*?)\]", run_sh, re.S | re.M).group(1))
++    mapped, unmapped = list(mapping["stages"]), list(mapping["unmapped_stages"])
++    both = sorted(set(mapped) & set(unmapped))
++    if both:
++        raise ValueError("k09_run_mapping lists %s as both mapped and unmapped" % both)
++    diff = sorted(set(mapped + unmapped) ^ set(runner))
++    if diff:
++        raise ValueError("k09_run_mapping and run.sh at %s disagree on stages %s" % (commit, diff))
++
++
+ class Parser(argparse.ArgumentParser):
+     def error(self, message):
+         # Review L5: usage errors are invalid input (3), never "open" (2).
+@@ -539,6 +558,7 @@ def main():
+         reports = check_rows(ledger, repositories, evidence_root, statements)
+         obligation_statements = check_obligation_citations(ledger, statements)
+         review_items = check_review_items(ledger)
++        check_k09_run_mapping(ledger, repositories, evidence_root)
+     except (ValueError, KeyError, TypeError, AttributeError, OSError, subprocess.CalledProcessError) as error:
+         parser.exit(3, "freshness error: %s\n" % error)
+     stale_statements = sorted({s["id"] for s in statements.values() if s["freshness"] != "fresh"})

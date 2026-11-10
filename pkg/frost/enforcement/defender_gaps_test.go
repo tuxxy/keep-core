@@ -23,6 +23,15 @@ func heartbeatDefense(t *testing.T, r *memRecords, nonce uint64) [32]byte {
 	return digest
 }
 
+// countEach counts each value, so a check is independent of processing order.
+func countEach[T comparable](values []T) map[T]int {
+	out := map[T]int{}
+	for _, v := range values {
+		out[v]++
+	}
+	return out
+}
+
 // Invariant: the defender acts at most once per challenged digest per pass,
 // however many challenge logs name that digest, and a repeated log never hides
 // the challenges logged after it.
@@ -44,7 +53,7 @@ func TestDefenderDeduplicatesChallengeLogs(t *testing.T) {
 		if len(actions) != 2 || kindOf(actions, first) != ActionDefended || kindOf(actions, second) != ActionDefended {
 			t.Fatalf("one action per distinct digest: %+v", actions)
 		}
-		if len(f.heartbeats) != 2 || f.heartbeats[0] != 40 || f.heartbeats[1] != 50 {
+		if got := countEach(f.heartbeats); len(f.heartbeats) != 2 || got[40] != 1 || got[50] != 1 {
 			t.Fatalf("each digest defended exactly once: %v", f.heartbeats)
 		}
 	})
@@ -58,7 +67,7 @@ func TestDefenderDeduplicatesChallengeLogs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(actions) != 2 || len(f.timeouts) != 2 || f.timeouts[0] != [32]byte{0xe1} || f.timeouts[1] != [32]byte{0xe2} {
+		if got := countEach(f.timeouts); len(actions) != 2 || len(f.timeouts) != 2 || got[[32]byte{0xe1}] != 1 || got[[32]byte{0xe2}] != 1 {
 			t.Fatalf("each expired digest notified exactly once: %+v %x", actions, f.timeouts)
 		}
 	})

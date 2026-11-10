@@ -513,22 +513,43 @@ func TestCloseReportsBusyAndLeaseFailure(t *testing.T) {
 	})
 }
 
-// Invariant: every store operation refuses a nil context instead of running.
-// Row store.go:305.
-func TestNilContextRefused(t *testing.T) {
-	_, v := openTest(t, testConfig(t))
+// Invariant: every store operation refuses a nil context instead of running,
+// whatever its arguments. Each operation gets valid arguments on a fresh
+// store, so only the context check can refuse it. Row store.go:305.
+func TestNilContextRefusedByEveryOperation(t *testing.T) {
 	var nilCtx context.Context
-	var err error
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				t.Fatalf("a nil context was not refused (panicked: %v)", r)
+	ops := map[string]func(*Scoped) error{
+		"Put":  func(v *Scoped) error { _, e := v.Put(nilCtx, writeTest()); return e },
+		"Read": func(v *Scoped) error { _, e := v.Read(nilCtx, writeTest().ID); return e },
+		"Claim": func(v *Scoped) error {
+			release, e := v.Claim(nilCtx, [32]byte{67}, "sign", []byte("intent"))
+			if release != nil {
+				release()
 			}
-		}()
-		_, err = v.Read(nilCtx, writeTest().ID)
-	}()
-	if err == nil || errors.Is(err, ErrMissing) {
-		t.Fatalf("a nil context was not refused: %v", err)
+			return e
+		},
+		"LoadKey":             func(v *Scoped) error { _, e := v.LoadKey(nilCtx); return e },
+		"SaveWallet":          func(v *Scoped) error { return v.SaveWallet(nilCtx, walletFixture(t)) },
+		"LoadWallet":          func(v *Scoped) error { _, e := v.LoadWallet(nilCtx); return e },
+		"RetainSigningRecord": func(v *Scoped) error { return v.RetainSigningRecord(nilCtx, [32]byte{95}, []byte("intent")) },
+		"ReadSigningRecord":   func(v *Scoped) error { _, e := v.ReadSigningRecord(nilCtx, [32]byte{95}); return e },
+	}
+	for name, op := range ops {
+		t.Run(name, func(t *testing.T) {
+			_, v := openTest(t, testConfig(t))
+			var err error
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						t.Fatalf("%s did not refuse a nil context (panicked: %v)", name, r)
+					}
+				}()
+				err = op(v)
+			}()
+			if err == nil || errors.Is(err, ErrMissing) {
+				t.Fatalf("%s did not refuse a nil context: %v", name, err)
+			}
+		})
 	}
 }
 

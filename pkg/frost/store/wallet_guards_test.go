@@ -35,6 +35,30 @@ func approved(w dkg.WalletRecord, state string) dkg.WalletRecord {
 	return w
 }
 
+// countingFence is a TEST fixture: the disk test authority whose lease head
+// becomes unreadable from call failFrom on (0: never). It models a fencing
+// service lost between two reads inside one store operation.
+type countingFence struct{ diskFence }
+type countingLease struct {
+	FenceLease
+	calls, failFrom int
+}
+
+func (f countingFence) Acquire(ctx context.Context, id [32]byte) (FenceLease, error) {
+	l, e := f.diskFence.Acquire(ctx, id)
+	if e != nil {
+		return nil, e
+	}
+	return &countingLease{FenceLease: l}, nil
+}
+func (l *countingLease) Head(ctx context.Context) (Point, error) {
+	l.calls++
+	if l.failFrom != 0 && l.calls >= l.failFrom {
+		return Point{}, errors.New("injected fence loss")
+	}
+	return l.FenceLease.Head(ctx)
+}
+
 // forgeWallet stores rec as the domain's wallet record without SaveWallet's
 // checks. TEST FIXTURE: it installs an authenticated record that a correct
 // store never writes, to test the checks applied when it is read back.
@@ -213,6 +237,9 @@ func TestSaveWalletRefusesEachIdentityOrLifecycleChange(t *testing.T) {
 // approval receipt, a pending wallet closes, and the separate quarantine flag
 // (KC-SF-V3 4.2: "plus a separate quarantine flag") can be set in every
 // state, Closed and ReadyUnfunded included. Rows wallet.go:80 (CN == and !=).
+// The Closed and ReadyUnfunded quarantine cases pin a store API permission:
+// no production caller quarantines a Closed or ReadyUnfunded record today
+// (the DKG executor saves Closed only on expiry, unquarantined).
 func TestSaveWalletAcceptsMonotoneUpdates(t *testing.T) {
 	quarantine := func(w dkg.WalletRecord) dkg.WalletRecord { w.Quarantined = true; return w }
 	cases := map[string]func(t *testing.T, v *Scoped) []dkg.WalletRecord{
@@ -301,8 +328,9 @@ func TestLoadWalletRefusesEachInconsistentField(t *testing.T) {
 
 // Invariant: a signing application record needs a non-zero ID and a payload
 // of 1 to maxRecord bytes; a refused record is not retained. A retained ID
-// is not acknowledged again from another domain. Rows signing.go:18 (2 LO,
-// CB), :19, :38.
+// is not acknowledged again from another domain, and is not acknowledged
+// again once the fence head became unreadable. Rows signing.go:18 (2 LO,
+// CB), :19, :34, :38.
 func TestRetainSigningRecordBounds(t *testing.T) {
 	refused := map[string]struct {
 		id      [32]byte
@@ -329,6 +357,24 @@ func TestRetainSigningRecordBounds(t *testing.T) {
 			t.Fatalf("a signing record of exactly maxRecord bytes was refused: %v", err)
 		}
 	})
+	t.Run("fence-lost-after-claim", func(t *testing.T) {
+		c := testConfig(t)
+		c.Fence = countingFence{c.Fence.(diskFence)}
+		s, v := openTest(t, c)
+		id, payload := [32]byte{96}, []byte("public intent")
+		must(t, v.RetainSigningRecord(context.Background(), id, payload))
+		lease := s.fence.(*countingLease)
+		// Claim's own check reads the head once (call n+1) and finds the
+		// record retained; the head is unreadable from the next call (n+2),
+		// which is RetainSigningRecord's re-check before acknowledging.
+		lease.failFrom = lease.calls + 2
+		if err := v.RetainSigningRecord(context.Background(), id, payload); !errors.Is(err, ErrQuarantined) {
+			t.Fatalf("a retained signing record was acknowledged after the fence head became unreadable: %v", err)
+		}
+		if lease.calls < lease.failFrom {
+			t.Fatal("fixture: the re-check never read the fence head")
+		}
+	})
 	t.Run("other-domain", func(t *testing.T) {
 		s, v := openTest(t, testConfig(t))
 		id, payload := [32]byte{94}, []byte("public intent")
@@ -337,8 +383,8 @@ func TestRetainSigningRecordBounds(t *testing.T) {
 		d.Epoch++
 		other, err := s.Scope(d)
 		must(t, err)
-		if err := other.RetainSigningRecord(context.Background(), id, payload); err == nil {
-			t.Fatal("a signing record retained in one domain was acknowledged from another")
+		if err := other.RetainSigningRecord(context.Background(), id, payload); !errors.Is(err, ErrQuarantined) {
+			t.Fatalf("a signing record retained in one domain was acknowledged from another: %v", err)
 		}
 	})
 }

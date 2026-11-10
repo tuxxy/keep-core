@@ -18,6 +18,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
 )
@@ -48,30 +49,49 @@ func deriveSafely(c *Claimer) (claim Claim, through uint64, err error, panicked 
 // a heartbeat with present*100 < percent*seats is a failure, signed or not;
 // at or above that bound it is no failure, and it ends the streak only if
 // signed. With no percent every unsigned heartbeat fails.
-// Kills KC-dd30f90d43 (:53 * -> /), KC-07b8bc8255 (:53 < -> <=) and
+// Kills KC-dd30f90d43 (:53 * -> /), KC-07b8bc8255 (:53 < -> <=, also by the
+// "exactly at the bound through Derive" case alone) and
 // KC-334b2c7ce4 (:56 false->true).
 func TestClaimerActivityRule(t *testing.T) {
-	for _, tc := range []struct {
-		percent, present int
-		signed           bool
-		failure, ends    bool
-	}{
-		{0, 0, false, true, false},
-		{0, 4, true, false, true},
-		{50, 1, false, true, false},
-		{50, 1, true, true, false},
-		{50, 2, false, false, false}, // exactly at the bound: 200 == 50*4
-		{50, 2, true, false, true},
-		{50, 4, true, false, true},
-		{100, 3, true, true, false},
-		{100, 4, false, false, false},
-	} {
-		c := &Claimer{MinimumActivePercent: tc.percent}
-		o := Outcome{Signed: tc.signed, Present: make([]uint16, tc.present)}
-		if failure, ends := c.failed(o, 4); failure != tc.failure || ends != tc.ends {
-			t.Errorf("percent %d, %d of 4 present, signed %v: failure=%v ends=%v, want %v %v", tc.percent, tc.present, tc.signed, failure, ends, tc.failure, tc.ends)
+	t.Run("outcome table", func(t *testing.T) {
+		for _, tc := range []struct {
+			percent, present int
+			signed           bool
+			failure, ends    bool
+		}{
+			{0, 0, false, true, false},
+			{0, 4, true, false, true},
+			{50, 1, false, true, false},
+			{50, 1, true, true, false},
+			{50, 2, false, false, false}, // exactly at the bound: 200 == 50*4
+			{50, 2, true, false, true},
+			{50, 4, true, false, true},
+			{100, 3, true, true, false},
+			{100, 4, false, false, false},
+		} {
+			c := &Claimer{MinimumActivePercent: tc.percent}
+			o := Outcome{Signed: tc.signed, Present: make([]uint16, tc.present)}
+			if failure, ends := c.failed(o, 4); failure != tc.failure || ends != tc.ends {
+				t.Errorf("percent %d, %d of 4 present, signed %v: failure=%v ends=%v, want %v %v", tc.percent, tc.present, tc.signed, failure, ends, tc.failure, tc.ends)
+			}
 		}
-	}
+	})
+	t.Run("exactly at the bound through Derive", func(t *testing.T) {
+		// A 4-seat wallet at 50%: two unsigned heartbeats with seats 1 and 2
+		// present (200 == 50*4) have enough presence, so neither is a
+		// failure and no claim follows. Counting the bound as a failure
+		// would claim seats 3 and 4.
+		r, f, rec := runnerFixture(t)
+		r.Wallet.Members = []uint32{11, 12, 13, 14}
+		r.Wallet.Operators = append(r.Wallet.Operators, common.Address{4})
+		failRound(t, r, f, 35, []uint16{1, 2}, 0)
+		failRound(t, r, f, 45, []uint16{1, 2}, 0)
+		c := gapClaimer(t, r, f, rec)
+		c.MinimumActivePercent = 50
+		if claim, _, err := c.Derive(context.Background()); !errors.Is(err, ErrNoClaim) {
+			t.Fatalf("heartbeats exactly at the activity bound were claimed: %+v %v", claim, err)
+		}
+	})
 	t.Run("through Derive", func(t *testing.T) {
 		// Two unsigned heartbeats with 2 of 3 seats present: at 50% that is
 		// enough presence, so neither counts and no claim follows; with only

@@ -80,10 +80,16 @@ done
 run_env+=(GOFLAGS= GOTOOLCHAIN=local GOWORK=off)
 
 scratch=$(mktemp -d)
+# probe_pid: the probe's process group while it may still be signalled;
+# cleared once stop_probe has handled it, so no group ID that may since have
+# been reused is signalled (as run.sh's stop_stage). snapshot_pid keeps the
+# PID for the snapshot removal.
 probe_pid=""
-cleanup() {
-  # The probe process leads its own group; nodes lead theirs. Kill both,
-  # never this script's own group, then the probe's in-process snapshots.
+snapshot_pid=""
+# stop_probe: kill the probe's own group and the group of every node process
+# of this probe (nodes lead their own groups), never this script's own group.
+stop_probe() {
+  local own groups p g
   own=$(ps -o pgid= -p $$ | tr -d ' ')
   groups=$probe_pid
   for p in $(pgrep -f -- "$scratch/tbtc.test" || true); do
@@ -92,17 +98,26 @@ cleanup() {
   for g in $groups; do
     [ "$g" = "$own" ] || kill -9 -- "-$g" 2>/dev/null || true
   done
+  probe_pid=""
+}
+cleanup() {
+  # Only an interrupted probe still has its group here.
+  stop_probe
   rm -rf "$scratch"
-  [ -z "$probe_pid" ] || find "$HOME/Library/Caches/keep-core-b6-tests" -maxdepth 2 -name "k09-local-$probe_pid-*" -exec rm -rf {} + 2>/dev/null || true
+  [ -z "$snapshot_pid" ] || find "$HOME/Library/Caches/keep-core-b6-tests" -maxdepth 2 -name "k09-local-$snapshot_pid-*" -exec rm -rf {} + 2>/dev/null || true
 }
 trap cleanup EXIT
+
+# The patch is read once (review N3): the probe applies, hashes and records
+# this copy, so a later change to <patch> cannot reach the record.
+cp "$patch" "$scratch/probe.patch"
 
 # HEAD only, with the patch: the export the build and the binary come from.
 src="$scratch/src"
 mkdir -p "$src/keep-core" "$src/snowfall"
 git archive --format=tar HEAD | tar -x -C "$src/keep-core"
 git -C "$snowfall" archive --format=tar "$snowfall_commit" | tar -x -C "$src/snowfall"
-(cd "$src/keep-core" && git apply "$patch") || { echo "the patch does not apply at $head" >&2; exit 2; }
+(cd "$src/keep-core" && git apply "$scratch/probe.patch") || { echo "the patch does not apply at $head" >&2; exit 2; }
 ln -s "$K09_ECDSA_NODE_MODULES" "$src/keep-core/solidity/ecdsa/node_modules"
 (cd "$src/keep-core/solidity/ecdsa" && env -i "${run_env[@]}" NODE_OPTIONS=--max-old-space-size=8192 npx hardhat compile) > "$scratch/ecdsa-build.log" 2>&1 \
   || { echo "solidity/ecdsa build failed:" >&2; tail -20 "$scratch/ecdsa-build.log" >&2; exit 2; }
@@ -113,7 +128,7 @@ go_version=$(cd "$src/keep-core" && env -i "${run_env[@]}" go version)
 mkdir -p "$(dirname "$record")"
 mkdir "$record" || { echo "$record exists: probe records are never overwritten" >&2; exit 2; }
 record=$(cd "$record" && pwd)
-cp "$patch" "$record/probe.patch"
+cp "$scratch/probe.patch" "$record/probe.patch"
 cp "$scratch/ecdsa-build.log" "$record/ecdsa-build.log"
 
 # Stages 01-06 and <stage>, in one process (no K09_RUN_ID: the test keeps
@@ -132,7 +147,10 @@ status=0
   "$scratch/tbtc.test" -test.v -test.count=1 -test.timeout 14m \
   -test.run "^TestK09Lifecycle\$/^($selected)\$") > "$record/probe.log" 2>&1 &
 probe_pid=$!
+snapshot_pid=$probe_pid
 wait "$probe_pid" || status=$?
+# Straight after the wait, as run.sh's stop_stage (review N1).
+stop_probe
 
 # Fixed-pattern secret scan over the record, as run.sh scans its evidence.
 if git show HEAD:test/k09/secret-patterns.txt > "$scratch/secret-patterns.txt" \
@@ -142,10 +160,10 @@ if git show HEAD:test/k09/secret-patterns.txt > "$scratch/secret-patterns.txt" \
   exit 1
 fi
 
-python3 - "$record" "$kc_root" "$head" "$patch" "$stage" "$status" "$snowfall_commit" "$go_version" "${before#|}" "${run_env[@]}" <<'EOF'
+python3 - "$record" "$kc_root" "$head" "$patch" "$scratch/probe.patch" "$stage" "$status" "$snowfall_commit" "$go_version" "${before#|}" "${run_env[@]}" <<'EOF'
 import hashlib, json, os, re, subprocess, sys
-record, root, head, patch, stage, status, snowfall, go_version, before = sys.argv[1:10]
-run_env = dict(a.split("=", 1) for a in sys.argv[10:])
+record, root, head, patch, patch_copy, stage, status, snowfall, go_version, before = sys.argv[1:11]
+run_env = dict(a.split("=", 1) for a in sys.argv[11:])
 def sha(b):
     return hashlib.sha256(b).hexdigest()
 def git(*args):
@@ -180,7 +198,7 @@ names = sorted(n for n in git("ls-tree", "--name-only", head, "pkg/tbtc/").decod
                if os.path.basename(n).startswith("k09_"))
 out = {
     "head": head, "clean": True,
-    "patch": {"path": patch if rel.startswith("..") else rel, "sha256": sha(open(patch, "rb").read()), "copy": "probe.patch"},
+    "patch": {"path": patch if rel.startswith("..") else rel, "sha256": sha(open(patch_copy, "rb").read()), "copy": "probe.patch"},
     "repos": {"keepCore": head, "snowfall": snowfall},
     "environment": run_env, "go": go_version,
     "testFiles": {os.path.basename(n): sha(git("cat-file", "blob", head + ":" + n)) for n in names},

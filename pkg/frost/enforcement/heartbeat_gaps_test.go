@@ -53,6 +53,21 @@ func TestReadOutcomeRejectsInvalidRecords(t *testing.T) {
 	}
 }
 
+// currentSafely runs Current and reports a panic separately from an error,
+// so a refusal is told apart from a crash.
+func currentSafely(r *Runner) (round Round, err error, panicked any) {
+	defer func() { panicked = recover() }()
+	round, err = r.Current(context.Background())
+	return
+}
+
+// authorizeSafely does the same for AuthorizeHeartbeat.
+func authorizeSafely(r *Runner, wallet [32]byte, nonce uint64) (err error, panicked any) {
+	defer func() { panicked = recover() }()
+	err = r.AuthorizeHeartbeat(context.Background(), wallet, nonce)
+	return
+}
+
 // Invariant: the current round is the latest whose anchor is final at head
 // (anchor + FinalityBlocks <= head); a chain shorter than finality, round 0
 // and an incomplete schedule have no round; chain read failures are returned;
@@ -89,10 +104,18 @@ func TestHeartbeatRoundSchedule(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				r, f, _ := runnerFixture(t)
 				f.head, r.Schedule = tc.head, tc.schedule
-				if round, err := r.Current(ctx); err == nil {
+				round, err, panicked := currentSafely(r)
+				if panicked != nil {
+					t.Fatalf("Current crashed instead of refusing: %v", panicked)
+				}
+				if err == nil {
 					t.Fatalf("a round was derived: %+v", round)
 				}
-				if err := r.AuthorizeHeartbeat(ctx, dkg.WalletID(r.Wallet.OutputKey), 0); err == nil {
+				err, panicked = authorizeSafely(r, dkg.WalletID(r.Wallet.OutputKey), 0)
+				if panicked != nil {
+					t.Fatalf("AuthorizeHeartbeat crashed instead of refusing: %v", panicked)
+				}
+				if err == nil {
 					t.Fatal("a heartbeat was authorized without a current round")
 				}
 			})

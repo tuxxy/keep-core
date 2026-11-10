@@ -12,8 +12,9 @@
 # unit needs no external program, chain or pinned build, and fails if any of
 # its tests skips (a test that skips without its tools belongs in e2e.txt).
 # e2e needs the environment its tests name (see test/frost/README.md and the
-# runbooks); pkg/frost/integration and pkg/tbtc run as shards, and the six
-# batch-6 node tests (b6 below) run last in a step of their own.
+# runbooks); pkg/frost/integration and pkg/tbtc run as shards, then the six
+# batch-6 node tests (b6 below) and the two batch-16 seat tests (b16, with
+# their own pinned Bridge build) each run in a step of their own.
 #
 # Packages that are acceptance checkers run by their own runbooks are in
 # neither suite: test/k09/evidence (test/k09/run.sh) and test/k09/controls
@@ -40,6 +41,14 @@ packages() { awk '!/^#/ && NF >= 2 { print $1 }' "$manifest" | sort -u; }
 # batch 6's settings (GOMAXPROCS 2, -parallel 2), as test/remediation-b6/run.sh
 # does, and never in a pkg/tbtc shard.
 b6='TestFrostNodeDispatch_IncomingSweepByLeader|TestFrostNodeDispatch_RestoreAtStartup|TestFrostNodeIsolation_CrashPoints|TestFrostNodeIsolation_FailedDKGDoesNotBlockSweep|TestFrostNodeIsolation_ReservationOnOtherWallet|TestFrostNodeResume_ReservationPaidAfterRestart'
+
+# The batch-16 and 16b seat tests pin the upgraded Bridge to tbtc-v2 39412825
+# (the FrostMovement seat numbering they check). Every other e2e test uses the
+# environment's LEGACY_UPGRADED_DIR, so these two run in their own step with a
+# second build: B16_UPGRADED_DIR, built by test/legacy/build-baseline.sh at
+# b16_commit. They never run in a pkg/tbtc shard.
+b16='TestFrostMovementLeaderOwnCommitment|TestFrostMovementTerminatedLeaderOwnCommitment'
+b16_commit=39412825454ae9d7d56811ce48cd826c92b821c2
 
 work=$(mktemp -d)
 pids=()
@@ -90,8 +99,8 @@ unit)
   ;;
 e2e)
   # Small packages together, then each sharded package on its own, then the
-  # b6 step alone: its node-process tests miss their windows when they share
-  # the machine with other world tests.
+  # b6 step alone (its node-process tests miss their windows when they share
+  # the machine with other world tests), then the b16 step on its pinned build.
   for p in $(packages); do
     regex="^($(names "$p" tests))\$"
     [ "$regex" = '^()$' ] && continue
@@ -103,11 +112,22 @@ e2e)
   status=0
   test/frost/go-test-shards.sh ./pkg/frost/integration 5 "$work/pkg_frost_integration.json" \
     -run "^($(names pkg/frost/integration tests))\$" -parallel 4 "$@" || status=1
-  shards=$(names pkg/tbtc tests | tr '|' '\n' | grep -v -x -E "$b6" | paste -sd'|' -)
+  shards=$(names pkg/tbtc tests | tr '|' '\n' | grep -v -x -E "$b6|$b16" | paste -sd'|' -)
   test/frost/go-test-shards.sh ./pkg/tbtc 6 "$work/pkg_tbtc.json" -run "^($shards)\$" "$@" || status=1
   GOMAXPROCS=2 go test -json -run "^($b6)\$" "$@" -parallel 2 ./pkg/tbtc > "$work/pkg_tbtc_b6.json" 2>&1
+  if [ -n "${B16_UPGRADED_DIR:-}" ]; then
+    LEGACY_UPGRADED_DIR=$B16_UPGRADED_DIR LEGACY_UPGRADED_COMMIT=$b16_commit \
+      go test -json -run "^($b16)\$" "$@" ./pkg/tbtc > "$work/pkg_tbtc_b16.json" 2>&1
+  else
+    echo "B16_UPGRADED_DIR is not set: build the upgraded Bridge at tbtc-v2 $b16_commit" >&2
+    : > "$work/pkg_tbtc_b16.json"
+  fi
   for t in ${b6//|/ }; do
     grep -q "\"Action\":\"pass\",\"Package\":\"[^\"]*\",\"Test\":\"$t\"," "$work/pkg_tbtc_b6.json" ||
+      { echo "test $t did not pass" >&2; status=1; }
+  done
+  for t in ${b16//|/ }; do
+    grep -q "\"Action\":\"pass\",\"Package\":\"[^\"]*\",\"Test\":\"$t\"," "$work/pkg_tbtc_b16.json" ||
       { echo "test $t did not pass" >&2; status=1; }
   done
   report "$work"/*.json || status=1

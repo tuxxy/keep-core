@@ -323,7 +323,8 @@ type FrostIncomingChain interface {
 		startBlock uint64,
 	) ([]bitcoin.TransactionOutpoint, error)
 	// IsFrostIncomingPending reports whether the outpoint is a pending
-	// incoming output of the FROST wallet.
+	// incoming output of the FROST wallet: one the Bridge still sweeps,
+	// recorded Pending or Escalated (D27).
 	IsFrostIncomingPending(
 		outputKey [32]byte,
 		outpoint bitcoin.TransactionOutpoint,

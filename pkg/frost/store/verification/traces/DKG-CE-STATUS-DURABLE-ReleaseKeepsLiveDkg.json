@@ -38,7 +38,7 @@
       "n": 2,
       "action": "claim",
       "proc": 1,
-      "attempt": 0,
+      "attempt": 1,
       "purpose": "dkg",
       "domain": 0,
       "pause": "before-write"
@@ -98,10 +98,6 @@
       "proc": 1,
       "domain": 0,
       "expect": "status_in_progress"
-    },
-    {
-      "n": 11,
-      "action": "fence_reset"
     }
   ],
   "claim_model_steps": [
@@ -135,7 +131,7 @@
       "n": 2,
       "action": "claim",
       "proc": 1,
-      "attempt": 0,
+      "attempt": 1,
       "purpose": "dkg",
       "domain": 0,
       "pause": "before-write"
@@ -196,10 +192,6 @@
       "domain": 0,
       "expect": "status_seats_lost",
       "diverges": true
-    },
-    {
-      "n": 11,
-      "action": "fence_reset"
     }
   ]
 }

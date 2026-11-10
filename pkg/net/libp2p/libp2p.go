@@ -82,7 +82,11 @@ type Config struct {
 	Peers              []string
 	Port               int
 	AnnouncedAddresses []string
-	DisseminationTime  int // TODO: Convert to time.Duration
+	// ListenAddresses, when non-empty, are the only multiaddresses the
+	// provider listens on. Empty (the default) keeps listening on every
+	// interface address at Port.
+	ListenAddresses   []string
+	DisseminationTime int // TODO: Convert to time.Duration
 }
 
 type provider struct {
@@ -331,6 +335,7 @@ func Connect(
 		identity,
 		config.Port,
 		config.AnnouncedAddresses,
+		config.ListenAddresses,
 		firewall,
 		&metricsRecorderRef,
 	)
@@ -410,6 +415,7 @@ func discoverAndListen(
 	identity *identity,
 	port int,
 	announcedAddresses []string,
+	listenAddresses []string,
 	firewall net.Firewall,
 	metricsRecorderRef *atomic.Value,
 ) (host.Host, error) {
@@ -419,6 +425,24 @@ func discoverAndListen(
 	addrs, err := getListenAddrs(port)
 	if err != nil {
 		return nil, err
+	}
+
+	// Configured listen addresses replace the interface addresses. An
+	// address that does not parse is an error, never a fallback to every
+	// interface.
+	if len(listenAddresses) > 0 {
+		addrs = make([]ma.Multiaddr, 0, len(listenAddresses))
+		for _, address := range listenAddresses {
+			listenAddr, err := ma.NewMultiaddr(address)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"could not parse listen address [%v]: [%v]",
+					address,
+					err,
+				)
+			}
+			addrs = append(addrs, listenAddr)
+		}
 	}
 
 	connectionManager, err := connmgr.NewConnManager(

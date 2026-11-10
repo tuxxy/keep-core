@@ -95,6 +95,10 @@ const (
 // the proposal generator reads FROST wallets at the same depth.
 const FrostFinalityBlocks = frostFinalityBlocks
 
+// FrostRedemptionDeadlineMargin is the members' redemption deadline margin;
+// the proposal generator selects requests with the same margin.
+const FrostRedemptionDeadlineMargin = frostRedemptionDeadlineMargin
+
 // FrostDepositPolicy is the K-06 deposit timing every FROST member and the
 // proposal generator apply: the finality depth and base's refund safety
 // margin.
@@ -617,6 +621,8 @@ func (fn *frostNode) joinDKGIfEligible(ctx context.Context, epoch uint64) {
 	}
 	journal, err := fn.scope(epoch)
 	if err != nil {
+		// Nothing started; look again on a later block.
+		fn.unclaimEpoch(epoch)
 		epochLogger.Errorf("cannot open FROST store scope: [%v]", err)
 		return
 	}
@@ -637,7 +643,11 @@ func (fn *frostNode) joinDKGIfEligible(ctx context.Context, epoch uint64) {
 }
 
 // executeDKG runs the FROST DKG of one epoch for the local seats and adds the
-// wallet to coordination once it is ready.
+// wallet to coordination once it is ready. Every error releases the epoch
+// claim, so the DKG loop looks at the epoch again on a later block: before
+// the engine claims the journal it joins the DKG again; after, DKGStatus
+// routes the epoch to restore and the DKG never runs again. A successful
+// DKG keeps the claim.
 func (fn *frostNode) executeDKG(
 	ctx context.Context,
 	selection dkg.Selection,
@@ -646,6 +656,13 @@ func (fn *frostNode) executeDKG(
 ) {
 	epoch := selection.Epoch
 	epochLogger := logger.With(zap.Uint64("frostEpoch", epoch))
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			fn.unclaimEpoch(epoch)
+		}
+	}()
 
 	dkgCtx, cancel := context.WithTimeout(ctx, frostDKGTimeout)
 	defer cancel()
@@ -716,6 +733,7 @@ func (fn *frostNode) executeDKG(
 		epochLogger.Errorf("FROST DKG failed: [%v]", err)
 		return
 	}
+	succeeded = true
 
 	fn.addWallet(epoch, journal, record)
 }

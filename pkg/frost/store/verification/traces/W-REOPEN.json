@@ -11,7 +11,7 @@
     {
       "n": 1,
       "action": "open",
-      "proc": 0,
+      "proc": 1,
       "image": 0,
       "expect": "opened",
       "expect_state": {
@@ -37,7 +37,7 @@
     {
       "n": 2,
       "action": "put",
-      "proc": 0,
+      "proc": 1,
       "slot": 0,
       "value": 0,
       "pause": "before-write"
@@ -45,52 +45,64 @@
     {
       "n": 3,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "write",
       "pause": "before-file-sync"
     },
     {
       "n": 4,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "file_sync",
       "pause": "before-install"
     },
     {
       "n": 5,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "install",
       "pause": "before-directory-sync"
     },
     {
       "n": 6,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "dir_sync",
       "pause": "before-fence"
     },
     {
       "n": 7,
-      "action": "fence_reset"
+      "action": "step",
+      "proc": 1,
+      "step": "fence",
+      "pause": "before-acknowledgement"
     },
     {
       "n": 8,
       "action": "step",
-      "proc": 0,
-      "step": "fence",
-      "pause": "before-acknowledgement"
+      "proc": 1,
+      "step": "ack",
+      "expect": "durable"
     },
     {
       "n": 9,
-      "action": "process_crash",
-      "proc": 0,
-      "expect": "crashed"
+      "action": "close",
+      "proc": 1,
+      "expect": "closed"
     },
     {
       "n": 10,
+      "action": "fence_reset"
+    },
+    {
+      "n": 11,
+      "action": "restore_stale",
+      "image": 0
+    },
+    {
+      "n": 12,
       "action": "open",
-      "proc": 0,
+      "proc": 1,
       "image": 0,
       "expect": "opened",
       "expect_state": {
@@ -100,7 +112,7 @@
           false
         ],
         "slots": [
-          0,
+          null,
           null
         ],
         "keys": [
@@ -114,138 +126,105 @@
       }
     },
     {
-      "n": 11,
-      "action": "claim",
-      "proc": 0,
-      "attempt": 1,
-      "purpose": "sign",
-      "domain": 0,
-      "pause": "before-write"
-    },
-    {
-      "n": 12,
-      "action": "step",
-      "proc": 0,
-      "step": "write",
-      "pause": "before-file-sync"
-    },
-    {
       "n": 13,
-      "action": "step",
-      "proc": 0,
-      "step": "file_sync",
-      "pause": "before-install"
+      "action": "claim",
+      "proc": 1,
+      "attempt": 1,
+      "purpose": "dkg",
+      "domain": 1,
+      "pause": "before-write"
     },
     {
       "n": 14,
       "action": "step",
-      "proc": 0,
-      "step": "install",
-      "pause": "before-directory-sync"
-    },
-    {
-      "n": 15,
-      "action": "step",
-      "proc": 0,
-      "step": "dir_sync",
-      "pause": "before-fence"
-    },
-    {
-      "n": 16,
-      "action": "process_crash",
-      "proc": 0,
-      "expect": "crashed"
-    },
-    {
-      "n": 17,
-      "action": "open",
-      "proc": 0,
-      "image": 0,
-      "expect": "opened",
-      "expect_state": {
-        "claims": 0,
-        "dkg": [
-          false,
-          false
-        ],
-        "slots": [
-          0,
-          null
-        ],
-        "keys": [
-          null,
-          null
-        ],
-        "wallet": [
-          null,
-          null
-        ]
-      }
-    },
-    {
-      "n": 18,
-      "action": "claim",
-      "proc": 0,
-      "attempt": 1,
-      "purpose": "sign",
-      "domain": 0,
-      "pause": "before-write"
-    },
-    {
-      "n": 19,
-      "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "write",
       "pause": "before-file-sync"
     },
     {
-      "n": 20,
+      "n": 15,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "file_sync",
       "pause": "before-install"
     },
     {
-      "n": 21,
+      "n": 16,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "install",
       "pause": "before-directory-sync"
     },
     {
-      "n": 22,
+      "n": 17,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "dir_sync",
       "pause": "before-fence"
     },
     {
-      "n": 23,
+      "n": 18,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "fence",
       "pause": "before-acknowledgement"
     },
     {
-      "n": 24,
+      "n": 19,
       "action": "step",
-      "proc": 0,
+      "proc": 1,
       "step": "ack",
       "expect": "claim_ok"
     },
     {
-      "n": 25,
+      "n": 20,
       "action": "put",
-      "proc": 0,
-      "slot": 0,
-      "value": 0,
-      "expect": "identical"
+      "proc": 1,
+      "slot": 1,
+      "value": 1,
+      "pause": "before-write"
+    },
+    {
+      "n": 21,
+      "action": "step",
+      "proc": 1,
+      "step": "write",
+      "pause": "before-file-sync"
+    },
+    {
+      "n": 22,
+      "action": "step",
+      "proc": 1,
+      "step": "file_sync",
+      "pause": "before-install"
+    },
+    {
+      "n": 23,
+      "action": "step",
+      "proc": 1,
+      "step": "install",
+      "pause": "before-directory-sync"
+    },
+    {
+      "n": 24,
+      "action": "step",
+      "proc": 1,
+      "step": "dir_sync",
+      "pause": "before-fence"
+    },
+    {
+      "n": 25,
+      "action": "step",
+      "proc": 1,
+      "step": "fence",
+      "pause": "before-acknowledgement"
     },
     {
       "n": 26,
-      "action": "process_crash",
-      "proc": 0,
-      "expect": "crashed"
+      "action": "step",
+      "proc": 1,
+      "step": "ack",
+      "expect": "durable"
     },
     {
       "n": 27,
@@ -253,6 +232,17 @@
     },
     {
       "n": 28,
+      "action": "process_crash",
+      "proc": 1,
+      "expect": "crashed"
+    },
+    {
+      "n": 29,
+      "action": "restore_stale",
+      "image": 0
+    },
+    {
+      "n": 30,
       "action": "open",
       "proc": 1,
       "image": 1,
@@ -261,11 +251,11 @@
         "claims": 2,
         "dkg": [
           false,
-          false
+          true
         ],
         "slots": [
-          0,
-          null
+          null,
+          1
         ],
         "keys": [
           null,

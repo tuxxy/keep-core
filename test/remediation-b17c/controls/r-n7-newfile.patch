@@ -1,0 +1,97 @@
+diff --git a/test/k09/evidence/runrecords_test.go b/test/k09/evidence/runrecords_test.go
+new file mode 100644
+index 000000000..65be6ea89
+--- /dev/null
++++ b/test/k09/evidence/runrecords_test.go
+@@ -0,0 +1,91 @@
++package evidence
++
++// REVIEWER CONTROL r-n7-newfile (batch 17c review): the N7 check in a new
++// file and a new TestK09Evidence<...> function; evidence_test.go untouched.
++
++import (
++	"encoding/json"
++	"io/fs"
++	"os"
++	"path/filepath"
++	"sort"
++	"strings"
++	"testing"
++)
++
++var runEnvNames = strings.Fields(`PATH HOME TMPDIR SNOWFALL_WORKER SNOWFALL_WORKER_SHA256 SNOWFALL_COMMIT
++LEGACY_BASELINE_DIR LEGACY_TBTC_REPO LEGACY_ANVIL LEGACY_BITCOIND LEGACY_BITCOIND_SHA256 LEGACY_UPGRADED_DIR
++LEGACY_UPGRADED_COMMIT K09_ECDSA_NODE_MODULES K09_ECDSA_NODE_LOCK GOCACHE GOMODCACHE GOPATH GOFLAGS GOTOOLCHAIN GOWORK`)
++
++func TestK09EvidenceRunRecords(t *testing.T) {
++	evidence := os.Getenv("K09_EVIDENCE")
++	if evidence == "" {
++		t.Fatal("K09_EVIDENCE is required")
++	}
++	raw, err := os.ReadFile(filepath.Join(evidence, "manifest.json"))
++	if err != nil {
++		t.Fatal(err)
++	}
++	var m struct {
++		Files       *map[string]string `json:"files"`
++		Environment *map[string]string `json:"environment"`
++		Repos       struct {
++			Snowfall string `json:"snowfall"`
++		} `json:"repos"`
++		Stages []map[string]any `json:"stages"`
++	}
++	if err := json.Unmarshal(raw, &m); err != nil {
++		t.Fatal(err)
++	}
++	// files: compare the sorted listings, then the hashes.
++	if m.Files == nil {
++		t.Error("manifest.files is missing (#36)")
++	} else {
++		var disk []string
++		filepath.WalkDir(evidence, func(p string, d fs.DirEntry, err error) error {
++			if err == nil && !d.IsDir() {
++				rel, _ := filepath.Rel(evidence, p)
++				if rel != "manifest.json" {
++					disk = append(disk, filepath.ToSlash(rel))
++				}
++			}
++			return nil
++		})
++		listed := make([]string, 0, len(*m.Files))
++		for k := range *m.Files {
++			listed = append(listed, k)
++		}
++		sort.Strings(disk)
++		sort.Strings(listed)
++		if strings.Join(disk, "\n") != strings.Join(listed, "\n") {
++			t.Errorf("manifest.files lists %v; the evidence holds %v", listed, disk)
++		}
++		for _, p := range disk {
++			b, err := os.ReadFile(filepath.Join(evidence, p))
++			if err == nil && (*m.Files)[p] != "" && sha256Hex(b) != (*m.Files)[p] {
++				t.Errorf("manifest.files: %s was changed after the inventory", p)
++			}
++		}
++	}
++	if m.Environment == nil {
++		t.Error("manifest.environment is missing (tbtc-v2#19)")
++	} else {
++		allowed := map[string]bool{}
++		for _, n := range runEnvNames {
++			allowed[n] = true
++		}
++		for n := range *m.Environment {
++			if !allowed[n] {
++				t.Errorf("manifest.environment: %s is not in run.sh's allowlist", n)
++			}
++		}
++		if c := (*m.Environment)["SNOWFALL_COMMIT"]; c == "" || c != m.Repos.Snowfall {
++			t.Errorf("repos.snowfall %q differs from environment.SNOWFALL_COMMIT %q (#35)", m.Repos.Snowfall, c)
++		}
++	}
++	for _, s := range m.Stages {
++		if _, ok := s["leftoverKilled"]; !ok {
++			t.Errorf("stage %v has no leftoverKilled (#30)", s["stage"])
++		}
++	}
++}

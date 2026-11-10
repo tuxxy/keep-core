@@ -1,0 +1,38 @@
+diff --git a/pkg/frost/verification/check_freshness.py b/pkg/frost/verification/check_freshness.py
+index 14416ede1..06a002a96 100644
+--- a/pkg/frost/verification/check_freshness.py
++++ b/pkg/frost/verification/check_freshness.py
+@@ -502,6 +502,25 @@ def check_review_items(ledger):
+     return [{"id": i["id"], "obligation": i["obligation"], "status": i["status"]} for i in items]
+ 
+ 
++def check_k09_run_mapping(ledger, evidence_root):
++    """K09-13 (#33): k09_run_mapping accounts for exactly the cited run's
++    stages, read from its manifest (pinned by manifest_sha256)."""
++    mapping = ledger.get("k09_run_mapping")
++    if mapping is None or evidence_root is None:
++        return
++    manifest_path = evidence_root / relative_path(mapping.get("run")) / "manifest.json"
++    if not manifest_path.is_file() or file_sha256(manifest_path) != mapping.get("manifest_sha256"):
++        raise ValueError("k09_run_mapping: run manifest missing or changed")
++    runner = [s.get("stage") for s in json.loads(manifest_path.read_text()).get("stages", [])]
++    mapped, unmapped = set(mapping.get("stages", {})), set(mapping.get("unmapped_stages", {}))
++    extra = []
++    if extra:
++        raise ValueError("k09_run_mapping cites stages the run does not have: %s" % ", ".join(extra))
++    missing = sorted(set(runner) - mapped - unmapped)
++    if missing:
++        raise ValueError("k09_run_mapping omits stages of the run: %s" % ", ".join(missing))
++
++
+ class Parser(argparse.ArgumentParser):
+     def error(self, message):
+         # Review L5: usage errors are invalid input (3), never "open" (2).
+@@ -539,6 +558,7 @@ def main():
+         reports = check_rows(ledger, repositories, evidence_root, statements)
+         obligation_statements = check_obligation_citations(ledger, statements)
+         review_items = check_review_items(ledger)
++        check_k09_run_mapping(ledger, evidence_root)
+     except (ValueError, KeyError, TypeError, AttributeError, OSError, subprocess.CalledProcessError) as error:
+         parser.exit(3, "freshness error: %s\n" % error)
+     stale_statements = sorted({s["id"] for s in statements.values() if s["freshness"] != "fresh"})

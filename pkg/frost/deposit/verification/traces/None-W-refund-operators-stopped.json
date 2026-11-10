@@ -1,0 +1,4620 @@
+{
+  "bounds": {
+    "attempt_slots": 2,
+    "deposits": 2,
+    "locktime": 2,
+    "margin": 1,
+    "max_round": 1,
+    "max_tick": 2
+  },
+  "id": "None-W-refund-operators-stopped",
+  "kind": "witness",
+  "property": "W-refund-operators-stopped",
+  "replay": "pending",
+  "replay_note": "classified by the Go replay (v07_replay_test.go)",
+  "steps": [
+    {
+      "action": "Reveal",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": false,
+        "cert_host": false,
+        "cert_until": 0,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 0,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 1,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 0,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 1,
+      "proc": "env"
+    },
+    {
+      "action": "FinalizeReveal",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": false,
+        "cert_host": false,
+        "cert_until": 0,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 0,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 0,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 2,
+      "proc": "env"
+    },
+    {
+      "action": "ForeignCertificate",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 0,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 0,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": null,
+      "n": 3,
+      "proc": "env"
+    },
+    {
+      "action": "Admit",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 0,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": null,
+      "n": 4,
+      "proc": "env"
+    },
+    {
+      "action": "Plan",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 0,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": [
+        0,
+        false
+      ],
+      "n": 5,
+      "proc": "host"
+    },
+    {
+      "action": "Reveal",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 1,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 6,
+      "proc": "env"
+    },
+    {
+      "action": "FinalizeReveal",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 7,
+      "proc": "env"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 1,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 8,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 2,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 9,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 3,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 10,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": true,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 4,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": false,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 11,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": true,
+            "failed": false,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 5,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 12,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": true,
+            "failed": false,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 6,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 13,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": false,
+            "claimed": true,
+            "failed": false,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 7,
+            "terminal": false,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 14,
+      "proc": "host"
+    },
+    {
+      "action": "MarkerFail",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": false,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 0,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": [
+        0,
+        true
+      ],
+      "n": 15,
+      "proc": "env"
+    },
+    {
+      "action": "Broadcast",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 0,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": false
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 16,
+      "proc": "host"
+    },
+    {
+      "action": "Plan",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 0,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": [
+        1,
+        false
+      ],
+      "n": 17,
+      "proc": "host"
+    },
+    {
+      "action": "NextRound",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 0,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": null,
+      "n": 18,
+      "proc": "env"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": false,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 1,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 19,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 2,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 20,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": false,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 3,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 21,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": true,
+            "failed": false,
+            "granted": false,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 4,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 22,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": true,
+            "failed": false,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 5,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 0,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 23,
+      "proc": "host"
+    },
+    {
+      "action": "MineSweep",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": true,
+            "failed": false,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": false,
+            "round": 0,
+            "stage": 5,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 18,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 0,
+      "n": 24,
+      "proc": "env"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": false,
+            "broadcast": false,
+            "claimed": true,
+            "failed": false,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 6,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 18,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 25,
+      "proc": "host"
+    },
+    {
+      "action": "Step",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": true,
+            "broadcast": false,
+            "claimed": true,
+            "failed": false,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": false,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 7,
+            "terminal": false,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 18,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 26,
+      "proc": "host"
+    },
+    {
+      "action": "MarkerFail",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": true,
+            "broadcast": false,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 18,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 4,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": [
+        1,
+        true
+      ],
+      "n": 27,
+      "proc": "env"
+    },
+    {
+      "action": "Broadcast",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 18,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 12,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 0,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": 1,
+      "n": 28,
+      "proc": "host"
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 18,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 12,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 1,
+        "up": true,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": null,
+      "n": 29,
+      "proc": "env"
+    },
+    {
+      "action": "Crash",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 18,
+            "swept": false
+          }
+        ],
+        "extra": 0,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 12,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 1,
+        "up": false,
+        "w_after_locktime": false,
+        "w_lost": false,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": null,
+      "n": 30,
+      "proc": "host"
+    },
+    {
+      "action": "ProveSweep",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 1,
+            "reveal": 2,
+            "spender": 18,
+            "swept": true
+          }
+        ],
+        "extra": 1,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 12,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 1,
+        "up": false,
+        "w_after_locktime": false,
+        "w_lost": true,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": [
+        0,
+        true
+      ],
+      "n": 31,
+      "proc": "maintainer"
+    },
+    {
+      "action": "Tick",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 0,
+            "swept": false
+          },
+          {
+            "credits": 1,
+            "reveal": 2,
+            "spender": 18,
+            "swept": true
+          }
+        ],
+        "extra": 1,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 12,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 2,
+        "up": false,
+        "w_after_locktime": false,
+        "w_lost": true,
+        "w_new_main": false,
+        "w_refund_down": false
+      },
+      "fields": null,
+      "n": 32,
+      "proc": "env"
+    },
+    {
+      "action": "Refund",
+      "diverges": false,
+      "expect": "transition",
+      "expect_state": {
+        "attempts": [
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 2,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          },
+          {
+            "accepted": true,
+            "broadcast": true,
+            "claimed": true,
+            "failed": true,
+            "granted": true,
+            "late": false,
+            "ledger": true,
+            "marker": true,
+            "plan": {
+              "deps": 3,
+              "main": 0,
+              "over": false,
+              "res": false
+            },
+            "resubmit": false,
+            "retained": true,
+            "round": 0,
+            "stage": 8,
+            "terminal": true,
+            "used": true
+          }
+        ],
+        "attested": false,
+        "bad_auth": false,
+        "bad_d13": true,
+        "bad_main": false,
+        "bad_refund": false,
+        "bad_terminal": false,
+        "cert_foreign": true,
+        "cert_host": false,
+        "cert_until": 1,
+        "custody_main": 1,
+        "custody_spent": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "deposits": [
+          {
+            "credits": 0,
+            "reveal": 2,
+            "spender": 1,
+            "swept": false
+          },
+          {
+            "credits": 1,
+            "reveal": 2,
+            "spender": 18,
+            "swept": true
+          }
+        ],
+        "extra": 1,
+        "locks": [
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          },
+          {
+            "plans": 0,
+            "purpose": 0,
+            "until": 0
+          }
+        ],
+        "main_exists": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "main_spender": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "mempool": 12,
+        "mined": 4,
+        "pay_granted": false,
+        "pay_mined": false,
+        "res": 1,
+        "round": 1,
+        "sweep_granted_main": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "tick": 2,
+        "up": false,
+        "w_after_locktime": false,
+        "w_lost": true,
+        "w_new_main": false,
+        "w_refund_down": true
+      },
+      "fields": 0,
+      "n": 33,
+      "proc": "depositor"
+    }
+  ],
+  "weakening": "None"
+}

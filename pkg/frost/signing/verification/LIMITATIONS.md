@@ -10,6 +10,18 @@ generated executor projections are labeled partial; store reopen is not process
 kill. The separate twelve application-boundary subprocess scenarios do execute
 process kills, without extending the claim to disk-stage or host power loss.
 
+Since 6 November 2026 (#82), `TestV04GeneratedTraceProcessReplay` drives every
+generated trace through the real executor and store in a subprocess and
+compares each executor pause and final result with the model state. It is full
+only at the executor's application boundaries. Storage stages inside one
+commit, interleaved attempts in one host process, `Deliver`, `Retry` and the
+C-04 ledger actions are still not driven; such traces count as partial.
+
+The A-STORE substitute stays (#80). SCOPE-2026-11-06.md splits it into
+checkable clauses A-STORE-1..6 and plans its discharge in V-05 from the store
+statements plus a store-owned `signing` profile. Until that is done, V-04 is
+not the strict KC-VER K-04 prerequisite.
+
 Each abstract request has one signing digest. Two attempts may serve two
 requests or a failed/fresh retry of one request. A concrete K-04 plan may batch
 two requests and have two inputs; that all-input completion join is exercised

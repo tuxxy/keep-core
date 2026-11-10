@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -133,6 +134,10 @@ func TestCollectRejectsWrongOperatorSignature(t *testing.T) {
 	}
 }
 
+// errUnclassifiedAfterSuccess marks the D31 case: the late error is returned
+// and nothing is quarantined.
+var errUnclassifiedAfterSuccess = errors.New("D31: unclassified after success")
+
 func TestFinishSuccessRetainsClassifiedObserverFailure(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -141,7 +146,9 @@ func TestFinishSuccessRetainsClassifiedObserverFailure(t *testing.T) {
 	}{
 		{"monitor quarantine", ErrQuarantined, ErrQuarantined},
 		{"quarantine joined with cancellation", errors.Join(ErrQuarantined, context.Canceled), ErrQuarantined},
-		{"transport uncertainty", errors.New("closed transport"), errors.New("closed transport")},
+		// D31 (b), tuxxy/keep-core#139: an unclassified late error after
+		// success leaves the ReadyUnfunded record unquarantined and is returned.
+		{"transport uncertainty", errors.New("closed transport"), errUnclassifiedAfterSuccess},
 		{"self cancellation", context.Canceled, nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -151,7 +158,11 @@ func TestFinishSuccessRetainsClassifiedObserverFailure(t *testing.T) {
 			e.background.Add(1)
 			go func() { defer e.background.Done(); <-ctx.Done(); e.failure <- context.Canceled; e.failure <- tc.late }()
 			record, err := e.finishSuccess(ctx)
-			if tc.want == nil {
+			if tc.want == errUnclassifiedAfterSuccess {
+				if err == nil || !strings.Contains(err.Error(), tc.late.Error()) || record.Quarantined || record.State != "ReadyUnfunded" || j.saved.Quarantined {
+					t.Fatalf("D31 (tuxxy/keep-core#139): unclassified late error after success must be returned with the record unquarantined: err=%v record state=%s quarantined=%t saved quarantined=%t", err, record.State, record.Quarantined, j.saved.Quarantined)
+				}
+			} else if tc.want == nil {
 				if err != nil || record.Quarantined || j.saved.ID != ([32]byte{}) {
 					t.Fatalf("normal completion became quarantine: %v %+v", err, record)
 				}

@@ -1,0 +1,13 @@
+diff --git a/pkg/tbtcpg/frost_moving_funds.go b/pkg/tbtcpg/frost_moving_funds.go
+index 20dbbde7c..3c1bf081e 100644
+--- a/pkg/tbtcpg/frost_moving_funds.go
++++ b/pkg/tbtcpg/frost_moving_funds.go
+@@ -178,7 +178,7 @@ func (mft *MovingFundsTask) runFrost(
+ func frostExecutingSeat(request *tbtc.CoordinationProposalRequest) (uint16, error) {
+ 	for i, operator := range request.WalletOperators {
+ 		if operator == request.ExecutingOperator {
+-			return uint16(i + 1), nil
++			return uint16(i), nil
+ 		}
+ 	}
+ 	return 0, ErrNoExecutingOperator

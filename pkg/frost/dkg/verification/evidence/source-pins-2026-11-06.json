@@ -1,0 +1,1471 @@
+{
+ "statement": "S-K03-CHAIN-2",
+ "subject": "keep-core tuxxy/integration/snowfall-base 925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f plus this branch's V-03 tooling (model, replay, runner, freshness)",
+ "base": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+ "client_revision": "c1847ebdf133d0570643ff968539dd498069f69f",
+ "tbtc_v2": "39412825 (solidity/contracts by blob; compiled build verified source-identical, see evidence build-check-*.json)",
+ "replaces_external_pin": {
+  "old": "/private/tmp/kc-ver-integration-current.md",
+  "new": "/Users/tux/threshold/Research/SNOWFALL/FROST-migration-spec @ d45afda keep-core-verification-spec.md (same blob 53535870285d22a60472eacfaffbd6e277a1a29b)"
+ },
+ "files": [
+  {
+   "path": "go.mod",
+   "sha256": "759595224bc75ac7c26d9ca4ffdd6a82afb64779f8cd0c9ccea0733c9d787b1b",
+   "git_blob": "3a711fdb93ce22f45125b873c92610dcae2a44fd"
+  },
+  {
+   "path": "go.sum",
+   "sha256": "f9bdd68e95e758c73862c1d1c9887d04e38aaa44a99e385e03a6d086b11583ab",
+   "git_blob": "100fc0080b4dcc7f941cbdbda5bb2c64e9c215eb"
+  },
+  {
+   "path": "pkg/frost/dkg/executor.go",
+   "sha256": "bb8d7ac40424d300f99080f9c7f35f360a6bb6efeecd56938944974edc159fd4",
+   "git_blob": "e3242c01ba1da91bc52062099d5da23298ab75bb"
+  },
+  {
+   "path": "pkg/frost/dkg/network.go",
+   "sha256": "4049e561e367e10aa933aa9dada3a6402b0ac0224ae4d2937515736112071a01",
+   "git_blob": "c2f1dc5aafa1f5133f62a17436a24bca0e3b2c4f"
+  },
+  {
+   "path": "pkg/frost/dkg/outcome_test.go",
+   "sha256": "ef1cef4e4b9a6d2271a49a51a13a3531deb57b53bf0a80cd427c169668de19db",
+   "git_blob": "bd11a15959abec257356ad94d51e3b90bed6f57c"
+  },
+  {
+   "path": "pkg/frost/dkg/profile_test.go",
+   "sha256": "db14d6fc79422cd48ba85c53342543a633fc3c9e4d84a084222e4d71f53178bb",
+   "git_blob": "e9bf9d7ad6d3d909643e0f2287f6f0a3371e2aa0"
+  },
+  {
+   "path": "pkg/frost/dkg/types.go",
+   "sha256": "7f513d90633988fff65e85e9325789198bd51a72505ed603dea668a7f135f200",
+   "git_blob": "68c9b67adb74d5eb0ca3a63e6bdcf5b05fdf5d65"
+  },
+  {
+   "path": "pkg/frost/dkg/v03_replay_test.go",
+   "sha256": "6be2efc32aa732a53d4c369cfe0fd05a400a3c3755545cf1daae8e222a4010cb",
+   "git_blob": "22a55711296b926a2235bf8bcaadd1ea53969020"
+  },
+  {
+   "path": "pkg/frost/dkg/verification/check_freshness.py",
+   "sha256": "350de9647156694399b44a54907cf70756d06c731f0206acf8e3db2c503d72ca",
+   "git_blob": "b966050609b324e15219365b53249bb11d06233c"
+  },
+  {
+   "path": "pkg/frost/dkg/verification/model/Cargo.lock",
+   "sha256": "b992d36ff56b9544e42ead6298a8022e629d7a168615d638e1981336270de5f2",
+   "git_blob": "86c5e79acecf4598344aba4d169d63e5f43a83f8"
+  },
+  {
+   "path": "pkg/frost/dkg/verification/model/Cargo.toml",
+   "sha256": "9d99034e6dc3839beade8e0b77fd4ffb828d4a187bc7421e674e23edabd7c82b",
+   "git_blob": "d006bb42c7349522a0ff96710a973e9369b0224d"
+  },
+  {
+   "path": "pkg/frost/dkg/verification/model/src/main.rs",
+   "sha256": "0070899055cc3bf82e66601e84a821bce8ad53743c9c19575d66b9dea4eea566",
+   "git_blob": "057b202c54ef3efa09a5145b9ab6cbff02165970"
+  },
+  {
+   "path": "pkg/frost/dkg/verification/replay/replay_test.go",
+   "sha256": "4de74cf005b6ce85aee845fd9952f5bae7c68c5f81d0b71af34f697ab838c672",
+   "git_blob": "7d82af4b6ce7d5a1cc1db3778341c03c1534896a"
+  },
+  {
+   "path": "pkg/frost/dkg/verification/run.py",
+   "sha256": "9b3a28d5ff509d0387ccae271c4d5af4f396b442995cdc2ee660e1017ac5b785",
+   "git_blob": "a7dbc08d25762959e22bd53b0927271ec63ad52e"
+  },
+  {
+   "path": "pkg/frost/integration/candidate_test.go",
+   "sha256": "08e802b083ad227fca83c01386ec757a7ddac8e293b6a2b01fee469d296c0f9f",
+   "git_blob": "243c7ea9a94913f1a3ec351d4144fbb468dcd530"
+  },
+  {
+   "path": "pkg/frost/integration/certificate_test.go",
+   "sha256": "62e3a88d9e42fc3f74da3ccdc45faf81d4ed2079aee1692d98e016ad88802be3",
+   "git_blob": "b912b9f9592e47ed3f10031e6a3d82793cdad441"
+  },
+  {
+   "path": "pkg/frost/integration/failures_test.go",
+   "sha256": "fcfe1cadca1ea51ed73d3e91007d065afa713b9f540a181b33801770fb4904c2",
+   "git_blob": "efa0a6357116318fc4494b51f71857749455f701"
+  },
+  {
+   "path": "pkg/frost/integration/integration_test.go",
+   "sha256": "4291f3302d221825599ac374f9e4c5dc10836d78e528239f2769eefe97900b25",
+   "git_blob": "700d6ee68cca355c13d31c1d012beb85be0794e4"
+  },
+  {
+   "path": "pkg/frost/integration/reorg_test.go",
+   "sha256": "26eb9ba66f118f29588b00feb003ce9489f8128bcbe04ea57bc6721a77579afa",
+   "git_blob": "11a9c6079b0eb5dca09767fd89d69350c3cb31e7"
+  },
+  {
+   "path": "pkg/frost/integration/review_boundaries_test.go",
+   "sha256": "6e6a8031f09b5f62730518f1ddbfd5a557d920917669164e0c4f20eedab21f98",
+   "git_blob": "a564185f7a8d1b2f1495af1714de4c0a66ec094f"
+  },
+  {
+   "path": "pkg/frost/store/dkg_status.go",
+   "sha256": "fd97889f3c11a48412663a253967ad8386406d3c8e13841f6a45474cedae6b28",
+   "git_blob": "57e6533e30bdae2fe4d6b55cf9a296a7f9df68c3"
+  },
+  {
+   "path": "pkg/frost/store/dkg_status_test.go",
+   "sha256": "ab3dfa7d2e59e1ae5f04243097c3eb5fcd93807e6a1c9ea0285de48eb91ef388",
+   "git_blob": "bb150214b232b5183f7b73435a1191147eb6f190"
+  },
+  {
+   "path": "pkg/frost/store/fence.go",
+   "sha256": "5ff33db28af3674298958a888cbb8738a66a65f4b805fcac62ec6dbe768b4906",
+   "git_blob": "66e7f0b0d3f4e978cc1cab0d17972cb73d980870"
+  },
+  {
+   "path": "pkg/frost/store/lease_other.go",
+   "sha256": "ffd66ed3b28b2848b06190f168285c557c719a0f4e1430cb8e4b7bdde1099012",
+   "git_blob": "0813ced4baff131baba2badac3545bcc4b8d9d7b"
+  },
+  {
+   "path": "pkg/frost/store/lease_unix.go",
+   "sha256": "2affc5ef047da0d8214e15f315359ef83319313f01e1972550920dd2bf63b934",
+   "git_blob": "93e63201ff4f37e7fb671508c309c2230f130611"
+  },
+  {
+   "path": "pkg/frost/store/replay_test.go",
+   "sha256": "b92d83b9d8f320f664d22048c74132465b2e9c6037609ba6e55140d8f691a96d",
+   "git_blob": "d3cd77eb99d8acda39b0a1895842ea5cf7c2b7c3"
+  },
+  {
+   "path": "pkg/frost/store/store.go",
+   "sha256": "669d7d2f40cbc275784186270d8d29fd2b89811244c73cc3dd860e5d7d457dc9",
+   "git_blob": "255eb6b18360b35596750c1df05169cb2ec88dd0"
+  },
+  {
+   "path": "pkg/frost/store/store_test.go",
+   "sha256": "71b6e3ed133fd6a0df8c4c8d363ee16713598f58f9a10256f361d9bf264a8eb8",
+   "git_blob": "bf2c2169b71565eefec8ee2e1c1243e6fde02b2d"
+  },
+  {
+   "path": "pkg/frost/store/wallet.go",
+   "sha256": "590af57e1f6a28439d1b88ac45a26dcd35b45f3c0e8bd422833701a738ad01e7",
+   "git_blob": "1eeada06c53d217eb1cc28adc39c7ef6495a4af1"
+  },
+  {
+   "path": "pkg/frost/store/wallet_test.go",
+   "sha256": "d562cf578fb14dea3c7d972182c57a55353303274abe6c4c28f7d5a0ddb0fed4",
+   "git_blob": "70220365b7ca1f249583aa09d0f3cf31a7c076c4"
+  },
+  {
+   "path": "pkg/frost/domain.go",
+   "sha256": "adc04c1d0333f10b296e5cfd489438352867b1bc9ae01654199ec90abac72565",
+   "git_blob": "b2374dde41b1b1e85876443e155bda17517e48b3"
+  },
+  {
+   "path": "pkg/frost/config.go",
+   "sha256": "5d48733e80bc13981e2b18769cfa7b15d36f7fbcf0701d4daa013f5b4154c011",
+   "git_blob": "1d427488fc6bf4224d6ad41232ab252bec0523a8"
+  },
+  {
+   "path": "pkg/frost/domain_test.go",
+   "sha256": "438690c346753aee9ad648cfcaaf60941d7c7f16d753fc47e4096a9ccf3ddac2",
+   "git_blob": "bf860ad47e54e4ab8f37e79f7cb2b53f55db9968"
+  },
+  {
+   "path": "pkg/frost/dkg_status.go",
+   "sha256": "4e42551a59e76580a751e2fe0be3998bbe7234f8281bf817a94bdbeeb6b1a80e",
+   "git_blob": "fffaed425a8800e10f2b05957208e7561d5f64cc"
+  },
+  {
+   "path": "pkg/frost/engine.go",
+   "sha256": "38c093251b978cd5eed2625197e3cfdd9c0ddec87f176be0473ffb686f5acc63",
+   "git_blob": "2275eb6a4d604d9340d083187b2c556a448796a7"
+  },
+  {
+   "path": "pkg/frost/config_test.go",
+   "sha256": "fa98f955c3b26731af073e79c62e5a678b1020a381d6097d0d9459764f7e6838",
+   "git_blob": "c7e0e7521fcfc35dc2736a3fe177beef106e6518"
+  },
+  {
+   "path": "pkg/frost/snowfallengine/reload.go",
+   "sha256": "9ed63d5f65b2a4afd1934ade20ff39ee622bb338c2585dc7508c6f82da64af66",
+   "git_blob": "f2b8e5e052819d9aa0ce943132e71c8365caf325"
+  },
+  {
+   "path": "pkg/frost/snowfallengine/acceptance_boundary_test.go",
+   "sha256": "4b8e5eae9039d6f2002e3ace9da3bf0cc092453d8fb1be5a1756692ac790e61d",
+   "git_blob": "011cb5c553b293ce6c41b867efbed4611c5c5525"
+  },
+  {
+   "path": "pkg/frost/snowfallengine/engine_test.go",
+   "sha256": "57954c6bde0b90634a25329a7ba81b14744cda7cd19ef55f2492b6b56797c3bd",
+   "git_blob": "4e3d74881cb60512113fcbbfe0b3adb799b745de"
+  },
+  {
+   "path": "pkg/frost/snowfallengine/engine.go",
+   "sha256": "2325008872da0f76aff3bebca5e38d15e6df49e78a16f734aa6eeebc73c1a994",
+   "git_blob": "06bf6b7ee887dba2096ae353a12707b947c82ae5"
+  },
+  {
+   "path": "solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol",
+   "sha256": "e54a120932b21cd0152676dad9624c3b861fd678b4be5235e2eb445c11d9a10f",
+   "git_blob": "3cd5ef8e564767e93d99499d6211dad7904e0d46"
+  },
+  {
+   "path": "solidity/ecdsa/contracts/frost/FrostDkgValidator.sol",
+   "sha256": "a1de4334cb2c0b4df6b9c4d8ed0b665947b6ba0712c1513601bdeda10019dee4",
+   "git_blob": "cf5b893adce584a75fb5b59f2d0997aa34080bea"
+  },
+  {
+   "path": "solidity/ecdsa/contracts/frost/FrostAdmission.sol",
+   "sha256": "e27ab44aff6ae5eafb024ead214c10b69efef4bfb5fbab0cd4cf91fc661d6930",
+   "git_blob": "b287cd96dcceccd0f96c69050f1ef4a1543ca665"
+  },
+  {
+   "path": "solidity/ecdsa/contracts/frost/FrostTypes.sol",
+   "sha256": "35e2f5b531f5ccfd96fd8010c4aec912f268c18b2e6f3866188122d6b3763aba",
+   "git_blob": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6"
+  },
+  {
+   "path": "solidity/ecdsa/contracts/frost/FrostCurve.sol",
+   "sha256": "09dd7b16959e1d593198e7d7168d55b881162e9712c9743a50db9a581813a9e7",
+   "git_blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
+  },
+  {
+   "path": "pkg/chain/ethereum/frost.go",
+   "sha256": "814ea9423d3bd9be4bb009e0503ae163b73820dddc409e9695c85e3205bfdd68",
+   "git_blob": "90c181c4d8bef9abd21347d9a66517127cf569d1"
+  },
+  {
+   "path": "pkg/chain/ethereum/frostabi/contracts.go",
+   "sha256": "da7390977faa5b9caca849fdaedc9c3821784b1676d05f36b9e3f195d9fefb91",
+   "git_blob": "9516f7c459b1a6a79af55f814aca92e8f53f63df"
+  },
+  {
+   "path": "solidity/ecdsa/contracts/test/FrostTestDependencies.sol",
+   "sha256": "a73b9ceae77acea709b49e19ef94ebf8105a3b17ac7a0a2977e3d3bf0e87c4e5",
+   "git_blob": "a5faf126917fd4b742b7ed9900e119bcf6c628f0"
+  },
+  {
+   "path": "pkg/frost/dkg/suite_rejection_test.go",
+   "sha256": "724c1adb0a009f97dfceca5bdd8fe03890126936ed933efde84000638bf0b723",
+   "git_blob": "6b5902e82b81f21e5a70ab3dc84e483a4d72a266"
+  },
+  {
+   "path": "pkg/tbtc/frost_dkg.go",
+   "sha256": "b724581952d5b299e2ba23dbe907c1a43954c3507647fe4c44373f4e0aec753b",
+   "git_blob": "a61f3202b8c2bd3d3c44e22d5315fdbdbf412ae2"
+  },
+  {
+   "path": "pkg/frost/integration/restart_test.go",
+   "sha256": "059fa6548d28a6aaec7f4c4a781c74757da14046bb136f6475e7f41dfaef3f5d",
+   "git_blob": "79b8715ba5adb411c6bd72328c04f1c18f63a5d2"
+  },
+  {
+   "path": "pkg/frost/integration/node_startup_test.go",
+   "sha256": "75cf6fa1c979a295c55baeb4c364a5f3840c1bb251ad069ff0dd36ad408629e6",
+   "git_blob": "09e8b297c50104b8241fbd6b61d2032b565e81c6"
+  },
+  {
+   "path": "pkg/frost/integration/startup_test.go",
+   "sha256": "7a9b037b43afea0eb18e25487f6c7cb55dfe3b304b513654b367695b55f323d0",
+   "git_blob": "03974792bcc360a40f1386c5c05a629678a36ea5"
+  },
+  {
+   "path": "pkg/chain/ethereum/frost_redemption.go",
+   "sha256": "bcc93cdc9097641373822ef98f03cc46e60fdcba94a200953b8d0cd3027c5ecd",
+   "git_blob": "80c26f4aa01fd97cf4cd1e7fb277af79fa0df443"
+  },
+  {
+   "path": "pkg/chain/ethereum/frost_send_test.go",
+   "sha256": "ed6f6a1d6d1b28b7e34018ef088d30a1227d0225a2cd827dd40e37e750c8098e",
+   "git_blob": "565ef76cccbc14df03999754ddcb5fa0f037c44f"
+  },
+  {
+   "path": "pkg/chain/ethereum/frost_test.go",
+   "sha256": "970d765129f250d159fc51eaef4ade628bcf012aa7c6f8ad9d4670d0b6476430",
+   "git_blob": "18581928f6203a65f7ff744ca920232e289210c7"
+  },
+  {
+   "path": "test/frost/deploy.cjs",
+   "sha256": "e9c541c0b87745e14e8082609180148830cfab7a345c28e765c86b315afd61ef",
+   "git_blob": "ed2d0c99238a9c76b4a81160f4f274f89dbb9750"
+  },
+  {
+   "path": "pkg/frost/dkg/verification/RESTORE-SCOPE-2026-11-06.md",
+   "sha256": "5278989892746720fee0f653bb9b3a4a30a34f0e7e6e27307375c48d0636866c",
+   "git_blob": "7b8c29c8d2a1423b17563a39db4fdf7c7aa0a466"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/CHANGELOG.md",
+   "git_blob": "a48706848e30f73d318488cea50de56b6e84ce64"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/CONFORMANCE.md",
+   "git_blob": "27e829b1219e985fdfec11c6fe2435e9bd8fcf4b"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/README.md",
+   "git_blob": "bb2a3c408e54ca4145d90e1a23d5c42e302e0248"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/bip340_test.go",
+   "git_blob": "a1be4147cd3de70cf204aff55d2c67c815da80cc"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/candidate.go",
+   "git_blob": "9ae4c259de118834b30738c034a0b7c39b3e273e"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/candidate_boundary_test.go",
+   "git_blob": "947773732beefeb963a675060e6274fac6254e9b"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/candidate_test.go",
+   "git_blob": "aca2e765824cb0c04fa49365911b7ab5ccf7d9e0"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/capacity_auxiliary_test.go",
+   "git_blob": "e2b7c22c8fa97407d180a8967f5f9a99572f9af1"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/capacity_schema_test.go",
+   "git_blob": "3e04efb850f2ec4f3df47cb3ea695be4dfe76771"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/client.go",
+   "git_blob": "e30790965a0fc757fbb5f0c76028344c46164de3"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/cmd/capacity/main.go",
+   "git_blob": "2998fe6196fa6340d2d75fc63c368cf7685b2c44"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/cmd/conformance/main.go",
+   "git_blob": "6d09cc34ad338e676daf3e67507b24c61c8aa234"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/cmd/conformance/providers.go",
+   "git_blob": "9460d364cbe1741983194837b87bb8b86227256d"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/codec_diff_test.go",
+   "git_blob": "3c2cae0c7cb95fb298504f3f27b860fd488f762e"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/conformance_map_test.go",
+   "git_blob": "1c2e00263dd7b35ff361f2ad4567aac0286f27fc"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/driver_test.go",
+   "git_blob": "44a0e8418b870cb1c20d2e1613d0b6e6e6c084c0"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/encoding.go",
+   "git_blob": "2bf2233a5eee9953b664bae3043b2e6a6b723a58"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/fake_test.go",
+   "git_blob": "3465b4c78bc1e26375f9297aeb3877d57e8f4e27"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/go.mod",
+   "git_blob": "e65c66c91244ef62493a123ae21f67517e715bf7"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/harness_test.go",
+   "git_blob": "b26cbd3792befbdace6591e0bec6268f85dd1c3a"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/internal/capacity/bounds.go",
+   "git_blob": "b368dfff8138ac5f81c7de8411ae017c1ff7d80a"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/internal/capacity/bounds_test.go",
+   "git_blob": "83dde8a94f969de00aba733a56c6ef8db5f49495"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/internal/mutants/main.go",
+   "git_blob": "41f7eec9f61854196923d591e44595ac3349b1ae"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/mutants.sh",
+   "git_blob": "f5a626db29cd72342ac549f7f9f9745060a53977"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/mutation-record.txt",
+   "git_blob": "4b9a36b339886a555cc73774e0724b9e424099a3"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/operation.go",
+   "git_blob": "505c6b3d315ce0d654a59232bd7f19030348b07d"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/reload_test.go",
+   "git_blob": "d71237826c6da150c5837591893b6b191bc699f7"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/section8_test.go",
+   "git_blob": "f93596eeca7a1d76d5b0d5b0e9a9e009b3ec9983"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/testdata/README.md",
+   "git_blob": "f872e95500e548412a17ed4a4a2ac39a425c7ae8"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/testdata/lock-ready-attestation.hex",
+   "git_blob": "1d57dc5dbd8de53e974e63045e62be4a14d6cb7e"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/testdata/lock-result-vote.hex",
+   "git_blob": "5fe8af0b4b10c070f1261045d72b8e9e8eff1db9"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/testdata/lock-round-one-vote.hex",
+   "git_blob": "9e5f9ee4718b028918b1ddf9de652e4a360da9b5"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/testdata/transcript-digest.json",
+   "git_blob": "7bdb3f5ddf32705efce9107056eb37c873dac593"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/transcript_digest_test.go",
+   "git_blob": "65c781e1d01a58ddd526f331c2a0c4ff245636d5"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/types.go",
+   "git_blob": "4b1748096b5f264cf98fcbec3c3515ce3a5e417c"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/validate_test.go",
+   "git_blob": "25956afcc29cb5fac647ce7b7bdf77d37c84ca12"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/vectors_data_test.go",
+   "git_blob": "4eef7bca473ef1f675b825dd34908717e91c1d86"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/vectors_test.go",
+   "git_blob": "5d2a61a0ddad31138b749b16a85a810686bab0fa"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/worker.go",
+   "git_blob": "c4c2c955414f787fe32d1c86b0ddf00e0e3acb1a"
+  },
+  {
+   "repo": "/Users/tux/threshold/snowfall",
+   "rev": "c1847ebdf133d0570643ff968539dd498069f69f",
+   "path": "clients/go/worker_test.go",
+   "git_blob": "632eeb09499ae349c8bd79266e157e292c9f6cf0"
+  },
+  {
+   "repo": "/Users/tux/threshold/Research/SNOWFALL/FROST-migration-spec",
+   "rev": "d45afdab9108cbd0156ad68cc5697ece737a7b1c",
+   "path": "keep-core-verification-spec.md",
+   "git_blob": "53535870285d22a60472eacfaffbd6e277a1a29b"
+  },
+  {
+   "repo": "/Users/tux/threshold/Research/SNOWFALL/FROST-migration-spec",
+   "rev": "d45afdab9108cbd0156ad68cc5697ece737a7b1c",
+   "path": "keep-core-integration-spec.md",
+   "git_blob": "98f8589a48ab95d065d5b95307734d66b93618f1"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/GovernanceUtils.sol",
+   "git_blob": "347387dac64df5383a322e06e3532f02e7da2103"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/Timelock.sol",
+   "git_blob": "76c2f5937e025eccf69ac4fa7c158560d9cdeedd"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bank/Bank.sol",
+   "git_blob": "d44aae20aefe4b2aa2027debc8b9556908cdc64c"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bank/IReceiveBalanceApproval.sol",
+   "git_blob": "bb56db70c4c43480c0c45a4addd2b081b552e8ca"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/BitcoinTx.sol",
+   "git_blob": "6c52c0cf233da047468b03f14b81d873f28529ff"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/Bridge.sol",
+   "git_blob": "07c326c55ceaee6fdfc4a6a0573421e7980e5c51"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/BridgeGovernance.sol",
+   "git_blob": "ea187289cc058e4270990bd81fa6dc4affe3eeaa"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/BridgeGovernanceParameters.sol",
+   "git_blob": "dfbcf8c0f9026c4340601c9343a8529b09efe98b"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/BridgeState.sol",
+   "git_blob": "98013b46506ab933f3dd6e66e94196437e10bda4"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/Deposit.sol",
+   "git_blob": "961f2ecc2415603bda7e5eaa240af509e76eac65"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/DepositSweep.sol",
+   "git_blob": "d0c72cb43b647568ac1c1872282bcf613f78b189"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/EcdsaLib.sol",
+   "git_blob": "f6cc01b4ab60194439846b45dee19c270598bbbe"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/Fraud.sol",
+   "git_blob": "66b2e96e25f666ad3bb543df751f935e26709ba6"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/Heartbeat.sol",
+   "git_blob": "8e8c7dfb646b0ecc6dbc9f968511e60c6f9ece2d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/IRelay.sol",
+   "git_blob": "4b28b244d714bc8435f976a3fbce19e04db64c6b"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/MovingFunds.sol",
+   "git_blob": "f7fb62b8abb60fc8465dcfbef5df915975264b57"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/RebateStaking.sol",
+   "git_blob": "5927c5f3c03a67ceedd109f3264e21dfa38ec2dc"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/Redemption.sol",
+   "git_blob": "584401a226cd05dab646a135209f16ef59c285d7"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/RedemptionWatchtower.sol",
+   "git_blob": "dd42fbddb0222b32adb9976ca3c641b3f97b404e"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/VendingMachine.sol",
+   "git_blob": "d7fe7d320bf37e3719d6a0b391b7ce9cb322d788"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/VendingMachineV2.sol",
+   "git_blob": "6ed15beff3894631efedf4e18e72d7f11209bdaf"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/VendingMachineV3.sol",
+   "git_blob": "01e761ff0313aceb83ed601eb015522f788daf63"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/WalletProposalValidator.sol",
+   "git_blob": "0cd2713bce65a2b392787093ad0147a6fcb3fa6d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/bridge/Wallets.sol",
+   "git_blob": "1e9c5b093f6f32053653700f8c8eeceb9ed14556"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/AbstractL1BTCDepositor.sol",
+   "git_blob": "0616b969f2a460c9c48fea1bf7501a9a84119096"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/starknet/StarkNetBitcoinDepositor.sol",
+   "git_blob": "f3136ceced55468b70726fcba6e3596fcba2ed4e"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/starknet/interfaces/IStarkGateBridge.sol",
+   "git_blob": "e4400142ea5e9fa0f2f60dda9dec872ec5ce2119"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/utils/Crosschain.sol",
+   "git_blob": "10e2a2aeec55d48173adeef4f40b7daadadad516"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/BTCDepositorWormhole.sol",
+   "git_blob": "68a5102e26c066a4232be08b537e1ec3003dfab4"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L1BTCDepositorNtt.sol",
+   "git_blob": "4abd1fc20db45031a8bdc193d3e3859cb0729ed6"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L1BTCDepositorNttWithExecutor.sol",
+   "git_blob": "43044edc34066439431ec28061516da050835371"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L1BTCDepositorWormhole.sol",
+   "git_blob": "0b767d11a11263cbc34dec41b6d941b10d26f25c"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L1BTCDepositorWormholeV2Arbitrum.sol",
+   "git_blob": "9a7f09e15a25b4a84632ed807cd600f8a723da2d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L1BTCDepositorWormholeV2Base.sol",
+   "git_blob": "2651976f5e26dfa3e1e35862a970ed1d41f595cc"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L1BTCRedeemerWormhole.sol",
+   "git_blob": "e215d25380da95b4483e06ade67d063c434a92b4"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L2BTCDepositorWormhole.sol",
+   "git_blob": "be6529d4a4fb5e3780b27717c5a3cf5f1662f999"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L2BTCRedeemerWormhole.sol",
+   "git_blob": "479409fa0a20f64a13d5e1cb34551e6a499f9f54"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L2TBTC.sol",
+   "git_blob": "6f8c054e67817f243621ce3653afc590034b1045"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/L2WormholeGateway.sol",
+   "git_blob": "9b670af0331d3036d42a2ee221d6667bb495a172"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/TransceiverStructs.sol",
+   "git_blob": "69deaa65733ee446fc92856cad1fd3c7b7464f57"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/TrimmedAmount.sol",
+   "git_blob": "871618cd68bdd2f7118022a931dd2411790106a3"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/cross-chain/wormhole/Wormhole.sol",
+   "git_blob": "577799be6be5cdc5d1c9d08973d60aea71fcf16d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/depositor/NativeBTCDepositor.sol",
+   "git_blob": "255e11cb198ddeae3a300fe3b41aab9c9312b0b1"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/C04-BOUNDARIES.md",
+   "git_blob": "8bf4f5eb3baf164c1dd2edd7becf42f1871195ce"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostBitcoinEncoding.sol",
+   "git_blob": "2187ab410ecbbdcfe3ed41a37259a33560aa7017"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostBridge.sol",
+   "git_blob": "0b0e69fcfa5cd8e1d520b5425f88a008f41da1d9"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostCancellationAdmissions.sol",
+   "git_blob": "70b1fce4ca12ee4a92c14dd6dd40efb4f813cad6"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostCancellationCertificate.sol",
+   "git_blob": "4d45d65f7b0ece9da6a4495760073b92e0f937a1"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostCancellationHistory.sol",
+   "git_blob": "29fd9e62fdb49a11bba39e0b79be05cea73b777f"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostCurve.sol",
+   "git_blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostCustody.sol",
+   "git_blob": "5fae71a81102819dd817cf8f1997380e83d73efd"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostDepositAdmission.sol",
+   "git_blob": "6e9d7ece253b22ff28f82cd1913e3c23058103a5"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostDepositProfile.sol",
+   "git_blob": "261b9619dedb4a9a5122145e4d26fa11586f84b3"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostDepositSweep.sol",
+   "git_blob": "2a7230399533988352a5f064737023f5185a8484"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostExposure.sol",
+   "git_blob": "26a2c845c3d98a579446cc14271f57a2bf70359f"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostExposureController.sol",
+   "git_blob": "9e0e768b7256e3218d49aad32c3022fe5d9c8e2d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostExposureState.sol",
+   "git_blob": "9b7d69cc1a7c744007e433bf4e0ad495b615e1c8"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostFraud.sol",
+   "git_blob": "abb14e7839f2b049ae94ffe4d22789b984b1161e"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostFraudDispatch.sol",
+   "git_blob": "42678dbda24c280a3e1af7f2ad6f1aabb4c48e68"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostFraudState.sol",
+   "git_blob": "bbc38cc6d7db7a07256cf6c04672019fcfe996d0"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostFundingConfiguration.sol",
+   "git_blob": "0897be497bd54c007e1900816a1803874612994b"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostFundingState.sol",
+   "git_blob": "9e8e8928519d278f81c76a35e598b52c611e58f5"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostLifecycle.sol",
+   "git_blob": "7db6ca7ba712e2048eb4d5c79cce9f74ec152a5a"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostMovement.sol",
+   "git_blob": "8a1dbd443c20465a26fb01e8fdfd62116a986f95"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostMovementDispatch.sol",
+   "git_blob": "35a836bdd7707e55996a3b79a39a0d9bc973b74a"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostMovementState.sol",
+   "git_blob": "c8302cb8fe6af4809f72725dfe5867edb9b15650"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostRedemptionLedger.sol",
+   "git_blob": "8a1d6aeca09cca64c330cdb3452f3ab3ec3121be"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostRedemptionRequests.sol",
+   "git_blob": "aeec9e3985d41e55b445c92960fbdbf9b89ade26"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostRedemptionSettlement.sol",
+   "git_blob": "5df9044356d3e893d97788dd9f6dff7cd661b385"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostRedemptionState.sol",
+   "git_blob": "6a5af03eca135604f303062d1ed33c6e779abaf0"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostRedemptionTransaction.sol",
+   "git_blob": "9f337ebcedaffee6f5746fbdb59b972c76dfafab"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostRedemptions.sol",
+   "git_blob": "bb9f64e28c7ed19213dc2f5d21980eeef4b453f9"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostReservationCertificate.sol",
+   "git_blob": "afd9a4d5e62cc691e732474acd3fcc7a1e61f9c6"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostSecp256k1.sol",
+   "git_blob": "24987710b29cd9194ffc66c536819e6a63feeaec"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostSigningIntent.sol",
+   "git_blob": "e5ccc4c18e3a5ef6b47adc1caaced47c2f2b5939"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostSweepResolutionCertificate.sol",
+   "git_blob": "4ca653f357cca0526f3fdd7644902c71ad9bb16e"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostTypes.sol",
+   "git_blob": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostVerifier.sol",
+   "git_blob": "95c2cdd08551756de91fc7c0cc1343e45b009278"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/FrostWallets.sol",
+   "git_blob": "c91a8941d059ccf694dc815763214e46527a88c7"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/IFrostBridge.sol",
+   "git_blob": "da45ded07c5c726878c60d38d5cd1e19f7b097a7"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/IFrostExposureBridge.sol",
+   "git_blob": "4dff35a522320d44e7d057bb7c447efd300f0d0d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/IFrostExposureController.sol",
+   "git_blob": "15c605fc66622e6f277ac1ac197ceb92c9b10435"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/IFrostFraudBridge.sol",
+   "git_blob": "6a9624ad222dbb5855eb7bbc5f9955b562a22cbe"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/IFrostFundingBridge.sol",
+   "git_blob": "8a937f109328bb132d866cce244b144f2930d1b5"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/IFrostFundingProof.sol",
+   "git_blob": "fd127de00bc61d6740df62976d1fc4cc3bed5580"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/IFrostLifecycleBridge.sol",
+   "git_blob": "06e3e1a5b481482e178dc36a54205e813f06c557"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/IFrostMovementBridge.sol",
+   "git_blob": "942aa421b500a1966c660efd75798910bed37615"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/IFrostVerifier.sol",
+   "git_blob": "c908c07dbe70ac07e96336f3573f81763108f488"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/frost/README.md",
+   "git_blob": "ad331bfa5da6e1f2152b99ad33d9482d362dc195"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/integrator/AbstractBTCDepositor.sol",
+   "git_blob": "58b69f4e54f2d4bc59183ecf4cb407683a09d08d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/integrator/AbstractBTCRedeemer.sol",
+   "git_blob": "84506ed61c813246d7c9886495776fc716a34e7f"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/integrator/BitcoinTx.sol",
+   "git_blob": "baf701b070ac9798898a0cb8b232e31177be5dc9"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/integrator/IBank.sol",
+   "git_blob": "48345125d9de1e69ec4eb4d148e7e31776f92202"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/integrator/IBridge.sol",
+   "git_blob": "d3e5d5b6425ec1eb40467c71f76f6532b06c67b5"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/integrator/IL2WormholeGateway.sol",
+   "git_blob": "923c32f0227b99176fba38ff54b38d1cefebb0b9"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/integrator/ITBTCVault.sol",
+   "git_blob": "e30981a09ffbf9cae03ed687b06b5d49223c7760"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/maintainer/MaintainerProxy.sol",
+   "git_blob": "4ef2dfe0574a3808fcd5fae67786b414fc960970"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/relay/LightRelay.sol",
+   "git_blob": "5c8af3439116b7c1f4b17ab1e1ee78307cf725b0"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/relay/LightRelayMaintainerProxy.sol",
+   "git_blob": "2d1347fd75d1f3a52684fe8cb9c27aa38ff722cb"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/BankStub.sol",
+   "git_blob": "8eb2a893fb08f8e334fa59d2cc1c1f84521aca34"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/BridgeStub.sol",
+   "git_blob": "11d6042e95efb78288124308ef5f8d539326b058"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostCancellationCapacityFixture.sol",
+   "git_blob": "6945b091d66cf4d01926137df650123c4aacc8ac"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostCancellationHistoryFixture.sol",
+   "git_blob": "48fce4b65918801e64625efdb78a8c889cfa23fa"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostCustodyFixture.sol",
+   "git_blob": "8bb5296e76ab14eedf1b77911f98b523a41bd102"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostDepositAdmissionFixture.sol",
+   "git_blob": "3476ca78afd12528fb331db7d0081b900f3100ee"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostDepositProfileFixture.sol",
+   "git_blob": "d7aca4ac851ae19b7b555744d53bf87f45415733"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostDepositSweepFixture.sol",
+   "git_blob": "d64862167346bbcd2cb5043896a7d5762fa55d0d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostDrainRegistryFixture.sol",
+   "git_blob": "e3d3fa00e9775e6b9d06a1be82450cb327618b10"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostFullAdmissionGasFixture.sol",
+   "git_blob": "a8d89b14ce0f8ec2ebec6370f141acc1f17a2386"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostLegacyOriginFixture.sol",
+   "git_blob": "8b28253632c10e1f8fb65a884af144d019c7c946"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostPublicFundingRegistryFixture.sol",
+   "git_blob": "72d927d13f5cd934a96e5330f15169e312228e61"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostRedemptionLedgerFixture.sol",
+   "git_blob": "61baa934631ffe8bcc09653e586bec6b7eb2478d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostRedemptionTransactionFixture.sol",
+   "git_blob": "9c7004cbf1e18d2ed6606fa90aaf3884eb71b1d0"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostRegistryFixture.sol",
+   "git_blob": "69a920c9650b259e6e311899fa581b1d285b5dc6"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostReservationCertificateFixture.sol",
+   "git_blob": "efc6b8eeac383e9a6dad119c0099abf863176e19"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostSecp256k1Fixture.sol",
+   "git_blob": "9d1dc9096f14a239ad36b6f7704bf49d0bfeda77"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostSharedCustodyLedgerFixture.sol",
+   "git_blob": "aea9dc80880f689a466dd866837581fc367e9361"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/FrostVaultCallbackFixture.sol",
+   "git_blob": "adbfa17bcb0cfe721294e427e5d9cd4f1b56bdfa"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/HeartbeatStub.sol",
+   "git_blob": "9df3aff74fa26ee2a81c54fb7ec50f8731821a9e"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/IMockTarget.sol",
+   "git_blob": "204ed4c3e687f717e3f99ac712c7f2da710f5b0c"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/LightRelayStub.sol",
+   "git_blob": "d916d9df07a12bae91164ebd50ae3bca8faa1a10"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockBank.sol",
+   "git_blob": "bf94afd0839d3d562c3d6413dbd7af1f87a0da7b"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockBridgeForStarkNet.sol",
+   "git_blob": "4fe8c7670eeaab05ffbbfda8226f18283125d9a7"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockBridgeWithRebateStaking.sol",
+   "git_blob": "e3f21cf9f3285901387ef740727105d18d521dd7"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockContract.sol",
+   "git_blob": "9625b5bdeeccde3add4c6c8485a88dc14cdb4233"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockL1BTCRedeemerWormhole.sol",
+   "git_blob": "1f90e7e3b6b13037b2b1981b4e11020d681259c0"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockNttManager.sol",
+   "git_blob": "41a64ce264e4d39d3ebbfcaa839377ae9b82d7ab"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockNttManagerWithExecutor.sol",
+   "git_blob": "098e9d92878c6f3752600f4ccb089a320d8bd21b"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockStarkGateBridge.sol",
+   "git_blob": "8607f88d9e7744d1f52318ed1b8b3ef712d619fa"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockTBTCBridge.sol",
+   "git_blob": "8e3562e5529ca1c9a5e1f97f62bcc7a85b48ce09"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockTBTCBridgeWithSweep.sol",
+   "git_blob": "2819dcd82132d101cf94cc7e9b70265c6e6c60d0"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockTBTCToken.sol",
+   "git_blob": "bef32716a17fc3a9c3ba601fe9745c7164642d7e"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockTBTCVault.sol",
+   "git_blob": "3a3a1b0f97279fc053b341a367053acc3347881b"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/MockTargetConsumer.sol",
+   "git_blob": "45c30efae4c6b834607ef1effbb63b21e100a473"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/ReceiveApprovalStub.sol",
+   "git_blob": "b45180485de66075f2f1537c0a7a100f10768edb"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/ReentrancyAttacker.sol",
+   "git_blob": "690f504fc76c96ecf2975f2d7e4c71d7b7a5b14d"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/SepoliaLightRelay.sol",
+   "git_blob": "1c2ccf938fe06c5c13cc3ee4dd3900cad7817747"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/SystemTestRelay.sol",
+   "git_blob": "c69477383fa0f402dc508b1dae2cff2672c34bbe"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/TestBTCDepositor.sol",
+   "git_blob": "dcae2f847053aaabeee8f61267dad26f5f5a5230"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/TestBTCRedeemer.sol",
+   "git_blob": "b71b0c179c98b2fec1e812b0d9eed802270de75a"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/TestBTCUtilsHelper.sol",
+   "git_blob": "c2d38fca87b9ca9a0c64510541c8bf83c1fefd50"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/TestBitcoinTx.sol",
+   "git_blob": "508b903b827b1eab806966f4050c6e475eda581f"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/TestERC20.sol",
+   "git_blob": "0202ac8b133a0151a65ba66645972f8c297ce5c9"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/TestERC721.sol",
+   "git_blob": "2e5774aa7760e45fc6fd8ec70f5cefb740eb9470"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/TestEcdsaLib.sol",
+   "git_blob": "244acf7868cd8d4981dc7479b682bceba6ec42e0"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/TestSepoliaLightRelay.sol",
+   "git_blob": "1442e2b3abc69fcfacb4a211e4f7d044476b37d0"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/test/WormholeBridgeStub.sol",
+   "git_blob": "f8652739c1c8494dd906e170035152b7db96ca43"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/token/TBTC.sol",
+   "git_blob": "9ef381e2415269dcc6a0e105121b8383fd011be0"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/vault/DonationVault.sol",
+   "git_blob": "aa4923f8c0bede2e774d9205cdcb6bab3492696c"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/vault/IVault.sol",
+   "git_blob": "07d17c020bc525934c6219e66231659416e7a3fd"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/vault/TBTCOptimisticMinting.sol",
+   "git_blob": "f578b7ec3dbd187854ae8c9250eaf2cbcfe11247"
+  },
+  {
+   "repo": "/Users/tux/threshold/tbtc-v2",
+   "rev": "39412825",
+   "path": "solidity/contracts/vault/TBTCVault.sol",
+   "git_blob": "02632c46bc7efc3e2f4219c5045f14067069ce89"
+  },
+  {
+   "path": "/Users/tux/threshold/Research/SNOWFALL/integration-spec-v2/implementation/K-00-SF-01-K-01/artifacts/snowfall-aarch64-apple-darwin",
+   "sha256": "d775dc36c508559f1bd997ab2552cea3aed94587540f6307352fec4628400765"
+  }
+ ]
+}

@@ -1,7 +1,7 @@
 {
-  "format": 2,
-  "date": "2026-10-15",
-  "claim": "Open incremental records; selected pin matches are not complete correspondence or a model result",
+  "format": 3,
+  "date": "2026-11-09",
+  "claim": "Open incremental records; selected pin matches, fresh cited statements and pinned run records are not complete correspondence, a model result or a discharge",
   "rows": [
     {
       "id": 1,
@@ -10,7 +10,8 @@
       "consumer_precondition": "Host publishes the same candidate",
       "model_links": [
         "P-K03-ONE-DESCRIPTOR",
-        "P-K03-SUBMITTED-NOT-TERMINAL"
+        "P-K03-SUBMITTED-NOT-TERMINAL",
+        "A-XONLY-SINGLE-VALIDATION"
       ],
       "producer_sources": [
         {
@@ -35,31 +36,31 @@
       "consumer_sources": [
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "31ab213f39f87085abd812c9e934fabc8ec4a9df",
           "path": "pkg/frost/dkg/executor.go",
-          "blob": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d"
+          "blob": "b61a34a8125cd8a89f78748ec5a727351b933a96"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/dkg/types.go",
           "blob": "68c9b67adb74d5eb0ca3a63e6bdcf5b05fdf5d65"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/snowfallengine/engine.go",
           "blob": "06bf6b7ee887dba2096ae353a12707b947c82ae5"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "solidity/ecdsa/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "solidity/ecdsa/contracts/frost/FrostDkgValidator.sol",
           "blob": "cf5b893adce584a75fb5b59f2d0997aa34080bea"
         }
@@ -70,18 +71,75 @@
           "revision": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
           "path": "test/frost/RESULTS-2026-10-07.md",
           "blob": "1b9d89c95c97084650793746a30b5deabb57dc3c",
-          "scope": "ROW-1: P-K03-ONE-DESCRIPTOR, P-K03-SUBMITTED-NOT-TERMINAL; K-03 local tests, not V-03 full replay"
+          "scope": "ROW-1: P-K03-ONE-DESCRIPTOR, P-K03-SUBMITTED-NOT-TERMINAL; K-03 local tests, not V-03 full replay",
+          "evidence_kind": "review"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/03-dkg.log",
+          "sha256": "75c668fd73e30c3c1dba63c356618903df7ab4cab409327951de9cae67cc2345",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "03-dkg"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-1: K-09 run b9-r2 stage 03-dkg passed (concrete execution, real nodes and workers, local chains): real nodes and workers take a 5-seat wallet {1,1,2,2,3} threshold 3 to ReadyUnfunded through the registry and Bridge. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/k09_lifecycle_test.go",
+          "blob": "aba388c873e460445f7b17104e11a243b719629e",
+          "evidence_kind": "source",
+          "scope": "ROW-1: K-09 stage assertions; byte-identical (sha256) to the b9-r2 manifest testFiles entry"
         }
       ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "K-03/SF-01 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "V-03 full boundary replay, source correspondence and independent review",
-        "C7-3: Named P-C07-BIP340 evidence/specialist review must cover the pinned C-02 FrostDkgValidator/FrostCurve.validX precompile/range/square-root path and Bridge FrostCurve copy, alongside C-07 lift; no implementation migration or new DKG proof is adopted"
+        "C7-3: Named P-C07-BIP340 evidence/specialist review must cover the pinned C-02 FrostDkgValidator/FrostCurve.validX precompile/range/square-root path and Bridge FrostCurve copy, alongside C-07 lift; no implementation migration or new DKG proof is adopted",
+        "K-09 b9-r2 03-dkg executes this join with real nodes and workers at keep-core ef916bf8; the cited V-03 statement must be fresh and V-06 must cover validX before the row can close"
+      ],
+      "statements": [
+        "V-03-chain"
+      ],
+      "blockers": [
+        {
+          "gate": "V-03 model checked and V-03 replay",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870)",
+          "blocks": "K-03 merge and K-03 exit record",
+          "slot": "V-03-chain",
+          "owner": {
+            "role": "verification lead with the K-03 implementer and the C-02/C-03 owners",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K03-CHAIN-3 is fresh. At 31ab213f all seven V-03 predicates pass within the bound, including the restore clause of P-K03-INCONSISTENCY-QUARANTINE (F-V03-R1 fixed by #135; D25)",
+          "package": "V-03"
+        },
+        {
+          "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-06",
+          "blocks": "C-02 exit where shared; C-05, C-08; G-F",
+          "slot": null,
+          "owner": {
+            "role": "cryptographic contract lead with independent specialist review",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
+          "package": "V-06"
+        }
       ]
     },
     {
@@ -109,19 +167,19 @@
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/store/store.go",
           "blob": "255eb6b18360b35596750c1df05169cb2ec88dd0"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/store/dkg_status.go",
           "blob": "57e6533e30bdae2fe4d6b55cf9a296a7f9df68c3"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/store/wallet.go",
           "blob": "1eeada06c53d217eb1cc28adc39c7ef6495a4af1"
         }
@@ -129,19 +187,19 @@
       "consumer_sources": [
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/snowfallengine/reload.go",
           "blob": "f2b8e5e052819d9aa0ce943132e71c8365caf325"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "31ab213f39f87085abd812c9e934fabc8ec4a9df",
           "path": "pkg/frost/dkg/executor.go",
-          "blob": "9bbd75e232e5ed83df23cfd60bd6e6509ca98f7d"
+          "blob": "b61a34a8125cd8a89f78748ec5a727351b933a96"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol",
           "blob": "3cd5ef8e564767e93d99499d6211dad7904e0d46"
         }
@@ -152,18 +210,93 @@
           "revision": "cb36ee3b0c2a0e1cadb185ba4b27f9bb1f00c098",
           "path": "pkg/frost/store/verification/STATEMENTS.json",
           "blob": "e6077d85ad1dc3f94e9d63ce7a756bed37917141",
-          "scope": "ROW-2: P-K03-RELOAD-ONLY-DURABLE, P-K03-READY-ONLY-RELOADED, A-READY-FRESH-RELOAD; V-02 statement on verification branch; combined-head alignment pending"
+          "scope": "ROW-2: P-K03-RELOAD-ONLY-DURABLE, P-K03-READY-ONLY-RELOADED, A-READY-FRESH-RELOAD; V-02 statement on verification branch; combined-head alignment pending",
+          "evidence_kind": "model"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/03-dkg.log",
+          "sha256": "75c668fd73e30c3c1dba63c356618903df7ab4cab409327951de9cae67cc2345",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "03-dkg"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-2: K-09 run b9-r2 stage 03-dkg passed (concrete execution, real nodes and workers, local chains): real nodes and workers take a 5-seat wallet {1,1,2,2,3} threshold 3 to ReadyUnfunded through the registry and Bridge. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/06-restart.log",
+          "sha256": "184d6e676affce9a3f5608d1926083626fa06ac18727b091535562d8085b455d",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "06-restart"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-2: K-09 run b9-r2 stage 06-restart passed (concrete execution, real nodes and workers, local chains): all nodes SIGKILLed after startup and restarted; FROST signers restored without a DKG rerun; a second incoming sweep settles. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/k09_lifecycle_test.go",
+          "blob": "aba388c873e460445f7b17104e11a243b719629e",
+          "evidence_kind": "source",
+          "scope": "ROW-2: K-09 stage assertions; byte-identical (sha256) to the b9-r2 manifest testFiles entry"
         }
       ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "Storage/K-03/C-03 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Align #10 model/replay tooling and affected source pins",
-        "V-03 readiness-counting join"
+        "V-03 readiness-counting join",
+        "K-09 b9-r2 03-dkg and 06-restart execute readiness and restart restore; V-02 runs below the spec bound on a store that still violates VD-05 (blocker V-02); V-03 statement stale"
+      ],
+      "statements": [
+        "V-01-store",
+        "V-02-store",
+        "V-03-chain"
+      ],
+      "blockers": [
+        {
+          "gate": "V-02 model and replay at the recorded V-02 bound",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-02 bound and VD-05 as amended locally for rev 02 (D26, D29; tux 2026-11-09; not pushed)",
+          "blocks": "K-03 exit",
+          "slot": "V-02-store",
+          "owner": {
+            "role": "verification lead with the K-03 implementer",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K03-STORE-4 is fresh. Bound: 3 commits (2 with clone), recorded by tux on 2026-11-09 instead of running the 31-72 GiB four-commit jobs (runbook kept: implementation/K-03/host-verification-repin-2026-11-06/RUNBOOK-4-COMMITS.md). D26: the store keeps its validDKGRequest group-policy guard (pkg/frost/store/dkg_status.go) as defence in depth; KC-VER rev 02 overrides VD-05 and V-02 holds with the guard in place (keep-core#77 closed). Fault families stay split, never combined.",
+          "package": "V-02"
+        },
+        {
+          "gate": "V-03 model checked and V-03 replay",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870)",
+          "blocks": "K-03 merge and K-03 exit record",
+          "slot": "V-03-chain",
+          "owner": {
+            "role": "verification lead with the K-03 implementer and the C-02/C-03 owners",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K03-CHAIN-3 is fresh. At 31ab213f all seven V-03 predicates pass within the bound, including the restore clause of P-K03-INCONSISTENCY-QUARANTINE (F-V03-R1 fixed by #135; D25)",
+          "package": "V-03"
+        }
       ]
     },
     {
@@ -174,30 +307,31 @@
       "model_links": [
         "P-K03-ONE-DESCRIPTOR",
         "P-K03-EXPIRY-TOMBSTONE",
-        "A-CHAIN-FINALITY"
+        "A-CHAIN-FINALITY",
+        "A-XONLY-SINGLE-VALIDATION"
       ],
       "producer_sources": [
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "solidity/ecdsa/contracts/frost/FrostWalletRegistry.sol",
           "blob": "3cd5ef8e564767e93d99499d6211dad7904e0d46"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "solidity/ecdsa/contracts/frost/FrostTypes.sol",
           "blob": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "solidity/ecdsa/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "solidity/ecdsa/contracts/frost/FrostDkgValidator.sol",
           "blob": "cf5b893adce584a75fb5b59f2d0997aa34080bea"
         }
@@ -205,25 +339,25 @@
       "consumer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostWallets.sol",
-          "blob": "9f6092236839548c13f94bde539a79437906a1d8"
+          "blob": "c91a8941d059ccf694dc815763214e46527a88c7"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostTypes.sol",
           "blob": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostBridge.sol",
-          "blob": "fb4fa7ad0aab09ec02f88f46af1f2ab640ac92c4"
+          "blob": "0b0e69fcfa5cd8e1d520b5425f88a008f41da1d9"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         }
@@ -234,18 +368,89 @@
           "revision": "a7406c13014372b0f6667be23e6561a5a64b8721",
           "path": "solidity/test/bridge/Frost.Identity.test.ts",
           "blob": "9e78a1878e775b475e28590788627289c55a7c1c",
-          "scope": "ROW-3: P-K03-ONE-DESCRIPTOR, P-K03-EXPIRY-TOMBSTONE, A-CHAIN-FINALITY; K-03 actual callback/upgrade tests, not V-03 closure"
+          "scope": "ROW-3: P-K03-ONE-DESCRIPTOR, P-K03-EXPIRY-TOMBSTONE, A-CHAIN-FINALITY; K-03 actual callback/upgrade tests, not V-03 closure",
+          "evidence_kind": "source"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/03-dkg.log",
+          "sha256": "75c668fd73e30c3c1dba63c356618903df7ab4cab409327951de9cae67cc2345",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "03-dkg"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-3: K-09 run b9-r2 stage 03-dkg passed (concrete execution, real nodes and workers, local chains): real nodes and workers take a 5-seat wallet {1,1,2,2,3} threshold 3 to ReadyUnfunded through the registry and Bridge. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/k09_lifecycle_test.go",
+          "blob": "aba388c873e460445f7b17104e11a243b719629e",
+          "evidence_kind": "source",
+          "scope": "ROW-3: K-09 stage assertions; byte-identical (sha256) to the b9-r2 manifest testFiles entry"
         }
       ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-01/C-02/C-03 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Finality, reorganization, expiry and readiness correspondence",
-        "C7-3: Named P-C07-BIP340 evidence/specialist review must cover the pinned C-02 FrostDkgValidator/FrostCurve.validX precompile/range/square-root path and Bridge FrostCurve copy, alongside C-07 lift; no implementation migration or new DKG proof is adopted"
+        "C7-3: Named P-C07-BIP340 evidence/specialist review must cover the pinned C-02 FrostDkgValidator/FrostCurve.validX precompile/range/square-root path and Bridge FrostCurve copy, alongside C-07 lift; no implementation migration or new DKG proof is adopted",
+        "K-09 b9-r2 03-dkg executes registry approval to Bridge recognition; finality/reorg correspondence (A-CHAIN-FINALITY) has no model"
+      ],
+      "statements": [
+        "V-02-store",
+        "V-03-chain"
+      ],
+      "blockers": [
+        {
+          "gate": "V-02 model and replay at the recorded V-02 bound",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-02 bound and VD-05 as amended locally for rev 02 (D26, D29; tux 2026-11-09; not pushed)",
+          "blocks": "K-03 exit",
+          "slot": "V-02-store",
+          "owner": {
+            "role": "verification lead with the K-03 implementer",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K03-STORE-4 is fresh. Bound: 3 commits (2 with clone), recorded by tux on 2026-11-09 instead of running the 31-72 GiB four-commit jobs (runbook kept: implementation/K-03/host-verification-repin-2026-11-06/RUNBOOK-4-COMMITS.md). D26: the store keeps its validDKGRequest group-policy guard (pkg/frost/store/dkg_status.go) as defence in depth; KC-VER rev 02 overrides VD-05 and V-02 holds with the guard in place (keep-core#77 closed). Fault families stay split, never combined.",
+          "package": "V-02"
+        },
+        {
+          "gate": "V-03 model checked and V-03 replay",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870)",
+          "blocks": "K-03 merge and K-03 exit record",
+          "slot": "V-03-chain",
+          "owner": {
+            "role": "verification lead with the K-03 implementer and the C-02/C-03 owners",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K03-CHAIN-3 is fresh. At 31ab213f all seven V-03 predicates pass within the bound, including the restore clause of P-K03-INCONSISTENCY-QUARANTINE (F-V03-R1 fixed by #135; D25)",
+          "package": "V-03"
+        },
+        {
+          "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-06",
+          "blocks": "C-02 exit where shared; C-05, C-08; G-F",
+          "slot": null,
+          "owner": {
+            "role": "cryptographic contract lead with independent specialist review",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
+          "package": "V-06"
+        }
       ]
     },
     {
@@ -255,24 +460,25 @@
       "consumer_precondition": "Funded output is sweepable/refundable and recognized by reveal",
       "model_links": [
         "A-SPV-MAINTAINER-RELAY",
-        "A-K06-CANONICAL-SWEEP-BUILDER"
+        "A-K06-CANONICAL-SWEEP-BUILDER",
+        "A-TARGET-CHAIN-GAS-CAP"
       ],
       "producer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostDepositProfile.sol",
           "blob": "261b9619dedb4a9a5122145e4d26fa11586f84b3"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/data/frost/deposit-profile.ts",
           "blob": "f00afebf3947f895aacf08263eb794f091de0edf"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/data/frost/deposit-profile-v1.json",
           "blob": "c090fec08fae052327cdd6749914d55c3414e502"
         }
@@ -280,61 +486,61 @@
       "consumer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostDepositAdmission.sol",
-          "blob": "b84241af4355b7bcabed1427b27d592c3a03237c"
+          "blob": "6e9d7ece253b22ff28f82cd1913e3c23058103a5"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostBitcoinEncoding.sol",
           "blob": "2187ab410ecbbdcfe3ed41a37259a33560aa7017"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostFundingState.sol",
-          "blob": "20e4d52adef77cf8dd571dc1038c54e9fbb6cdb0"
+          "blob": "9e8e8928519d278f81c76a35e598b52c611e58f5"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostFundingConfiguration.sol",
           "blob": "0897be497bd54c007e1900816a1803874612994b"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/IFrostFundingBridge.sol",
-          "blob": "27d15d6a616131a13d165b030a4fd16a4b403fec"
+          "blob": "8a937f109328bb132d866cce244b144f2930d1b5"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/IFrostVerifier.sol",
           "blob": "c908c07dbe70ac07e96336f3573f81763108f488"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostVerifier.sol",
           "blob": "95c2cdd08551756de91fc7c0cc1343e45b009278"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostSecp256k1.sol",
           "blob": "24987710b29cd9194ffc66c536819e6a63feeaec"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostDepositSweep.sol",
-          "blob": "512cc94a153c286e5ff377664b709b1e8db817ca"
+          "blob": "2a7230399533988352a5f064737023f5185a8484"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostCustody.sol",
           "blob": "5fae71a81102819dd817cf8f1997380e83d73efd"
         }
@@ -345,49 +551,79 @@
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/docs/frost/DEPOSIT-PROFILE-V1.md",
           "blob": "0d29f486ec2302f70a1dfdbfd52afc491186c3be",
-          "scope": "ROW-4: Exact proposed local D-04 receipt/scripts/control bytes and primary-source references; owner decision and production qualification pending"
+          "scope": "ROW-4: Exact proposed local D-04 receipt/scripts/control bytes and primary-source references; owner decision and production qualification pending",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/docs/frost/C05-LOCAL-BOUNDARIES.md",
           "blob": "dfb221a12ecf1ab7d26cb36d607de03aa73659a6",
-          "scope": "ROW-4: Implemented local reveal, code-pinned TapTweak and Core sweep/refund boundary; controlled readiness/known key/regtest work, not K-06 or G-F exit"
+          "scope": "ROW-4: Implemented local reveal, code-pinned TapTweak and Core sweep/refund boundary; controlled readiness/known key/regtest work, not K-06 or G-F exit",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.DepositProfile.test.ts",
           "blob": "b4b408269d6ee47c6f3618c31b4db0f71ae21c2d",
-          "scope": "ROW-4: Committed independent deposit-byte/vector and shape regression source; not an unpublished execution log"
+          "scope": "ROW-4: Committed independent deposit-byte/vector and shape regression source; not an unpublished execution log",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.DepositAdmission.test.ts",
           "blob": "6b275dc1aba8aab566bdbc7230be73674e07217d",
-          "scope": "ROW-4: Committed canonical reveal, domain/output/receipt/refund and rollback test source; full client/provider join remains open"
+          "scope": "ROW-4: Committed canonical reveal, domain/output/receipt/refund and rollback test source; full client/provider join remains open",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "12510a6fec33c12ad5437fdef44c19ae99d04d24",
           "path": "solidity/test/helpers/frost-bitcoin.ts",
           "blob": "d7e554fba836a3c0c03e8ef3183eddb13c723157",
-          "scope": "ROW-4: Committed actual Core known-key witness: same archived wallet spend admitted before independent refund and refused after; refund-phase wallet signing disabled. Not threshold signing or production finality."
+          "scope": "ROW-4: Committed actual Core known-key witness: same archived wallet spend admitted before independent refund and refused after; refund-phase wallet signing disabled. Not threshold signing or production finality.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "12510a6fec33c12ad5437fdef44c19ae99d04d24",
           "path": "solidity/test/bridge/Frost.DepositSweep.test.ts",
           "blob": "9b2bbd93954ec46897b74b69842e88faee7b99de",
-          "scope": "ROW-4: Committed refund-spent component refusal with real mined refund proof and unchanged financial frame; 8 producer checks pass, 11 integrated consumer checks pass. Controlled metadata, not K-06 or a universal theorem."
+          "scope": "ROW-4: Committed refund-spent component refusal with real mined refund proof and unchanged financial frame; 8 producer checks pass, 11 integrated consumer checks pass. Controlled metadata, not K-06 or a universal theorem.",
+          "evidence_kind": "source"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/08-deposit-refund.log",
+          "sha256": "f34240d01461b41d54a5118ccc0ed02fe0fa4dfa9165e823c2254a2a302e5a98",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "08-deposit-refund"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-4: K-09 run b9-r2 stage 08-deposit-refund passed (concrete execution, real nodes and workers, local chains): nodes sweep a revealed reserved FROST deposit with the main; maintainer proves it; depositor credited net of fees; depositor refunds alone after locktime. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/k09_lifecycle_test.go",
+          "blob": "aba388c873e460445f7b17104e11a243b719629e",
+          "evidence_kind": "source",
+          "scope": "ROW-4: K-09 stage assertions; byte-identical (sha256) to the b9-r2 manifest testFiles entry"
         }
       ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "Deposit/C-05/C-07/K-06 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "D-04 owner approval and C-07 named P-C07-BIP340/P-C07-TAPTWEAK evidence, exact implementation/bytecode correspondence and specialist qualification remain open",
@@ -396,7 +632,52 @@
         "C05 F1: All FROST funding/payment/cancellation SPV routes require authenticated maintainers plus qualified relay/work/finality assumptions; gates and real-dispatch negative tests are published on C04/C05; qualified relay/canonical-chain correspondence and maintainer availability remain OPEN, not discharged by relay difficulty or regtest proof acceptance",
         "C05 F2/F6: K-06 sweep builder must produce version2 canonical transactions, include existing main when unreserved under the selected main-input rule, and never consume reserved main. Deposit-only reserved credits preserve captured plan context; the main-input rule and focused regressions are implemented/published on C05; the K-06 host-builder and cross-purpose correspondence remain OPEN",
         "C05 F5: Joint maximum deposit-input and real Vault mint/callback gas must be measured and limits qualified with Bitcoin weight; Bank-only extrapolation and single-input witnesses do not establish this bound",
-        "C05 F6: Reveal currently refuses nonzero rebateStaking; rebate ownership/activation disposition is unresolved C-11 release work. Verifier installation is once-only; replacement needs a reviewed Bridge upgrade. pendingReveals includes refunded/fabricated reveals and is not custody, outstanding rights or retirement evidence"
+        "C05 F6: Reveal currently refuses nonzero rebateStaking; rebate ownership/activation disposition is unresolved C-11 release work. Verifier installation is once-only; replacement needs a reviewed Bridge upgrade. pendingReveals includes refunded/fabricated reveals and is not custody, outstanding rights or retirement evidence",
+        "K-09 b9-r2 08-deposit-refund executes sweep and independent refund at tbtc-v2 8a9e9e5a; IFrostFundingBridge.sol changed since (batch 8). V-07 model absent; V-06 named proofs absent"
+      ],
+      "statements": [
+        "V-07-deposit"
+      ],
+      "blockers": [
+        {
+          "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-06",
+          "blocks": "C-02 exit where shared; C-05, C-08; G-F",
+          "slot": null,
+          "owner": {
+            "role": "cryptographic contract lead with independent specialist review",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
+          "package": "V-06"
+        },
+        {
+          "gate": "V-07 model checked; replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-06 merge and exit",
+          "slot": "V-07-deposit",
+          "owner": {
+            "role": "verification lead with the K-06 implementer and the C-05 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K06-DEPOSIT-1 is fresh (5/5 P-K06 at the V-07 bound). The \"exactly that predicate\" weakening matrix is skipped for now (tux 2026-11-09, 30-60 GiB per run); its runbook is kept: implementation/K-06/v07-model-2026-11-06/RUNBOOK-exactness.md",
+          "package": "V-07"
+        },
+        {
+          "gate": "P-K06-D13-NO-SIDE-SWEEP (F-V07-1)",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D13; proposed predicate adopted by D29",
+          "blocks": "K-06 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-06 implementer and the C-05 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "F-V07-1: the D13 side sweep is still allowed by pkg/frost/deposit and C-05 (the node refuses it); tracked by tbtc-v2#24, tests tbtc-v2#52 and keep-core#105 await review",
+          "package": "V-07"
+        }
       ]
     },
     {
@@ -413,108 +694,109 @@
         "A-READY-SEAT-ELIGIBILITY",
         "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION",
         "P-HOST-ONE-INTENT-ATTESTATION",
-        "P-HOST-REPLACEMENT-FINALIZED-ABSENCE"
+        "P-HOST-REPLACEMENT-FINALIZED-ABSENCE",
+        "A-TARGET-CHAIN-GAS-CAP"
       ],
       "producer_sources": [
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/signing/INTENT-V2.md",
           "blob": "e936a9e9d8934fdd42d604867b78ea8c5d78d0ed"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/signing/testdata/intent-v2.json",
           "blob": "a7b25725371a0a650b636c686876ad3efb9f2a7f"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionRequests.sol",
-          "blob": "fd8a28d225703d919adfb56da5dca849bfe8be29"
+          "blob": "aeec9e3985d41e55b445c92960fbdbf9b89ade26"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptions.sol",
           "blob": "bb9f64e28c7ed19213dc2f5d21980eeef4b453f9"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionLedger.sol",
-          "blob": "53be22472bf7b66b88c44d2c65d6baefb1103c92"
+          "blob": "8a1d6aeca09cca64c330cdb3452f3ab3ec3121be"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionState.sol",
           "blob": "6a5af03eca135604f303062d1ed33c6e779abaf0"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostCustody.sol",
           "blob": "5fae71a81102819dd817cf8f1997380e83d73efd"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionTransaction.sol",
           "blob": "9f337ebcedaffee6f5746fbdb59b972c76dfafab"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostReservationCertificate.sol",
           "blob": "afd9a4d5e62cc691e732474acd3fcc7a1e61f9c6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostSigningIntent.sol",
           "blob": "e5ccc4c18e3a5ef6b47adc1caaced47c2f2b5939"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostBridge.sol",
-          "blob": "fb4fa7ad0aab09ec02f88f46af1f2ab640ac92c4"
+          "blob": "0b0e69fcfa5cd8e1d520b5425f88a008f41da1d9"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/IFrostBridge.sol",
-          "blob": "19abd34568692bd8f0bac80adccfe46cd31bac78"
+          "blob": "da45ded07c5c726878c60d38d5cd1e19f7b097a7"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostWallets.sol",
-          "blob": "9f6092236839548c13f94bde539a79437906a1d8"
+          "blob": "c91a8941d059ccf694dc815763214e46527a88c7"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostTypes.sol",
           "blob": "b7cf47c5da60cce61aa616a4ad7123db8d3b8ff6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/C04-BOUNDARIES.md",
           "blob": "8bf4f5eb3baf164c1dd2edd7becf42f1871195ce"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/bridge/BridgeState.sol",
-          "blob": "4be8933b8019ce304e3a64df63bc6ab235ad8c59"
+          "blob": "98013b46506ab933f3dd6e66e94196437e10bda4"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/data/frost/intent-v2.json",
           "blob": "a7b25725371a0a650b636c686876ad3efb9f2a7f"
         }
@@ -522,63 +804,63 @@
       "consumer_sources": [
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/signing/plan.go",
-          "blob": "1d21b09a21f24b80d0a5f0c5d2a7a7265604c927"
+          "blob": "a8e27b8c86bd59bfe5736385f192f2bf835c96e9"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/signing/executor.go",
-          "blob": "da212305cff151ae7a6f9a614e47f6b208113cc0"
+          "blob": "02f2877d7acc7dc049b48d7989260d5bdbfbaaff"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/store/signing.go",
           "blob": "40a00d3ddf5168a55aff09ee12d092a71e5dac5b"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/attestation.go",
-          "blob": "e0518e89635984cfad9d85b42cbea0e3913a4f8d"
+          "blob": "f203352295801599ea011bd534af997937e58c4a"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/planner.go",
-          "blob": "6fd0666f34e7bf32414d4c9061a4a3de870aace8"
+          "blob": "f698114c059a12908a75d90f3c736613bb36e121"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/reservations.go",
           "blob": "e4fb789920bfbabe2cad549b3e11b150ca8b0279"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/agreement.go",
-          "blob": "1d67efba4c186e21bd6ec1cbf83255e92cfa5f66"
+          "blob": "a09aca1124a98063a7ce3cb1ca032a966c49bd81"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/reload.go",
           "blob": "2c9fc3398cc6699bc1795131b8b763f73993bf78"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/chain.go",
-          "blob": "d03113d6599d2e7dd7081006c5ffe09afae79003"
+          "blob": "e5b46f78efcc5ac6270147832b44ddfaf7223b5b"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/chain/ethereum/frost_redemption.go",
-          "blob": "70bc6edf89fbf6e9c82541fffa8f728531799b98"
+          "blob": "80c26f4aa01fd97cf4cd1e7fb277af79fa0df443"
         }
       ],
       "joining_evidence": [
@@ -587,63 +869,111 @@
           "revision": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
           "path": "test/frost/K04-ADVERSARIAL-RESPONSE-2026-10-13.md",
           "blob": "41a5f1e8183f49c9fbb9230b0bdb28a3f7954b0a",
-          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION, A-STORED-DESCRIPTOR-ONLY, A-DUPLICATE-REQUEST-STATE-GUARD, A-READY-SEAT-ELIGIBILITY; Concrete recovery review; controlled reservation provider"
+          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION, A-STORED-DESCRIPTOR-ONLY, A-DUPLICATE-REQUEST-STATE-GUARD, A-READY-SEAT-ELIGIBILITY; Concrete recovery review; controlled reservation provider",
+          "evidence_kind": "review"
         },
         {
           "repository": "tbtc-v2",
           "revision": "a7406c13014372b0f6667be23e6561a5a64b8721",
           "path": "solidity/docs/frost/C04-CLAUDE-RESPONSE-2026-10-13.md",
           "blob": "486dea7c433b4eccb3de5c05db5ec025659ebf3d",
-          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION, A-STORED-DESCRIPTOR-ONLY, A-DUPLICATE-REQUEST-STATE-GUARD, A-READY-SEAT-ELIGIBILITY; Foundation APIs and vectors; no funded admission witness"
+          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION, A-STORED-DESCRIPTOR-ONLY, A-DUPLICATE-REQUEST-STATE-GUARD, A-READY-SEAT-ELIGIBILITY; Foundation APIs and vectors; no funded admission witness",
+          "evidence_kind": "review"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicReservation.test.ts",
           "blob": "3ea1d7d86695c4a72c84f14e26189093d1d86dd3",
-          "scope": "ROW-5: Committed public proof-funded request/reservation, nonce rollback, exact fees/counters/authority and duplicate refusal test source; controlled readiness and known key, not K-05/V-04 correspondence"
+          "scope": "ROW-5: Committed public proof-funded request/reservation, nonce rollback, exact fees/counters/authority and duplicate refusal test source; controlled readiness and known key, not K-05/V-04 correspondence",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicMaximumBatch.test.ts",
           "blob": "96aa49796124797e4da969cc6bbfefb3fce4ee04",
-          "scope": "ROW-5: Committed unchanged 255-request admission/256 refusal and Core/SPV settlement test source; one-input local gas witness, not full combined maxima or production budget"
+          "scope": "ROW-5: Committed unchanged 255-request admission/256 refusal and Core/SPV settlement test source; one-input local gas witness, not full combined maxima or production budget",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/contracts/frost/C04-BOUNDARIES.md",
           "blob": "e08fa005c827c5b1b0571470b5bdc01270847dff",
-          "scope": "ROW-5: Local escrow/counters/record APIs and honest-host eligibility/replacement obligations; K-05 providers, V-04, D-08 and release qualification remain open"
+          "scope": "ROW-5: Local escrow/counters/record APIs and honest-host eligibility/replacement obligations; K-05 providers, V-04, D-08 and release qualification remain open",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/integration/redemption_test.go",
           "blob": "e0c2bb020f64799ad99632266075e4904813eff1",
-          "scope": "ROW-5: K-05 named tests (real DKG, real worker, real C-04/C-05 on Anvil, Bitcoin Core regtest); concrete tests, local test values"
+          "scope": "ROW-5: K-05 named tests (real DKG, real worker, real C-04/C-05 on Anvil, Bitcoin Core regtest); concrete tests, local test values",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/redemption/v04_admission_replay_test.go",
           "blob": "b761c0a7c18af880dd58ce3297bbcd4bbb0050d7",
-          "scope": "ROW-5: P-HOST-ONE-INTENT-ATTESTATION, P-HOST-REPLACEMENT-FINALIZED-ABSENCE, A-ONE-INTENT-PER-STATE-VERSION; 22 admission traces replay on the real Attester.lock and store, controlled C-04 reader; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "ROW-5: P-HOST-ONE-INTENT-ATTESTATION, P-HOST-REPLACEMENT-FINALIZED-ABSENCE, A-ONE-INTENT-PER-STATE-VERSION; 22 admission traces replay on the real Attester.lock and store, controlled C-04 reader; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/signing/verification/RESULTS-K05.md",
           "blob": "cecb6dbd3823a963fc0767e934b0a0e7f6d2b6d6",
-          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "ROW-5: P-K04-AUTHORIZED-ONLY, A-OPERATOR-ATTEST-AFTER-VALIDATION, A-ONE-INTENT-PER-STATE-VERSION; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "review"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/05-redemption.log",
+          "sha256": "90fb74708ad98997c300768e4a04bcdd57da601ef06f522ca838ad509ece3c39",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "05-redemption"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-5: K-09 run b9-r2 stage 05-redemption passed (concrete execution, real nodes and workers, local chains): nodes reserve and pay a redemption; Core pays the redeemer; Bridge main equals the change. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/07-reservation-timeout.log",
+          "sha256": "5248a3b5018c9560179ed8a99d1c938a141a8b9108af6498c6ff01b558fd7bae",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "07-reservation-timeout"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-5: K-09 run b9-r2 stage 07-reservation-timeout passed (concrete execution, real nodes and workers, local chains): nodes reserve then go down; keeper times the request out by its deadline; wallet MovingFunds. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/k09_lifecycle_test.go",
+          "blob": "aba388c873e460445f7b17104e11a243b719629e",
+          "evidence_kind": "source",
+          "scope": "ROW-5: K-09 stage assertions; byte-identical (sha256) to the b9-r2 manifest testFiles entry"
         }
       ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-04/K-04/K-05 leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Local Bridge escrow, admission records, stored-descriptor binding, uint64 intent counters/stateVersion and duplicate-state guard are implemented; canonical finalized Go K-05 provider and full signing correspondence remain open",
@@ -655,7 +985,39 @@
         "Claude A5: First credit sets stateVersion1; unreserved credits and confirmed custody replacement/quarantine bump it; reserved additive deposits and ordinary policy reconfiguration do not. Required host/provider current-versus-captured version correspondence remains OPEN",
         "Published K04/C04 profile is64requests/32recognized inputs/65outputs, with up to100certificate seats. Historical255 and provisional128 profiles are superseded; exact target/watchtower/proof budgets and production gas qualification remain OPEN. Current published source pins do not turn local gas tests into qualification",
         "K-05 (15 Oct): the durable slot lock implements finalized-deadline plus finalized-custody replacement; V-04 admission replay passes 22/22 at the declared bound after model repair F-V04-K05-01. Planner.Validate, the Attest window check and key reload are not exercised by that replay; the lock trusts the finalized head that Attest derives as head - FinalityBlocks (A-CHAIN-FINALITY, D-09)",
-        "K-05 cross-operator certificate transport is absent (A-K05-CERTIFICATE-TRANSPORT); certificates are collected in-process in the local fixture"
+        "K-05 cross-operator certificate transport is absent (A-K05-CERTIFICATE-TRANSPORT); certificates are collected in-process in the local fixture",
+        "K-09 b9-r2 05-redemption and 07-reservation-timeout execute this join at tbtc-v2 8a9e9e5a; BridgeState.sol changed since. V-04 statement stale; certificate transport absent"
+      ],
+      "statements": [
+        "V-04-signing"
+      ],
+      "blockers": [
+        {
+          "gate": "V-04 model checked and V-04 replay with C-04",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged) V-04 rev 02 predicates",
+          "blocks": "K-04 merge and K-05 exit record",
+          "slot": "V-04-signing",
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K05-SIGN-5 (supersedes S-K05-SIGN-4) is fresh; the rev 02 V-04 predicates are a separate blocker below",
+          "package": "V-04"
+        },
+        {
+          "gate": "V-04 rev 02 predicates and the containment transition",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-05 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "The rev 02 V-04 predicates and the containment transition are not modelled; P-K05-LATE-SIGNATURE-QUARANTINE not cited; A-STORE (#80) not discharged",
+          "package": "V-04"
+        }
       ]
     },
     {
@@ -672,53 +1034,53 @@
       "producer_sources": [
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/signing/done.go",
-          "blob": "f0565b079e61061352e59c322469863ec5d37511"
+          "blob": "e6ba3064c9f3ae247c7f2cc0489aa13ebe358a12"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/signing/executor.go",
-          "blob": "da212305cff151ae7a6f9a614e47f6b208113cc0"
+          "blob": "02f2877d7acc7dc049b48d7989260d5bdbfbaaff"
         }
       ],
       "consumer_sources": [
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/bitcoin/taproot_transaction.go",
-          "blob": "13fb9123646404d673c036d47f20bd97a05946c6"
+          "blob": "dd3101f8f1064bf3c87b9e4246557d7716d43390"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/tbtc/wallet_signing.go",
           "blob": "161059144c95e01a2b6f10659225a7b07c1d9836"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Core.test.ts",
           "blob": "fd1a6e4851c8b49a43f2f820c66ad06b0c984847"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/resolver.go",
-          "blob": "cb32ba7fdc85e9755d43c4e8586b3f11d62f3ab0"
+          "blob": "c2c5603b3c532cb34e120d48c5ff82843fd86e7c"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/ledger.go",
-          "blob": "02eeeb7478b54082b050f453e0828b98dd11e3dc"
+          "blob": "0ba6e89dd37d59543c77471d1203880e6b5bbfb3"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/maintainer/spv/frost_redemptions.go",
-          "blob": "d5bfe26997d3a346e34a38e4103f18645e8fa615"
+          "blob": "5fba78523e2f4d873c0f645615996a4a7bf10f03"
         }
       ],
       "joining_evidence": [
@@ -727,41 +1089,176 @@
           "revision": "5c595620d2ec1e2a73ebd811c937c695d162a35d",
           "path": "test/frost/K04-ADVERSARIAL-RESPONSE-2026-10-13.md",
           "blob": "41a5f1e8183f49c9fbb9230b0bdb28a3f7954b0a",
-          "scope": "ROW-6: P-K05-LATE-SIGNATURE-QUARANTINE, P-K05-TERMINAL-ATTEMPT, A-BUILDER-FROZEN-BEFORE-SIGN; Local worker/Core/recovery tests; public SPV join pending"
+          "scope": "ROW-6: P-K05-LATE-SIGNATURE-QUARANTINE, P-K05-TERMINAL-ATTEMPT, A-BUILDER-FROZEN-BEFORE-SIGN; Local worker/Core/recovery tests; public SPV join pending",
+          "evidence_kind": "review"
         },
         {
           "repository": "tbtc-v2",
           "revision": "b20ed301786b714a0ec4dbd81ce0909fe9ff5619",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Core.test.ts",
           "blob": "8c7c58edf1bbc21eb8fefef1bd014bdb574dd19c",
-          "scope": "ROW-6: Committed controlled Core mixed key/script-path witness source; identical signed sweep before reservation and mined afterward, public SPV resolution and local canonical certificate calldata/receipt retrieval. Known scalar3/controlled registry/regtest work; not canonical K-05 provider, archive availability, finality or threshold qualification."
+          "scope": "ROW-6: Committed controlled Core mixed key/script-path witness source; identical signed sweep before reservation and mined afterward, public SPV resolution and local canonical certificate calldata/receipt retrieval. Known scalar3/controlled registry/regtest work; not canonical K-05 provider, archive availability, finality or threshold qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/integration/redemption_test.go",
           "blob": "e0c2bb020f64799ad99632266075e4904813eff1",
-          "scope": "ROW-6: P-K05-TERMINAL-ATTEMPT; K-05 lifecycle and late-signature named tests: same bytes broadcast, SPV payment proof by the K-05 maintainer path on regtest; concrete tests"
+          "scope": "ROW-6: P-K05-TERMINAL-ATTEMPT; K-05 lifecycle and late-signature named tests: same bytes broadcast, SPV payment proof by the K-05 maintainer path on regtest; concrete tests",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/signing/verification/RESULTS-K05.md",
           "blob": "cecb6dbd3823a963fc0767e934b0a0e7f6d2b6d6",
-          "scope": "ROW-6: P-K05-TERMINAL-ATTEMPT pass within bounds; P-K05-LATE-SIGNATURE-QUARANTINE blocked on tlabs-xyz/FROST-migration-spec#2; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "ROW-6: P-K05-TERMINAL-ATTEMPT pass within bounds; P-K05-LATE-SIGNATURE-QUARANTINE blocked on tlabs-xyz/FROST-migration-spec#2; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "review"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/04-drain.log",
+          "sha256": "f6a990e0a6fe38d643ad18738a27170009a1e810d523eb2021ef8820f95ca5e8",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "04-drain"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-6: K-09 run b9-r2 stage 04-drain passed (concrete execution, real nodes and workers, local chains): nodes sweep the incoming drain output; maintainer proves the sweep; Bridge main equals the sweep output, Core confirmed. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/05-redemption.log",
+          "sha256": "90fb74708ad98997c300768e4a04bcdd57da601ef06f522ca838ad509ece3c39",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "05-redemption"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-6: K-09 run b9-r2 stage 05-redemption passed (concrete execution, real nodes and workers, local chains): nodes reserve and pay a redemption; Core pays the redeemer; Bridge main equals the change. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/06-restart.log",
+          "sha256": "184d6e676affce9a3f5608d1926083626fa06ac18727b091535562d8085b455d",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "06-restart"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-6: K-09 run b9-r2 stage 06-restart passed (concrete execution, real nodes and workers, local chains): all nodes SIGKILLed after startup and restarted; FROST signers restored without a DKG rerun; a second incoming sweep settles. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/09-movement.log",
+          "sha256": "f6b98f2fe0ecc0e1feede87ef4888a3de619ef38e769d8f6a33efac1f4118d74",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "09-movement"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-6: K-09 run b9-r2 stage 09-movement passed (concrete execution, real nodes and workers, local chains): nodes commit A targets and move A main to B; maintainer proves it; A custody 0, B holds the pending incoming output. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/k09_lifecycle_test.go",
+          "blob": "aba388c873e460445f7b17104e11a243b719629e",
+          "evidence_kind": "source",
+          "scope": "ROW-6: K-09 stage assertions; byte-identical (sha256) to the b9-r2 manifest testFiles entry"
         }
       ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "Signing/Bitcoin/maintainer leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Public K-05/K-07 SPV and maintainer witnesses",
         "Claude A5: P-K05-LATE-SIGNATURE-QUARANTINE wording needs owner/model disposition distinguishing a late host grant/release from SPV resolution of a previously authorized payment in TimeoutPending/Quarantined; normative specs are unchanged",
         "C05 F1 / A-SPV-MAINTAINER-RELAY: The broadcast-to-SPV join requires approved maintainer callers on all funding/payment/cancellation proof routes and qualified relay/work/canonical-chain/finality assumptions. Work alone does not prove canonical membership. Local gate review does not discharge K-05/K-07 provider/maintainer correspondence; selected sources are rebound to the published heads; qualified provider/relay/maintainer release evidence remains OPEN",
-        "P-K05-LATE-SIGNATURE-QUARANTINE is BLOCKED on owner decision tlabs-xyz/FROST-migration-spec#2 (A5); V-04 claims neither reading (A-K05-LATE-SIGNATURE-SETTLEMENT)"
+        "P-K05-LATE-SIGNATURE-QUARANTINE is BLOCKED on owner decision tlabs-xyz/FROST-migration-spec#2 (A5); V-04 claims neither reading (A-K05-LATE-SIGNATURE-SETTLEMENT)",
+        "K-09 b9-r2 stages 04/05/06/09 execute signed transaction to maintainer proof; realistic-header SPV run absent; V-04 statement stale; V-08 model absent"
+      ],
+      "statements": [
+        "V-04-signing",
+        "V-08-movement"
+      ],
+      "blockers": [
+        {
+          "gate": "V-04 model checked and V-04 replay with C-04",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged) V-04 rev 02 predicates",
+          "blocks": "K-04 merge and K-05 exit record",
+          "slot": "V-04-signing",
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K05-SIGN-5 (supersedes S-K05-SIGN-4) is fresh; the rev 02 V-04 predicates are a separate blocker below",
+          "package": "V-04"
+        },
+        {
+          "gate": "V-08 predicates, model, replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-07",
+          "slot": "V-08-movement",
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K07-MOVEMENT-1 is fresh (5/5 P-K07, movement and closure profiles separate; no combined profile)",
+          "package": "V-08"
+        },
+        {
+          "gate": "V-04 rev 02 predicates and the containment transition",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-05 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "The rev 02 V-04 predicates and the containment transition are not modelled; P-K05-LATE-SIGNATURE-QUARANTINE not cited; A-STORE (#80) not discharged",
+          "package": "V-04"
+        },
+        {
+          "gate": "F-V08-1 escalated incoming output never swept",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D27",
+          "blocks": "K-07 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "keep-core#133, confirmed P2 defect (D27: nodes sweep an Escalated incoming output as a Pending one); tests-first batch 11, then a V-08 replay of the recovery path",
+          "package": "V-08"
+        }
       ]
     },
     {
@@ -773,24 +1270,25 @@
         "P-K05-NO-DOUBLE-OUTCOME",
         "A-FEE-INCLUSION-ESCALATION",
         "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION",
-        "A-SPV-MAINTAINER-RELAY"
+        "A-SPV-MAINTAINER-RELAY",
+        "A-TARGET-CHAIN-GAS-CAP"
       ],
       "producer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/bridge/BitcoinTx.sol",
           "blob": "6c52c0cf233da047468b03f14b81d873f28529ff"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostCustody.sol",
           "blob": "5fae71a81102819dd817cf8f1997380e83d73efd"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionTransaction.sol",
           "blob": "9f337ebcedaffee6f5746fbdb59b972c76dfafab"
         }
@@ -798,165 +1296,165 @@
       "consumer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostDepositSweep.sol",
-          "blob": "512cc94a153c286e5ff377664b709b1e8db817ca"
+          "blob": "2a7230399533988352a5f064737023f5185a8484"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostDepositAdmission.sol",
-          "blob": "b84241af4355b7bcabed1427b27d592c3a03237c"
+          "blob": "6e9d7ece253b22ff28f82cd1913e3c23058103a5"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostFundingState.sol",
-          "blob": "20e4d52adef77cf8dd571dc1038c54e9fbb6cdb0"
+          "blob": "9e8e8928519d278f81c76a35e598b52c611e58f5"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/IFrostFundingProof.sol",
           "blob": "fd127de00bc61d6740df62976d1fc4cc3bed5580"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionLedger.sol",
-          "blob": "53be22472bf7b66b88c44d2c65d6baefb1103c92"
+          "blob": "8a1d6aeca09cca64c330cdb3452f3ab3ec3121be"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionSettlement.sol",
           "blob": "5df9044356d3e893d97788dd9f6dff7cd661b385"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostCancellationCertificate.sol",
           "blob": "4d45d65f7b0ece9da6a4495760073b92e0f937a1"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionRequests.sol",
-          "blob": "fd8a28d225703d919adfb56da5dca849bfe8be29"
+          "blob": "aeec9e3985d41e55b445c92960fbdbf9b89ade26"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionState.sol",
           "blob": "6a5af03eca135604f303062d1ed33c6e779abaf0"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostBridge.sol",
-          "blob": "fb4fa7ad0aab09ec02f88f46af1f2ab640ac92c4"
+          "blob": "0b0e69fcfa5cd8e1d520b5425f88a008f41da1d9"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/bridge/BridgeState.sol",
-          "blob": "4be8933b8019ce304e3a64df63bc6ab235ad8c59"
+          "blob": "98013b46506ab933f3dd6e66e94196437e10bda4"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/bridge/Deposit.sol",
           "blob": "961f2ecc2415603bda7e5eaa240af509e76eac65"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/bank/Bank.sol",
           "blob": "d44aae20aefe4b2aa2027debc8b9556908cdc64c"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/vault/TBTCVault.sol",
           "blob": "02632c46bc7efc3e2f4219c5045f14067069ce89"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/bridge/Frost.PublicSettlement.test.ts",
           "blob": "db64749a4573e228f1b84a72352fe7ff2e423cba"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostSweepResolutionCertificate.sol",
           "blob": "4ca653f357cca0526f3fdd7644902c71ad9bb16e"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Core.test.ts",
           "blob": "fd1a6e4851c8b49a43f2f820c66ad06b0c984847"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Gas.test.ts",
-          "blob": "fa8c19d8df61e73b1b58e10cee8609423334a33e"
+          "blob": "f72653bbd02bdaab18e2751d34427f34932437b0"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.test.ts",
-          "blob": "4371561794cd62ddf25fe5aa674f313091c949d5"
+          "blob": "eb0e14003f02ad2fd4c9f412d3a88a69f26af347"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostCancellationAdmissions.sol",
           "blob": "70b1fce4ca12ee4a92c14dd6dd40efb4f813cad6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostCancellationHistory.sol",
           "blob": "29fd9e62fdb49a11bba39e0b79be05cea73b777f"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/test/FrostCancellationHistoryFixture.sol",
           "blob": "48fce4b65918801e64625efdb78a8c889cfa23fa"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/bridge/Frost.CancellationAlternatives.test.ts",
           "blob": "242f76a6097ee5b43547415d0cc2323180295f98"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/test/bridge/Frost.CancellationHistory.test.ts",
           "blob": "18ca8c5b920fa51360229b69f4244fb9708dcf30"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/resolver.go",
-          "blob": "cb32ba7fdc85e9755d43c4e8586b3f11d62f3ab0"
+          "blob": "c2c5603b3c532cb34e120d48c5ff82843fd86e7c"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/frost/redemption/ledger.go",
-          "blob": "02eeeb7478b54082b050f453e0828b98dd11e3dc"
+          "blob": "0ba6e89dd37d59543c77471d1203880e6b5bbfb3"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "pkg/chain/ethereum/frost_redemption.go",
-          "blob": "70bc6edf89fbf6e9c82541fffa8f728531799b98"
+          "blob": "80c26f4aa01fd97cf4cd1e7fb277af79fa0df443"
         }
       ],
       "joining_evidence": [
@@ -965,105 +1463,223 @@
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicFunding.test.ts",
           "blob": "da5c0d98d9d5b6a1dd61735f60c9ef839d9a836b",
-          "scope": "ROW-7: Committed public reveal/Core-SPV sweep/backed Bank credit/replay refusal test source; controlled readiness and regtest work, not full custody qualification"
+          "scope": "ROW-7: Committed public reveal/Core-SPV sweep/backed Bank credit/replay refusal test source; controlled readiness and regtest work, not full custody qualification",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicSettlement.test.ts",
           "blob": "a9e3d5783a7c5db06fc33f8aab7c8c57fe1fe0a7",
-          "scope": "ROW-7: Committed public Core/SPV payment/cancellation, quarantine recovery, single consumption, unreserved timeout/finality and request-deadline boundary test source at test-only successor2229c9cf; controlled readiness/known scalar3/regtest work, not K-05/V-04/D-08 closure"
+          "scope": "ROW-7: Committed public Core/SPV payment/cancellation, quarantine recovery, single consumption, unreserved timeout/finality and request-deadline boundary test source at test-only successor2229c9cf; controlled readiness/known scalar3/regtest work, not K-05/V-04/D-08 closure",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.PublicVaultCallback.test.ts",
           "blob": "91fedca4814b12a13b9efbfe9b3001738c4c8893",
-          "scope": "ROW-7: Committed public Bank/Vault credit, shared callback guard, late-failure full frame and captured watchtower-policy test source; no generalized financial proof"
+          "scope": "ROW-7: Committed public Bank/Vault credit, shared callback guard, late-failure full frame and captured watchtower-policy test source; no generalized financial proof",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/docs/frost/CUSTODY-SCHEMA-V1.md",
           "blob": "b64b164ee6f27f88b0560201d3fcc516d901e75b",
-          "scope": "ROW-7: Shared custody owner/intent-counter and active additive-deposit accounting obligations; not a qualified storage/provider or proof claim"
+          "scope": "ROW-7: Shared custody owner/intent-counter and active additive-deposit accounting obligations; not a qualified storage/provider or proof claim",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/docs/frost/C05-LOCAL-BOUNDARIES.md",
           "blob": "dfb221a12ecf1ab7d26cb36d607de03aa73659a6",
-          "scope": "ROW-7: Local exact SPV/Bank/Vault and fee conservation implementation boundaries; full qualification/reconciliation remain open"
+          "scope": "ROW-7: Local exact SPV/Bank/Vault and fee conservation implementation boundaries; full qualification/reconciliation remain open",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "b20ed301786b714a0ec4dbd81ce0909fe9ff5619",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Core.test.ts",
           "blob": "8c7c58edf1bbc21eb8fefef1bd014bdb574dd19c",
-          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification."
+          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "b20ed301786b714a0ec4dbd81ce0909fe9ff5619",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.Gas.test.ts",
           "blob": "c752496cc1efb5283598fcb24682fb0d24016ce8",
-          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification."
+          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "b20ed301786b714a0ec4dbd81ce0909fe9ff5619",
           "path": "solidity/test/bridge/Frost.SweepConflictResolution.test.ts",
           "blob": "4371561794cd62ddf25fe5aa674f313091c949d5",
-          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification."
+          "scope": "ROW-7: Scoped source for operator-approved sweep conflict resolution and individually held/claimed refunds, Bank/Vault rollback and capped 64-request/128-input/100-seat measurement. Synthetic gas proofs are distinct from the actual Core witness. Test source pins do not infer run results, model correspondence or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.CancellationAlternatives.test.ts",
           "blob": "242f76a6097ee5b43547415d0cc2323180295f98",
-          "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification."
+          "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "64b981854619b4804d404823bfe77059bf1a554d",
           "path": "solidity/test/bridge/Frost.CancellationHistory.test.ts",
           "blob": "18ca8c5b920fa51360229b69f4244fb9708dcf30",
-          "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification."
+          "scope": "ROW-7: Scoped source for increasing-fee immutable cancellation alternatives, independent full sponsor budgets, exact proven winner and sponsor-only terminal returns. Core-backed lifecycle/RBF tests are distinct from synthetic legacy-record metadata units; source references do not infer execution, canonical provider/model or production qualification.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "12510a6fec33c12ad5437fdef44c19ae99d04d24",
           "path": "solidity/test/helpers/frost-bitcoin.ts",
           "blob": "d7e554fba836a3c0c03e8ef3183eddb13c723157",
-          "scope": "ROW-7: Committed actual Core known-key witness: same archived wallet spend admitted before independent refund and refused after; refund-phase wallet signing disabled. Not threshold signing or production finality."
+          "scope": "ROW-7: Committed actual Core known-key witness: same archived wallet spend admitted before independent refund and refused after; refund-phase wallet signing disabled. Not threshold signing or production finality.",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "12510a6fec33c12ad5437fdef44c19ae99d04d24",
           "path": "solidity/test/bridge/Frost.DepositSweep.test.ts",
           "blob": "9b2bbd93954ec46897b74b69842e88faee7b99de",
-          "scope": "ROW-7: Committed refund-spent component refusal with real mined refund proof and unchanged financial frame; 8 producer checks pass, 11 integrated consumer checks pass. Controlled metadata, not K-06 or a universal theorem."
+          "scope": "ROW-7: Committed refund-spent component refusal with real mined refund proof and unchanged financial frame; 8 producer checks pass, 11 integrated consumer checks pass. Controlled metadata, not K-06 or a universal theorem.",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/integration/v04_c04_replay_test.go",
           "blob": "992118278d8241bd956b4125f9952e9b60005ba3",
-          "scope": "ROW-7: P-K05-NO-DOUBLE-OUTCOME; C-04 projection replay of 8 signing traces on the real Bridge, host, worker and Core (partial); refund-on-elapsed-time and refund-on-certificate-expiry weakened expectations refused by the real Bridge; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "ROW-7: P-K05-NO-DOUBLE-OUTCOME; C-04 projection replay of 8 signing traces on the real Bridge, host, worker and Core (partial); refund-on-elapsed-time and refund-on-certificate-expiry weakened expectations refused by the real Bridge; S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "source"
         },
         {
           "repository": "keep-core",
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/integration/redemption_test.go",
           "blob": "e0c2bb020f64799ad99632266075e4904813eff1",
-          "scope": "ROW-7: P-K05-NO-DOUBLE-OUTCOME; K-05 reservation timeout race named test; concrete tests"
+          "scope": "ROW-7: P-K05-NO-DOUBLE-OUTCOME; K-05 reservation timeout race named test; concrete tests",
+          "evidence_kind": "source"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/04-drain.log",
+          "sha256": "f6a990e0a6fe38d643ad18738a27170009a1e810d523eb2021ef8820f95ca5e8",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "04-drain"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-7: K-09 run b9-r2 stage 04-drain passed (concrete execution, real nodes and workers, local chains): nodes sweep the incoming drain output; maintainer proves the sweep; Bridge main equals the sweep output, Core confirmed. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/05-redemption.log",
+          "sha256": "90fb74708ad98997c300768e4a04bcdd57da601ef06f522ca838ad509ece3c39",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "05-redemption"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-7: K-09 run b9-r2 stage 05-redemption passed (concrete execution, real nodes and workers, local chains): nodes reserve and pay a redemption; Core pays the redeemer; Bridge main equals the change. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/06-restart.log",
+          "sha256": "184d6e676affce9a3f5608d1926083626fa06ac18727b091535562d8085b455d",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "06-restart"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-7: K-09 run b9-r2 stage 06-restart passed (concrete execution, real nodes and workers, local chains): all nodes SIGKILLed after startup and restarted; FROST signers restored without a DKG rerun; a second incoming sweep settles. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/07-reservation-timeout.log",
+          "sha256": "5248a3b5018c9560179ed8a99d1c938a141a8b9108af6498c6ff01b558fd7bae",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "07-reservation-timeout"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-7: K-09 run b9-r2 stage 07-reservation-timeout passed (concrete execution, real nodes and workers, local chains): nodes reserve then go down; keeper times the request out by its deadline; wallet MovingFunds. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/08-deposit-refund.log",
+          "sha256": "f34240d01461b41d54a5118ccc0ed02fe0fa4dfa9165e823c2254a2a302e5a98",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "08-deposit-refund"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-7: K-09 run b9-r2 stage 08-deposit-refund passed (concrete execution, real nodes and workers, local chains): nodes sweep a revealed reserved FROST deposit with the main; maintainer proves it; depositor credited net of fees; depositor refunds alone after locktime. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/09-movement.log",
+          "sha256": "f6b98f2fe0ecc0e1feede87ef4888a3de619ef38e769d8f6a33efac1f4118d74",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "09-movement"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-7: K-09 run b9-r2 stage 09-movement passed (concrete execution, real nodes and workers, local chains): nodes commit A targets and move A main to B; maintainer proves it; A custody 0, B holds the pending incoming output. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/k09_lifecycle_test.go",
+          "blob": "aba388c873e460445f7b17104e11a243b719629e",
+          "evidence_kind": "source",
+          "scope": "ROW-7: K-09 stage assertions; byte-identical (sha256) to the b9-r2 manifest testFiles entry"
         }
       ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-04/C-05/C-06 accounting leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Local funding credit, escrow, captured-input payment/cancellation, shared tombstones, additive deposits and governance quarantine are implemented; required full financial-frame tests/review and source/model correspondence, including V-04 named predicate evidence and combined-provider correspondence, remain open",
@@ -1074,7 +1690,93 @@
         "Claude A5: P-K05-LATE-SIGNATURE-QUARANTINE wording needs owner/model disposition distinguishing a late host grant/release from SPV resolution of a previously authorized payment in TimeoutPending/Quarantined; normative specs are unchanged",
         "C05 F1: All FROST funding/payment/cancellation SPV routes require authenticated maintainers plus qualified relay/work/finality assumptions; gates and real-dispatch negative tests are published on C04/C05; qualified relay/canonical-chain correspondence and maintainer availability remain OPEN, not discharged by relay difficulty or regtest proof acceptance",
         "C05 F2/F6: Shared spentMainUTXOs is the intentional cross-scheme replay boundary; retain shared tombstone and legacy-defense/accounting correspondence, without adopting a separate scheme-spent map. A3 Bank/Vault joint maximum is measured locally; alternate debt/proof/target qualification remains OPEN",
-        "K-05 TimeoutPending host policy is an owner decision (tlabs-xyz/FROST-migration-spec#3, A-K05-TIMEOUT-POLICY); RebroadcastThenCancel and AlwaysCancel are both implemented, neither is a default"
+        "K-05 TimeoutPending host policy is an owner decision (tlabs-xyz/FROST-migration-spec#3, A-K05-TIMEOUT-POLICY); RebroadcastThenCancel and AlwaysCancel are both implemented, neither is a default",
+        "K-09 b9-r2 stages 04-09 execute credit/settlement once on the happy and timeout paths; no adversarial double-outcome execution; V-04 stale, V-07/V-08 absent"
+      ],
+      "statements": [
+        "V-04-signing",
+        "V-07-deposit",
+        "V-08-movement"
+      ],
+      "blockers": [
+        {
+          "gate": "V-04 model checked and V-04 replay with C-04",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged) V-04 rev 02 predicates",
+          "blocks": "K-04 merge and K-05 exit record",
+          "slot": "V-04-signing",
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K05-SIGN-5 (supersedes S-K05-SIGN-4) is fresh; the rev 02 V-04 predicates are a separate blocker below",
+          "package": "V-04"
+        },
+        {
+          "gate": "V-07 model checked; replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-06 merge and exit",
+          "slot": "V-07-deposit",
+          "owner": {
+            "role": "verification lead with the K-06 implementer and the C-05 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K06-DEPOSIT-1 is fresh (5/5 P-K06 at the V-07 bound). The \"exactly that predicate\" weakening matrix is skipped for now (tux 2026-11-09, 30-60 GiB per run); its runbook is kept: implementation/K-06/v07-model-2026-11-06/RUNBOOK-exactness.md",
+          "package": "V-07"
+        },
+        {
+          "gate": "V-08 predicates, model, replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-07",
+          "slot": "V-08-movement",
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K07-MOVEMENT-1 is fresh (5/5 P-K07, movement and closure profiles separate; no combined profile)",
+          "package": "V-08"
+        },
+        {
+          "gate": "V-04 rev 02 predicates and the containment transition",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-05 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-04/K-05 implementers and the C-04 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "The rev 02 V-04 predicates and the containment transition are not modelled; P-K05-LATE-SIGNATURE-QUARANTINE not cited; A-STORE (#80) not discharged",
+          "package": "V-04"
+        },
+        {
+          "gate": "P-K06-D13-NO-SIDE-SWEEP (F-V07-1)",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D13; proposed predicate adopted by D29",
+          "blocks": "K-06 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-06 implementer and the C-05 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "F-V07-1: the D13 side sweep is still allowed by pkg/frost/deposit and C-05 (the node refuses it); tracked by tbtc-v2#24, tests tbtc-v2#52 and keep-core#105 await review",
+          "package": "V-07"
+        },
+        {
+          "gate": "F-V08-1 escalated incoming output never swept",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D27",
+          "blocks": "K-07 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "keep-core#133, confirmed P2 defect (D27: nodes sweep an Escalated incoming output as a Pending one); tests-first batch 11, then a V-08 replay of the recovery path",
+          "package": "V-08"
+        }
       ]
     },
     {
@@ -1083,113 +1785,168 @@
       "producer_result": "Local C-07 verifier output and retained C-04 authorization/quarantine records; canonical challenge producer absent",
       "consumer_precondition": "Defense resolves the exact act",
       "model_links": [
-        "A-SPV-MAINTAINER-RELAY"
+        "A-SPV-MAINTAINER-RELAY",
+        "A-XONLY-SINGLE-VALIDATION"
       ],
       "producer_sources": [
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostVerifier.sol",
           "blob": "95c2cdd08551756de91fc7c0cc1343e45b009278"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostSecp256k1.sol",
           "blob": "24987710b29cd9194ffc66c536819e6a63feeaec"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/IFrostVerifier.sol",
           "blob": "c908c07dbe70ac07e96336f3573f81763108f488"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostReservationCertificate.sol",
           "blob": "afd9a4d5e62cc691e732474acd3fcc7a1e61f9c6"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostCancellationCertificate.sol",
           "blob": "4d45d65f7b0ece9da6a4495760073b92e0f937a1"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionLedger.sol",
-          "blob": "53be22472bf7b66b88c44d2c65d6baefb1103c92"
+          "blob": "8a1d6aeca09cca64c330cdb3452f3ab3ec3121be"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionRequests.sol",
-          "blob": "fd8a28d225703d919adfb56da5dca849bfe8be29"
+          "blob": "aeec9e3985d41e55b445c92960fbdbf9b89ade26"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostRedemptionState.sol",
           "blob": "6a5af03eca135604f303062d1ed33c6e779abaf0"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "solidity/ecdsa/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         },
         {
           "repository": "keep-core",
-          "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
           "path": "solidity/ecdsa/contracts/frost/FrostDkgValidator.sol",
           "blob": "cf5b893adce584a75fb5b59f2d0997aa34080bea"
         },
         {
           "repository": "tbtc-v2",
-          "revision": "64b981854619b4804d404823bfe77059bf1a554d",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
           "path": "solidity/contracts/frost/FrostCurve.sol",
           "blob": "db089b5617b7c4af72248bc3ad93876bf992331c"
         }
       ],
-      "consumer_sources": [],
+      "consumer_sources": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostFraud.sol",
+          "blob": "abb14e7839f2b049ae94ffe4d22789b984b1161e"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostFraudDispatch.sol",
+          "blob": "42678dbda24c280a3e1af7f2ad6f1aabb4c48e68"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/frost/enforcement/defender.go",
+          "blob": "a718c34ba51bbfea99d2d20038e5d7edad971012"
+        }
+      ],
       "joining_evidence": [
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/verification/frost-c07/README.md",
           "blob": "9401bd0acb0e109bc30673a3f89bd94596e1b14d",
-          "scope": "ROW-8: Draft BIP340/TapTweak runtime and partial arithmetic proof boundaries; complete Solidity/EVM correspondence and named V-06 predicates remain open"
+          "scope": "ROW-8: Draft BIP340/TapTweak runtime and partial arithmetic proof boundaries; complete Solidity/EVM correspondence and named V-06 predicates remain open",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/test/bridge/Frost.Verifier.test.ts",
           "blob": "fb71068f7c736ef1b1a488af5f32dcc8085bdd61",
-          "scope": "ROW-8: Committed official-vector/runtime verifier test source; not C-07 specialist or worst-case gas qualification"
+          "scope": "ROW-8: Committed official-vector/runtime verifier test source; not C-07 specialist or worst-case gas qualification",
+          "evidence_kind": "source"
         },
         {
           "repository": "tbtc-v2",
           "revision": "2229c9cfc67cbb78de370cc10165b06a2142f9a6",
           "path": "solidity/contracts/frost/C04-BOUNDARIES.md",
           "blob": "e08fa005c827c5b1b0571470b5bdc01270847dff",
-          "scope": "ROW-8: Retained admitted certificate/cancellation expiry and authenticated governance quarantine/recovery records; containment is not a canonical C-08 signature challenge or loss proof"
+          "scope": "ROW-8: Retained admitted certificate/cancellation expiry and authenticated governance quarantine/recovery records; containment is not a canonical C-08 signature challenge or loss proof",
+          "evidence_kind": "source"
         }
       ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-07/C-08 enforcement leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
-        "Draft C-07 verifier and retained local C-04 authorization/quarantine records are implemented; canonical C-08 public challenge/defense/timeout consumer remains absent",
+        "Draft C-07 verifier and retained local C-04 authorization/quarantine records are implemented; canonical C-08 public challenge/defense/timeout consumer remains absent (superseded 2026-11-06: C-08 FrostFraud/FrostFraudDispatch and the K-08 defender are now pinned consumers; their qualification remains open)",
         "P-C07-BIP340 and P-C07-TAPTWEAK belong to V-06; evidence for those named predicates, verifier implementation/bytecode correspondence, specialist review and qualified worst-case gas remain open",
         "Governance containment and known-key controlled witnesses do not discharge exact-act defense or production signing/finality assumptions",
         "C7-3: Named P-C07-BIP340 evidence/specialist review must cover the pinned C-02 FrostDkgValidator/FrostCurve.validX precompile/range/square-root path and Bridge FrostCurve copy, alongside C-07 lift; no implementation migration or new DKG proof is adopted",
         "C05 F1: All FROST funding/payment/cancellation SPV routes require authenticated maintainers plus qualified relay/work/finality assumptions; gates and real-dispatch negative tests are published on C04/C05; qualified relay/canonical-chain correspondence and maintainer availability remain OPEN, not discharged by relay difficulty or regtest proof acceptance",
-        "C05 F6: Shared spent identities also reach legacy fraud defense; verify the intended cross-scheme defense correspondence, not an invented scheme-separation production change"
+        "C05 F6: Shared spent identities also reach legacy fraud defense; verify the intended cross-scheme defense correspondence, not an invented scheme-separation production change",
+        "C-08 FrostFraud admission/defense and the K-08 defender exist and are now pinned; K-09 b9-r2 has no fraud admission/defense/timeout stage; V-06 and V-09 absent"
+      ],
+      "statements": [
+        "V-09-enforcement"
+      ],
+      "blockers": [
+        {
+          "gate": "V-06 named proofs P-C07-BIP340 and P-C07-TAPTWEAK",
+          "spec": "KC-VER rev 01 section 4 (d45afda, blob 53535870); V-06",
+          "blocks": "C-02 exit where shared; C-05, C-08; G-F",
+          "slot": null,
+          "owner": {
+            "role": "cryptographic contract lead with independent specialist review",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "V-06 not started; no named-predicate evidence for either BIP340 implementation (FrostCurve.validX, FrostSecp256k1.lift)",
+          "package": "V-06"
+        },
+        {
+          "gate": "V-09 predicates, model, replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-08",
+          "slot": "V-09-enforcement",
+          "owner": {
+            "role": "verification lead with the K-08 implementer and the C-08 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K08-ENFORCE-1 is fresh (HEARTBEAT-DOMAIN, EVIDENCE-RETAINED, NO-SUSPECT-SANCTION pass). P-K08-DEFENSE-BEFORE-DEADLINE is owned by a separate (future) defender process (D28), recorded as caller obligation A-K08-DEFENDER-PROCESS with the V-09 component result as its evidence",
+          "package": "V-09"
+        }
       ]
     },
     {
@@ -1200,20 +1957,144 @@
       "model_links": [
         "A-SPV-MAINTAINER-RELAY"
       ],
-      "producer_sources": [],
-      "consumer_sources": [],
-      "joining_evidence": [],
+      "producer_sources": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostLifecycle.sol",
+          "blob": "7db6ca7ba712e2048eb4d5c79cce9f74ec152a5a"
+        }
+      ],
+      "consumer_sources": [
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/node_wallet_closure.go",
+          "blob": "25b5f68c7114950f27fcb546d277148753c12970"
+        }
+      ],
+      "joining_evidence": [
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/11-cutover-closure.log",
+          "sha256": "34bbc41afd0ca54705299307f262f91f3ee2d1de65159e110ba467601a60530f",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "11-cutover-closure"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-9: K-09 run b9-r2 stage 11-cutover-closure passed (concrete execution, real nodes and workers, local chains): cutover to FrostOnly; legacy creation refused; legacy source and an empty FROST wallet close. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/k09_lifecycle_test.go",
+          "blob": "aba388c873e460445f7b17104e11a243b719629e",
+          "evidence_kind": "source",
+          "scope": "ROW-9: K-09 stage assertions; byte-identical (sha256) to the b9-r2 manifest testFiles entry"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/k09/K09.LegacyObligations.test.ts",
+          "blob": "7f47120619a97a5fb048476d51e506116860b092",
+          "evidence_kind": "source",
+          "scope": "ROW-9: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/k09/obligation-ledger.ts",
+          "blob": "6b0e47f23080ab1cbc47f0950038b7a20a01993d",
+          "evidence_kind": "source",
+          "scope": "ROW-9: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/k09/K09.CutoverInvariants.test.ts",
+          "blob": "cac709d95980ec2159c511b85fe6ad8fb3edda4b",
+          "evidence_kind": "source",
+          "scope": "ROW-9: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/k09-contract.log",
+          "sha256": "e83851674c70d75bcf95c1bf6300a7e18d79d9db61d67bac1c21390654607b05",
+          "manifest": {
+            "path": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/manifest.json",
+            "sha256": "e5f7aa861b4bb9182f5dc3b8364b07865594d56c607f75bbd0856ba2a85795bd",
+            "stage": "k09-contract"
+          },
+          "subject": {
+            "tbtc-v2": "39412825454ae9d7d56811ce48cd826c92b821c2"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-9: tbtc-v2 K09 contract tests at 39412825, 35 passing (concrete tests, real ECDSA WalletRegistry stack and 40a11d1d Bridge behind a real proxy; smock beacon and difficulty-0 relay are labelled adapters): K09.LegacyObligations (every 40a11d1d obligation class carried across upgrade, drain, cutover and containment and discharged by each of 21 routes; uncovered class fails) and K09.CutoverInvariants (direct FROST closure with an open challenge reverts \"FROST closure obligations\"). Not a model result or a discharge"
+        }
+      ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-09/K-12 lifecycle/operations leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Funded closure, Bitcoin custody and archive inventory absent",
         "No V-01\u2013V-04 predicate discharges retirement",
         "C05 F1: All FROST funding/payment/cancellation SPV routes require authenticated maintainers plus qualified relay/work/finality assumptions; gates and real-dispatch negative tests are published on C04/C05; qualified relay/canonical-chain correspondence and maintainer availability remain OPEN, not discharged by relay difficulty or regtest proof acceptance",
-        "C05 F6: pendingReveals is an unreconciled cumulative reveal count, not a live-rights or safe-retirement predicate; refunded/fabricated reveal and custody/authorization archives require explicit lifecycle inventory"
+        "C05 F6: pendingReveals is an unreconciled cumulative reveal count, not a live-rights or safe-retirement predicate; refunded/fabricated reveal and custody/authorization archives require explicit lifecycle inventory",
+        "K-09 b9-r2 11-cutover-closure executes closure of a legacy source and an empty FROST wallet; tbtc-v2 K09 LegacyObligations/CutoverInvariants are sources without a retained run at 39412825; K-12 Bitcoin/archive inventory absent",
+        "6 November addendum: tbtc-v2 K09 contract tests executed at 39412825 (35 passing) and pinned as execution evidence; this is concrete testing of the contracts, not the K-12 Bitcoin/archive inventory or deployed-state correspondence"
+      ],
+      "statements": [
+        "V-08-movement"
+      ],
+      "blockers": [
+        {
+          "gate": "V-08 predicates, model, replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-07",
+          "slot": "V-08-movement",
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "Clears while S-K07-MOVEMENT-1 is fresh (5/5 P-K07, movement and closure profiles separate; no combined profile)",
+          "package": "V-08"
+        },
+        {
+          "gate": "V-10 model; replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-10, K-11, K-12",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the release commander and the C-10 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "V-10 predicates defined in the rev 02 draft; no model or replay exists",
+          "package": "V-10"
+        },
+        {
+          "gate": "F-V08-1 escalated incoming output never swept",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged); D27",
+          "blocks": "K-07 exit",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the K-07 implementer and the C-06 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "keep-core#133, confirmed P2 defect (D27: nodes sweep an Escalated incoming output as a Pending one); tests-first batch 11, then a V-08 replay of the recovery path",
+          "package": "V-08"
+        }
       ]
     },
     {
@@ -1222,19 +2103,138 @@
       "producer_result": "Approved source/configuration",
       "consumer_precondition": "Production inherits the qualified claim",
       "model_links": [],
-      "producer_sources": [],
+      "producer_sources": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/deploy/87_deploy_frost_bridge_upgrade.ts",
+          "blob": "c0b70278d18f1e6c3f84540e0c5e256d6695370d"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "solidity/ecdsa/deploy/18_deploy_frost_registry.ts",
+          "blob": "bb0c68cd90ec7a8daa4d0956d5f2dd6d30e66e54"
+        }
+      ],
       "consumer_sources": [],
-      "joining_evidence": [],
+      "joining_evidence": [
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/01-legacy.log",
+          "sha256": "ffe38477b9826bc07c2d9e0331b20dc2cc0b7565aa034234ada1ee099d25cd04",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "01-legacy"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-10: K-09 run b9-r2 stage 01-legacy passed (concrete execution, real nodes and workers, local chains): 40a11d1d Bridge world built with a legacy source in MovingFunds (setup for the upgrade witness). Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/02-upgrade.log",
+          "sha256": "d5bd0edf41565781c40d0e9460891f18113ab5e88a02b5149e881c12fda6723c",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "02-upgrade"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-10: K-09 run b9-r2 stage 02-upgrade passed (concrete execution, real nodes and workers, local chains): proxy upgraded in place; legacy wallets and Bank balance unchanged (local layout witness, not C-11/K-10 deployed-state correspondence). Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/11-cutover-closure.log",
+          "sha256": "34bbc41afd0ca54705299307f262f91f3ee2d1de65159e110ba467601a60530f",
+          "manifest": {
+            "path": "implementation/K09-lifecycle-run-2026-11-06-b9-r2/manifest.json",
+            "sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+            "stage": "11-cutover-closure"
+          },
+          "subject": {
+            "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+            "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-10: K-09 run b9-r2 stage 11-cutover-closure passed (concrete execution, real nodes and workers, local chains): cutover to FrostOnly; legacy creation refused; legacy source and an empty FROST wallet close. Ran at keep-core ef916bf8 / tbtc-v2 8a9e9e5a; not a model result or a discharge"
+        },
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "pkg/tbtc/k09_lifecycle_test.go",
+          "blob": "aba388c873e460445f7b17104e11a243b719629e",
+          "evidence_kind": "source",
+          "scope": "ROW-10: K-09 stage assertions; byte-identical (sha256) to the b9-r2 manifest testFiles entry"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/k09/K09.CutoverInvariants.test.ts",
+          "blob": "cac709d95980ec2159c511b85fe6ad8fb3edda4b",
+          "evidence_kind": "source",
+          "scope": "ROW-10: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/k09/K09.RegistryCutover.test.ts",
+          "blob": "5e23baf0bdf19c697c99d0a86ffbfe4ab41e45fa",
+          "evidence_kind": "source",
+          "scope": "ROW-10: tbtc-v2 K09 contract test source (tbtc-v2#53); executed at 39412825 in V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run"
+        },
+        {
+          "repository": "evidence",
+          "path": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/k09-contract.log",
+          "sha256": "e83851674c70d75bcf95c1bf6300a7e18d79d9db61d67bac1c21390654607b05",
+          "manifest": {
+            "path": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run/manifest.json",
+            "sha256": "e5f7aa861b4bb9182f5dc3b8364b07865594d56c607f75bbd0856ba2a85795bd",
+            "stage": "k09-contract"
+          },
+          "subject": {
+            "tbtc-v2": "39412825454ae9d7d56811ce48cd826c92b821c2"
+          },
+          "evidence_kind": "execution",
+          "scope": "ROW-10: tbtc-v2 K09 contract tests at 39412825, 35 passing (concrete tests, real ECDSA WalletRegistry stack and 40a11d1d Bridge behind a real proxy; smock beacon and difficulty-0 relay are labelled adapters): K09.RegistryCutover (cutover refused in every non-IDLE registry DKG state with the full storage frame unchanged; no ECDSA wallet after FrostOnly) and K09.CutoverInvariants (FROST-only creation, cutover and containment refusals with positive twins). Not a model result or a discharge"
+        }
+      ],
       "dependency_coverage": "selected; incomplete",
       "owner": {
         "role": "C-11/K-10 release/governance leads",
-        "person": null,
-        "assignment_status": "open"
+        "person": "tux",
+        "assignment_status": "assigned"
       },
       "remaining": [
         "Exact release, layout, runtime/fence and deployed-state records absent",
         "No V-01\u2013V-04 predicate discharges deployment",
-        "C05 F6: Nonzero rebateStaking blocks FROST reveal; rebate ownership/activation decision remains unresolved C-11. Install-once verifier replacement requires reviewed Bridge upgrade/configuration qualification; no ownership or upgrade policy adopted"
+        "C05 F6: Nonzero rebateStaking blocks FROST reveal; rebate ownership/activation decision remains unresolved C-11. Install-once verifier replacement requires reviewed Bridge upgrade/configuration qualification; no ownership or upgrade policy adopted",
+        "K-09 b9-r2 02-upgrade and 11-cutover-closure are local upgrade/cutover witnesses; C-11a/C-11b deploy scripts now pinned as producers; K-10 reproducible build and deployed-state correspondence absent",
+        "6 November addendum: tbtc-v2 K09 contract tests executed at 39412825 (35 passing) and pinned as execution evidence; K-10 reproducible build and deployed-state correspondence remain absent"
+      ],
+      "statements": [],
+      "blockers": [
+        {
+          "gate": "V-10 model; replay",
+          "spec": "KC-VER rev 02 draft section 4 (kc-ver-02 51b9a16, blob ab1815f3; not merged)",
+          "blocks": "K-10, K-11, K-12",
+          "slot": null,
+          "owner": {
+            "role": "verification lead with the release commander and the C-10 owner",
+            "person": "tux",
+            "assignment_status": "assigned"
+          },
+          "missing": "V-10 predicates defined in the rev 02 draft; no model or replay exists",
+          "package": "V-10"
+        }
       ]
     }
   ],
@@ -1260,10 +2260,12 @@
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/agreement.go",
           "blob": "1d67efba4c186e21bd6ec1cbf83255e92cfa5f66",
-          "scope": "A-K04-AGREED-EXECUTOR-CONFIG: local chain-derived agreement only; no cross-operator transport"
+          "scope": "A-K04-AGREED-EXECUTOR-CONFIG: local chain-derived agreement only; no cross-operator transport",
+          "evidence_kind": "source"
         }
       ],
-      "k05_disposition": "K-05 derives the agreed executor configuration from finalized chain state locally (redemption/agreement.go); cross-operator agreement transport is not implemented; stays open"
+      "k05_disposition": "K-05 derives the agreed executor configuration from finalized chain state locally (redemption/agreement.go); cross-operator agreement transport is not implemented; stays open",
+      "statements": []
     },
     {
       "id": "A-GUARDED-END-BEFORE-RELEASE",
@@ -1280,7 +2282,11 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": [
+        "V-01-store",
+        "V-04-signing"
+      ]
     },
     {
       "id": "A-READY-FRESH-RELOAD",
@@ -1297,7 +2303,11 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": [
+        "V-02-store",
+        "V-03-chain"
+      ]
     },
     {
       "id": "A-BUILDER-FROZEN-BEFORE-SIGN",
@@ -1314,7 +2324,10 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": [
+        "V-04-signing"
+      ]
     },
     {
       "id": "A-CHAIN-FINALITY",
@@ -1331,7 +2344,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-FENCE-STORAGE",
@@ -1348,7 +2362,10 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": [
+        "V-01-store"
+      ]
     },
     {
       "id": "A-OPERATOR-ATTEST-AFTER-VALIDATION",
@@ -1371,10 +2388,14 @@
           "revision": "8b5e601e0b51e0d3c30c7a7dd6596449c3579eee",
           "path": "pkg/frost/redemption/attestation.go",
           "blob": "e0518e89635984cfad9d85b42cbea0e3913a4f8d",
-          "scope": "A-OPERATOR-ATTEST-AFTER-VALIDATION: Attest orders Validate, Reload, lock, sign"
+          "scope": "A-OPERATOR-ATTEST-AFTER-VALIDATION: Attest orders Validate, Reload, lock, sign",
+          "evidence_kind": "source"
         }
       ],
-      "k05_disposition": "K-05 Attester.Attest validates the plan against finalized chain state and reloads the completed key before the durable lock and any seat signature; covered by K-05 named tests, not by the V-04 admission replay; stays open"
+      "k05_disposition": "K-05 Attester.Attest validates the plan against finalized chain state and reloads the completed key before the durable lock and any seat signature; covered by K-05 named tests, not by the V-04 admission replay; stays open",
+      "statements": [
+        "V-04-signing"
+      ]
     },
     {
       "id": "A-ONE-INTENT-PER-STATE-VERSION",
@@ -1397,10 +2418,14 @@
           "revision": "6ae3fd46127dcef918134d993b31b578684292b1",
           "path": "pkg/frost/redemption/v04_admission_replay_test.go",
           "blob": "b761c0a7c18af880dd58ce3297bbcd4bbb0050d7",
-          "scope": "A-ONE-INTENT-PER-STATE-VERSION: S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go"
+          "scope": "A-ONE-INTENT-PER-STATE-VERSION: S-K05-SIGN-2 (V-04 at K-05): bounded model checking plus concrete replay; not proof of Go",
+          "evidence_kind": "source"
         }
       ],
-      "k05_disposition": "K-05 durable compare-and-insert slot lock implemented (Attester.lock); V-04 admission replay 22/22 at the declared bound; production finality depth and provider authentication remain assumptions; stays open"
+      "k05_disposition": "K-05 durable compare-and-insert slot lock implemented (Attester.lock); V-04 admission replay 22/22 at the declared bound; production finality depth and provider authentication remain assumptions; stays open",
+      "statements": [
+        "V-04-signing"
+      ]
     },
     {
       "id": "A-STORED-DESCRIPTOR-ONLY",
@@ -1417,7 +2442,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-FEE-INCLUSION-ESCALATION",
@@ -1434,7 +2460,25 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostCancellationHistory.sol",
+          "blob": "29fd9e62fdb49a11bba39e0b79be05cea73b777f",
+          "evidence_kind": "source",
+          "scope": "A-FEE-INCLUSION-ESCALATION: retained increasing-fee cancellation alternatives (52413cc6) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.CancellationAlternatives.test.ts",
+          "blob": "242f76a6097ee5b43547415d0cc2323180295f98",
+          "evidence_kind": "source",
+          "scope": "A-FEE-INCLUSION-ESCALATION: alternatives with independent budgets at the integration head; source only, not a qualification"
+        }
+      ],
+      "statements": []
     },
     {
       "id": "A-DUPLICATE-REQUEST-STATE-GUARD",
@@ -1451,7 +2495,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-READY-SEAT-ELIGIBILITY",
@@ -1468,7 +2513,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION",
@@ -1485,7 +2531,25 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostSweepResolutionCertificate.sol",
+          "blob": "4ca653f357cca0526f3fdd7644902c71ad9bb16e",
+          "evidence_kind": "source",
+          "scope": "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION: certified sweep conflict resolution (4ccbacf0) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.SweepConflictResolution.test.ts",
+          "blob": "eb0e14003f02ad2fd4c9f412d3a88a69f26af347",
+          "evidence_kind": "source",
+          "scope": "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION: sweep spends a reserved main; requests individually refundable at the integration head; source only, not a qualification"
+        }
+      ],
+      "statements": []
     },
     {
       "id": "A-SPV-MAINTAINER-RELAY",
@@ -1502,7 +2566,41 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostBridge.sol",
+          "blob": "0b0e69fcfa5cd8e1d520b5425f88a008f41da1d9",
+          "evidence_kind": "source",
+          "scope": "A-SPV-MAINTAINER-RELAY: isSpvMaintainer required for deposit sweep, sweep resolution, redemption and cancellation proofs (02baba9e, 4ccbacf0, 2b205b85) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostMovementDispatch.sol",
+          "blob": "35a836bdd7707e55996a3b79a39a0d9bc973b74a",
+          "evidence_kind": "source",
+          "scope": "A-SPV-MAINTAINER-RELAY: isSpvMaintainer required for moving-funds and moved-funds-sweep proofs (98f1e993) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.PublicSpvMaintainer.test.ts",
+          "blob": "ebea5781b04c5b81339fb1e31ca5f2d227444337",
+          "evidence_kind": "source",
+          "scope": "A-SPV-MAINTAINER-RELAY: refusal test through the funded Bridge at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.FundingDispatch.test.ts",
+          "blob": "d3f9e377b4abf3f8f97a44bd9132a2b74d360f67",
+          "evidence_kind": "source",
+          "scope": "A-SPV-MAINTAINER-RELAY: dispatch refusal test at the integration head; source only, not a qualification"
+        }
+      ],
+      "statements": []
     },
     {
       "id": "A-K06-CANONICAL-SWEEP-BUILDER",
@@ -1519,7 +2617,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-K05-TIMEOUT-POLICY",
@@ -1536,7 +2635,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-K05-LATE-SIGNATURE-SETTLEMENT",
@@ -1553,7 +2653,8 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
     },
     {
       "id": "A-K05-CERTIFICATE-TRANSPORT",
@@ -1570,7 +2671,182 @@
         "named_monitor": null,
         "approved_deadline": null
       },
-      "evidence": []
+      "evidence": [],
+      "statements": []
+    },
+    {
+      "id": "A-TARGET-CHAIN-GAS-CAP",
+      "evidence": [
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostSigningIntent.sol",
+          "blob": "e5ccc4c18e3a5ef6b47adc1caaced47c2f2b5939",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: MAX_REQUESTS 64, MAX_INPUTS 32 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostDepositSweep.sol",
+          "blob": "2a7230399533988352a5f064737023f5185a8484",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: MAX_SWEEP_INPUTS 128 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostMovement.sol",
+          "blob": "8a1dbd443c20465a26fb01e8fdfd62116a986f95",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: MAX_MOVEMENT_TARGETS 128 (28b35730, ADV-C1 tbtc-v2#49) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostFraud.sol",
+          "blob": "abb14e7839f2b049ae94ffe4d22789b984b1161e",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: MAX_INPUTS 128, MAX_OUTPUTS 252 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.PublicGasCap.test.ts",
+          "blob": "29c6dfa08ebb7ff150807a16c460eba89723e799",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: admission/payment/cancellation under the transaction cap at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.FullAdmissionGas.test.ts",
+          "blob": "07d2b8b0e2156114c8714430627f12b611e6fec1",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: complete admission gas at combined shapes at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.DepositSweep.Gas.test.ts",
+          "blob": "c735db1b231ad993ad7e5acc75190a4953a5058b",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: sweep credits under the explicit cap (synthetic SPV) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.SweepConflictResolution.Gas.test.ts",
+          "blob": "f72653bbd02bdaab18e2751d34427f34932437b0",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: resolution proof under 2^24 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/b8/B8.MovementTargetCap.test.ts",
+          "blob": "f9caa84348e1a3a6623415cb91b231a841a7f5e4",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: [ADV-C1 #49] 129 refused, 128 proves under 2^24 at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/test/bridge/Frost.Fraud.MovementOutputCap.test.ts",
+          "blob": "b11b2112ef69ea7fbcfc332e0294f895a4aeaedb",
+          "evidence_kind": "source",
+          "scope": "A-TARGET-CHAIN-GAS-CAP: fraud defense output cap at the integration head; source only, not a qualification"
+        }
+      ],
+      "requirement": "Every FROST admission, proof, resolution, movement and defense fits the target chain per-transaction gas cap (2^24, EIP-7825) at its declared maximum shape",
+      "status": "open",
+      "statements": [],
+      "owner": {
+        "role": "C-04/C-05/C-06/C-08 contract leads and C-11 release owners",
+        "person": null,
+        "assignment_status": "open"
+      },
+      "monitoring_escalation": {
+        "status": "proposed; approval pending",
+        "policy": "Refuse shapes above the declared caps; requalify gas on any change to a capped path or target chain",
+        "named_monitor": null,
+        "approved_deadline": null
+      },
+      "disposition": "Caps implemented: 64 requests / 32 inputs (FrostSigningIntent), 128 sweep inputs, 128 movement targets (28b35730, ADV-C1), fraud 128 inputs / 252 outputs. Gas tests exist as sources; no execution record at 39412825 is pinned here; production gas qualification on the target chain open (review L2 gas cap)"
+    },
+    {
+      "id": "A-XONLY-SINGLE-VALIDATION",
+      "evidence": [
+        {
+          "repository": "keep-core",
+          "revision": "925103a6cf28bd9b4ddeacb4a457b3d4346b9d4f",
+          "path": "solidity/ecdsa/contracts/frost/FrostCurve.sol",
+          "blob": "db089b5617b7c4af72248bc3ad93876bf992331c",
+          "evidence_kind": "source",
+          "scope": "A-XONLY-SINGLE-VALIDATION: C-02 validX used by FrostDkgValidator at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostCurve.sol",
+          "blob": "db089b5617b7c4af72248bc3ad93876bf992331c",
+          "evidence_kind": "source",
+          "scope": "A-XONLY-SINGLE-VALIDATION: byte-identical Bridge copy (blob db089b56) at the integration head; source only, not a qualification"
+        },
+        {
+          "repository": "tbtc-v2",
+          "revision": "39412825454ae9d7d56811ce48cd826c92b821c2",
+          "path": "solidity/contracts/frost/FrostSecp256k1.sol",
+          "blob": "24987710b29cd9194ffc66c536819e6a63feeaec",
+          "evidence_kind": "source",
+          "scope": "A-XONLY-SINGLE-VALIDATION: C-07 lift, a separate x-only implementation at the integration head; source only, not a qualification"
+        }
+      ],
+      "requirement": "One x-only BIP340 key validation is qualified for C-02 and C-07, or both implementations are covered by P-C07-BIP340 evidence",
+      "status": "open",
+      "statements": [],
+      "owner": {
+        "role": "cryptographic contract lead (V-06) with the C-02 and C-07 owners",
+        "person": null,
+        "assignment_status": "open"
+      },
+      "monitoring_escalation": {
+        "status": "proposed; approval pending",
+        "policy": "Any change to either implementation re-opens V-06 evidence",
+        "named_monitor": null,
+        "approved_deadline": null
+      },
+      "disposition": "Unchanged since review L2: keep-core FrostCurve.validX (C-02) and its byte-identical Bridge copy, plus the separate FrostSecp256k1.lift (C-07). V-06 not started"
+    },
+    {
+      "id": "A-K08-DEFENDER-PROCESS",
+      "evidence": [
+        {
+          "repository": "keep-core",
+          "revision": "31ab213f39f87085abd812c9e934fabc8ec4a9df",
+          "path": "pkg/frost/enforcement/verification/STATEMENTS.json",
+          "blob": "cfdf9ce0bf5afc4e5f6b7876ccdeeb8b6cbf9e6e",
+          "evidence_kind": "source",
+          "scope": "A-K08-DEFENDER-PROCESS: S-K08-ENFORCE-1, the V-09 component model and replay of enforcement.Defender (P-K08-DEFENSE-BEFORE-DEADLINE passes at component scope; no node path calls the defender)"
+        }
+      ],
+      "requirement": "A separate defender process, as the D17 keeper, submits the exact FROST fraud defense before the challenge deadline (P-K08-DEFENSE-BEFORE-DEADLINE); the node stays as base and has no defense duty (F4)",
+      "status": "open",
+      "statements": [
+        "V-09-enforcement"
+      ],
+      "owner": {
+        "role": "operator of the separate (future) defender process, as the D17 keeper (D28)",
+        "person": null,
+        "assignment_status": "open"
+      },
+      "monitoring_escalation": {
+        "status": "proposed; approval pending",
+        "policy": "Process not built; until it runs, an unanswered challenge is a missed defense; the V-09 component result is its evidence and must stay fresh",
+        "named_monitor": null,
+        "approved_deadline": null
+      },
+      "disposition": "D28 (tux 2026-11-09): P-K08-DEFENSE-BEFORE-DEADLINE stays in KC-VER rev 02, owned by a separate future defender process; no dev change; V-09 component result (S-K08-ENFORCE-1) is the evidence"
     }
   ],
   "specifications": [
@@ -1596,5 +2872,335 @@
     }
   ],
   "spec_integration_revision": "44f1356f5b292ad2e78b1d1fa303cd04018d1f8a",
-  "spec_verification_revision": "d45afdab9108cbd0156ad68cc5697ece737a7b1c"
+  "spec_verification_revision": "d45afdab9108cbd0156ad68cc5697ece737a7b1c",
+  "subject_heads": {
+    "keep-core": {
+      "branch": "integration/snowfall-base",
+      "head": "31ab213f39f87085abd812c9e934fabc8ec4a9df"
+    },
+    "tbtc-v2": {
+      "branch": "integration/frost-base",
+      "head": "39412825454ae9d7d56811ce48cd826c92b821c2"
+    },
+    "snowfall": {
+      "branch": null,
+      "head": "c1847ebdf133d0570643ff968539dd498069f69f"
+    }
+  },
+  "component_statements": [
+    {
+      "slot": "V-01-store",
+      "component": "V-01",
+      "id": "S-K02-HOST-5",
+      "predicates": [
+        "P-K02-OWNER",
+        "P-K02-TERMINAL",
+        "P-K02-IMMUTABLE",
+        "P-K02-DURABLE",
+        "P-K02-UNCERTAIN"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/store/verification/check-freshness.py"
+      },
+      "statement": {
+        "file": "pkg/frost/store/verification/STATEMENTS.json"
+      }
+    },
+    {
+      "slot": "V-02-store",
+      "component": "V-02",
+      "id": "S-K03-STORE-4",
+      "predicates": [
+        "P-K03-NO-LATE-KEY",
+        "P-K03-SEATSLOST-TERMINAL",
+        "P-K03-STATUS-DURABLE",
+        "P-K03-RELOAD-ONLY-DURABLE"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/store/verification/check-freshness.py"
+      },
+      "statement": {
+        "file": "pkg/frost/store/verification/STATEMENTS.json"
+      }
+    },
+    {
+      "slot": "V-03-chain",
+      "component": "V-03",
+      "id": "S-K03-CHAIN-3",
+      "predicates": [
+        "P-K03-ONE-DESCRIPTOR",
+        "P-K03-SUBMITTED-NOT-TERMINAL",
+        "P-K03-EXPIRY-TOMBSTONE",
+        "P-K03-READY-ONLY-RELOADED",
+        "P-K03-INCONSISTENCY-QUARANTINE"
+      ],
+      "checker": {
+        "kind": "statement-file",
+        "repository": "keep-core",
+        "path": "pkg/frost/dkg/verification/check_freshness.py",
+        "args": []
+      },
+      "statement": {
+        "search": [
+          "keep-core:pkg/frost/dkg/verification/{id}.json",
+          "evidence:implementation/V-03/*/{id}.json"
+        ]
+      }
+    },
+    {
+      "slot": "V-04-signing",
+      "component": "V-04",
+      "id": "S-K05-SIGN-5",
+      "predicates": [
+        "P-K04-AUTHORIZED-ONLY",
+        "P-K05-TERMINAL-ATTEMPT",
+        "P-K05-NO-DOUBLE-OUTCOME",
+        "P-HOST-ONE-INTENT-ATTESTATION",
+        "P-HOST-REPLACEMENT-FINALIZED-ABSENCE"
+      ],
+      "checker": {
+        "kind": "statement-file",
+        "repository": "keep-core",
+        "path": "pkg/frost/signing/verification/check-freshness.py",
+        "args": [
+          "{statement:freshness.manifest}"
+        ]
+      },
+      "statement": {
+        "search": [
+          "evidence:implementation/V-04/*/{id}.json",
+          "keep-core:pkg/frost/signing/verification/{id}.json"
+        ]
+      }
+    },
+    {
+      "slot": "V-07-deposit",
+      "component": "V-07",
+      "id": "S-K06-DEPOSIT-1",
+      "predicates": [
+        "P-K06-SWEEP-AUTHORIZED-ONLY",
+        "P-K06-ONE-MAIN-PURPOSE",
+        "P-K06-REFUND-RACE",
+        "P-K06-CREDIT-ONCE",
+        "P-K06-TERMINAL-SWEEP-ATTEMPT"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/deposit/verification/check-freshness.py",
+        "args": [
+          "--repo",
+          "tbtc-v2={repo:tbtc-v2}",
+          "--repo",
+          "spec={repo:kc-ver-02}"
+        ]
+      },
+      "statement": {
+        "file": "pkg/frost/deposit/verification/STATEMENTS.json"
+      }
+    },
+    {
+      "slot": "V-08-movement",
+      "component": "V-08",
+      "id": "S-K07-MOVEMENT-1",
+      "predicates": [
+        "P-K07-COMMITTED-TARGET-ONLY",
+        "P-K07-INCOMING-ONCE",
+        "P-K07-NO-STRANDED-MOVEMENT",
+        "P-K07-CLOSE-ONLY-WHEN-CLEAR",
+        "P-K07-SIGNER-RETENTION"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/movement/verification/check-freshness.py",
+        "args": [
+          "--repo",
+          "tbtc-v2={repo:tbtc-v2}",
+          "--repo",
+          "spec-kcver02={repo:kc-ver-02}"
+        ]
+      },
+      "statement": {
+        "file": "pkg/frost/movement/verification/STATEMENTS.json"
+      }
+    },
+    {
+      "slot": "V-09-enforcement",
+      "component": "V-09",
+      "id": "S-K08-ENFORCE-1",
+      "predicates": [
+        "P-K08-HEARTBEAT-DOMAIN",
+        "P-K08-EVIDENCE-RETAINED",
+        "P-K08-NO-SUSPECT-SANCTION",
+        "P-K08-DEFENSE-BEFORE-DEADLINE"
+      ],
+      "checker": {
+        "kind": "store-statements",
+        "repository": "keep-core",
+        "path": "pkg/frost/enforcement/verification/check-freshness.py",
+        "args": [
+          "--repo",
+          "tbtc-v2={repo:tbtc-v2}",
+          "--repo",
+          "kc-ver-02={repo:kc-ver-02}"
+        ]
+      },
+      "statement": {
+        "file": "pkg/frost/enforcement/verification/STATEMENTS.json"
+      }
+    }
+  ],
+  "k09_run_mapping": {
+    "run": "implementation/K09-lifecycle-run-2026-11-06-b9-r2",
+    "manifest_sha256": "41c48b5e3c4609fb65f47c55c8a9689f7aa9b4fc3d5a9450b167a475be9d59b2",
+    "accepted": true,
+    "passed": 12,
+    "skipped": 0,
+    "subject": {
+      "keep-core": "ef916bf80ce01f680b7782a316b1db5d06721e3c",
+      "tbtc-v2": "8a9e9e5aea836c3e6369cd9878df67f7650be6de"
+    },
+    "subject_vs_integration": "keep-core ef916bf8..925103a6 changes no Go source or K-09 test (only solidity/ecdsa/deploy/18 and .gitignore); tbtc-v2 8a9e9e5a..39412825 changes Bridge.sol, BridgeGovernance.sol, BridgeState.sol, MovingFunds.sol, FrostMovement.sol, IFrostFundingBridge.sol and deploy 87 (batch 8, C-11a). The checker reports each row pin whose bytes differ at the run subject",
+    "stages": {
+      "01-legacy": {
+        "rows": [
+          10
+        ],
+        "claim": "40a11d1d Bridge world built with a legacy source in MovingFunds (setup for the upgrade witness)"
+      },
+      "02-upgrade": {
+        "rows": [
+          10
+        ],
+        "claim": "proxy upgraded in place; legacy wallets and Bank balance unchanged (local layout witness, not C-11/K-10 deployed-state correspondence)"
+      },
+      "03-dkg": {
+        "rows": [
+          1,
+          2,
+          3
+        ],
+        "claim": "real nodes and workers take a 5-seat wallet {1,1,2,2,3} threshold 3 to ReadyUnfunded through the registry and Bridge"
+      },
+      "04-drain": {
+        "rows": [
+          6,
+          7
+        ],
+        "claim": "nodes sweep the incoming drain output; maintainer proves the sweep; Bridge main equals the sweep output, Core confirmed"
+      },
+      "05-redemption": {
+        "rows": [
+          5,
+          6,
+          7
+        ],
+        "claim": "nodes reserve and pay a redemption; Core pays the redeemer; Bridge main equals the change"
+      },
+      "06-restart": {
+        "rows": [
+          2,
+          6,
+          7
+        ],
+        "claim": "all nodes SIGKILLed after startup and restarted; FROST signers restored without a DKG rerun; a second incoming sweep settles"
+      },
+      "07-reservation-timeout": {
+        "rows": [
+          5,
+          7
+        ],
+        "claim": "nodes reserve then go down; keeper times the request out by its deadline; wallet MovingFunds"
+      },
+      "08-deposit-refund": {
+        "rows": [
+          4,
+          7
+        ],
+        "claim": "nodes sweep a revealed reserved FROST deposit with the main; maintainer proves it; depositor credited net of fees; depositor refunds alone after locktime"
+      },
+      "09-movement": {
+        "rows": [
+          6,
+          7
+        ],
+        "claim": "nodes commit A targets and move A main to B; maintainer proves it; A custody 0, B holds the pending incoming output"
+      },
+      "11-cutover-closure": {
+        "rows": [
+          9,
+          10
+        ],
+        "claim": "cutover to FrostOnly; legacy creation refused; legacy source and an empty FROST wallet close"
+      }
+    },
+    "unmapped_stages": {
+      "10-inactivity": "inactivity claim for a down operator; no KC-SF-V3 section 8.3 row covers inactivity enforcement (V-09 gate)",
+      "12-no-inactivity": "no claim for an operator above the activity threshold; no KC-SF-V3 section 8.3 row covers inactivity enforcement (V-09 gate)"
+    },
+    "k09_verification_now_not_run": [
+      "fraud admission/defense/timeout (row 8): no b9-r2 stage",
+      "realistic-header SPV run (KC-SF-V3 K-09 scope): absent"
+    ],
+    "tbtc_v2_k09_contract_run": {
+      "record": "implementation/V-05/catchup-2026-11-06/tbtc-v2-k09-contract-run",
+      "subject": {
+        "tbtc-v2": "39412825454ae9d7d56811ce48cd826c92b821c2"
+      },
+      "passing": 35,
+      "failing": 0,
+      "rows": [
+        9,
+        10
+      ],
+      "seconds": 152.8
+    }
+  },
+  "review_items": [
+    {
+      "id": "L2-SPV-MAINTAINER",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-SPV-MAINTAINER-RELAY",
+      "item": "FROST SPV-proof entrypoints skip onlySpvMaintainer",
+      "status": "on-chain gate implemented; relay/canonical-chain qualification and maintainer availability open",
+      "current": "tbtc-v2 39412825 FrostBridge.sol requires isSpvMaintainer for deposit sweep (02baba9e), sweep resolution (4ccbacf0), redemption and cancellation proofs (2b205b85); FrostMovementDispatch.sol for moving-funds and moved-funds-sweep proofs (98f1e993). Refusal tests: Frost.PublicSpvMaintainer.test.ts, Frost.FundingDispatch.test.ts. K-09 b9-r2 stages 04/05/08/09 prove through the maintainer (positive path only)"
+    },
+    {
+      "id": "L2-GAS-CAP",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-TARGET-CHAIN-GAS-CAP",
+      "item": "2^24 per-transaction cap versus 255-request admission and 256-input sweep",
+      "status": "caps lowered and measured locally; target-chain qualification open",
+      "current": "MAX_REQUESTS 64 / MAX_INPUTS 32 (FrostSigningIntent.sol:11-12), MAX_SWEEP_INPUTS 128 (FrostDepositSweep.sol:18), MAX_MOVEMENT_TARGETS 128 (28b35730, B8.MovementTargetCap.test.ts, ADV-C1 tbtc-v2#49), FrostFraud 128/252. Measured in Frost.PublicGasCap / FullAdmissionGas / DepositSweep.Gas / SweepConflictResolution.Gas tests; Frost.PublicMaximumBatch.test.ts (255-request) remains a row-5 historical source"
+    },
+    {
+      "id": "L2-SWEEP-RESERVATION",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-MAIN-SPEND-CROSS-PURPOSE-SERIALIZATION",
+      "item": "main-spending sweep and reservation can lock each other",
+      "status": "on-chain recovery route implemented; canonical host serialization and V-04 interleaving open",
+      "current": "4ccbacf0 resolves reservations whose main a proven deposit sweep spent (FrostSweepResolutionCertificate.sol; Frost.SweepConflictResolution*.test.ts). No V-04 model covers the interleaving (V-04 blocker)"
+    },
+    {
+      "id": "L2-SINGLE-SHOT-CANCELLATION",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-FEE-INCLUSION-ESCALATION",
+      "item": "single-shot cancellation under fee pressure",
+      "status": "in-envelope alternatives implemented; above-envelope policy and D-09 fee caps open",
+      "current": "52413cc6 retains increasing-fee cancellation alternatives with independent budgets (FrostCancellationHistory.sol, Frost.CancellationAlternatives.test.ts, Frost.CancellationHistory.test.ts). KC-VER rev 02 draft records the BIP125 size argument for this obligation (owner: D-09 and redemption leads)"
+    },
+    {
+      "id": "L2-XONLY-DUPLICATE",
+      "source": "keep-core#12 review 6169655796 L2",
+      "obligation": "A-XONLY-SINGLE-VALIDATION",
+      "item": "C-02 uses FrostCurve.validX, not the C-07 code",
+      "status": "unchanged; open (V-06 not started)",
+      "current": "keep-core solidity/ecdsa/contracts/frost/FrostCurve.sol and tbtc-v2 solidity/contracts/frost/FrostCurve.sol are the same blob db089b56; FrostSecp256k1.lift is separate"
+    }
+  ]
 }

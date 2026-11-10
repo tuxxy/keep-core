@@ -470,7 +470,9 @@ func (tc *TbtcChain) PastFrostIncomingOutputs(
 }
 
 // IsFrostIncomingPending implements tbtc.FrostIncomingChain: the Bridge's
-// incoming record of the outpoint is Pending and belongs to the wallet.
+// incoming record of the outpoint belongs to the wallet and is still
+// sweepable, Pending or Escalated. The Bridge sweeps an Escalated output as
+// a Pending one and closure waits for it, so hosts sweep both (D27).
 func (tc *TbtcChain) IsFrostIncomingPending(
 	outputKey [32]byte,
 	outpoint bitcoin.TransactionOutpoint,
@@ -479,8 +481,15 @@ func (tc *TbtcChain) IsFrostIncomingPending(
 	if err != nil {
 		return false, err
 	}
-	return record.Target == dkg.WalletID(outputKey) &&
-		movement.IncomingState(record.State) == movement.IncomingPending, nil
+	if record.Target != dkg.WalletID(outputKey) {
+		return false, nil
+	}
+	switch movement.IncomingState(record.State) {
+	case movement.IncomingPending, movement.IncomingEscalated:
+		return true, nil
+	default:
+		return false, nil
+	}
 }
 
 // FrostWalletHasMain implements tbtc.FrostIncomingChain.
@@ -495,8 +504,9 @@ func (tc *TbtcChain) FrostWalletHasMain(outputKey [32]byte) (bool, error) {
 // validateFrostMovedFundsSweepProposal checks a FROST wallet's moved funds
 // sweep proposal as the base WalletProposalValidator checks a legacy one,
 // against the Bridge's FROST records: the wallet can sweep incoming outputs
-// (FrostMovement.sweep), the named output is a pending incoming output of
-// this wallet, and the fee is positive and within the on-chain cap (D19).
+// (FrostMovement.sweep), the named output is a pending (Pending or
+// Escalated, D27) incoming output of this wallet, and the fee is positive
+// and within the on-chain moved funds sweep cap (D19).
 func (tc *TbtcChain) validateFrostMovedFundsSweepProposal(
 	label [20]byte,
 	outputKey [32]byte,

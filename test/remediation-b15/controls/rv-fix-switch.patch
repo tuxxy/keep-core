@@ -1,0 +1,21 @@
+diff --git a/pkg/tbtcpg/frost_moving_funds.go b/pkg/tbtcpg/frost_moving_funds.go
+index c287d75d5..34a929c21 100644
+--- a/pkg/tbtcpg/frost_moving_funds.go
++++ b/pkg/tbtcpg/frost_moving_funds.go
+@@ -60,8 +60,14 @@ func (mft *MovingFundsTask) runFrost(
+ 	if err != nil {
+ 		return nil, false, fmt.Errorf("cannot read FROST source wallet: [%w]", err)
+ 	}
+-	if source.Wallet.State != movement.StateMovingFunds {
+-		taskLogger.Infof("source wallet not in MoveFunds state")
++	switch source.Wallet.State {
++	case movement.StateMovingFunds, movement.StateTerminated:
++	default:
++		taskLogger.Infof("source wallet not in MoveFunds or Terminated state")
++		return nil, false, nil
++	}
++	if source.Lifecycle.Dust {
++		taskLogger.Infof("source wallet holds recorded dust")
+ 		return nil, false, nil
+ 	}
+ 	if source.Commitment.ProvenAt != 0 {

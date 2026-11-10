@@ -202,6 +202,15 @@ func (e *Executor) Restore(ctx context.Context) (frost.DKGStatus, WalletRecord, 
 	e.record = record
 	descriptor := record.Descriptor
 	e.descriptor = &descriptor
+	// The saved record exists only after this host observed the approval, so
+	// a restored host knows it before its monitor starts: a later read of it
+	// removed or replaced quarantines, as it does for a Run host (KC-SF-V3 4.3).
+	e.mu.Lock()
+	e.approvalGeneration++
+	e.approvalSeen = true
+	e.observedApprovalID = record.ID
+	e.observedApprovalHash = record.ApprovalHash
+	e.mu.Unlock()
 	if e.PollInterval <= 0 {
 		e.PollInterval = 250 * time.Millisecond
 	}
@@ -222,7 +231,8 @@ func (e *Executor) Restore(ctx context.Context) (frost.DKGStatus, WalletRecord, 
 }
 
 // finishRestore records a classified expiry or quarantine as finishFailure
-// does; any other failure leaves the saved wallet as it was.
+// does; any other failure leaves the saved wallet as it was. Run uses it too
+// when the executor cancelled itself before sending its certificate (D32).
 func (e *Executor) finishRestore(ctx context.Context, err error) (WalletRecord, error) {
 	if e.abort != nil {
 		e.abort()
@@ -318,6 +328,12 @@ func (e *Executor) ready(ctx context.Context, view View, key frost.KeyReady, loc
 		if err = e.atBoundary("before-certificate-submit"); err != nil {
 			return fail(ctx, err)
 		}
+		if ctx.Err() != nil {
+			// The executor already cancelled itself: the certificate never
+			// leaves the host, so no outcome is unresolved. Only a classified
+			// cause changes the saved wallet, on Run as on Restore (D32).
+			return e.finishRestore(ctx, ctx.Err())
+		}
 		if err = e.Chain.Ready(ctx, e.record.ID, seats, references, signatures); err != nil {
 			if _, x := e.reconcileWallet(ctx, view, err); x != nil {
 				return fail(ctx, x)
@@ -351,7 +367,9 @@ func (e *Executor) ready(ctx context.Context, view View, key frost.KeyReady, loc
 }
 
 // Join observers before returning success. A classified conflict can arrive
-// after the final wallet save; cancellation alone must not erase it.
+// after the final wallet save; cancellation alone must not erase it. Any other
+// cause is returned with the saved ReadyUnfunded wallet unchanged, on Run as
+// on Restore, so a later startup restores it (D31).
 func (e *Executor) finishSuccess(ctx context.Context) (WalletRecord, error) {
 	if e.abort != nil {
 		e.abort()
@@ -368,8 +386,11 @@ func (e *Executor) finishSuccess(ctx context.Context) (WalletRecord, error) {
 			draining = false
 		}
 	}
-	if cause != nil && (errors.Is(cause, ErrQuarantined) || errors.Is(cause, ErrExpired) || (!errors.Is(cause, context.Canceled) && !errors.Is(cause, context.DeadlineExceeded))) {
+	if errors.Is(cause, ErrQuarantined) || errors.Is(cause, ErrExpired) {
 		return e.finishFailure(ctx, cause)
+	}
+	if cause != nil && !errors.Is(cause, context.Canceled) && !errors.Is(cause, context.DeadlineExceeded) {
+		return e.record, cause
 	}
 	return e.record, nil
 }

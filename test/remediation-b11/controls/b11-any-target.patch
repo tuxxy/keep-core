@@ -1,0 +1,16 @@
+diff --git a/pkg/chain/ethereum/frost_movement.go b/pkg/chain/ethereum/frost_movement.go
+index 7bb9721fd..f65abba59 100644
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -479,8 +479,9 @@ func (tc *TbtcChain) IsFrostIncomingPending(
+ 	if err != nil {
+ 		return false, err
+ 	}
+-	return record.Target == dkg.WalletID(outputKey) &&
+-		movement.IncomingState(record.State) == movement.IncomingPending, nil
++	return (record.Target == dkg.WalletID(outputKey) &&
++		movement.IncomingState(record.State) == movement.IncomingPending) ||
++		movement.IncomingState(record.State) == movement.IncomingEscalated, nil
+ }
+ 
+ // FrostWalletHasMain implements tbtc.FrostIncomingChain.

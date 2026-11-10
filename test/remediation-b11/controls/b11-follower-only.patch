@@ -1,0 +1,19 @@
+diff --git a/pkg/chain/ethereum/frost_movement.go b/pkg/chain/ethereum/frost_movement.go
+index 7bb9721fd..d0769aa99 100644
+--- a/pkg/chain/ethereum/frost_movement.go
++++ b/pkg/chain/ethereum/frost_movement.go
+@@ -528,7 +528,13 @@ func (tc *TbtcChain) validateFrostMovedFundsSweepProposal(
+ 		return err
+ 	}
+ 	if !pending {
+-		return fmt.Errorf("not a pending FROST incoming output of the wallet")
++		record, err := tc.frostBridge.FrostIncoming(nil, deposit.OutpointKey(bitcoin.TransactionOutpoint{TransactionHash: proposal.MovingFundsTxHash, OutputIndex: proposal.MovingFundsTxOutputIndex}))
++		if err != nil {
++			return err
++		}
++		if record.Target != dkg.WalletID(outputKey) || movement.IncomingState(record.State) != movement.IncomingEscalated {
++			return fmt.Errorf("not a pending FROST incoming output of the wallet")
++		}
+ 	}
+ 
+ 	if proposal.SweepTxFee == nil || proposal.SweepTxFee.Sign() <= 0 {

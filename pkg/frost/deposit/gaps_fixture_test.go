@@ -43,6 +43,8 @@ type faultChain struct {
 	// reservedErrAt fails Reserved at exactly this block when nonzero.
 	reservedErrAt uint64
 	seats         []uint16
+	// certFailures fails that many CertifiedSeats reads, then answers.
+	certFailures int
 }
 
 func newFaultChain(c *fakeChain) *faultChain {
@@ -160,7 +162,13 @@ func (c *faultChain) Reserved(ctx context.Context, at uint64, key [32]byte) (boo
 }
 
 func (c *faultChain) CertifiedSeats(context.Context, [32]byte) ([]uint16, error) {
-	if c.failing("CertifiedSeats") {
+	c.mu.Lock()
+	once := c.certFailures > 0
+	if once {
+		c.certFailures--
+	}
+	c.mu.Unlock()
+	if once || c.failing("CertifiedSeats") {
 		return nil, errInjected
 	}
 	return append([]uint16(nil), c.seats...), nil

@@ -182,6 +182,22 @@ func TestSweeperSignStartsAnAgreedAttempt(t *testing.T) {
 		h.chain.head = 92 // round 9: anchor 90, start 92
 		started(t, h.sign(t, plan, 9), "head at the round's start block")
 	})
+	// A run failure is the run's failure, even when the deposit is swept on
+	// chain meanwhile: no signature exists, so nothing is late-quarantined.
+	t.Run("deposit swept while the run fails", func(t *testing.T) {
+		h := newSweepHost(t)
+		h.fund(1_000_000)
+		key := h.deposit(1, 100_000, 90, [20]byte{})
+		plan := planned(t, h.world, key)
+		r := h.chain.records[key]
+		r.SweptAt = 95
+		h.chain.records[key] = r
+		o := h.sign(t, plan, 9)
+		if o.entries[redemption.KindSweepLateQuarantined] != 0 {
+			t.Fatalf("a run that produced no signature was late-quarantined: %v", o.entries)
+		}
+		started(t, o, "deposit swept while the run fails")
+	})
 	t.Run("deposit-only sweep", func(t *testing.T) {
 		h := newSweepHost(t)
 		plan := planned(t, h.world, h.deposit(1, 100_000, 90, [20]byte{}))
@@ -256,13 +272,11 @@ func TestSweeperSignStartsAnAgreedAttempt(t *testing.T) {
 	}
 }
 
-// TestSweeperSignedRoundAndBroadcast: the signed round of a plan is read
-// from the ledger records of that plan's transaction only, and Broadcast
-// sends only a durable accepted result. Invariant: the signed marker of the
-// plan's own transaction is found behind a marker of another transaction;
-// without any marker, with an unreadable ledger, with an underivable round
-// or executor, or without the durable result, Broadcast fails and records
-// no broadcast. Refs M5-deposit mutation batch.
+// TestSweeperSignedRoundAndBroadcast: Broadcast sends only a durable
+// accepted result. Invariant: without any signed marker, with an unreadable
+// ledger, with an underivable round or executor, or without the durable
+// result, Broadcast fails and records no broadcast. Refs M5-deposit mutation
+// batch.
 func TestSweeperSignedRoundAndBroadcast(t *testing.T) {
 	setup := func(t *testing.T) (*sweepHost, *signing.Plan) {
 		h := newSweepHost(t)
@@ -275,31 +289,6 @@ func TestSweeperSignedRoundAndBroadcast(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	t.Run("own marker behind another transaction's", func(t *testing.T) {
-		h, plan := setup(t)
-		appendEntry(t, h, plan, redemption.KindSweepSigned, [32]byte{0x0e}, 3)
-		appendEntry(t, h, plan, redemption.KindSweepSigned, plan.BitcoinTransactionHash(), 7)
-		round, ok, err := h.sweeper.signedRound(ctx, plan)
-		if err != nil || !ok || round != 7 {
-			t.Fatalf("signed round %d %v (%v), want 7", round, ok, err)
-		}
-	})
-	t.Run("reconcile with an underivable round", func(t *testing.T) {
-		h, plan := setup(t)
-		appendEntry(t, h, plan, redemption.KindSweepAttempt, plan.BitcoinTransactionHash(), 7)
-		h.sweeper.Schedule.RoundBlocks = 0
-		if _, ok, err := h.sweeper.signedRound(ctx, plan); err == nil || ok {
-			t.Fatal("an attempt of an underivable round was reconciled without error:", ok, err)
-		}
-	})
-	t.Run("reconcile with an incomplete executor", func(t *testing.T) {
-		h, plan := setup(t)
-		appendEntry(t, h, plan, redemption.KindSweepAttempt, plan.BitcoinTransactionHash(), 7)
-		h.sweeper.Base.Transport = nil
-		if _, ok, err := h.sweeper.signedRound(ctx, plan); err == nil || ok {
-			t.Fatal("an attempt was reconciled without an executor:", ok, err)
-		}
-	})
 	for _, tc := range []struct {
 		name string
 		set  func(*testing.T, *sweepHost, *signing.Plan)
@@ -338,8 +327,11 @@ func TestSweeperSignedRoundAndBroadcast(t *testing.T) {
 // only above the finalized head is not; a late-quarantine record makes the
 // sweep quarantined; a signed marker without a durable result fails; an
 // attempt of the current round waits without signing again; an attempt of
-// an earlier round does not; every failed read or stop fails Resolve without
-// starting a round. Refs M5-deposit mutation batch.
+// an earlier round does not, but only after every earlier attempt of the
+// plan's own transaction was checked for a durable result (a marker of
+// another transaction does not count); every failed read or stop, including
+// any single failed ledger read, fails Resolve without starting a round.
+// Refs M5-deposit mutation batch.
 func TestSweeperResolveSteps(t *testing.T) {
 	setup := func(t *testing.T) (*sweepHost, *signing.Plan, [32]byte) {
 		h := newSweepHost(t)
@@ -428,9 +420,7 @@ func TestSweeperResolveSteps(t *testing.T) {
 			h.sweeper.boundary = stopAtName("outcome-seen")
 		}},
 		{"ledger unreadable", func(h *sweepHost, _ [32]byte) { h.ledgerJ.failReadsAfter(0) }},
-		{"signed round unreadable", func(h *sweepHost, _ [32]byte) { h.ledgerJ.failOnlyRead(2) }},
 		{"current round unreadable", func(h *sweepHost, _ [32]byte) { h.fc.hashFail = func(n uint64) bool { return n == 90 } }},
-		{"round attempts unreadable", func(h *sweepHost, _ [32]byte) { h.ledgerJ.failOnlyRead(3) }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			h, plan, key := setup(t)
@@ -446,6 +436,80 @@ func TestSweeperResolveSteps(t *testing.T) {
 			}
 		})
 	}
+	// Every single failed ledger read, wherever Resolve makes it, stops the
+	// step: n runs over every read index Resolve reaches on an empty ledger,
+	// so the case does not depend on how many reads each call makes.
+	t.Run("any single ledger read failure", func(t *testing.T) {
+		for n := 1; ; n++ {
+			h, plan, _ := setup(t)
+			h.ledgerJ.failOnlyRead(n)
+			status, err := resolve(h, plan)
+			notPanic(t, err, "ledger read "+strconv.Itoa(n))
+			h.ledgerJ.mu.Lock()
+			reached := h.ledgerJ.reads >= n
+			h.ledgerJ.failReadAt = 0
+			h.ledgerJ.mu.Unlock()
+			if !reached {
+				if n < 4 {
+					t.Fatalf("fixture: Resolve made only %d ledger reads", n-1)
+				}
+				break
+			}
+			if err == nil {
+				t.Fatalf("Resolve reported %q with ledger read %d failing", status, n)
+			}
+			if got := kinds(h.entries(t, plan)); got[redemption.KindSweepAttempt] != 0 || got[redemption.KindSweepOutcome] != 0 {
+				t.Fatalf("Resolve with ledger read %d failing recorded progress: %v", n, got)
+			}
+		}
+	})
+	// The K-05 F2 rule (sweeper.go:220): before a new round starts, every
+	// earlier attempt of the plan's own transaction is checked for a durable
+	// result, and a check that cannot be made fails Resolve.
+	appendEntry := func(t *testing.T, h *sweepHost, plan *signing.Plan, kind redemption.Kind, tx [32]byte, round string) {
+		t.Helper()
+		if err := h.sweeper.Ledger.Append(ctx, redemption.Entry{Reservation: SweepID(plan), Kind: kind, Block: 90, Transaction: tx, Detail: round}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	noNewRound := func(t *testing.T, h *sweepHost, plan *signing.Plan, attempts int, what string) {
+		t.Helper()
+		status, err := resolve(h, plan)
+		notPanic(t, err, what)
+		got := kinds(h.entries(t, plan))
+		if err == nil || errors.Is(err, errNoWallet) || got[redemption.KindSweepAttempt] != attempts {
+			t.Fatalf("%s: a new round started (%s, %v, %v)", what, status, err, got)
+		}
+	}
+	t.Run("every earlier attempt is checked", func(t *testing.T) {
+		h, plan, _ := setup(t)
+		appendEntry(t, h, plan, redemption.KindSweepAttempt, plan.BitcoinTransactionHash(), "7")
+		appendEntry(t, h, plan, redemption.KindSweepAttempt, plan.BitcoinTransactionHash(), "8")
+		h.fc.hashFail = func(n uint64) bool { return n == 80 } // round 8's anchor
+		noNewRound(t, h, plan, 2, "round 8 cannot be checked")
+	})
+	t.Run("an earlier attempt whose executor cannot be built", func(t *testing.T) {
+		h, plan, _ := setup(t)
+		appendEntry(t, h, plan, redemption.KindSweepAttempt, plan.BitcoinTransactionHash(), "7")
+		h.fc.certFailures = 1 // the readiness certificate read fails once
+		noNewRound(t, h, plan, 1, "round 7 cannot be checked")
+	})
+	t.Run("own signed marker behind another transaction's", func(t *testing.T) {
+		h, plan, _ := setup(t)
+		appendEntry(t, h, plan, redemption.KindSweepSigned, [32]byte{0x0e}, "3")
+		appendEntry(t, h, plan, redemption.KindSweepSigned, plan.BitcoinTransactionHash(), "7")
+		// Signed without a durable result here: Broadcast fails, no new round.
+		noNewRound(t, h, plan, 0, "own transaction signed")
+	})
+	t.Run("another transaction's signed marker does not count", func(t *testing.T) {
+		h, plan, _ := setup(t)
+		appendEntry(t, h, plan, redemption.KindSweepSigned, [32]byte{0x0e}, "3")
+		status, err := resolve(h, plan)
+		notPanic(t, err, "other transaction")
+		if !errors.Is(err, errNoWallet) || kinds(h.entries(t, plan))[redemption.KindSweepAttempt] != 1 {
+			t.Fatalf("a marker of another transaction stopped the round: %s %v %v", status, err, kinds(h.entries(t, plan)))
+		}
+	})
 	t.Run("sign failure is reported", func(t *testing.T) {
 		h, plan, _ := setup(t)
 		status, err := resolve(h, plan)

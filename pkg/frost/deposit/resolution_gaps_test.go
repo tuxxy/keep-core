@@ -169,7 +169,9 @@ func stopAtName(name string) func(string) error {
 // directed, an attester with no directive store, an unreadable store, no
 // directive, a directive for another reservation, without class, or with
 // another action refuses and leaves the lock at redemption(r); the complete
-// cancel directive attests. Refs M5-deposit mutation batch.
+// cancel directive attests. This pins the code's defence-in-depth choice
+// (an attest-time check besides the authority's), not a spec rule: if that
+// design changes, change this test with it. Refs M5-deposit mutation batch.
 func TestResolutionAttesterNeedsItsOwnDirective(t *testing.T) {
 	r := [32]byte{0x99}
 	good := redemption.Directive{Reservation: r, Class: "signer-integrity", Action: redemption.DirectiveCancel}

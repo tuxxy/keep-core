@@ -164,10 +164,15 @@ func getUnprovenMovingFundsTransactions(
 		)
 	}
 
+	// Two commitments for one wallet can land in the same block (#171).
+	// Same-block events arrive in log-index order, because the binding
+	// stable-sorts by block number only, so `>=` lets the later-listed one
+	// win. On chain, a live commitment can only follow a cleared one there:
+	// it needs the stored commitment hash to have been zeroed first.
 	latest := make(map[[20]byte]*tbtc.MovingFundsCommitmentSubmittedEvent)
 	for _, event := range events {
 		previous, ok := latest[event.WalletPublicKeyHash]
-		if !ok || event.BlockNumber > previous.BlockNumber {
+		if !ok || event.BlockNumber >= previous.BlockNumber {
 			latest[event.WalletPublicKeyHash] = event
 		}
 	}

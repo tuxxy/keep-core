@@ -226,7 +226,9 @@ func (p Planner) Movement(ctx context.Context) (*signing.Plan, error) {
 	for i, v := range signing.MovementSplit(main.Value-fee, len(targets)) {
 		tx.Outputs[i].Value = v
 	}
-	return signing.NewMovementPlan(signing.MovementProposal{Wallet: p.Wallet, BitcoinGenesis: p.Genesis, Generation: s.Custody.Generation, StateVersion: s.Custody.StateVersion, Period: s.Lifecycle.Period, Main: main, Targets: targets, MaximumFee: int64(s.Commitment.MaxFee), MaximumSatPerVByte: p.MaximumSatPerVByte, Transaction: tx})
+	// #168: tbtc-v2 accepts any uint64 > 0 as a fee cap, so a cap may exceed
+	// supply. The signed bound is the cap clamped to bitcoin.MaxSatoshi.
+	return signing.NewMovementPlan(signing.MovementProposal{Wallet: p.Wallet, BitcoinGenesis: p.Genesis, Generation: s.Custody.Generation, StateVersion: s.Custody.StateVersion, Period: s.Lifecycle.Period, Main: main, Targets: targets, MaximumFee: int64(min(s.Commitment.MaxFee, uint64(bitcoin.MaxSatoshi))), MaximumSatPerVByte: p.MaximumSatPerVByte, Transaction: tx})
 }
 
 // IncomingSweep builds the target's sweep of every finalized pending or
@@ -307,5 +309,7 @@ func (p Planner) IncomingSweep(ctx context.Context) (*signing.Plan, error) {
 		fee = int64(capFee)
 	}
 	tx.Outputs[0].Value = total - fee
-	return signing.NewIncomingSweepPlan(signing.IncomingSweepProposal{Wallet: p.Wallet, BitcoinGenesis: p.Genesis, Generation: t.Custody.Generation, StateVersion: t.Custody.StateVersion, Main: main, Incoming: incoming, MaximumFee: int64(capFee), MaximumSatPerVByte: p.MaximumSatPerVByte, Transaction: tx})
+	// #168: the cap may exceed supply (tbtc-v2 caps are any uint64 > 0); the
+	// signed bound is the cap clamped to bitcoin.MaxSatoshi.
+	return signing.NewIncomingSweepPlan(signing.IncomingSweepProposal{Wallet: p.Wallet, BitcoinGenesis: p.Genesis, Generation: t.Custody.Generation, StateVersion: t.Custody.StateVersion, Main: main, Incoming: incoming, MaximumFee: int64(min(capFee, uint64(bitcoin.MaxSatoshi))), MaximumSatPerVByte: p.MaximumSatPerVByte, Transaction: tx})
 }

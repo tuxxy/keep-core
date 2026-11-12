@@ -249,10 +249,10 @@ func (p Planner) Build(ctx context.Context, at uint64, ids [][32]byte) (*signing
 	if err != nil {
 		return nil, nil, err
 	}
-	maxFee, err := checkedAmount(maximum)
-	if err != nil {
-		return nil, nil, err
-	}
+	// #176: the tbtc-v2 cap is a uint64 with redemptionTxMaxTotalFee >=
+	// redemptionTxMaxFee > 0, so it may exceed supply; the signed bound is
+	// the cap clamped to bitcoin.MaxSatoshi.
+	maxFee := int64(min(maximum, uint64(bitcoin.MaxSatoshi)))
 	if fee < p.Fees.Minimum || fee > maxFee {
 		return nil, nil, fmt.Errorf("%w: fee %d outside [%d, %d]", ErrFeeDomain, fee, p.Fees.Minimum, maxFee)
 	}
@@ -360,7 +360,8 @@ func (p Planner) Validate(ctx context.Context, at uint64, plan *signing.Plan) er
 	if err != nil {
 		return err
 	}
-	if fees.Maximum > int64(maximum) || fees.MaximumSatPerVByte > p.Fees.MaximumSatPerVByte || fees.Minimum < p.Fees.Minimum {
+	// #176: compare unsigned, so a cap above supply does not wrap negative.
+	if uint64(fees.Maximum) > maximum || fees.MaximumSatPerVByte > p.Fees.MaximumSatPerVByte || fees.Minimum < p.Fees.Minimum {
 		return ErrFeeDomain
 	}
 	var shareTotal int64

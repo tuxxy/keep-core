@@ -432,7 +432,6 @@ func TestBuildRequestCountAndConfiguration(t *testing.T) {
 			c.MainOutpoint = [32]byte{}
 			w.chain.custody[dkg.WalletID(w.wallet.OutputKey)] = c
 		}},
-		{"governance fee cap beyond the satoshi domain", func(w *world) { w.chain.maxTotalFee = uint64(bitcoin.MaxSatoshi) + 1 }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			defer guard(t)

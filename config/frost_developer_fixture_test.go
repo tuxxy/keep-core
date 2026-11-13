@@ -205,10 +205,30 @@ func assertNoLeak(t *testing.T, label, text string, secret []byte) {
 	}
 }
 
-// captureLogs records every log line (all subsystems, debug and up) until
-// the returned function is called; it returns the captured text.
+// captureLogs records every log line (all subsystems, debug and up) and
+// everything written to the process's stdout and stderr until the returned
+// function is called; it returns the captured text.
 func captureLogs(t *testing.T) func() string {
 	t.Helper()
+	stdout, stderr := os.Stdout, os.Stderr
+	var streams sync.WaitGroup
+	var streamText [2]strings.Builder
+	var writers [2]*os.File
+	for i := range writers {
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		writers[i] = w
+		streams.Add(1)
+		go func(i int, r *os.File) {
+			defer streams.Done()
+			b, _ := io.ReadAll(r)
+			r.Close()
+			streamText[i].Write(b)
+		}(i, r)
+	}
+	os.Stdout, os.Stderr = writers[0], writers[1]
 	previous := golog.GetConfig().Level
 	golog.SetAllLoggers(golog.LevelDebug)
 	reader := golog.NewPipeReader(golog.PipeLevel(golog.LevelDebug))
@@ -232,9 +252,18 @@ func captureLogs(t *testing.T) func() string {
 	var once sync.Once
 	stop := func() string {
 		once.Do(func() {
+			os.Stdout, os.Stderr = stdout, stderr
+			for _, w := range writers {
+				_ = w.Close()
+			}
+			streams.Wait()
 			_ = reader.Close()
 			<-done
 			golog.SetAllLoggers(previous)
+			mu.Lock()
+			text.WriteString(streamText[0].String())
+			text.WriteString(streamText[1].String())
+			mu.Unlock()
 		})
 		mu.Lock()
 		defer mu.Unlock()

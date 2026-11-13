@@ -128,6 +128,64 @@ func TestDeveloperWithoutFrostUnchanged(t *testing.T) {
 	}
 }
 
+// Acceptance 3 (decision F3, coordinator 2026-11-13). Invariant: [tbtc.frost]
+// is the FROST activation. On the developer network a file with
+// [developer] FrostWalletRegistryAddress but no [tbtc.frost] section loads
+// as a node without FROST: FROST unconfigured, the node gate open. PASSES
+// TODAY by design (guard against activating on the registry address alone).
+func TestDeveloperRegistryAloneLeavesFrostUnconfigured(t *testing.T) {
+	d := newDevFrost(t)
+	content := strings.Replace(d.toml(false, nil), "[developer]\n",
+		fmt.Sprintf("[developer]\nFrostWalletRegistryAddress = %q\n", devRegistry), 1)
+	if !strings.Contains(content, "FrostWalletRegistryAddress") {
+		t.Fatal("setup: the registry address is not in the file")
+	}
+	c, err := readDev(t, d, content, "--developer")
+	if err != nil {
+		t.Fatalf("M2-3: a developer configuration with only the FROST registry address was refused: %v", err)
+	}
+	if !reflect.ValueOf(c.Tbtc.Frost).IsZero() {
+		t.Fatal("M2-3: the FROST registry address alone configured FROST")
+	}
+	if err := c.ValidateFrostNode(); err != nil {
+		t.Fatalf("M2-3: the FROST node gate refuses a configuration without [tbtc.frost]: %v", err)
+	}
+}
+
+// Acceptance 2 (decision F4, coordinator 2026-11-13). Invariant: the [frost]
+// Enabled switch stays refused with exactly the D5 gate error on every
+// network, the developer network included, with or without a valid
+// [tbtc.frost] section; nothing reaches the node configuration. PASSES TODAY
+// by design (guard against opening the whole gate on developer).
+func TestFrostSwitchRefusedOnEveryNetwork(t *testing.T) {
+	gate := frost.Config{Enabled: true}.ValidateNode()
+	if gate == nil {
+		t.Fatal("M2-2: the FROST node gate accepts an enabled configuration")
+	}
+	for _, network := range []struct {
+		name string
+		args []string
+	}{
+		{"developer", []string{"--developer"}},
+		{"mainnet", nil},
+		{"testnet", []string{"--testnet"}},
+	} {
+		for _, withFrost := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/tbtc.frost=%v", network.name, withFrost), func(t *testing.T) {
+				d := newDevFrost(t)
+				content := d.toml(withFrost, nil) + "\n[frost]\nEnabled = true\n"
+				c, err := readDev(t, d, content, network.args...)
+				if err == nil || err.Error() != gate.Error() {
+					t.Fatalf("M2-2: [frost] Enabled on %s was not refused with the D5 gate error: %v", network.name, err)
+				}
+				if !reflect.ValueOf(c.Tbtc.Frost).IsZero() {
+					t.Fatalf("M2-2: a refused [frost] switch on %s left FROST settings in the node configuration", network.name)
+				}
+			})
+		}
+	}
+}
+
 // Acceptance 4. Invariant: on the developer network every malformed FROST
 // setting is refused at configuration with an error that names the setting,
 // which is not the D5 gate's error, and nothing reaches the node
@@ -176,13 +234,6 @@ func TestDeveloperFrostBadSettingsRefused(t *testing.T) {
 			}
 			return d.toml(true, nil)
 		}},
-		bad{"key file unreadable", "KeyFile", func(t *testing.T, d *devFrost) string {
-			if err := os.Chmod(d.keyFile, 0); err != nil {
-				t.Fatal(err)
-			}
-			t.Cleanup(func() { _ = os.Chmod(d.keyFile, 0600) })
-			return d.toml(true, nil)
-		}},
 		bad{"key file is a directory", "KeyFile", func(t *testing.T, d *devFrost) string {
 			if err := os.Remove(d.keyFile); err != nil {
 				t.Fatal(err)
@@ -193,6 +244,21 @@ func TestDeveloperFrostBadSettingsRefused(t *testing.T) {
 			return d.toml(true, nil)
 		}},
 	)
+	// An unreadable key file (mode 0) is unreadable only to a non-root
+	// user: root reads it anyway (CI runs go test as root in Docker). Under
+	// root the case is left out, not skipped (unit tests never skip); the
+	// "is a directory" case covers a failed read on every user.
+	if os.Geteuid() == 0 {
+		t.Log("M2-4: the \"key file unreadable\" case is left out when running as root (root reads mode-0 files)")
+	} else {
+		cases = append(cases, bad{"key file unreadable", "KeyFile", func(t *testing.T, d *devFrost) string {
+			if err := os.Chmod(d.keyFile, 0); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = os.Chmod(d.keyFile, 0600) })
+			return d.toml(true, nil)
+		}})
+	}
 	keyHex := hex.EncodeToString(devStoreKey[:])
 	for name, content := range badKeyContents(keyHex) {
 		content := content

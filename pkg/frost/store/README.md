@@ -42,7 +42,10 @@ the file (other processes and other leases of the same process are refused),
 the first Acquire binds the file to its storage ID, and every head is written in
 place and synchronized before Advance returns. A torn or altered file is
 refused, never reset. The record has two alternating slots, so a torn write
-leaves the previous head readable in the other slot.
+leaves the previous head readable in the other slot. The slots protect against
+torn writes from a crash, not against media corruption or edits of an
+acknowledged slot: damage to the slot holding the head reopens the fence one
+sequence lower, without an error.
 
 A fence file that is refused must never be truncated or re-provisioned to get
 the node running again: an empty file binds to any storage ID at head 0, which

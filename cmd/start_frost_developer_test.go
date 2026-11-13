@@ -40,6 +40,7 @@ import (
 	"github.com/keep-network/keep-core/config"
 	"github.com/keep-network/keep-core/pkg/bitcoin"
 	"github.com/keep-network/keep-core/pkg/chain"
+	chainethereum "github.com/keep-network/keep-core/pkg/chain/ethereum"
 	"github.com/keep-network/keep-core/pkg/chain/local_v1"
 	"github.com/keep-network/keep-core/pkg/frost"
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
@@ -309,6 +310,57 @@ func TestFrostStorageIDDerivedFromOperator(t *testing.T) {
 			if pair.id == plain {
 				t.Fatalf("M2-5: operator %s's storage ID is the %s, not a domain-separated hash", operatorName, name)
 			}
+		}
+	}
+}
+
+// Known-answer vector (decision F5, coordinator 2026-11-13): the storage ID
+// is Keccak-256("keep-core/frost/storage-id/v1" || operator address, 20
+// bytes). TEST operator key: bytes 0x01..0x20 (never a real key).
+const (
+	m2VectorAddress   = "0x6370eF2f4Db3611D657b90667De398a2Cc2a370C"
+	m2VectorStorageID = "665b9786f3b1527eb9472e35f485064126d44a88ed606b6e6f32727ae8ddd42e"
+)
+
+// Acceptance 5 (decision F5). Invariant: the derived storage ID is exactly
+// Keccak-256("keep-core/frost/storage-id/v1" || operator address): the fixed
+// vector, and the formula for a random operator.
+func TestFrostStorageIDKnownAnswer(t *testing.T) {
+	fixed := make([]byte, 32)
+	for i := range fixed {
+		fixed[i] = byte(i + 1)
+	}
+	key, err := crypto.ToECDSA(fixed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := crypto.PubkeyToAddress(key.PublicKey); got != common.HexToAddress(m2VectorAddress) {
+		t.Fatalf("setup: the vector operator's address is %s, want %s", got.Hex(), m2VectorAddress)
+	}
+	vectorPrivate, vectorPublic, err := chainethereum.ChainPrivateKeyToOperatorKeyPair(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	randomPrivate, randomPublic, randomAddress := newOperator(t)
+	for _, operatorCase := range []struct {
+		name    string
+		private *operator.PrivateKey
+		public  *operator.PublicKey
+		want    string
+	}{
+		{"fixed vector", vectorPrivate, vectorPublic, m2VectorStorageID},
+		{"random operator", randomPrivate, randomPublic, hex.EncodeToString(crypto.Keccak256([]byte("keep-core/frost/storage-id/v1"), randomAddress[:]))},
+	} {
+		fence := &recordingFence{}
+		_, err := initializeNode(t, frostConfigAsLoaded(t, common.HexToAddress(m2Registry), fence), commonethereum.Developer, operatorCase.private, operatorCase.public)
+		if !errors.Is(err, errFenceReached) {
+			t.Fatalf("M2-5: %s: the FROST store was not opened under a derived storage ID: %v", operatorCase.name, err)
+		}
+		if len(fence.ids) != 1 {
+			t.Fatalf("M2-5: %s: the store acquired its fence %d times, want 1", operatorCase.name, len(fence.ids))
+		}
+		if got := hex.EncodeToString(fence.ids[0][:]); got != operatorCase.want {
+			t.Fatalf("M2-5: %s: storage ID %s, want Keccak-256(\"keep-core/frost/storage-id/v1\" || address) = %s", operatorCase.name, got, operatorCase.want)
 		}
 	}
 }

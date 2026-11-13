@@ -49,11 +49,13 @@ func (c *Config) validateFrostNode(clientNetwork commonEthereum.Network) error {
 
 // readFrostNode fills the node's FROST configuration from [tbtc.frost] and
 // developer.frostWalletRegistryAddress. It runs after the FROST node gate, so
-// only on the developer network. Without [tbtc.frost] FROST stays
+// only on the developer network, and only for a command that asked for the
+// Tbtc category: no other command runs FROST duties, so none reads the store
+// key or touches the fence file. Without [tbtc.frost] FROST stays
 // unconfigured. On any error the node's FROST configuration is left as it
 // was.
-func (c *Config) readFrostNode() error {
-	if !viper.IsSet(frostSection) {
+func (c *Config) readFrostNode(categories ...Category) error {
+	if !viper.IsSet(frostSection) || !hasCategory(categories, Tbtc) {
 		return nil
 	}
 
@@ -142,6 +144,16 @@ func (c *Config) readFrostNode() error {
 
 	c.Tbtc.Frost = fc
 	return nil
+}
+
+// hasCategory reports whether the requested categories include the given one.
+func hasCategory(categories []Category, category Category) bool {
+	for _, c := range categories {
+		if c == category {
+			return true
+		}
+	}
+	return false
 }
 
 // decodeHex32 decodes exactly 64 hexadecimal digits (no 0x prefix) of a

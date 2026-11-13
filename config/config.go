@@ -150,8 +150,9 @@ func (c *Config) ReadConfig(configFilePath string, flagSet *pflag.FlagSet, categ
 		return err
 	}
 
-	// Read the node's FROST settings (developer network only).
-	if err := c.readFrostNode(); err != nil {
+	// Read the node's FROST settings (developer network only, and only for
+	// a command that runs TBTC: no other command needs the store key).
+	if err := c.readFrostNode(categories...); err != nil {
 		return err
 	}
 

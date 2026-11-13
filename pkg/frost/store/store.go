@@ -44,6 +44,18 @@ type Config struct {
 	Fence     Fence
 }
 
+// Format renders the configuration with Key withheld, for every verb (%v,
+// %+v, %#v, %s, ...), also when Config is nested in another value.
+func (c Config) Format(f fmt.State, verb rune) {
+	type Config struct {
+		Keystore  string
+		StorageID [32]byte
+		Key       string
+		Fence     Fence
+	}
+	fmt.Fprintf(f, fmt.FormatString(f, verb), Config{c.Keystore, c.StorageID, "[withheld]", c.Fence})
+}
+
 type record struct {
 	Domain     frost.Domain
 	Kind       string

@@ -145,12 +145,12 @@ type v04ProcessObservation struct {
 	Error                                                 string
 }
 type v04ProcessJournal struct {
-	*v04RecoveryJournal
+	*reviewJournal
 	after func([32]byte) error
 }
 
 func (j *v04ProcessJournal) RetainSigningRecord(c context.Context, id [32]byte, b []byte) error {
-	if err := j.v04RecoveryJournal.RetainSigningRecord(c, id, b); err != nil {
+	if err := j.reviewJournal.RetainSigningRecord(c, id, b); err != nil {
 		return err
 	}
 	if j.after != nil {
@@ -199,10 +199,10 @@ func TestV04ProcessReplayChild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	base := &v04RecoveryJournal{journalStub: e.config.Journal.(*journalStub), durable: scoped}
-	journal := &v04ProcessJournal{v04RecoveryJournal: base}
+	base := &reviewJournal{journalStub: e.config.Journal.(*journalStub), durable: scoped}
+	journal := &v04ProcessJournal{reviewJournal: base}
 	e.config.Journal = journal
-	engine := &v04RecoveryEngine{journal: base, private: stub.private}
+	engine := &reviewEngine{journal: base, private: stub.private}
 	e.engine = engine
 	decoder := json.NewDecoder(os.Stdin)
 	encoder := json.NewEncoder(os.Stdout)
@@ -213,7 +213,7 @@ func TestV04ProcessReplayChild(t *testing.T) {
 		o.Receipt = err == nil
 		_, err = journal.ReadSigningRecord(context.Background(), e.Plan().Commitment())
 		o.Intent = err == nil
-		doneRaw, err := journal.ReadSigningRecord(context.Background(), v04DoneID(e))
+		doneRaw, err := journal.ReadSigningRecord(context.Background(), doneID(e))
 		o.Done = err == nil
 		if o.Done {
 			var done Done
@@ -269,7 +269,7 @@ func TestV04ProcessReplayChild(t *testing.T) {
 			return hook("receipt-durable")
 		case e.Plan().Commitment():
 			return hook("intent-durable")
-		case v04DoneID(e):
+		case doneID(e):
 			return hook("done-durable")
 		case e.resultID():
 			return hook("aggregate-durable")

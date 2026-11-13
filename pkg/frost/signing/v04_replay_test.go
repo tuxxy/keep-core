@@ -57,9 +57,9 @@ func TestV04TraceProjection(t *testing.T) {
 				if strings.Contains(trace.ID, "done-only-late-refused") {
 					v04ProjectLateReconstruction(t)
 				} else if strings.Contains(trace.ID, "cancelled-return-retained") {
-					TestV04CancelledReturnedSignatureRetained(t)
+					TestReturnedSignatureSurvivesCancellation(t)
 				} else if strings.Contains(trace.ID, "done-only-recovered") {
-					TestV04DoneOnlyRecovery(t)
+					TestRecoverResultAfterDurableDone(t)
 				} else if strings.Contains(trace.ID, "late-quarantine") {
 					e.boundary = func(name string) error {
 						if name == "after-signature" {
@@ -211,9 +211,9 @@ func TestV04TraceProjection(t *testing.T) {
 					t.Fatal("foreign done context")
 				}
 			case "CancelledRetention":
-				TestV04CancelledReturnedSignatureRetained(t)
+				TestReturnedSignatureSurvivesCancellation(t)
 			case "AggregateOnlyRecovery":
-				TestV04DoneOnlyRecovery(t)
+				TestRecoverResultAfterDurableDone(t)
 			case "ReconstructWithoutReread":
 				// Claim-model expectation at the divergence: the reread refuses.
 				v04ProjectLateReconstruction(t)
@@ -253,7 +253,7 @@ func v04ProjectLateReconstruction(t *testing.T) {
 	if _, err := e.config.Journal.ReadSigningRecord(ctx, e.resultID()); err == nil {
 		t.Fatal("aggregate written for a late Done-only set")
 	}
-	if _, err := e.config.Journal.ReadSigningRecord(ctx, v04DoneID(e)); err != nil {
+	if _, err := e.config.Journal.ReadSigningRecord(ctx, doneID(e)); err != nil {
 		t.Fatal("Done not retained after the refusal", err)
 	}
 }

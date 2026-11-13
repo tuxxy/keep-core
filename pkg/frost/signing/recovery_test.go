@@ -48,10 +48,11 @@ func (j *reviewJournal) ReadSigningRecord(c context.Context, id [32]byte) ([]byt
 // claims, calls the actual executor guard, and returns valid BIP340 signatures.
 type reviewEngine struct {
 	frost.Engine
-	journal *reviewJournal
-	private *btcec.PrivateKey
-	signed  func()
-	calls   int
+	journal    *reviewJournal
+	private    *btcec.PrivateKey
+	signed     func()
+	afterClaim func()
+	calls      int
 }
 
 func (e *reviewEngine) Sign(c context.Context, r frost.SigningRequest, p frost.Providers) ([64]byte, error) {
@@ -61,6 +62,9 @@ func (e *reviewEngine) Sign(c context.Context, r frost.SigningRequest, p frost.P
 		return [64]byte{}, err
 	}
 	defer release()
+	if e.afterClaim != nil {
+		e.afterClaim()
+	}
 	if err = p.SigningAuthorization.BeforeSigning(c, r); err != nil {
 		return [64]byte{}, err
 	}
@@ -101,21 +105,42 @@ func doneID(e *Executor) [32]byte {
 	return sha256.Sum256(append([]byte("keep-core/frost/signing-done/v1/"), id[:]...))
 }
 
+// A signature the engine returned before the caller cancelled is kept: the Done
+// record stays durable and verifies, the intent record and the terminal claim
+// survive, and with the reservation in TimeoutPending the completion stays
+// quarantined. The cancel-only case (no TimeoutPending) is the V-04
+// verification regression formerly in v04_recovery_test.go.
 func TestReturnedSignatureSurvivesCancellation(t *testing.T) {
-	for _, cancelAt := range []string{"engine-return", "transport-cleanup"} {
-		t.Run(cancelAt, func(t *testing.T) {
+	for _, c := range []struct {
+		name     string
+		atReturn bool // cancel when the engine returns, not at transport cleanup
+		timeout  bool // the reservation reaches TimeoutPending before cancellation
+	}{
+		{"engine-return", true, true},
+		{"transport-cleanup", false, true},
+		{"transport-cleanup-no-timeout", false, false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
 			e, eng, _, _, j := reviewFixture(t)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			if cancelAt == "engine-return" {
+			if c.atReturn {
 				eng.signed = cancel
 			}
 			e.config.Transport = func(context.Context, frost.Attempt) (frost.Transport, func(), error) {
-				return transportStub{}, func() { e.config.Reservations.(*reservationStub).view.State = "TimeoutPending"; cancel() }, nil
+				return transportStub{}, func() {
+					if c.timeout {
+						e.config.Reservations.(*reservationStub).view.State = "TimeoutPending"
+					}
+					cancel()
+				}, nil
 			}
 			result, err := e.Run(ctx)
-			if !errors.Is(err, ErrLateSignature) || result != nil || eng.calls != 1 {
-				t.Fatalf("unexpected result=%v err=%v signed=%d", result, err, eng.calls)
+			if err == nil || result != nil || eng.calls != 1 {
+				t.Fatalf("expected classified cancellation after one valid return, result=%v err=%v signed=%d", result, err, eng.calls)
+			}
+			if c.timeout && !errors.Is(err, ErrLateSignature) {
+				t.Fatalf("late return not classified as late: %v", err)
 			}
 			raw, err := j.ReadSigningRecord(context.Background(), doneID(e))
 			if err != nil {
@@ -129,8 +154,16 @@ func TestReturnedSignatureSurvivesCancellation(t *testing.T) {
 			if _, err = done.Verify(e.doneContext(0, attempt), e.Plan().Snapshot().OutputKey()); err != nil {
 				t.Fatal(err)
 			}
-			if _, err = e.LoadResult(context.Background()); !errors.Is(err, ErrLateSignature) {
-				t.Fatal("late completion escaped quarantine", err)
+			if c.timeout {
+				if _, err = e.LoadResult(context.Background()); !errors.Is(err, ErrLateSignature) {
+					t.Fatal("late completion escaped quarantine", err)
+				}
+			}
+			if _, err = j.ReadSigningRecord(context.Background(), e.Plan().Commitment()); err != nil {
+				t.Fatal("intent record lost at caller cancellation", err)
+			}
+			if _, err = j.durable.Claim(context.Background(), snowfallengine.AttemptID(attempt), "sign", []byte("retry")); !errors.Is(err, store.ErrClaimed) {
+				t.Fatal("terminal claim lost at caller cancellation", err)
 			}
 		})
 	}
@@ -145,6 +178,12 @@ func TestRecoverResultAfterDurableDone(t *testing.T) {
 	}
 	if _, err := e.Run(context.Background()); err == nil {
 		t.Fatal("boundary ignored")
+	}
+	if _, err := j.ReadSigningRecord(context.Background(), doneID(e)); err != nil {
+		t.Fatal("durable Done record missing after the crash", err)
+	}
+	if _, err := j.ReadSigningRecord(context.Background(), e.resultID()); !errors.Is(err, store.ErrMissing) {
+		t.Fatal("aggregate should be absent before recovery", err)
 	}
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
@@ -186,6 +225,10 @@ func TestRecoverResultAfterDurableDone(t *testing.T) {
 	}
 	if retained.Transaction.Hash() != result.Transaction.Hash() {
 		t.Fatal("recovered bytes changed")
+	}
+	fresh.config.Reservations.(*reservationStub).view.State = "TimeoutPending"
+	if err = fresh.Broadcast(context.Background(), result); !errors.Is(err, ErrUnauthorized) {
+		t.Fatal("recovered late signature broadcast", err)
 	}
 }
 

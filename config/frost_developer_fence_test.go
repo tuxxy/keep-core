@@ -146,11 +146,14 @@ func TestDeveloperFenceDurableAcrossReopen(t *testing.T) {
 	}
 }
 
-// Invariant (Fence contract: Acquire excludes every other process; the lease
-// is non-expiring until Close): while a lease is held, a second Acquire for
-// the same storage ID is refused, through the same fence and through a
-// freshly loaded configuration (another process on the same files). After
-// Close it succeeds.
+// Invariant (in-process exclusion; the lease is non-expiring until Close):
+// while a lease is held, a second Acquire for the same storage ID in the same
+// process is refused, through the same fence and through a freshly loaded
+// configuration on the same files. After Close it succeeds. Exclusion within
+// one process is a deliberate extra requirement beyond the Fence contract
+// (which speaks of other processes), consistent with store.Open's flock on
+// its owner lock. Other processes are covered by
+// TestDeveloperFenceCrossProcess.
 func TestDeveloperFenceExclusiveWhileHeld(t *testing.T) {
 	d := newDevFrost(t)
 	first := loadFence(t, d)

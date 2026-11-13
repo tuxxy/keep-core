@@ -267,6 +267,9 @@ func newFrostNode(
 		config.Store.StorageID = frostStorageID(self)
 	}
 	root, err := store.Open(ctx, config.Store)
+	// The store derived and kept what it needs; no copy of the store key
+	// outlives this call, so fn.config never holds one.
+	clear(config.Store.Key[:])
 	if err != nil {
 		return nil, fmt.Errorf("cannot open FROST store: [%w]", err)
 	}

@@ -181,6 +181,9 @@ func start(cmd *cobra.Command) error {
 			perfMetrics, // Pass the existing performance metrics instance to avoid duplicate registrations
 			clientConfig.Ethereum.Network,
 		)
+		// The node holds what it needs from the FROST store key; the
+		// configuration keeps no copy of it, whether or not TBTC started.
+		clear(clientConfig.Tbtc.Frost.Store.Key[:])
 		if err != nil {
 			return fmt.Errorf("error initializing TBTC: [%v]", err)
 		}

@@ -41,7 +41,13 @@ a missing file is refused and never created. A lease holds an exclusive flock on
 the file (other processes and other leases of the same process are refused),
 the first Acquire binds the file to its storage ID, and every head is written in
 place and synchronized before Advance returns. A torn or altered file is
-refused, never reset.
+refused, never reset. The record has two alternating slots, so a torn write
+leaves the previous head readable in the other slot.
+
+A fence file that is refused must never be truncated or re-provisioned to get
+the node running again: an empty file binds to any storage ID at head 0, which
+is the silent new identity after data loss that the fence contract forbids.
+Repair the file from the lab's own record of the head, or retire the store.
 
 ## Records, attempts and keys
 

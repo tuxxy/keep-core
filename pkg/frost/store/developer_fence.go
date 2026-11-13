@@ -25,12 +25,18 @@ import (
 // new identity. The holder of a lease keeps an exclusive flock on the file
 // until Close or process death, which excludes every other lease, in this
 // process and in others. The first Acquire binds the file to its storage ID.
-// Every installed head is written in place and synchronized before Advance
-// returns, so it survives the holder's death.
+// Every installed head is written and synchronized before Advance returns, so
+// it survives the holder's death.
 //
-// File format: an empty file, or exactly developerFenceSize bytes: the magic,
-// the bound storage ID, the head's sequence (big-endian) and digest, and the
-// SHA-256 of all of these. Anything else is refused, never reset.
+// File format: an empty file, or two alternating slots of developerFenceSize
+// bytes each. A slot is the magic, the bound storage ID, the head's sequence
+// (big-endian) and digest, and the SHA-256 of all of these. The head is the
+// valid slot with the higher sequence, and an install writes the other slot,
+// so a torn write leaves the previous head readable in its own slot. A file
+// whose slots are all invalid is refused, never reset: a refused fence file
+// must be repaired or the store retired, never truncated or re-provisioned
+// (an empty file binds to any storage ID at head 0, which is exactly the
+// silent new identity after data loss that the Fence contract forbids).
 
 var (
 	// ErrFenceBound means the fence file belongs to another storage ID.
@@ -44,7 +50,10 @@ var (
 
 var developerFenceMagic = [8]byte{'K', 'C', 'F', 'E', 'N', 'C', 'E', '1'}
 
-const developerFenceSize = 8 + 32 + 8 + 32 + sha256.Size
+const (
+	developerFenceSize  = 8 + 32 + 8 + 32 + sha256.Size
+	developerFenceSlots = 2
+)
 
 type developerFence struct{ path string }
 
@@ -77,7 +86,7 @@ func (f developerFence) Acquire(ctx context.Context, id [32]byte) (FenceLease, e
 	if err != nil {
 		return nil, err
 	}
-	lease := &developerLease{file: file, id: id}
+	lease := &developerLease{file: file, id: id, slot: -1}
 	if err = acquireDeveloperLease(file, lease, id); err != nil {
 		file.Close()
 		return nil, err
@@ -98,54 +107,108 @@ func acquireDeveloperLease(file *os.File, lease *developerLease, id [32]byte) er
 	if err = lockFile(file); err != nil {
 		return ErrBusy
 	}
-	bound, head, empty, err := readDeveloperFence(file)
+	record, err := readDeveloperFence(file)
 	if err != nil {
 		return err
 	}
-	if empty {
+	if record.empty {
 		// First use: bind the provisioned file to this storage ID at the
 		// zero head.
 		return lease.install(Point{})
 	}
-	if bound != id {
+	if record.id != id {
 		return ErrFenceBound
 	}
-	lease.head = head
+	lease.head, lease.slot = record.head, record.slot
 	return nil
 }
 
-func readDeveloperFence(file *os.File) (id [32]byte, head Point, empty bool, err error) {
-	b, err := io.ReadAll(io.NewSectionReader(file, 0, developerFenceSize+1))
+// developerFenceRecord is the fence file's state: the slot holding the head,
+// or empty for a freshly provisioned (zero-length) file.
+type developerFenceRecord struct {
+	id    [32]byte
+	head  Point
+	slot  int
+	empty bool
+}
+
+// readDeveloperFence reads the file's slots and returns the valid one with
+// the higher sequence. A slot that is absent, short (a torn write) or fails
+// its checksum is ignored; a file with no valid slot, with slots bound to
+// different storage IDs, or longer than the slots is refused.
+func readDeveloperFence(file *os.File) (developerFenceRecord, error) {
+	var out developerFenceRecord
+	limit := int64(developerFenceSlots * developerFenceSize)
+	b, err := io.ReadAll(io.NewSectionReader(file, 0, limit+1))
 	if err != nil {
-		return id, head, false, err
+		return out, err
 	}
 	if len(b) == 0 {
-		return id, head, true, nil
+		out.empty = true
+		return out, nil
 	}
-	if len(b) != developerFenceSize || !bytes.Equal(b[:8], developerFenceMagic[:]) {
-		return id, head, false, errFenceFile
+	if int64(len(b)) > limit {
+		return out, errFenceFile
+	}
+	found := false
+	for slot := 0; slot < developerFenceSlots; slot++ {
+		start := slot * developerFenceSize
+		if start+developerFenceSize > len(b) {
+			break
+		}
+		id, head, ok := decodeDeveloperFenceSlot(b[start : start+developerFenceSize])
+		if !ok {
+			continue
+		}
+		if found {
+			if id != out.id || head.Sequence == out.head.Sequence {
+				// Two slots that disagree on the identity, or on the
+				// content of the same sequence, are corruption.
+				return developerFenceRecord{}, errFenceFile
+			}
+			if head.Sequence < out.head.Sequence {
+				continue
+			}
+		}
+		out.id, out.head, out.slot, found = id, head, slot, true
+	}
+	if !found {
+		return developerFenceRecord{}, errFenceFile
+	}
+	return out, nil
+}
+
+func decodeDeveloperFenceSlot(b []byte) (id [32]byte, head Point, ok bool) {
+	if !bytes.Equal(b[:8], developerFenceMagic[:]) {
+		return id, head, false
 	}
 	sum := sha256.Sum256(b[:developerFenceSize-sha256.Size])
 	if !bytes.Equal(sum[:], b[developerFenceSize-sha256.Size:]) {
-		return id, head, false, errFenceFile
+		return id, head, false
 	}
 	copy(id[:], b[8:40])
 	head.Sequence = binary.BigEndian.Uint64(b[40:48])
 	copy(head.Digest[:], b[48:80])
-	return id, head, false, nil
+	return id, head, true
 }
 
 type developerLease struct {
-	mu     sync.Mutex
-	file   *os.File
-	id     [32]byte
-	head   Point
+	mu   sync.Mutex
+	file *os.File
+	id   [32]byte
+	head Point
+	// slot holds the head; -1 before the first install.
+	slot   int
 	closed bool
+	// failed is the write or synchronization error that left the lease's
+	// view of the file uncertain. The lease refuses every later call with
+	// it, instead of reporting the file as corrupt.
+	failed error
 }
 
-// install writes p as the head bound to the lease's storage ID, in place
-// (the flock is on this inode, so the file is never replaced), and
-// synchronizes it before returning.
+// install writes p as the head bound to the lease's storage ID, into the slot
+// that does not hold the current head (the flock is on this inode, so the
+// file is never replaced), and synchronizes it before returning.
 func (l *developerLease) install(p Point) error {
 	b := make([]byte, 0, developerFenceSize)
 	b = append(b, developerFenceMagic[:]...)
@@ -154,17 +217,25 @@ func (l *developerLease) install(p Point) error {
 	b = append(b, p.Digest[:]...)
 	sum := sha256.Sum256(b)
 	b = append(b, sum[:]...)
-	if _, err := l.file.WriteAt(b, 0); err != nil {
-		return err
+
+	slot := 0
+	if l.slot == 0 {
+		slot = 1
+	}
+	if _, err := l.file.WriteAt(b, int64(slot*developerFenceSize)); err != nil {
+		l.failed = fmt.Errorf("cannot write the FROST developer fence file: %w", err)
+		return l.failed
 	}
 	if err := l.file.Sync(); err != nil {
-		return err
+		l.failed = fmt.Errorf("cannot synchronize the FROST developer fence file: %w", err)
+		return l.failed
 	}
-	l.head = p
+	l.head, l.slot = p, slot
 	return nil
 }
 
-// Head rereads the file, so a change made outside the lease is seen.
+// Head rereads the file: a head installed by anything but this lease is
+// detected and refused, never returned.
 func (l *developerLease) Head(ctx context.Context) (Point, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -175,23 +246,26 @@ func (l *developerLease) current(ctx context.Context) (Point, error) {
 	if l.closed {
 		return Point{}, ErrFenceClosed
 	}
+	if l.failed != nil {
+		return Point{}, l.failed
+	}
 	if ctx == nil {
 		return Point{}, errors.New("missing context")
 	}
 	if err := ctx.Err(); err != nil {
 		return Point{}, err
 	}
-	id, head, empty, err := readDeveloperFence(l.file)
+	record, err := readDeveloperFence(l.file)
 	if err != nil {
 		return Point{}, err
 	}
-	if empty || id != l.id {
+	if record.empty || record.id != l.id {
 		return Point{}, ErrFenceBound
 	}
-	if head != l.head {
+	if record.head != l.head {
 		return Point{}, fmt.Errorf("%w: changed outside the lease", errFenceFile)
 	}
-	return head, nil
+	return record.head, nil
 }
 
 // Advance installs after only if before is the current head and after is

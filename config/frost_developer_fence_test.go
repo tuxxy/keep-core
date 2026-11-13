@@ -11,13 +11,20 @@ package config
 // Fixture and pinned settings: frost_developer_fixture_test.go.
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
+	"fmt"
+	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/spf13/viper"
 
 	"github.com/keep-network/keep-core/pkg/frost"
 	"github.com/keep-network/keep-core/pkg/frost/store"
@@ -281,4 +288,151 @@ func TestDeveloperStoreSurvivesReopen(t *testing.T) {
 	if !bytes.Equal(got, write.Payload) {
 		t.Fatal("M2-6: the record read after reopen differs from the one committed")
 	}
+}
+
+// Invariant (decision F6, coordinator 2026-11-13): the disk fence binds the
+// storage ID. A fence file already used (advanced) under one storage ID is
+// refused to Acquire under another; the owning ID still acquires it, at the
+// head it installed.
+func TestDeveloperFenceBoundToStorageID(t *testing.T) {
+	d := newDevFrost(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	fence := loadFence(t, d)
+	lease := acquire(t, fence)
+	p1 := point(1, "one")
+	if err := lease.Advance(ctx, store.Point{}, p1); err != nil {
+		t.Fatalf("M2-6: Advance failed: %v", err)
+	}
+	if err := lease.Close(); err != nil {
+		t.Fatalf("M2-6: Close failed: %v", err)
+	}
+	other := [32]byte{0x0b, 0x1d}
+	for name, f := range map[string]store.Fence{"same fence": fence, "reloaded configuration": loadFence(t, d)} {
+		if l, err := f.Acquire(ctx, other); err == nil {
+			l.Close()
+			t.Fatalf("M2-6: a fence file used by one storage ID was acquired under another (%s)", name)
+		}
+	}
+	owner := acquire(t, loadFence(t, d))
+	defer owner.Close()
+	if got := head(t, owner); got != p1 {
+		t.Fatalf("M2-6: the owning storage ID's head is %+v after a refused foreign Acquire, want %+v", got, p1)
+	}
+}
+
+const (
+	fenceHolderEnv   = "M2_FENCE_HOLDER"
+	fenceHolderReady = "M2-FENCE-HOLDER-READY"
+)
+
+// fenceHolderPoint is the point the holder process installs.
+var fenceHolderPoint = point(1, "holder")
+
+// Invariant (review F2; Fence contract: Acquire excludes every other
+// process, Advance durably installs): while another process holds the
+// developer disk fence, this process's Acquire on the same fence file is
+// refused; after that process is killed (SIGKILL, no Close), this process
+// acquires the fence and its head is the point the killed holder installed.
+// The holder is this test binary re-run as TestDeveloperFenceHolder.
+func TestDeveloperFenceCrossProcess(t *testing.T) {
+	d := newDevFrost(t)
+	own := loadFence(t, d)
+	path := filepath.Join(d.dir, "holder.toml")
+	if err := os.WriteFile(path, []byte(d.toml(true, nil)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=^TestDeveloperFenceHolder$", "-test.count=1")
+	cmd.Env = append(os.Environ(), fenceHolderEnv+"="+path)
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	exited := make(chan struct{})
+	ready := make(chan struct{})
+	go func() {
+		scanner := bufio.NewScanner(out)
+		for scanner.Scan() {
+			if scanner.Text() == fenceHolderReady {
+				close(ready)
+				break
+			}
+		}
+		_, _ = io.Copy(io.Discard, out)
+	}()
+	go func() { _ = cmd.Wait(); close(exited) }()
+	t.Cleanup(func() { _ = cmd.Process.Kill(); <-exited })
+
+	select {
+	case <-ready:
+	case <-exited:
+		t.Fatalf("M2-6: the holder process exited before holding the fence: %s", tail(stderr.String()))
+	case <-time.After(8 * time.Second):
+		t.Fatal("M2-6: the holder process did not hold the fence within 8 s")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if lease, err := own.Acquire(ctx, devStorageID); err == nil {
+		lease.Close()
+		t.Fatal("M2-6: Acquire succeeded while another process holds the fence")
+	}
+
+	if err := cmd.Process.Kill(); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-exited:
+	case <-time.After(5 * time.Second):
+		t.Fatal("setup: the killed holder process did not exit within 5 s")
+	}
+	lease := acquire(t, own)
+	defer lease.Close()
+	if got := head(t, lease); got != fenceHolderPoint {
+		t.Fatalf("M2-6: head after the holder was killed is %+v, want its installed %+v", got, fenceHolderPoint)
+	}
+}
+
+func tail(s string) string {
+	if len(s) > 400 {
+		return "..." + s[len(s)-400:]
+	}
+	return s
+}
+
+// TestDeveloperFenceHolder is the subprocess entry point of
+// TestDeveloperFenceCrossProcess (test/suites/e2e.txt helper): it loads the
+// developer configuration named by M2_FENCE_HOLDER, acquires the fence,
+// advances it to fenceHolderPoint, reports ready and holds the lease without
+// closing it until killed (bounded at 20 s).
+func TestDeveloperFenceHolder(t *testing.T) {
+	path := os.Getenv(fenceHolderEnv)
+	if path == "" {
+		t.Skip("subprocess helper of TestDeveloperFenceCrossProcess")
+	}
+	viper.Reset()
+	c := &Config{}
+	if err := c.ReadConfig(path, networkFlags(t, "--developer"), StartCmdCategories...); err != nil {
+		t.Fatalf("holder: configuration refused: %v", err)
+	}
+	if c.Tbtc.Frost.Store.Fence == nil {
+		t.Fatal("holder: no fence configured")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	lease, err := c.Tbtc.Frost.Store.Fence.Acquire(ctx, devStorageID)
+	if err != nil {
+		t.Fatalf("holder: Acquire failed: %v", err)
+	}
+	if err := lease.Advance(ctx, store.Point{}, fenceHolderPoint); err != nil {
+		t.Fatalf("holder: Advance failed: %v", err)
+	}
+	fmt.Println(fenceHolderReady)
+	time.Sleep(20 * time.Second)
+	os.Exit(3) // never Close: the lease ends only with the process
 }

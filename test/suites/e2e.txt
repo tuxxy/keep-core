@@ -7,6 +7,8 @@
 # directly.
 # test/suites/run.sh reads this file; `run.sh check` verifies it.
 
+config TestDeveloperFenceCrossProcess  # starts the test binary as a separate process (fence holder)
+config TestDeveloperFenceHolder helper # subprocess entry point of TestDeveloperFenceCrossProcess
 pkg/chain/ethereum TestFrostSendDoesNotHoldTheLockWhileMining  # Anvil
 pkg/chain/ethereum TestFrostSendIsResubmittedAfterAFeeSpike  # Anvil
 pkg/chain/ethereum TestFrostSendSharesTheOperatorNonceWithBaseSends  # Anvil

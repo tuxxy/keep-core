@@ -68,6 +68,10 @@ func start(cmd *cobra.Command) error {
 	if err := clientConfig.ValidateFrostNode(); err != nil {
 		return err
 	}
+	// The configuration keeps no copy of the FROST store key past start's
+	// use of it: cleared on every early return here, and below once TBTC is
+	// set up (or skipped, on a bootstrap node).
+	defer clear(clientConfig.Tbtc.Frost.Store.Key[:])
 	ctx := context.Background()
 
 	beaconChain, tbtcChain, blockCounter, signing, operatorPrivateKey, err :=
@@ -181,13 +185,14 @@ func start(cmd *cobra.Command) error {
 			perfMetrics, // Pass the existing performance metrics instance to avoid duplicate registrations
 			clientConfig.Ethereum.Network,
 		)
-		// The node holds what it needs from the FROST store key; the
-		// configuration keeps no copy of it, whether or not TBTC started.
-		clear(clientConfig.Tbtc.Frost.Store.Key[:])
 		if err != nil {
 			return fmt.Errorf("error initializing TBTC: [%v]", err)
 		}
 	}
+
+	// The node holds what it needs from the FROST store key; start runs
+	// until the node stops, so clear the configuration's copy now.
+	clear(clientConfig.Tbtc.Frost.Store.Key[:])
 
 	nodeHeader(
 		netProvider.ConnectionManager().AddrStrings(),

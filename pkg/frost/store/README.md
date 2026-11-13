@@ -30,6 +30,19 @@ a finalized block number, and the tests' in-memory authority do not meet this
 requirement. Tests use a separate file authority for process-death cases and a
 clearly labeled memory authority for local worker integration.
 
+## Developer fence
+
+`NewDeveloperFence` is the developer network's fence (chaosnet M2): the
+exclusive-host, no-snapshot operational assumption that KC-SF-V3 K-02 "Safe
+state/recovery" allows when no independent fencing authority exists. It is not
+a production fence; the production fencing authority is a later decision. Its
+state is one lab-provisioned file outside the keystore: empty is the zero head,
+a missing file is refused and never created. A lease holds an exclusive flock on
+the file (other processes and other leases of the same process are refused),
+the first Acquire binds the file to its storage ID, and every head is written in
+place and synchronized before Advance returns. A torn or altered file is
+refused, never reset.
+
 ## Records, attempts and keys
 
 The caller supplies 32 bytes of high-entropy key material from its secret

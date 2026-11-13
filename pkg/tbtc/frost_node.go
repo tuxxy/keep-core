@@ -262,7 +262,14 @@ func newFrostNode(
 	if err != nil {
 		return nil, fmt.Errorf("cannot read FROST Bitcoin network: [%w]", err)
 	}
+	self := crypto.PubkeyToAddress(signer.PublicKey)
+	if config.Store.StorageID == ([32]byte{}) {
+		config.Store.StorageID = frostStorageID(self)
+	}
 	root, err := store.Open(ctx, config.Store)
+	// The store derived and kept what it needs; no copy of the store key
+	// outlives this call, so fn.config never holds one.
+	clear(config.Store.Key[:])
 	if err != nil {
 		return nil, fmt.Errorf("cannot open FROST store: [%w]", err)
 	}
@@ -275,7 +282,7 @@ func newFrostNode(
 		bitcoin:  btc,
 		store:    root,
 		signer:   signer,
-		self:     crypto.PubkeyToAddress(signer.PublicKey),
+		self:     self,
 		network:  network,
 		genesis:  redemptions.BitcoinGenesis,
 		scopes:   make(map[uint64]*store.Scoped),
@@ -304,6 +311,19 @@ func newFrostNode(
 	}
 
 	return fn, nil
+}
+
+// frostStorageIDDomain separates the FROST storage ID from other hashes of
+// the operator address.
+const frostStorageIDDomain = "keep-core/frost/storage-id/v1"
+
+// frostStorageID is the FROST store's storage ID of a node configured without
+// one: Keccak-256 of the domain and the operator address. It depends on the
+// operator alone, so it is the same across restarts and registries.
+func frostStorageID(address common.Address) [32]byte {
+	var id [32]byte
+	copy(id[:], crypto.Keccak256([]byte(frostStorageIDDomain), address[:]))
+	return id
 }
 
 func operatorPrivateKeyToECDSA(key *operator.PrivateKey) *ecdsa.PrivateKey {

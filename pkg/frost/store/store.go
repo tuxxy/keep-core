@@ -40,8 +40,34 @@ const maxRecord = 1 << 20
 type Config struct {
 	Keystore  string
 	StorageID [32]byte
-	Key       [32]byte
+	Key       [32]byte `json:"-"`
 	Fence     Fence
+}
+
+// withheldConfig is a Config rendered with its key withheld. Format and
+// MarshalJSON both render it, so no rendering of a Config, or of a value
+// holding one, can carry the key.
+type withheldConfig struct {
+	Keystore  string
+	StorageID [32]byte
+	Key       string
+	Fence     Fence
+}
+
+func (c Config) withheld() withheldConfig {
+	return withheldConfig{c.Keystore, c.StorageID, "[withheld]", c.Fence}
+}
+
+// MarshalJSON renders the configuration with Key withheld, so a structured
+// log line or a diagnostics dump cannot emit it either.
+func (c Config) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.withheld())
+}
+
+// Format renders the configuration with Key withheld, for every verb (%v,
+// %+v, %#v, %s, ...), also when Config is nested in another value.
+func (c Config) Format(f fmt.State, verb rune) {
+	fmt.Fprintf(f, fmt.FormatString(f, verb), c.withheld())
 }
 
 type record struct {

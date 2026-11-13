@@ -18,6 +18,11 @@ import (
 	"github.com/keep-network/keep-core/pkg/frost/dkg"
 )
 
+// FrostWalletRegistryContractName is the FROST wallet registry's name in the
+// contract addresses, set on the developer network by
+// developer.frostWalletRegistryAddress.
+const FrostWalletRegistryContractName = "FrostWalletRegistry"
+
 // FrostChain is a separate, explicitly constructed local chain view. Creating
 // the legacy TbtcChain does not create it or enable FROST dispatch.
 type FrostChain struct {

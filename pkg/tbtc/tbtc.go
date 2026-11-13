@@ -97,8 +97,10 @@ type Config struct {
 	// Concurrency level for key-generation for tECDSA.
 	KeyGenerationConcurrency int
 	// Frost is the FROST configuration. Its zero value leaves FROST
-	// unconfigured: the node then runs the legacy duties only. It is never
-	// read from a configuration file: keep-client start refuses FROST (D5).
+	// unconfigured: the node then runs the legacy duties only. The config
+	// package fills it from [tbtc.frost] and [developer]
+	// FrostWalletRegistryAddress on the developer network only; on every
+	// other network keep-client start refuses FROST settings (D5).
 	Frost FrostConfig `mapstructure:"-"`
 }
 
@@ -224,8 +226,8 @@ func Initialize(
 		sortition.NewConjunctionPolicy(
 			sortition.NewBetaOperatorPolicy(chain, logger),
 			&enoughPreParamsInPoolPolicy{
-				node:   node,
-				config: config,
+				node:     node,
+				poolSize: config.PreParamsPoolSize,
 			},
 		),
 	)
@@ -398,12 +400,14 @@ func Initialize(
 // enoughPreParamsInPoolPolicy is a policy that enforces the sufficient size
 // of the DKG pre-parameters pool before joining the sortition pool.
 type enoughPreParamsInPoolPolicy struct {
-	node   *node
-	config Config
+	node *node
+	// poolSize is the configured pre-parameters pool size. The policy lives
+	// as long as the process, so it keeps only this, never the whole Config
+	// (which can carry the FROST store key).
+	poolSize int
 }
 
 func (eppip *enoughPreParamsInPoolPolicy) ShouldJoin() bool {
 	paramsInPool := eppip.node.dkgExecutor.preParamsCount()
-	poolSize := eppip.config.PreParamsPoolSize
-	return paramsInPool >= poolSize
+	return paramsInPool >= eppip.poolSize
 }

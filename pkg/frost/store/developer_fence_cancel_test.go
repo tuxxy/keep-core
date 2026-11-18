@@ -43,13 +43,21 @@ import (
 	"time"
 )
 
+// storeStepDeadline is the deadline-mode context's lifetime in the store
+// case: the claim must reach its commit step before it expires, so it is far
+// above the few milliseconds that takes, and the case then waits out the rest
+// (the cases run in parallel).
+const storeStepDeadline = 300 * time.Millisecond
+
 // cancelModes are the two ways a caller's context ends.
 var cancelModes = []string{"cancel", "deadline"}
 
 // endingContext returns a context and a function that ends it in the given
-// mode and returns only once it has ended (bounded: a deadline context gets
-// 20 ms, and end waits at most 5 s).
-func endingContext(t *testing.T, mode string) (context.Context, func()) {
+// mode and returns only once it has ended (bounded: a deadline context expires
+// after d, and end waits at most 5 s). A real deadline cannot be started
+// later, so a caller that must reach a step before it ends passes a d that is
+// a wide margin over that step (storeStepDeadline).
+func endingContext(t *testing.T, mode string, d time.Duration) (context.Context, func()) {
 	t.Helper()
 	switch mode {
 	case "cancel":
@@ -57,7 +65,7 @@ func endingContext(t *testing.T, mode string) (context.Context, func()) {
 		t.Cleanup(cancel)
 		return ctx, cancel
 	case "deadline":
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+		ctx, cancel := context.WithTimeout(context.Background(), d)
 		t.Cleanup(cancel)
 		return ctx, func() {
 			select {
@@ -74,7 +82,7 @@ func endingContext(t *testing.T, mode string) (context.Context, func()) {
 // endedContext returns a context that has already ended in the given mode.
 func endedContext(t *testing.T, mode string) context.Context {
 	t.Helper()
-	ctx, end := endingContext(t, mode)
+	ctx, end := endingContext(t, mode, time.Millisecond)
 	end()
 	if ctx.Err() == nil {
 		t.Fatal("test context did not end")
@@ -156,7 +164,7 @@ func TestDeveloperFenceStoreSurvivesClaimCancelledInCommit(t *testing.T) {
 				must(t, err)
 				v, err := s.Scope(testDomain())
 				must(t, err)
-				ctx, end := endingContext(t, mode)
+				ctx, end := endingContext(t, mode, storeStepDeadline)
 				var ended atomic.Bool
 				s.boundary = func(name string) error {
 					if name == step {
@@ -208,22 +216,6 @@ func TestDeveloperFenceStoreSurvivesClaimCancelledInCommit(t *testing.T) {
 	}
 }
 
-// lateCancelContext is a TEST context, not a real cancellation source: its
-// first Err() reports it live and every later call reports it cancelled. It
-// models a cancellation that lands after the store's own ctx.Err() check in
-// Store.check and before that check reads the fence head.
-type lateCancelContext struct {
-	context.Context
-	calls atomic.Int32
-}
-
-func (c *lateCancelContext) Err() error {
-	if c.calls.Add(1) == 1 {
-		return nil
-	}
-	return context.Canceled
-}
-
 // TestDeveloperFenceStoreSurvivesCancelBeforeHead: a claim whose context ends
 // after the store's own cancellation check and before the store reads the
 // developer fence's head does not quarantine the store. The store poisons
@@ -236,12 +228,13 @@ func TestDeveloperFenceStoreSurvivesCancelBeforeHead(t *testing.T) {
 	defer s.Close()
 	v, err := s.Scope(testDomain())
 	must(t, err)
-	ctx := &lateCancelContext{Context: context.Background()}
-	spy := &headSpy{FenceLease: s.fence, target: ctx}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	spy := &headSpy{FenceLease: s.fence, target: ctx, cancel: cancel}
 	s.fence = spy
 	release, err := v.Claim(ctx, [32]byte{7}, "dkg", []byte("intent"))
-	if !spy.late.Load() {
-		t.Fatal("the store never read the fence head with the context after its own cancellation check")
+	if !spy.fired.Load() {
+		t.Fatal("the store never read the fence head with the claim's context")
 	}
 	if errors.Is(err, ErrQuarantined) {
 		t.Fatalf("DF-CANCEL-3: a cancellation between the store's check and its fence read quarantined the store: %v", err)
@@ -257,19 +250,22 @@ func TestDeveloperFenceStoreSurvivesCancelBeforeHead(t *testing.T) {
 	requireInstalledHead(t, s, 2, "DF-CANCEL-3")
 }
 
-// headSpy is a TEST wrapper around the real developer lease: it only records
-// whether the store read the head with the target context after the store had
-// already consulted that context once (so the context reports cancelled), then
-// delegates every call unchanged.
+// headSpy is a TEST wrapper around the real developer lease. The first time
+// the store reads the head with the target context (in Store.check, after the
+// store's own ctx.Err() check passed), it cancels that real context, then
+// delegates. This places the cancellation between the store's check and its
+// head read without depending on how often the store consults the context.
+// Every other call is delegated unchanged.
 type headSpy struct {
 	FenceLease
-	target *lateCancelContext
-	late   atomic.Bool
+	target context.Context
+	cancel context.CancelFunc
+	fired  atomic.Bool
 }
 
 func (h *headSpy) Head(ctx context.Context) (Point, error) {
-	if c, ok := ctx.(*lateCancelContext); ok && c == h.target && c.calls.Load() >= 1 {
-		h.late.Store(true)
+	if ctx == h.target && h.fired.CompareAndSwap(false, true) {
+		h.cancel()
 	}
 	return h.FenceLease.Head(ctx)
 }
@@ -364,6 +360,44 @@ func TestDeveloperFenceCancellationKeepsCompareAndInstall(t *testing.T) {
 			}
 			if _, err = lease.Head(ended); !errors.Is(err, ErrFenceClosed) {
 				t.Fatalf("DF-CANCEL-3: a closed lease did not refuse Head under an ended context: %v", err)
+			}
+		})
+	}
+}
+
+// TestDeveloperFenceCancellationKeepsOutsideChangeCheck: an ended context
+// does not switch off the developer fence's reread of its file. When the file
+// was rolled back outside the lease (a TEST rollback: an older valid fence
+// file written back over the current one), Head and Advance under an ended
+// context still refuse it as changed outside the lease (errFenceFile), and
+// Advance installs nothing.
+func TestDeveloperFenceCancellationKeepsOutsideChangeCheck(t *testing.T) {
+	for _, mode := range cancelModes {
+		mode := mode
+		t.Run(mode, func(t *testing.T) {
+			t.Parallel()
+			path := provisionFence(t, t.TempDir())
+			lease, err := developerFenceAt(t, path).Acquire(context.Background(), [32]byte{0x4d, 0x37})
+			must(t, err)
+			defer lease.Close()
+			one, two := fencePoint(1, "one"), fencePoint(2, "two")
+			must(t, lease.Advance(context.Background(), Point{}, one))
+			older, err := os.ReadFile(path)
+			must(t, err)
+			must(t, lease.Advance(context.Background(), one, two))
+			must(t, os.WriteFile(path, older, 0600))
+			ended := endedContext(t, mode)
+
+			if head, err := lease.Head(ended); !errors.Is(err, errFenceFile) {
+				t.Fatalf("DF-CANCEL-2: Head under an ended context did not refuse a fence file rolled back outside the lease: %+v, %v", head, err)
+			}
+			if err = lease.Advance(ended, two, fencePoint(3, "three")); !errors.Is(err, errFenceFile) {
+				t.Fatalf("DF-CANCEL-2: Advance under an ended context did not refuse a fence file rolled back outside the lease: %v", err)
+			}
+			after, err := os.ReadFile(path)
+			must(t, err)
+			if string(after) != string(older) {
+				t.Fatal("DF-CANCEL-2: Advance under an ended context wrote over a fence file rolled back outside the lease")
 			}
 		})
 	}

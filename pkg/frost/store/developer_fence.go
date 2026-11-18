@@ -37,6 +37,17 @@ import (
 // must be repaired or the store retired, never truncated or re-provisioned
 // (an empty file binds to any storage ID at head 0, which is exactly the
 // silent new identity after data loss that the Fence contract forbids).
+//
+// Cancellation: Acquire refuses a context that has already ended, before it
+// opens, locks or binds the file. A lease's Head and Advance ignore the
+// context's cancellation and deadline. The store calls Advance after it has
+// installed the journal, so the fence step is past the commit's point of no
+// return, and the store treats any Advance error as possibly committed and
+// quarantines itself. An abort that reaches the caller's context there must
+// not decide the commit: the compare-and-install on the local file runs to
+// completion (it takes milliseconds) and reports its own result. Head commits
+// nothing, but the store also quarantines on any Head error, so it ignores
+// cancellation too.
 
 var (
 	// ErrFenceBound means the fence file belongs to another storage ID.
@@ -235,7 +246,8 @@ func (l *developerLease) install(p Point) error {
 }
 
 // Head rereads the file: a head installed by anything but this lease is
-// detected and refused, never returned.
+// detected and refused, never returned. It ignores the context's cancellation
+// (see the package comment above).
 func (l *developerLease) Head(ctx context.Context) (Point, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -252,9 +264,8 @@ func (l *developerLease) current(ctx context.Context) (Point, error) {
 	if ctx == nil {
 		return Point{}, errors.New("missing context")
 	}
-	if err := ctx.Err(); err != nil {
-		return Point{}, err
-	}
+	// The context's cancellation and deadline are deliberately not
+	// consulted: the store quarantines on any Head or Advance error.
 	record, err := readDeveloperFence(l.file)
 	if err != nil {
 		return Point{}, err
@@ -269,7 +280,10 @@ func (l *developerLease) current(ctx context.Context) (Point, error) {
 }
 
 // Advance installs after only if before is the current head and after is
-// its successor.
+// its successor. It ignores the context's cancellation: the store calls it
+// past the commit's point of no return and treats any error as possibly
+// committed, so a cancelled caller must not turn a local install into a
+// quarantine.
 func (l *developerLease) Advance(ctx context.Context, before, after Point) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()

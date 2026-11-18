@@ -46,6 +46,9 @@ leaves the previous head readable in the other slot. The slots protect against
 torn writes from a crash, not against media corruption or edits of an
 acknowledged slot: damage to the slot holding the head reopens the fence one
 sequence lower, without an error.
+A lease's Head and Advance ignore the context's cancellation (Acquire still
+refuses an ended context before it binds or locks): the fence step is past the
+commit's point of no return, and the store quarantines on any Advance error.
 
 A fence file that is refused must never be truncated or re-provisioned to get
 the node running again: an empty file binds to any storage ID at head 0, which

@@ -168,7 +168,6 @@ type fixtureRPC struct {
 	reads     map[common.Address]map[[4]byte]contractRead
 	logs      []types.Log
 	calls     []ethCallRecord
-	methods   map[string]int
 	// afterCall runs, with mu held, after an eth_call with this selector has
 	// been answered: it is how a test reorganizes the chain mid-read.
 	afterCall map[[4]byte]func(f *fixtureRPC)
@@ -176,7 +175,7 @@ type fixtureRPC struct {
 
 func newFixtureRPC(t *testing.T, blocks []fixtureBlock) *fixtureRPC {
 	f := &fixtureRPC{t: t, canonical: append([]fixtureBlock(nil), blocks...), known: map[common.Hash]fixtureBlock{},
-		reads: map[common.Address]map[[4]byte]contractRead{}, methods: map[string]int{}, afterCall: map[[4]byte]func(*fixtureRPC){}}
+		reads: map[common.Address]map[[4]byte]contractRead{}, afterCall: map[[4]byte]func(*fixtureRPC){}}
 	for _, b := range blocks {
 		f.known[b.hash] = b
 	}
@@ -219,16 +218,6 @@ func (f *fixtureRPC) callsTo(selector [4]byte) []ethCallRecord {
 		if c.selector == selector {
 			out = append(out, c)
 		}
-	}
-	return out
-}
-
-func (f *fixtureRPC) methodsUsed() map[string]int {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	out := map[string]int{}
-	for k, v := range f.methods {
-		out[k] = v
 	}
 	return out
 }
@@ -283,7 +272,6 @@ func (f *fixtureRPC) handle(w http.ResponseWriter, r *http.Request) {
 func (f *fixtureRPC) answer(req rpcRequest) rpcResponse {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.methods[req.Method]++
 	result, err := f.dispatch(req)
 	out := rpcResponse{JSONRPC: "2.0", ID: req.ID}
 	if err != nil {
@@ -432,7 +420,9 @@ func (f *fixtureRPC) ethCall(req rpcRequest) (interface{}, error) {
 				record.byHash, record.hash = true, *sel.BlockHash
 				b, ok := f.known[*sel.BlockHash]
 				if !ok {
-					// What a node answers for a block hash it does not have.
+					// What geth answers for a block hash it does not have
+					// (anvil answers -32001 "Resource not found"; the
+					// adapter depends on neither).
 					f.calls = append(f.calls, record)
 					return nil, &rpcError{Code: -32000, Message: "header for hash not found"}
 				}

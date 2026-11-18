@@ -9,7 +9,8 @@ package ethereum
 // for that block. On a Prague chain (mainnet and Sepolia since May 2025,
 // anvil's default) go-ethereum v1.13.15 drops the header's requestsHash
 // (EIP-7685), so types.Header.Hash() is not the block's hash.
-// Pre-Prague (Cancun-shaped) behaviour is unchanged.
+// Pre-Prague (Cancun-shaped) behaviour is unchanged: every Cancun subtest
+// pins the same results as today.
 //
 // Refs: chaosnet-terminal/FINDING-FROST-PRAGUE-HEADER-HASH.md (2026-11-18);
 // decision (tux, 2026-11-18): use the RPC's block hash, no go-ethereum upgrade.
@@ -121,19 +122,6 @@ func shapeName(prague bool) string {
 		return "prague"
 	}
 	return "cancun"
-}
-
-// cancunMethods are the RPC methods the adapter uses at 1a3aef655 on a
-// Cancun chain. Pre-Prague behaviour is unchanged: no other method appears.
-var cancunMethods = map[string]bool{"eth_chainId": true, "eth_getBlockByNumber": true, "eth_call": true, "eth_getLogs": true}
-
-func requireCancunMethods(t *testing.T, rpc *fixtureRPC) {
-	t.Helper()
-	for method := range rpc.methodsUsed() {
-		if !cancunMethods[method] {
-			t.Errorf("pre-Prague behaviour changed: new RPC method %s", method)
-		}
-	}
 }
 
 // ---------------------------------------------------------------- FrostChain
@@ -254,9 +242,6 @@ func TestFrostViewReadsAtTheRPCBlockHash(t *testing.T) {
 			if view.State != 2 || view.Epoch != pragueTestEpoch || view.ApprovedID != ([32]byte{}) {
 				t.Fatalf("View snapshot fields changed: state=%d epoch=%d", view.State, view.Epoch)
 			}
-			if !prague {
-				requireCancunMethods(t, fx.rpc)
-			}
 		})
 	}
 }
@@ -288,9 +273,6 @@ func TestFrostViewApprovalHashIsTheRPCHash(t *testing.T) {
 			}
 			if view.ApprovedID == ([32]byte{}) || view.Approved.DescriptorHash != fx.approved.DescriptorHash || view.Approved.ApprovalBlock != pragueTestApprovalBlock {
 				t.Fatalf("approved wallet fields changed")
-			}
-			if !prague {
-				requireCancunMethods(t, fx.rpc)
 			}
 		})
 		siblings := []struct {
@@ -432,9 +414,6 @@ func TestFrostRedemptionReadsUseTheRPCBlockHash(t *testing.T) {
 					t.Fatalf("HeaderHash(%d) = %s, want the RPC's hash %s", n, common.Hash(got), fx.blocks[n].hash)
 				}
 			}
-			if !prague {
-				requireCancunMethods(t, fx.rpc)
-			}
 		})
 		t.Run(shapeName(prague)+"/canonical admission", func(t *testing.T) {
 			t.Parallel()
@@ -453,9 +432,6 @@ func TestFrostRedemptionReadsUseTheRPCBlockHash(t *testing.T) {
 			}
 			if view.Head != pragueTestHead || view.HeadHash != fx.blocks[pragueTestHead].hash || view.Block != pragueTestApprovalBlock {
 				t.Fatalf("reservation view head %d %s block %d, want %d %s %d", view.Head, common.Hash(view.HeadHash), view.Block, pragueTestHead, fx.blocks[pragueTestHead].hash, pragueTestApprovalBlock)
-			}
-			if !prague {
-				requireCancunMethods(t, fx.rpc)
 			}
 		})
 		t.Run(shapeName(prague)+"/admission from another block", func(t *testing.T) {

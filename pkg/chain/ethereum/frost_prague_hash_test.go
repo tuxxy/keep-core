@@ -474,3 +474,51 @@ func pragueTestKey(t *testing.T) *ecdsa.PrivateKey {
 	}
 	return key
 }
+
+// Refs FINDING-FROST-PRAGUE-HEADER-HASH sites frost.go ~195 and
+// frost_redemption.go ~72, ~80; review of tuxxy/keep-core#184, F2.
+// Invariant: a new block landing on top of the head during a read is not a
+// reorg. The stability recheck reads the head's own height, so View and the
+// redemption reads succeed and report the head they read at, not the new one.
+func TestFrostReadsAcceptAHeadAdvanceDuringTheRead(t *testing.T) {
+	t.Parallel()
+	for _, prague := range []bool{true, false} {
+		prague := prague
+		t.Run(shapeName(prague)+"/view", func(t *testing.T) {
+			t.Parallel()
+			ctx := pragueTestContext(t)
+			fx := newFrostViewFixture(t, ctx, prague, true, common.Hash{})
+			head := fx.blocks[pragueTestHead]
+			var next fixtureBlock
+			fx.rpc.onCall(fx.epochView, func(f *fixtureRPC) { next = f.advance() })
+			view, err := fx.chain.View(ctx, pragueTestEpoch)
+			requireEpochViewAtHash(t, fx, head)
+			if err != nil {
+				t.Fatalf("head advanced to block %d %s (no reorg) during the read, View failed: %v", pragueTestHead+1, next.hash, err)
+			}
+			if view.Head != pragueTestHead || view.HeadHash != head.hash {
+				t.Fatalf("View head = %d %s, want the block read at, %d %s", view.Head, common.Hash(view.HeadHash), pragueTestHead, head.hash)
+			}
+			if view.ApprovalHash != fx.blocks[pragueTestApprovalBlock].hash {
+				t.Fatalf("ApprovalHash = %s, want the RPC's hash %s", common.Hash(view.ApprovalHash), fx.blocks[pragueTestApprovalBlock].hash)
+			}
+		})
+		t.Run(shapeName(prague)+"/redemption", func(t *testing.T) {
+			t.Parallel()
+			ctx := pragueTestContext(t)
+			fx := newFrostRedemptionFixture(t, ctx, prague, common.Hash{})
+			head := fx.blocks[pragueTestHead]
+			fx.rpc.onCall(fx.read, func(f *fixtureRPC) { f.advance() })
+			view, err := redemption.ChainReservations{Chain: fx.chain}.ReadReservation(ctx, fx.reservation)
+			if err != nil {
+				t.Fatalf("head advanced (no reorg) during the read, ReadReservation failed: %v", err)
+			}
+			if view.Head != pragueTestHead || view.HeadHash != head.hash {
+				t.Fatalf("reservation view head = %d %s, want the block read at, %d %s", view.Head, common.Hash(view.HeadHash), pragueTestHead, head.hash)
+			}
+			if view.BlockHash != view.CanonicalBlockHash || view.CanonicalBlockHash != fx.blocks[pragueTestApprovalBlock].hash {
+				t.Fatalf("canonical admission refused after a head advance: log %s canonical %s", common.Hash(view.BlockHash), common.Hash(view.CanonicalBlockHash))
+			}
+		})
+	}
+}

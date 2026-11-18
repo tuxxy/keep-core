@@ -189,6 +189,23 @@ func (f *fixtureRPC) replace(b fixtureBlock) {
 	f.known[b.hash] = b
 }
 
+// advance appends a new canonical block on top of the head, of the same
+// shape: the chain grows, nothing is reorganized. Callers hold mu (it is
+// meant for afterCall hooks).
+func (f *fixtureRPC) advance() fixtureBlock {
+	parent := f.head()
+	n := parent.header.Number.Uint64() + 1
+	h := types.CopyHeader(parent.header)
+	h.ParentHash = parent.hash
+	h.Number = new(big.Int).SetUint64(n)
+	h.Time = parent.header.Time + 12
+	h.Root = crypto.Keccak256Hash([]byte("state"), new(big.Int).SetUint64(n).Bytes())
+	b := sealFixtureBlock(h, parent.requests)
+	f.canonical = append(f.canonical, b)
+	f.known[b.hash] = b
+	return b
+}
+
 func (f *fixtureRPC) serve(to common.Address, selector [4]byte, read contractRead) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
